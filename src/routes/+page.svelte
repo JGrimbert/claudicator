@@ -7,49 +7,32 @@
     import TaskList from "$lib/components/TaskList.svelte";
 
     /**
-     * TODO: Intégration Claude Code
+     * TODO: Prompt contextuel de l'agent
+     * Voir plan détaillé : plans/todo-prompt-context.md
      *
-     * Objectif:
-     * Permettre à l'application d'appeler Claude Code localement et d'afficher
-     * sa sortie dans l'interface (console agent / artifact viewer).
+     * Pipeline : item sélectionné → scan codebase → Context → prompt prérempli → lancement agent
      *
-     * Backend:
-     * - créer un service serveur qui exécute la CLI "claude"
-     * - utiliser child_process.spawn pour lire stdout en streaming
-     * - envoyer les logs progressivement au frontend (SSE ou websocket)
+     * 1. SÉLECTION DE L'ITEM
+     *    Issue GitHub / task / TODO → point d'entrée du contexte
      *
-     * Endpoint:
-     * - POST /api/agent/run
-     * - payload:
-     *      {
-     *          prompt
-     *          issueNumber
-     *          taskId
-     *      }
+     * 2. CONSTRUCTION DU CONTEXT (via lolve-cartography)
+     *    a) Symbol Map  : classes, méthodes, fonctions exportées
+     *    b) Call Graph  : appels inter-classes (heuristique regex)
+     *    c) Dependencies: imports par fichier
+     *    d) Concept Map : concepts métier du codebase (concepts.json)
      *
-     * Flux:
-     * - l'utilisateur lance une task
-     * - le backend appelle "claude <prompt>"
-     * - les lignes de sortie sont streamées vers l'UI
-     * - la console affiche le raisonnement et les actions de l'agent
+     * 3. FORMAT DU PROMPT FINAL
+     *    TASK / OBJECTIF / CONCEPTS / SYMBOL MAP / CALL GRAPH / DEPENDENCIES / MATCHES
      *
-     * Artifact capture:
-     * - détecter automatiquement dans la sortie:
-     *      - plans markdown
-     *      - patch git
-     *      - commandes exécutées
+     * 4. INPUT UI (colonne des tasks)
+     *    Textarea préremplie + bouton "Lancer l'agent"
      *
-     * UI:
-     * - afficher la sortie dans la Console de l'agent
-     * - afficher les artefacts dans un panneau dédié:
-     *      - plan
-     *      - diff patch
-     *      - logs
-     *
-     * Sécurité:
-     * - exécution uniquement côté serveur
-     * - sandbox du repo agent
-     * - limiter les commandes autorisées
+     * Composants à créer :
+     *    src/lib/server/services/cartography.ts  — scanner regex
+     *    src/lib/server/agent/context.ts         — assembleur de Context
+     *    src/lib/server/agent/prompt.ts          — formateur de prompt
+     *    src/routes/api/context/+server.ts       — endpoint API
+     *    src/lib/components/AgentInput.svelte    — textarea + bouton lancement
      */
 
 
@@ -76,6 +59,16 @@
 
     /** TODO: UI
      * - le backougrnd bleu nuit de la liste METHODES 140 | FICHIERS 61 | ... doit être reservé uniquement à l'input text central
+     * - je n'arrive pas à faire fonctionner les barres de redimensionnement des colonnes
+     * - il faut une barre de redim latérale pour la partie input texte + listes d'onglets + liste d'occurences
+     */
+
+    /** TODO: Prompt prérempli pour chaque task
+     * Actuellement quand je clique sur les .md de la cartography, ça m'affiche le contenu brut du .md dans la section centrale
+     * - quand je selectionne une task, je veux que la section du milieu entre les colones est remplacé par le prompt prérempli pour cette task, avec un bouton "Lancer l'agent" en dessous
+     * - les aperçus de readme.md et claude.md doivent être bcp plus succint: juste le titre
+     * - les titres ne disparaissent pas mais s'affichent dans la section centrale quand on clique dessus, et c'est là que le prompt prérempli s'affiche
+     * - les composant actules en dessous de la zone centrale (input recherche, liste méthodes/fichiers/todo etc, doit pouvoir être retrouvé qd on clique sur un onglet dans la section centrale, et ne pas disparaitre systématiquement à chaque click sur une task
      */
 
     /**

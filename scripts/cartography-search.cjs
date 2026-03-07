@@ -32,7 +32,9 @@ function grepProject(projectPath, query) {
     const hits    = [];
     const exts    = new Set(['.js', '.cjs', '.mjs', '.vue', '.ts', '.tsx', '.svelte']);
     const ignored = new Set(['node_modules', 'dist', '.cache', '.git', '.backups', '.idea']);
-    const needle  = query.toLowerCase();
+    // Chercher chaque mot de 4+ caractères pour ne pas dépendre d'une phrase exacte
+    const words   = [...new Set(query.toLowerCase().split(/\s+/).filter(w => w.length >= 4))];
+    const needle  = words.length > 0 ? words[0] : query.toLowerCase(); // fallback phrase exacte
 
     function walk(dir) {
         let entries;
@@ -46,7 +48,8 @@ function grepProject(projectPath, query) {
                 try {
                     const lines = fs.readFileSync(abs, 'utf-8').split('\n');
                     for (let i = 0; i < lines.length; i++) {
-                        if (lines[i].toLowerCase().includes(needle)) {
+                        const low = lines[i].toLowerCase();
+                        if (words.some(w => low.includes(w))) {
                             hits.push({
                                 file:    path.relative(projectPath, abs).replace(/\\/g, '/'),
                                 line:    i + 1,
@@ -112,9 +115,29 @@ try {
                 snippetError = e.message;
                 _log(`[snippet error] ${r.key}: ${e.message}`);
             }
+        } else if (meta.file) {
+            // Fallback : startLine absent — localiser la méthode par son nom dans le fichier
+            try {
+                const filePath = path.isAbsolute(meta.file)
+                    ? meta.file
+                    : path.join(projectPath, meta.file);
+                const lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+                const shortName = r.key.includes('.') ? r.key.split('.').pop() : r.key;
+                const idx = lines.findIndex(l => l.includes(shortName));
+                if (idx !== -1) {
+                    codeSnippet = lines.slice(idx, Math.min(idx + 25, lines.length)).join('\n');
+                    _log(`[snippet fallback] ${r.key}: trouvé ligne ${idx + 1}`);
+                } else {
+                    snippetError = `"${shortName}" non trouvé dans ${path.basename(meta.file)}`;
+                    _log(`[no snippet] ${r.key}: ${snippetError}`);
+                }
+            } catch (e) {
+                snippetError = e.message;
+                _log(`[snippet error fallback] ${r.key}: ${e.message}`);
+            }
         } else {
-            snippetError = `missing: file=${!!meta.file} startLine=${!!meta.startLine} endLine=${!!meta.endLine}`;
-            _log(`[no snippet] ${r.key}: ${snippetError}`);
+            snippetError = 'Fichier non référencé dans l\'index';
+            _log(`[no snippet] ${r.key}: no file`);
         }
 
         return {

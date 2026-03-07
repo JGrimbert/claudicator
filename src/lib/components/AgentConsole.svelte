@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, notifyTaskCreated } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, agentRunState } from "$lib/stores/agent";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -263,6 +263,24 @@
 
 </script>
 
+<!-- ══════════════════════════════════════════════════ RUN CONSOLE ══ -->
+{#if $agentRunState.logs.length > 0}
+    <div class="run-console">
+        <div class="run-console-header">
+            <span class="run-title">{$agentRunState.taskTitle || "Claude"}</span>
+            {#if $agentRunState.running}
+                <span class="run-blink">●</span>
+            {/if}
+            <button class="run-clear" onclick={() => agentRunState.update(s => ({ ...s, logs: [] }))}>✕</button>
+        </div>
+        <div class="run-log-area">
+            {#each $agentRunState.logs as entry}
+                <div class="run-log-line" class:system={entry.type === "system"}>{entry.line}</div>
+            {/each}
+        </div>
+    </div>
+{/if}
+
 <!-- ═══════════════════════════════════════════════════════ PROJET ══ -->
 {#if expandedFile}
     <div class="section fill">
@@ -451,6 +469,64 @@
 {/if}
 
 <style>
+/* ── Run Console ──────────────────────────────────────────────────── */
+.run-console {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    max-height: 40%;
+    min-height: 80px;
+    border-bottom: 2px solid #2a2a3a;
+    background: #05050f;
+}
+.run-console-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-bottom: 1px solid #1a1a2a;
+    flex-shrink: 0;
+}
+.run-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #7c6af7;
+}
+.run-blink {
+    font-size: 0.6rem;
+    color: #7c6af7;
+    animation: blink 1.2s step-start infinite;
+}
+.run-clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+    line-height: 1;
+}
+.run-clear:hover { color: #666; }
+.run-log-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.4rem 1rem;
+}
+.run-log-area::-webkit-scrollbar { width: 4px; }
+.run-log-area::-webkit-scrollbar-track { background: transparent; }
+.run-log-area::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
+.run-log-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: #888;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.run-log-line.system { color: #444; font-style: italic; }
+
 /* ── Layout ───────────────────────────────────────────────────────── */
 .projet-section {
     display: flex;

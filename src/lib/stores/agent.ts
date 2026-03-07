@@ -1,5 +1,37 @@
 import { writable } from "svelte/store";
 
+export type ContextItem =
+    | { kind: "method"; key: string; file: string; startLine: number | null; summary: string; snippet: string | null }
+    | { kind: "grep";   file: string; line: number; content: string }
+
+export type Context = {
+    source: { kind: "task" | "issue" | "todo"; label: string };
+    items: ContextItem[];
+    loading: boolean;
+    error: string;
+}
+
+export const contextState = writable<Context>({
+    source: { kind: "task", label: "" },
+    items: [],
+    loading: false,
+    error: "",
+});
+
+export type RunLog = { line: string; type: "agent" | "system" };
+
+export const agentRunState = writable<{
+    taskId: string | null;
+    taskTitle: string;
+    logs: RunLog[];
+    running: boolean;
+}>({
+    taskId: null,
+    taskTitle: "",
+    logs: [],
+    running: false,
+});
+
 export const taskRefreshTick = writable(0);
 export function notifyTaskCreated() { taskRefreshTick.update(n => n + 1); }
 

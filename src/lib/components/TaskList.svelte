@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, taskRefreshTick } from "$lib/stores/agent";
+    import { get } from "svelte/store";
+    import { agentState, taskRefreshTick, agentRunState, contextState, type RunLog, type ContextItem } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
@@ -90,22 +91,117 @@
         if (e.key === "Enter") createTask();
     }
 
+    // ─── Lancer Claude sur une task ──────────────────────────────────────────
+    let showRunFor: string | null = null;
+    let runPrompt = "";
+
+    function serializeContext(label: string): string {
+        const ctx = get(contextState);
+        if (ctx.items.length === 0) return label;
+        const lines = ctx.items.slice(0, 15).map(item => {
+            if (item.kind === "method") {
+                const loc = item.startLine ? `:${item.startLine}` : "";
+                return `- ${item.file}${loc} — ${item.key}${item.summary ? ` : "${item.summary}"` : ""}`;
+            }
+            return `- ${item.file}:${item.line} — ${item.content.trim()}`;
+        });
+        return `Contexte du codebase pertinent :\n${lines.join("\n")}\n\nTâche : ${label}`;
+    }
+
+    async function runTask(task: Task) {
+        const base   = runPrompt.trim() || task.title;
+        const prompt = serializeContext(base);
+        if (!base) return;
+        showRunFor = null;
+        runPrompt = "";
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
+        try {
+            const res = await fetch("/api/agent/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt, taskId: task.id })
+            });
+            if (!res.ok || !res.body) {
+                agentRunState.update(s => ({
+                    ...s,
+                    running: false,
+                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }]
+                }));
+                return;
+            }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                for (const raw of dec.decode(value).split("\n")) {
+                    if (raw.startsWith("data: ")) {
+                        try {
+                            const event = JSON.parse(raw.slice(6)) as RunLog;
+                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
+                        } catch { /* skip */ }
+                    }
+                }
+            }
+        } finally {
+            agentRunState.update(s => ({ ...s, running: false }));
+            await loadTasks();
+        }
+    }
+
+    function openRun(task: Task) {
+        showRunFor = task.id;
+        runPrompt = task.title;
+    }
+
     async function selectTask(task: Task) {
-        if (selected?.id === task.id) { selected = null; return; }
+        if (selected?.id === task.id) { selected = null; contextState.set({ source: { kind: "task", label: "" }, items: [], loading: false, error: "" }); return; }
         selected = task;
-        if (!task.issueNumber) return;
-        agentState.update(s => ({ ...s, status: "loading", plan: null }));
-        const res  = await fetch(`/api/issue?number=${task.issueNumber}`);
-        const full = await res.json();
-        agentState.update(s => ({
-            ...s,
-            issue: full,
-            status: "idle",
-            navigationStack: [],
-            knownSubIssueNumbers: [
-                ...new Set([...s.knownSubIssueNumbers, ...(full.subIssues?.map((si: any) => si.number) ?? [])])
-            ]
-        }));
+        let issueBody = "";
+        if (task.issueNumber) {
+            agentState.update(s => ({ ...s, status: "loading", plan: null }));
+            const res  = await fetch(`/api/issue?number=${task.issueNumber}`);
+            const full = await res.json();
+            issueBody  = full.body ?? "";
+            agentState.update(s => ({
+                ...s,
+                issue: full,
+                status: "idle",
+                navigationStack: [],
+                knownSubIssueNumbers: [
+                    ...new Set([...s.knownSubIssueNumbers, ...(full.subIssues?.map((si: any) => si.number) ?? [])])
+                ]
+            }));
+        }
+        buildContext(task, issueBody);
+    }
+
+    async function buildContext(task: Task, issueBody = "") {
+        // Construire une query dense : titre + première ligne significative du corps de l'issue
+        const bodyLine = issueBody.split("\n").find(l => l.trim().length > 20)?.trim() ?? "";
+        const query    = bodyLine ? `${task.title} ${bodyLine}`.slice(0, 250) : task.title;
+        contextState.set({ source: { kind: "task", label: task.title }, items: [], loading: true, error: "" });
+        try {
+            const res  = await fetch("/api/cartography", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+            const data = await res.json();
+            if (data.error) { contextState.update(s => ({ ...s, loading: false, error: data.error })); return; }
+            const items: ContextItem[] = [
+                ...(data.grepMethods ?? []).map((m: any): ContextItem => ({
+                    kind: "method", key: m.key, file: m.file, startLine: m.startLine ?? null,
+                    summary: m.summary ?? "", snippet: m.codeSnippet ?? null
+                })),
+                ...(data.grepResults ?? []).map((g: any): ContextItem => ({
+                    kind: "grep", file: g.file, line: g.line, content: g.content
+                })),
+            ];
+            contextState.set({ source: { kind: "task", label: task.title }, items, loading: false, error: "" });
+        } catch (e: any) {
+            contextState.update(s => ({ ...s, loading: false, error: e.message }));
+        }
     }
 </script>
 
@@ -174,8 +270,59 @@
                             {:else if task.status === "failed" || task.status === "pending"}
                                 <button class="action-btn" onclick={() => setStatus(task, "pending")}>Relancer</button>
                             {/if}
+                            <button
+                                class="action-btn run-btn"
+                                class:active={showRunFor === task.id}
+                                onclick={() => showRunFor === task.id ? showRunFor = null : openRun(task)}
+                                disabled={$agentRunState.running}
+                            >Claude →</button>
                             <button class="action-btn danger" onclick={() => remove(task)}>Supprimer</button>
                         </div>
+                        {#if showRunFor === task.id}
+                            <div class="run-input-area">
+                                <textarea
+                                    class="run-textarea"
+                                    bind:value={runPrompt}
+                                    rows={3}
+                                    placeholder="Prompt pour Claude…"
+                                ></textarea>
+                                <button
+                                    class="run-submit"
+                                    onclick={() => runTask(task)}
+                                    disabled={!runPrompt.trim()}
+                                >Lancer</button>
+                            </div>
+                        {/if}
+                        {#if $contextState.source.label === task.title}
+                            <div class="ctx-section">
+                                {#if $contextState.loading}
+                                    <span class="ctx-hint">Recherche contexte…</span>
+                                {:else if $contextState.error}
+                                    <span class="ctx-hint err">{$contextState.error}</span>
+                                {:else if $contextState.items.length > 0}
+                                    <div class="ctx-header">Contexte — {$contextState.items.length}</div>
+                                    {#each $contextState.items.slice(0, 8) as item}
+                                        {#if item.kind === "method"}
+                                            <div class="ctx-item">
+                                                <span class="ctx-key">{item.key}</span>
+                                                <span class="ctx-loc">{item.file}{item.startLine ? `:${item.startLine}` : ""}</span>
+                                                {#if item.summary}<span class="ctx-summary">{item.summary}</span>{/if}
+                                            </div>
+                                        {:else}
+                                            <div class="ctx-item">
+                                                <span class="ctx-loc">{item.file}:{item.line}</span>
+                                                <span class="ctx-content">{item.content.trim()}</span>
+                                            </div>
+                                        {/if}
+                                    {/each}
+                                    {#if $contextState.items.length > 8}
+                                        <span class="ctx-hint">+{$contextState.items.length - 8} autres</span>
+                                    {/if}
+                                {:else}
+                                    <span class="ctx-hint">Aucun contexte trouvé</span>
+                                {/if}
+                            </div>
+                        {/if}
                         {#if task.logs.length > 0}
                             <div class="inline-logs">
                                 {#each task.logs as log}
@@ -357,4 +504,74 @@
     border-bottom: 1px solid #111;
     padding: 0.1rem 0;
 }
+/* ── Contexte ─────────────────────────────────────────────────────── */
+.ctx-section {
+    border-top: 1px solid #141414;
+    max-height: 160px;
+    overflow-y: auto;
+}
+.ctx-header {
+    padding: 0.25rem 1rem;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #333;
+    background: #0a0a16;
+    border-bottom: 1px solid #141414;
+    position: sticky;
+    top: 0;
+}
+.ctx-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.5rem;
+    align-items: baseline;
+    padding: 0.2rem 1rem;
+    border-bottom: 1px solid #0f0f18;
+}
+.ctx-item:hover { background: #0c0c18; }
+.ctx-key  { font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; color: #7c6af7; }
+.ctx-loc  { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;  color: #333; }
+.ctx-summary { font-size: 0.63rem; color: #555; width: 100%; }
+.ctx-content { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: #444; }
+.ctx-hint { display: block; padding: 0.25rem 1rem; font-size: 0.62rem; color: #333; font-style: italic; }
+.ctx-hint.err { color: #f44336; }
+
+.run-btn { color: #7c6af7; border-color: #2a2a3a; }
+.run-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.run-btn.active { color: #9181f9; border-color: #9181f9; background: #0e0e1a; }
+.run-btn:disabled { opacity: 0.3; cursor: default; }
+.run-input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid #141414;
+}
+.run-textarea {
+    background: #070710;
+    border: 1px solid #2a2a3a;
+    border-radius: 3px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    padding: 0.4rem 0.6rem;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+}
+.run-textarea:focus { border-color: #7c6af7; color: #bbb; }
+.run-submit {
+    align-self: flex-end;
+    background: #7c6af7;
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+.run-submit:hover:not(:disabled) { background: #9181f9; }
+.run-submit:disabled { opacity: 0.4; cursor: default; }
 </style>
