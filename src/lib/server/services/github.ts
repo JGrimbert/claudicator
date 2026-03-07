@@ -54,6 +54,12 @@ export async function getRepoFile(owner: string, repo: string, path: string): Pr
     return Buffer.from(data.content, "base64").toString("utf-8");
 }
 
+export async function createIssue(owner: string, repo: string, title: string, body: string) {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.create({ owner, repo, title, body });
+    return data;
+}
+
 export async function getSubIssues(owner: string, repo: string, number: number) {
     const octokit = getOctokit();
     const { data } = await octokit.request(

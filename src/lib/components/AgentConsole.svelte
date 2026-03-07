@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated } from "$lib/stores/agent";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -216,6 +216,51 @@
         if (e.key === "Enter") search();
     }
 
+    // ─── Créer une task depuis un TODO ────────────────────────────────────────
+    let creatingTodo: Record<string, boolean> = {};
+    let createdTodo:  Record<string, boolean> = {};
+
+    async function createTaskFromTodo(g: GrepResult) {
+        const key = `${g.file}:${g.line}`;
+        if (creatingTodo[key] || createdTodo[key]) return;
+        creatingTodo = { ...creatingTodo, [key]: true };
+        try {
+            const rawTitle = g.content.trim()
+                .replace(/^(\/\/|\/\*+)\s*TODO:?\s*/i, "")
+                .replace(/\*\/\s*$/, "")
+                .trim();
+            const title = (rawTitle || g.content.trim()).slice(0, 120);
+
+            const match = g.content.match(/#(\d+)/);
+            let issueNumber: number | undefined;
+
+            if (match) {
+                issueNumber = Number(match[1]);
+            } else {
+                const res = await fetch("/api/github/issues", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: title.slice(0, 80),
+                        body: `Trouvé dans \`${g.file}:${g.line}\`\n\n\`\`\`\n${g.content.trim()}\n\`\`\``
+                    })
+                });
+                const data = await res.json();
+                if (data.number) issueNumber = data.number;
+            }
+
+            await fetch("/api/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, issueNumber })
+            });
+            createdTodo = { ...createdTodo, [key]: true };
+            notifyTaskCreated();
+        } catch { /* silencieux */ } finally {
+            creatingTodo = { ...creatingTodo, [key]: false };
+        }
+    }
+
 </script>
 
 <!-- ═══════════════════════════════════════════════════════ PROJET ══ -->
@@ -309,52 +354,70 @@
             {@const grep    = activeTab === "todo" ? todoGrep    : queryGrep}
             {@const methods = activeTab === "todo" ? todoMethods : queryMethods}
             {@const sem     = activeTab === "todo" ? []          : querySemantic}
-            <div class="result-list">
+            <div class="result-area">
                 {#if grep.length > 0}
                     <div class="result-group-header">Occurrences — {grep.length}</div>
-                    {#each grep as g}
-                        <div class="grep-item">
-                            <span class="grep-file">{g.file}<span class="grep-line">:{g.line}</span></span>
-                            <span class="grep-content">{g.content}</span>
-                        </div>
-                    {/each}
+                    <div class="result-list grouped">
+                        {#each grep as g}
+                            {@const key = `${g.file}:${g.line}`}
+                            <div class="grep-item">
+                                <div class="grep-item-top">
+                                    <span class="grep-file">{g.file}<span class="grep-line">:{g.line}</span></span>
+                                    {#if activeTab === "todo"}
+                                        <button
+                                            class="todo-task-btn"
+                                            class:done={createdTodo[key]}
+                                            onclick={() => createTaskFromTodo(g)}
+                                            disabled={creatingTodo[key] || createdTodo[key]}
+                                            title="Créer une task depuis ce TODO"
+                                        >{createdTodo[key] ? "✓" : creatingTodo[key] ? "…" : "→ Task"}</button>
+                                    {/if}
+                                </div>
+                                <span class="grep-content">{g.content}</span>
+                            </div>
+                        {/each}
+                    </div>
                 {/if}
                 {#if methods.length > 0}
                     <div class="result-group-header">Méthodes — {methods.length}</div>
-                    {#each methods as r}
-                        <div class="result-item">
-                            <div class="result-head">
-                                <div class="result-meta">
-                                    <span class="mono purple small">{r.key}</span>
-                                    <span class="role-tag">{r.role}</span>
+                    <div class="result-list grouped">
+                        {#each methods as r}
+                            <div class="result-item">
+                                <div class="result-head">
+                                    <div class="result-meta">
+                                        <span class="mono purple small">{r.key}</span>
+                                        <span class="role-tag">{r.role}</span>
+                                    </div>
+                                    {#if r.summary}<div class="result-summary">{r.summary}</div>{/if}
+                                    <div class="mono dim small">{r.file}{r.startLine ? `:${r.startLine}` : ""}</div>
                                 </div>
-                                {#if r.summary}<div class="result-summary">{r.summary}</div>{/if}
-                                <div class="mono dim small">{r.file}{r.startLine ? `:${r.startLine}` : ""}</div>
+                                {#if r.codeSnippet}<pre class="result-code-inline">{r.codeSnippet}</pre>{/if}
                             </div>
-                            {#if r.codeSnippet}<pre class="result-code-inline">{r.codeSnippet}</pre>{/if}
-                        </div>
-                    {/each}
+                        {/each}
+                    </div>
                 {/if}
                 {#if sem.length > 0}
                     <div class="result-group-header">Méthodes pertinentes — {sem.length}</div>
-                    {#each sem as r}
-                        <div class="result-item">
-                            <div class="result-head">
-                                <div class="result-meta">
-                                    <span class="mono purple small">{r.key}</span>
-                                    <span class="role-tag">{r.role}</span>
-                                    <span class="mono dim small" style="margin-left:auto">score {r.score}</span>
+                    <div class="result-list grouped">
+                        {#each sem as r}
+                            <div class="result-item">
+                                <div class="result-head">
+                                    <div class="result-meta">
+                                        <span class="mono purple small">{r.key}</span>
+                                        <span class="role-tag">{r.role}</span>
+                                        <span class="mono dim small" style="margin-left:auto">score {r.score}</span>
+                                    </div>
+                                    {#if r.summary}<div class="result-summary">{r.summary}</div>{/if}
+                                    <div class="mono dim small">{r.file}{r.startLine ? `:${r.startLine}` : ""}</div>
                                 </div>
-                                {#if r.summary}<div class="result-summary">{r.summary}</div>{/if}
-                                <div class="mono dim small">{r.file}{r.startLine ? `:${r.startLine}` : ""}</div>
+                                {#if r.codeSnippet}
+                                    <pre class="result-code-inline">{r.codeSnippet}</pre>
+                                {:else}
+                                    <div class="snippet-missing">{r.snippetError ?? "Code non disponible"}</div>
+                                {/if}
                             </div>
-                            {#if r.codeSnippet}
-                                <pre class="result-code-inline">{r.codeSnippet}</pre>
-                            {:else}
-                                <div class="snippet-missing">{r.snippetError ?? "Code non disponible"}</div>
-                            {/if}
-                        </div>
-                    {/each}
+                        {/each}
+                    </div>
                 {/if}
             </div>
         {:else if activeTab === "files"}
@@ -457,6 +520,10 @@
     overflow-x: auto;
     flex-wrap: nowrap;
     scrollbar-width: none;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    background: #0c0c12;
 }
 .todos-header::-webkit-scrollbar { display: none; }
 .tab {
@@ -640,6 +707,21 @@
     border-radius: 6px;
     margin: 0.5rem 0.75rem;
 }
+.result-area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.result-list.grouped {
+    flex: 1;
+    min-height: 60px;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid #1a1a1a;
+}
 .result-group-header {
     padding: 0.3rem 0.75rem;
     font-size: 0.6rem;
@@ -648,8 +730,7 @@
     color: #333;
     background: #0c0c14;
     border-bottom: 1px solid #1a1a1a;
-    position: sticky;
-    top: 0;
+    flex-shrink: 0;
 }
 .grep-item {
     display: flex;
@@ -659,6 +740,12 @@
     border-bottom: 1px solid #141414;
 }
 .grep-item:hover { background: #111118; }
+.grep-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
 .grep-file {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.65rem;
@@ -672,6 +759,21 @@
     white-space: pre-wrap;
     word-break: break-all;
 }
+.todo-task-btn {
+    background: none;
+    border: 1px solid #2a2a2a;
+    color: #444;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.1s, border-color 0.1s;
+}
+.todo-task-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.todo-task-btn.done { color: #4caf50; border-color: #4caf50; }
+.todo-task-btn:disabled { opacity: 0.5; cursor: default; }
 .result-list::-webkit-scrollbar { width: 6px; }
 .result-list::-webkit-scrollbar-track { background: transparent; }
 .result-list::-webkit-scrollbar-thumb {

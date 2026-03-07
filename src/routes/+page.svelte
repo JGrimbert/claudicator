@@ -4,47 +4,7 @@
     import IssueList from "$lib/components/IssueList.svelte";
     import AgentConsole from "$lib/components/AgentConsole.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
-
-    /** TODO: liste de TASKS.
-     *
-     * Principe:
-     * Une task est une issue avec branche git associée, qui représente une unité de travail (ex: build, test, déploiement, etc.) lancée par l'agent.
-     * il faut les enregistrer séparement des issues classiques, car elles ont un cycle de vie différent (en cours, terminé, échoué) et des métadonnées spécifiques (logs, résultats, etc.), et qu'elles sont gérées en local.
-     * Une task permet d'actionner:
-     * - commit initial sur une branche dédiée (ex: "agent/task-1234") pour déclencher les pipelines CI/CD associés
-     * - enregistrer les logs et résultats de la task dans une base de données locale (ex: SQLite) pour pouvoir les afficher dans l'interface
-     * - générer un plan pour réaliser la tâche en mode plan à partir du contexte fourni par les listes de méthodes enrichie et la séléction par recherche des méthodes
-     *
-     *
-     *  Utilisation:
-     * - Afficher la liste des tâches en cours et terminées dans une section dédiée (ex: à droite de la console)
-     * - Permettre de cliquer sur une tâche pour voir les détails (logs, résultats, etc.)
-     * - Ajouter des filtres pour trier les tâches par statut (en cours, terminé, échoué), type (build, test, déploiement, etc.) ou date
-     * - Permettre d'annuler une tâche en cours ou de relancer une tâche échouée directement depuis l'interface
-     *
-     */
-
-    /** TODO: liste de TODO
-     * - La liste de TODO doit pouvoir générer des tasks.
-     * - A la creation d'une task, en l'absence d'issue #nnn associée, il faudra créer
-     * - Une TODO doit devenir un task avec sous tâches liée à une issue avec sub-issues
-     * -
-     */
-
-    /**
-     * TODO: Console de l'agent:
-     *
-     * - afficher les logs temps réel de l'agent
-     * - différencier logs système / logs agent / logs task
-     * - afficher les étapes du workflow agent:
-     *      - plan generation
-     *      - step execution
-     *      - patch generation
-     *      - commit / push
-     * - permettre d'interrompre une tâche en cours
-     * - permettre de rejouer une étape
-     *
-     */
+    import TaskList from "$lib/components/TaskList.svelte";
 
     /**
      * TODO: Intégration Claude Code
@@ -90,6 +50,48 @@
      * - exécution uniquement côté serveur
      * - sandbox du repo agent
      * - limiter les commandes autorisées
+     */
+
+
+    /**
+     * TODO: Console de l'agent:
+     *
+     * - afficher les logs temps réel de l'agent
+     * - différencier logs système / logs agent / logs task
+     * - afficher les étapes du workflow agent:
+     *      - plan generation
+     *      - step execution
+     *      - patch generation
+     *      - commit / push
+     * - permettre d'interrompre une tâche en cours
+     * - permettre de rejouer une étape
+     *
+     */
+
+    /**
+     * TODO: Amélioration d'une task
+     * - le bouton de retour est moche il faut trouver mieux
+     * - transition animée douce au début
+     */
+
+    /** TODO: UI
+     * - le backougrnd bleu nuit de la liste METHODES 140 | FICHIERS 61 | ... doit être reservé uniquement à l'input text central
+     */
+
+    /**
+     * TODO: Description de la issue dynamique
+     * - la task selectionnée doit afficher la description de l'issue associée
+     */
+
+    /**
+     * TODO: Intégration avec GitHub API
+     */
+
+    /**
+     * TODO: Les colonnes latérales peuvent devenir de petits onglers verticaux
+     * - on garde la présentation actuelle par defaut et on ajoute une rangée verticale pour pouvoir switcher de vues
+     * - de là on controle les sections à afficher dans la colonne (ex: artefacts, issues, console, etc.)
+     *
      */
 
     /**
@@ -189,7 +191,7 @@
             class:active={dragging === "section"}
         ></div>
         <section style="width: {widths.section}px">
-            <!-- PRs, reviews, etc. -->
+            <TaskList />
         </section>
     </div>
 </div>

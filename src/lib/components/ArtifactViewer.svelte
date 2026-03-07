@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated } from "$lib/stores/agent";
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
     let prevIssue = 0;
@@ -67,6 +67,22 @@
             return { ...s, issue: parent, plan: null, status: "idle", navigationStack: stack };
         });
     }
+
+    // ─── Créer une task ───────────────────────────────────────────────────────
+    let taskCreated = false;
+
+    async function createTask() {
+        const issue = $agentState.issue;
+        if (!issue) return;
+        await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
+        });
+        notifyTaskCreated();
+        taskCreated = true;
+        setTimeout(() => { taskCreated = false; }, 2000);
+    }
 </script>
 
 <div class="panel">
@@ -120,6 +136,9 @@
         <div class="plan-section">
             <div class="plan-header">
                 <span class="plan-label">Plan — #{$agentState.issue.number}</span>
+                <button class="plan-btn" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
+                    {taskCreated ? "✓ créée" : "+ Task"}
+                </button>
                 <button class="plan-btn" onclick={generatePlan} disabled={$agentState.status === "planning"}>
                     {$agentState.status === "planning" ? "…" : $agentState.plan ? "Regénérer" : "Générer"}
                 </button>
