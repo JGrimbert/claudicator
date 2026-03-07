@@ -20,7 +20,12 @@ export async function GET() {
                 number: issue.number,
                 title: issue.title,
                 state: issue.state,
-                created: issue.created_at
+                created: issue.created_at,
+                labels: issue.labels.map(l =>
+                    typeof l === "string"
+                        ? { name: l, color: "555555" }
+                        : { name: l.name ?? "", color: l.color ?? "555555" }
+                )
             }))
         );
     } catch (err: any) {

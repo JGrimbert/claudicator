@@ -12,12 +12,18 @@ export type SubIssue = {
     state: string;
 };
 
+export type Label = {
+    name: string;
+    color: string;
+};
+
 export type Issue = {
     number: number;
     title: string;
     body: string;
     state: string;
     created: string;
+    labels: Label[];
     subIssues: SubIssue[];
 };
 

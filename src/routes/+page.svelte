@@ -5,20 +5,6 @@
     import AgentConsole from "$lib/components/AgentConsole.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
 
-    /**
-     * TODO: les colonnes pourraient être redimensionnables:
-     * - drag handle entre les panels pour ajuster la largeur
-     * - stocker les préférences de largeur dans localStorage pour les restaurer à chaque chargement
-     * - les bordures entre les panels ont une line solid de 1 px puis un espace de 4px, puis une line solid 1px
-     * -
-     **/
-
-    /**
-     * TODO: Harmoniser l'affichage des listes (issues, tasks, TODOs, etc.) avec des composants réutilisables:
-     * - issues doit donner #XXX, title, labels, etc.
-     *
-     */
-
     /** TODO: liste de TASKS.
      *
      * Principe:
