@@ -5,6 +5,126 @@
     import AgentConsole from "$lib/components/AgentConsole.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
 
+    /**
+     * TODO: les colonnes pourraient être redimensionnables:
+     * - drag handle entre les panels pour ajuster la largeur
+     * - stocker les préférences de largeur dans localStorage pour les restaurer à chaque chargement
+     * - les bordures entre les panels ont une line solid de 1 px puis un espace de 4px, puis une line solid 1px
+     * -
+     **/
+
+    /**
+     * TODO: Harmoniser l'affichage des listes (issues, tasks, TODOs, etc.) avec des composants réutilisables:
+     * - issues doit donner #XXX, title, labels, etc.
+     *
+     */
+
+    /** TODO: liste de TASKS.
+     *
+     * Principe:
+     * Une task est une issue avec branche git associée, qui représente une unité de travail (ex: build, test, déploiement, etc.) lancée par l'agent.
+     * il faut les enregistrer séparement des issues classiques, car elles ont un cycle de vie différent (en cours, terminé, échoué) et des métadonnées spécifiques (logs, résultats, etc.), et qu'elles sont gérées en local.
+     * Une task permet d'actionner:
+     * - commit initial sur une branche dédiée (ex: "agent/task-1234") pour déclencher les pipelines CI/CD associés
+     * - enregistrer les logs et résultats de la task dans une base de données locale (ex: SQLite) pour pouvoir les afficher dans l'interface
+     * - générer un plan pour réaliser la tâche en mode plan à partir du contexte fourni par les listes de méthodes enrichie et la séléction par recherche des méthodes
+     *
+     *
+     *  Utilisation:
+     * - Afficher la liste des tâches en cours et terminées dans une section dédiée (ex: à droite de la console)
+     * - Permettre de cliquer sur une tâche pour voir les détails (logs, résultats, etc.)
+     * - Ajouter des filtres pour trier les tâches par statut (en cours, terminé, échoué), type (build, test, déploiement, etc.) ou date
+     * - Permettre d'annuler une tâche en cours ou de relancer une tâche échouée directement depuis l'interface
+     *
+     */
+
+    /** TODO: liste de TODO
+     * - La liste de TODO doit pouvoir générer des tasks.
+     * - A la creation d'une task, en l'absence d'issue #nnn associée, il faudra créer
+     * - Une TODO doit devenir un task avec sous tâches liée à une issue avec sub-issues
+     * -
+     */
+
+    /**
+     * TODO: Console de l'agent:
+     *
+     * - afficher les logs temps réel de l'agent
+     * - différencier logs système / logs agent / logs task
+     * - afficher les étapes du workflow agent:
+     *      - plan generation
+     *      - step execution
+     *      - patch generation
+     *      - commit / push
+     * - permettre d'interrompre une tâche en cours
+     * - permettre de rejouer une étape
+     *
+     */
+
+    /**
+     * TODO: Intégration Claude Code
+     *
+     * Objectif:
+     * Permettre à l'application d'appeler Claude Code localement et d'afficher
+     * sa sortie dans l'interface (console agent / artifact viewer).
+     *
+     * Backend:
+     * - créer un service serveur qui exécute la CLI "claude"
+     * - utiliser child_process.spawn pour lire stdout en streaming
+     * - envoyer les logs progressivement au frontend (SSE ou websocket)
+     *
+     * Endpoint:
+     * - POST /api/agent/run
+     * - payload:
+     *      {
+     *          prompt
+     *          issueNumber
+     *          taskId
+     *      }
+     *
+     * Flux:
+     * - l'utilisateur lance une task
+     * - le backend appelle "claude <prompt>"
+     * - les lignes de sortie sont streamées vers l'UI
+     * - la console affiche le raisonnement et les actions de l'agent
+     *
+     * Artifact capture:
+     * - détecter automatiquement dans la sortie:
+     *      - plans markdown
+     *      - patch git
+     *      - commandes exécutées
+     *
+     * UI:
+     * - afficher la sortie dans la Console de l'agent
+     * - afficher les artefacts dans un panneau dédié:
+     *      - plan
+     *      - diff patch
+     *      - logs
+     *
+     * Sécurité:
+     * - exécution uniquement côté serveur
+     * - sandbox du repo agent
+     * - limiter les commandes autorisées
+     */
+
+    /**
+     * TODO: Version mobile avec lien SSH pour se connecter à l'agent depuis un terminal mobile (Termius, etc.):
+     * - Afficher un QR code avec les infos de connexion (host, port, username, etc.) pour faciliter la connexion depuis le mobile
+     - Ajouter une section "Mobile Access" dans le TopBar ou un bouton dédié pour afficher les infos de connexion
+     - Permettre d'envoyer des commandes simples depuis l'interface web qui seraient exécutées sur l'agent et dont les résultats seraient affichés dans la console (ex: "uptime", "df -h", etc.)
+     */
+
+        // TODO: add PR list, review panel, etc.
+
+        // TODO: add global error handling and display (e.g. toast notifications)
+
+        // TODO: add loading states for each panel
+
+        // TODO: add keyboard shortcuts for common actions (e.g. refresh, focus panels, etc.)
+
+        // TODO: add user settings panel (e.g. theme, notifications, etc.)
+
+        // TODO: add support for multiple agents and switching between them
+
     // ─── Colonnes redimensionnables ───────────────────────────────────────────
     const STORAGE_KEY = "claudicator:panel-widths";
     const LIMITS = { aside: [180, 600], section: [200, 600] } as const;
