@@ -2,6 +2,7 @@ import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 import type { Task } from "../services/tasks";
+import { formatPrompt, loadConceptMap } from "./prompt";
 
 // Chemin vers lolve-cartography (configurable via LC_PATH dans .env)
 const LC_PATH = process.env.LC_PATH ?? "C:/lolve-cartography";
@@ -54,47 +55,15 @@ export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: stri
         ? buildCallGraph(srcPath, knownClasses)
         : {};
 
-    const prompt = formatPrompt(task.title, symbolMap, callGraph);
-
-    return {
+    const ctx = {
         task: { id: task.id, title: task.title },
         symbolMap,
         callGraph,
-        prompt
+        prompt: ""
     };
-}
 
-function formatPrompt(
-    taskTitle: string,
-    symbolMap: Record<string, string[]>,
-    callGraph: Record<string, string[]>
-): string {
-    const lines: string[] = [];
+    const conceptMap = loadConceptMap(projectRoot) ?? undefined;
+    ctx.prompt = formatPrompt(ctx, { conceptMap });
 
-    lines.push("TASK");
-    lines.push(taskTitle);
-    lines.push("");
-    lines.push("OBJECTIF");
-    lines.push("Créer un plan pour réaliser la tâche ci-dessus.");
-    lines.push("");
-
-    if (Object.keys(symbolMap).length > 0) {
-        lines.push("SYMBOL MAP");
-        for (const [cls, sigs] of Object.entries(symbolMap).sort()) {
-            lines.push(cls);
-            for (const sig of sigs) lines.push(`  ${sig}`);
-        }
-        lines.push("");
-    }
-
-    if (Object.keys(callGraph).length > 0) {
-        lines.push("CALL GRAPH");
-        for (const [caller, callees] of Object.entries(callGraph).sort()) {
-            lines.push(caller);
-            for (const c of callees.slice(0, 5)) lines.push(`  → ${c}`);
-        }
-        lines.push("");
-    }
-
-    return lines.join("\n");
+    return ctx;
 }
