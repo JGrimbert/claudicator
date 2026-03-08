@@ -1,9 +1,9 @@
 import { json } from "@sveltejs/kit";
+import { getCurrentProject } from "$lib/server/services/projects";
 import { createIssuePlan } from "$lib/server/agent/issue";
 import { getIssue, getSubIssues } from "$lib/server/services/github";
-import dotenv from "dotenv";
 
-dotenv.config();
+
 
 export async function GET({ url }) {
     const number = Number(url.searchParams.get("number"));
@@ -12,8 +12,8 @@ export async function GET({ url }) {
         return json({ error: "Paramètre 'number' manquant" }, { status: 400 });
     }
 
-    const owner = process.env.TARGET_OWNER!;
-    const repo = process.env.TARGET_REPO!;
+    const owner = getCurrentProject()?.owner ?? "";
+    const repo = getCurrentProject()?.repo ?? "";
 
     const [issue, subIssues] = await Promise.all([
         getIssue(owner, repo, number),

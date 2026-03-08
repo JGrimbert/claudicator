@@ -1,16 +1,15 @@
 import { json } from "@sveltejs/kit";
 import { getIssues } from "$lib/server/services/github";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getCurrentProject } from "$lib/server/services/projects";
 
 export async function GET() {
     try {
-        const owner = process.env.TARGET_OWNER;
-        const repo = process.env.TARGET_REPO;
+        const project = getCurrentProject();
+        const owner = project?.owner;
+        const repo  = project?.repo;
 
         if (!owner || !repo) {
-            return json({ error: "TARGET_OWNER ou TARGET_REPO manquant dans .env" }, { status: 500 });
+            return json({ error: "Aucun owner/repo configuré pour ce projet" }, { status: 500 });
         }
 
         const issues = await getIssues(owner, repo);

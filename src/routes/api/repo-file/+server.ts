@@ -1,15 +1,15 @@
 import { json } from "@sveltejs/kit";
+import { getCurrentProject } from "$lib/server/services/projects";
 import { getRepoFile } from "$lib/server/services/github";
-import dotenv from "dotenv";
 
-dotenv.config();
+
 
 export async function GET({ url }) {
     const path = url.searchParams.get("path");
     if (!path) return json({ error: "path manquant" }, { status: 400 });
 
-    const owner = process.env.TARGET_OWNER!;
-    const repo = process.env.TARGET_REPO!;
+    const owner = getCurrentProject()?.owner ?? "";
+    const repo = getCurrentProject()?.repo ?? "";
 
     try {
         const content = await getRepoFile(owner, repo, path);

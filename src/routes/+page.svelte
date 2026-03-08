@@ -3,8 +3,10 @@
     import TopBar from "$lib/components/TopBar.svelte";
     import IssueList from "$lib/components/IssueList.svelte";
     import AgentConsole from "$lib/components/AgentConsole.svelte";
+    import RunConsole from "$lib/components/RunConsole.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
+    import { agentRunState } from "$lib/stores/agent";
 
     /**
      * DONE: Prompt contextuel de l'agent
@@ -43,7 +45,7 @@
      */
 
     /**
-     * TODO: Automatiser le scoring de pertinence pour SYMBOL MAP via doc/mots-clés
+     * DONE: Automatiser le scoring de pertinence pour SYMBOL MAP via doc/mots-clés
      *
      * Pour réaliser ce to do il va falloir modifier et utiliser c:/cartography-lolve et ses facultées particulières
      * par exemple ici on va utiliser le systeme d'annotation et enrichir la documentation du code
@@ -107,21 +109,6 @@
      *   automatiquement un contexte optimisé pour Claude Code.
      */
 
-    /**
-     * TODO: Console de l'agent:
-     *
-     * - afficher les logs temps réel de l'agent
-     * - différencier logs système / logs agent / logs task
-     * - afficher les étapes du workflow agent:
-     *      - plan generation
-     *      - step execution
-     *      - patch generation
-     *      - commit / push
-     * - permettre d'interrompre une tâche en cours
-     * - permettre de rejouer une étape
-     *
-     */
-    
     /**
      * DONE: Sélection automatique des symboles pertinents pour le SYMBOL MAP
      *
@@ -220,6 +207,28 @@
      */
 
     /**
+     * DONE: Console de l'agent:
+     *
+     * - afficher les logs temps réel de l'agent
+     * - différencier logs système / logs agent / logs task
+     * - afficher les étapes du workflow agent:
+     *      - plan generation
+     *      - step execution
+     *      - patch generation
+     *      - commit / push
+     * - permettre d'interrompre une tâche en cours
+     * - permettre de rejouer une étape
+     *
+     */
+
+    /**
+     * TODO: Prise en compte du nombre de tokens
+     * - Nombre de tokens envoyés par l'agent à côté des btn qui lancent les tasks
+     * - Nombre de tokens utilisés pour réaliser une tâche
+     * - Total des tokens utilisés pour cette task
+     */
+
+    /**
      * TODO: Amélioration d'une task
      * - le bouton de retour est moche il faut trouver mieux
      * - transition animée douce au début
@@ -237,6 +246,13 @@
      * - les aperçus de readme.md et claude.md doivent être bcp plus succint: juste le titre
      * - les titres ne disparaissent pas mais s'affichent dans la section centrale quand on clique dessus, et c'est là que le prompt prérempli s'affiche
      * - les composant actules en dessous de la zone centrale (input recherche, liste méthodes/fichiers/todo etc, doit pouvoir être retrouvé qd on clique sur un onglet dans la section centrale, et ne pas disparaitre systématiquement à chaque click sur une task
+     */
+
+    /**
+     * TODO: il faut une option pour documenter le code en arborescence
+     * - Le contexte peut referer au diagramme de la cartographie pour découvrir le code et ses éléments les plus pertinents,
+     * mais il faut que ce diagramme soit lui même documenté pour que le contexte puisse s'appuyer dessus et faire du scoring de pertinence dessus.
+     *
      */
 
     /** TODO: initial commit
@@ -346,7 +362,11 @@
             class:active={dragging === "aside"}
         ></div>
         <main>
-            <AgentConsole />
+            {#if $agentRunState.running || $agentRunState.logs.length > 0}
+                <RunConsole />
+            {:else}
+                <AgentConsole />
+            {/if}
         </main>
         <div
             class="handle"

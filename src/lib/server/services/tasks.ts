@@ -1,8 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-
-const TASKS_DIR = ".agent/tasks";
+import { getCurrentProject } from "./projects";
 
 export type TaskStatus = "pending" | "running" | "done" | "failed";
 
@@ -17,19 +16,26 @@ export type Task = {
     updatedAt: string;
 };
 
+/** Retourne le dossier des tasks pour le projet courant.
+ *  Le projet "default" (lolve historique) conserve l'ancien chemin pour la rétrocompatibilité. */
+export function getTasksDir(): string {
+    const id = getCurrentProject()?.id ?? "default";
+    return id === "default" ? ".agent/tasks" : path.join(".agent/tasks", id);
+}
+
 function ensureDir() {
-    fs.mkdirSync(TASKS_DIR, { recursive: true });
+    fs.mkdirSync(getTasksDir(), { recursive: true });
 }
 
 function taskPath(id: string) {
-    return path.join(TASKS_DIR, `${id}.json`);
+    return path.join(getTasksDir(), `${id}.json`);
 }
 
 export function listTasks(): Task[] {
     ensureDir();
-    return fs.readdirSync(TASKS_DIR)
+    return fs.readdirSync(getTasksDir())
         .filter(f => f.endsWith(".json"))
-        .map(f => JSON.parse(fs.readFileSync(path.join(TASKS_DIR, f), "utf-8")) as Task)
+        .map(f => JSON.parse(fs.readFileSync(path.join(getTasksDir(), f), "utf-8")) as Task)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

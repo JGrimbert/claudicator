@@ -7,10 +7,17 @@ export type PromptOptions = {
     description?: string;
     /** Concepts métier du codebase : { NomConcept: "définition" } */
     conceptMap?: Record<string, string>;
-    /** Diagramme condensé du projet (30 premières lignes de project-diagram.md) */
-    projectDiagram?: string;
-    /** Limite d'arêtes affichées par entrée du call graph */
-    maxCallees?: number;
+    /** Ressources de documentation disponibles dans le projet */
+    projectDocs?: ProjectDocs;
+};
+
+export type ProjectDocs = {
+    /** Fichiers agents experts : .claude/agents/*.md */
+    agents: string[];
+    /** Fichiers de théorie/concepts : theory/* */
+    theoryFiles: string[];
+    /** Map UML disponible dans .cache/project-diagram.md */
+    hasDiagram: boolean;
 };
 
 /**
@@ -38,13 +45,52 @@ export function loadProjectDiagram(projectRoot: string): string | null {
 }
 
 /**
+ * Détecte les ressources de documentation disponibles dans le projet cible.
+ * Les chemins retournés sont relatifs à la racine du projet.
+ */
+export function loadProjectDocs(projectRoot: string): ProjectDocs {
+    const agents: string[] = [];
+    const theoryFiles: string[] = [];
+
+    try {
+        const agentsDir = path.join(projectRoot, ".claude", "agents");
+        for (const f of fs.readdirSync(agentsDir)) {
+            if (f.endsWith(".md")) agents.push(`.claude/agents/${f}`);
+        }
+    } catch { /* absent */ }
+
+    try {
+        const theoryDir = path.join(projectRoot, "theory");
+        for (const f of fs.readdirSync(theoryDir)) {
+            theoryFiles.push(`theory/${f}`);
+        }
+    } catch { /* absent */ }
+
+    const hasDiagram = fs.existsSync(path.join(projectRoot, ".cache", "project-diagram.md"));
+
+    return { agents, theoryFiles, hasDiagram };
+}
+
+/** Dérive la catégorie d'un symbole depuis son chemin de fichier. */
+function srcCategory(file: string): string {
+    const norm = file.replace(/\\/g, '/');
+    if (/\/composables\//i.test(norm)) return 'composable';
+    if (/\/components\//i.test(norm))  return 'component';
+    if (/\/prima\//i.test(norm))       return 'prima';
+    if (/\/stores?\//i.test(norm))     return 'store';
+    if (/\/utils?\//i.test(norm))      return 'util';
+    if (/\/data\//i.test(norm))        return 'data';
+    return '';
+}
+
+/**
  * Formate un AgentContext en prompt texte complet prêt à envoyer à Claude.
  *
  * Format produit :
- *   TASK / DESCRIPTION / OBJECTIF / CONCEPTS / SYMBOL MAP / CALL GRAPH
+ *   TASK / DESCRIPTION / OBJECTIF / CONTRAINTES / FORMAT DU PLAN / DOCUMENTATION / CONCEPTS / SYMBOL MAP
  */
 export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): string {
-    const { description, conceptMap, projectDiagram, maxCallees = 5 } = opts;
+    const { description, conceptMap, projectDocs } = opts;
     const lines: string[] = [];
 
     // ── En-tête ──────────────────────────────────────────────────────────────
@@ -58,10 +104,48 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         lines.push("");
     }
 
+    // ── Objectif ─────────────────────────────────────────────────────────────
     lines.push("OBJECTIF");
-    lines.push("Créer un plan détaillé en plusieurs étapes pour réaliser la tâche ci-dessus.");
+    lines.push("Créer un plan détaillé pour réaliser la tâche ci-dessus.");
     lines.push("Ne pas coder. Produire uniquement le plan.");
     lines.push("");
+
+    // ── Contraintes ───────────────────────────────────────────────────────────
+    lines.push("CONTRAINTES");
+    lines.push("Le plan doit inclure :");
+    lines.push("- identification des usages");
+    lines.push("- étapes de migration si nécessaire");
+    lines.push("- vérifications pour éviter les régressions");
+    lines.push("");
+
+    // ── Format du plan ────────────────────────────────────────────────────────
+    lines.push("FORMAT DU PLAN");
+    lines.push("1. Analyse du problème");
+    lines.push("2. Localisation des usages");
+    lines.push("3. Stratégie de remplacement si nécessaire");
+    lines.push("4. Étapes de modification du code");
+    lines.push("5. Vérifications et nettoyage final");
+    lines.push("");
+
+    // ── Documentation disponible ──────────────────────────────────────────────
+    if (projectDocs) {
+        const docLines: string[] = [];
+        if (projectDocs.hasDiagram) {
+            docLines.push("- Map UML du projet : .cache/project-diagram.md");
+        }
+        for (const f of projectDocs.agents) {
+            docLines.push(`- Agent expert : ${f}`);
+        }
+        for (const f of projectDocs.theoryFiles) {
+            docLines.push(`- Théorie / concepts métier : ${f}`);
+        }
+        if (docLines.length > 0) {
+            lines.push("DOCUMENTATION");
+            lines.push("Les ressources suivantes sont disponibles et consultables :");
+            lines.push(...docLines);
+            lines.push("");
+        }
+    }
 
     // ── Concepts ─────────────────────────────────────────────────────────────
     if (conceptMap && Object.keys(conceptMap).length > 0) {
@@ -72,29 +156,15 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         lines.push("");
     }
 
-    // ── Project Diagram ──────────────────────────────────────────────────────
-    if (projectDiagram) {
-        lines.push("PROJECT DIAGRAM");
-        lines.push(projectDiagram.trim());
-        lines.push("");
-    }
-
     // ── Symbol Map ───────────────────────────────────────────────────────────
     if (Object.keys(ctx.symbolMap).length > 0) {
         lines.push("SYMBOL MAP");
-        for (const [cls, sigs] of Object.entries(ctx.symbolMap).sort()) {
-            lines.push(cls);
-            for (const sig of sigs) lines.push(`  ${sig}`);
-        }
-        lines.push("");
-    }
-
-    // ── Call Graph ───────────────────────────────────────────────────────────
-    if (Object.keys(ctx.callGraph).length > 0) {
-        lines.push("CALL GRAPH");
-        for (const [caller, callees] of Object.entries(ctx.callGraph).sort()) {
-            lines.push(caller);
-            for (const c of callees.slice(0, maxCallees)) lines.push(`  → ${c}`);
+        for (const [cls, group] of Object.entries(ctx.symbolMap).sort()) {
+            const filePath = group.file ? group.file.replace(/\\/g, '/') : '';
+            const cat      = filePath ? srcCategory(filePath) : '';
+            const meta     = [cat, filePath].filter(Boolean).join(' · ');
+            lines.push(meta ? `${cls}  [${meta}]` : cls);
+            for (const sig of group.sigs) lines.push(`  ${sig}`);
         }
         lines.push("");
     }

@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { getTask } from "$lib/server/services/tasks";
 import { buildContext } from "$lib/server/agent/context";
+import { getProjectRoot } from "$lib/server/services/projects";
 
 export async function POST({ request }) {
     const body = await request.json();
@@ -15,7 +16,7 @@ export async function POST({ request }) {
         return json({ error: "Task introuvable" }, { status: 404 });
     }
 
-    const root = projectRoot?.trim() || process.env.TARGET_PROJECT_PATH || process.env.LC_PROJECT_PATH || process.cwd();
+    const root = projectRoot?.trim() || getProjectRoot();
 
     try {
         const ctx = buildContext(task, root);

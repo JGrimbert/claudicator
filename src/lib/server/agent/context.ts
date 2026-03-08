@@ -2,7 +2,7 @@ import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 import type { Task } from "../services/tasks";
-import { formatPrompt, loadConceptMap, loadProjectDiagram } from "./prompt";
+import { formatPrompt, loadConceptMap, loadProjectDocs } from "./prompt";
 
 // Chemin vers lolve-cartography (configurable via LC_PATH dans .env)
 const LC_PATH = process.env.LC_PATH ?? "C:/lolve-cartography";
@@ -12,10 +12,11 @@ const { buildCallGraph } = require(`${LC_PATH}/lib/call-graph.cjs`) as {
     buildCallGraph: (srcPath: string, knownClasses: Set<string>) => Record<string, string[]>;
 };
 
+export type SymbolGroup = { file?: string; sigs: string[] };
+
 export type AgentContext = {
     task: { id: string; title: string };
-    symbolMap: Record<string, string[]>;
-    callGraph: Record<string, string[]>;
+    symbolMap: Record<string, SymbolGroup>;
     prompt: string;
 };
 
@@ -65,26 +66,31 @@ function loadAnnotCache(projectRoot: string): Record<string, { role?: string; de
 
 /**
  * Score un symbole individuel contre les mots-clés de la tâche.
- *   +5 : un mot-clé correspond à un part camelCase du nom
- *   +3 : un mot-clé apparaît dans la signature (paramètres)
- *   +1 : un mot-clé apparaît dans la description JSDoc
- *   +ROLE_SCORE[role] : bonus selon le rôle de la méthode
+ *   kwScore (filtre strict) :
+ *     +5 : un mot-clé correspond à un part camelCase du nom
+ *     +3 : un mot-clé apparaît dans la signature (paramètres)
+ *     +1 : un mot-clé apparaît dans la description JSDoc
+ *   roleBonus (départage uniquement) :
+ *     +ROLE_SCORE[role] : bonus selon le rôle de la méthode
+ *
+ * Un symbole n'est inclus que si kwScore > 0.
+ * Le rôle ne peut pas seul justifier l'inclusion dans le SYMBOL MAP.
  */
-function scoreSymbol(key: string, method: MethodEntry, keywords: string[]): number {
-    if (!keywords.length) return 0;
+function scoreSymbol(key: string, method: MethodEntry, keywords: string[]): { kwScore: number; total: number } {
+    if (!keywords.length) return { kwScore: 0, total: 0 };
     const rawName  = key.split('.').pop() ?? key;
     const parts    = camelParts(rawName);
     const sigLower = (method.signature ?? '').toLowerCase();
     const descLow  = (method.description ?? '').toLowerCase();
 
-    let score = 0;
+    let kwScore = 0;
     for (const kw of keywords) {
-        if (parts.includes(kw))    score += 5;
-        if (sigLower.includes(kw)) score += 3;
-        if (descLow.includes(kw))  score += 1;
+        if (parts.includes(kw))    kwScore += 5;
+        if (sigLower.includes(kw)) kwScore += 3;
+        if (descLow.includes(kw))  kwScore += 1;
     }
-    if (method.role) score += ROLE_SCORE[method.role] ?? 0;
-    return score;
+    const roleBonus = method.role ? (ROLE_SCORE[method.role] ?? 0) : 0;
+    return { kwScore, total: kwScore + roleBonus };
 }
 
 const SYMBOL_MAP_MAX = 15;
@@ -114,22 +120,22 @@ function loadSymbolMap(projectRoot: string, query: string): Record<string, strin
         // 1. Scorer chaque symbole individuellement
         const scored = Object.entries(methods)
             .filter(([, m]) => !m.isPrivate)
-            .map(([key, method]) => ({ key, method, score: scoreSymbol(key, method, keywords) }))
-            .sort((a, b) => b.score - a.score);
+            .map(([key, method]) => ({ key, method, ...scoreSymbol(key, method, keywords) }))
+            .sort((a, b) => b.total - a.total);
 
-        // 2. Garder les top SYMBOL_MAP_MAX (si aucun score, fallback alphabétique)
-        const withScore = scored.filter(s => s.score > 0);
-        const selected  = (withScore.length > 0 ? withScore : scored).slice(0, SYMBOL_MAP_MAX);
+        // 2. Garder uniquement les symboles avec au moins un match de mot-clé.
+        //    Le rôle seul ne suffit pas à justifier l'inclusion (évite le bruit).
+        const selected = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);
 
         // 3. Construire le map : méthode de classe → grouper sous la classe
         //    fonction standalone → clé = nom de la fonction
-        const map: Record<string, string[]> = {};
+        const map: Record<string, SymbolGroup> = {};
         for (const { key, method } of selected) {
             const parts = key.split('.');
             const cls   = parts.length > 1 ? parts[0] : key;
             const sig   = method.signature ?? parts.at(-1) ?? key;
-            if (!map[cls]) map[cls] = [];
-            if (!map[cls].includes(sig)) map[cls].push(sig);
+            if (!map[cls]) map[cls] = { file: method.file, sigs: [] };
+            if (!map[cls].sigs.includes(sig)) map[cls].sigs.push(sig);
         }
         return map;
     } catch {
@@ -143,11 +149,11 @@ function loadSymbolMap(projectRoot: string, query: string): Record<string, strin
  * Limite l'expansion pour ne pas dépasser SYMBOL_MAP_MAX.
  */
 function expandWithCallees(
-    symbolMap: Record<string, string[]>,
+    symbolMap: Record<string, SymbolGroup>,
     callGraph: Record<string, string[]>,
     allMethods: Record<string, MethodEntry>
 ): void {
-    const budget = SYMBOL_MAP_MAX - Object.values(symbolMap).flat().length;
+    const budget = SYMBOL_MAP_MAX - Object.values(symbolMap).flatMap(g => g.sigs).length;
     if (budget <= 0) return;
 
     let added = 0;
@@ -156,10 +162,11 @@ function expandWithCallees(
             if (added >= budget) return;
             const parts = callee.split('.');
             const cls   = parts[0];
-            const sig   = allMethods[callee]?.signature ?? parts.at(-1) ?? callee;
-            if (!symbolMap[cls]) symbolMap[cls] = [];
-            if (!symbolMap[cls].includes(sig)) {
-                symbolMap[cls].push(sig);
+            const m     = allMethods[callee];
+            const sig   = m?.signature ?? parts.at(-1) ?? callee;
+            if (!symbolMap[cls]) symbolMap[cls] = { file: m?.file, sigs: [] };
+            if (!symbolMap[cls].sigs.includes(sig)) {
+                symbolMap[cls].sigs.push(sig);
                 added++;
             }
         }
@@ -192,13 +199,12 @@ export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: stri
     const ctx = {
         task: { id: task.id, title: task.title },
         symbolMap,
-        callGraph,
         prompt: ""
     };
 
-    const conceptMap = loadConceptMap(projectRoot) ?? undefined;
-    const projectDiagram = loadProjectDiagram(projectRoot) ?? undefined;
-    ctx.prompt = formatPrompt(ctx, { conceptMap, projectDiagram });
+    const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
+    const projectDocs = loadProjectDocs(projectRoot);
+    ctx.prompt = formatPrompt(ctx, { conceptMap, projectDocs });
 
     return ctx;
 }

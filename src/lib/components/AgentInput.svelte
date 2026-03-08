@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentRunState } from "$lib/stores/agent";
+    import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
 
     type Task = { id: string; title: string };
 
@@ -50,7 +50,7 @@
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: text, taskId: task.id })
+                body: JSON.stringify({ prompt: text, taskId: task.id, projectRoot: projectRoot || undefined })
             });
             if (!res.ok || !res.body) {
                 agentRunState.update(s => ({
@@ -75,6 +75,7 @@
             }
         } finally {
             agentRunState.update(s => ({ ...s, running: false }));
+            taskRefreshTick.update(n => n + 1);
         }
     }
 </script>

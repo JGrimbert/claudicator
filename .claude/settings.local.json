@@ -12,7 +12,17 @@
       "Bash(npx tsc:*)",
       "Bash(node_modules/.bin/tsc:*)",
       "Bash(npm run:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(claude:*)",
+      "Bash(CLAUDECODE=\"\" claude:*)",
+      "Bash(CLAUDECODE=\"\" ANTHROPIC_API_KEY=\"\" claude:*)",
+      "Bash(npx svelte-check:*)",
+      "Bash(for f in \"src/routes/api/cartography/+server.ts\" \"src/routes/api/cartography/diagram/+server.ts\" \"src/routes/api/cartography/enrich/+server.ts\" \"src/routes/api/cartography/methods/+server.ts\" \"src/routes/api/cartography/run/+server.ts\" \"src/routes/api/cartography/stats/+server.ts\")",
+      "Bash(do)",
+      "Read(//c/claudicator/**)",
+      "Bash(sed -i '1s|^|import { getProjectRoot } from \"\"$lib/server/services/projects\"\";\\\\n|' \"$f\")",
+      "Bash(done)",
+      "Bash(for f in \"C:/claudicator/src/routes/api/github/issues/+server.ts\" \"C:/claudicator/src/routes/api/issue/+server.ts\" \"C:/claudicator/src/routes/api/repo-file/+server.ts\")"
     ]
   }
 }

@@ -1,11 +1,9 @@
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join, basename } from "path";
-import dotenv from "dotenv";
+import { getProjectRoot } from "$lib/server/services/projects";
 
-dotenv.config();
-
-const PROJECT_PATH = process.env.TARGET_PROJECT_PATH ?? "C:/lolve";
+const PROJECT_PATH = getProjectRoot();
 
 interface MethodInfo {
     sig: string;
