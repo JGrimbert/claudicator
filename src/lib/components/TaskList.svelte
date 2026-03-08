@@ -3,6 +3,7 @@
     import { get } from "svelte/store";
     import { agentState, taskRefreshTick, agentRunState, contextState, type RunLog, type ContextItem } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import AgentInput from "$lib/components/AgentInput.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type Task = {
@@ -270,29 +271,9 @@
                             {:else if task.status === "failed" || task.status === "pending"}
                                 <button class="action-btn" onclick={() => setStatus(task, "pending")}>Relancer</button>
                             {/if}
-                            <button
-                                class="action-btn run-btn"
-                                class:active={showRunFor === task.id}
-                                onclick={() => showRunFor === task.id ? showRunFor = null : openRun(task)}
-                                disabled={$agentRunState.running}
-                            >Claude →</button>
                             <button class="action-btn danger" onclick={() => remove(task)}>Supprimer</button>
                         </div>
-                        {#if showRunFor === task.id}
-                            <div class="run-input-area">
-                                <textarea
-                                    class="run-textarea"
-                                    bind:value={runPrompt}
-                                    rows={3}
-                                    placeholder="Prompt pour Claude…"
-                                ></textarea>
-                                <button
-                                    class="run-submit"
-                                    onclick={() => runTask(task)}
-                                    disabled={!runPrompt.trim()}
-                                >Lancer</button>
-                            </div>
-                        {/if}
+                        <AgentInput task={task} />
                         {#if $contextState.source.label === task.title}
                             <div class="ctx-section">
                                 {#if $contextState.loading}
