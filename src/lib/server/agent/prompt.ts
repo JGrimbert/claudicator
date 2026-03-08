@@ -7,6 +7,8 @@ export type PromptOptions = {
     description?: string;
     /** Concepts métier du codebase : { NomConcept: "définition" } */
     conceptMap?: Record<string, string>;
+    /** Diagramme condensé du projet (30 premières lignes de project-diagram.md) */
+    projectDiagram?: string;
     /** Limite d'arêtes affichées par entrée du call graph */
     maxCallees?: number;
 };
@@ -24,6 +26,17 @@ export function loadConceptMap(projectRoot: string): Record<string, string> | nu
     }
 }
 
+/** Charge le project-diagram.md (30 premières lignes). Retourne null si absent. */
+export function loadProjectDiagram(projectRoot: string): string | null {
+    const p = path.join(projectRoot, ".cache", "project-diagram.md");
+    try {
+        const content = fs.readFileSync(p, "utf-8");
+        return content.split("\n").slice(0, 30).join("\n");
+    } catch {
+        return null;
+    }
+}
+
 /**
  * Formate un AgentContext en prompt texte complet prêt à envoyer à Claude.
  *
@@ -31,7 +44,7 @@ export function loadConceptMap(projectRoot: string): Record<string, string> | nu
  *   TASK / DESCRIPTION / OBJECTIF / CONCEPTS / SYMBOL MAP / CALL GRAPH
  */
 export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): string {
-    const { description, conceptMap, maxCallees = 5 } = opts;
+    const { description, conceptMap, projectDiagram, maxCallees = 5 } = opts;
     const lines: string[] = [];
 
     // ── En-tête ──────────────────────────────────────────────────────────────
@@ -56,6 +69,13 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         for (const [name, def] of Object.entries(conceptMap)) {
             lines.push(`${name} : ${def}`);
         }
+        lines.push("");
+    }
+
+    // ── Project Diagram ──────────────────────────────────────────────────────
+    if (projectDiagram) {
+        lines.push("PROJECT DIAGRAM");
+        lines.push(projectDiagram.trim());
         lines.push("");
     }
 

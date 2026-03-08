@@ -2,7 +2,7 @@ import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 import type { Task } from "../services/tasks";
-import { formatPrompt, loadConceptMap } from "./prompt";
+import { formatPrompt, loadConceptMap, loadProjectDiagram } from "./prompt";
 
 // Chemin vers lolve-cartography (configurable via LC_PATH dans .env)
 const LC_PATH = process.env.LC_PATH ?? "C:/lolve-cartography";
@@ -49,13 +49,26 @@ function camelParts(name: string): string[] {
         .filter(Boolean);
 }
 
-type MethodEntry = { isPrivate?: boolean; signature?: string; description?: string; file?: string };
+type MethodEntry = { isPrivate?: boolean; signature?: string; description?: string; file?: string; role?: string };
+
+const ROLE_SCORE: Record<string, number> = {
+    entry: 3, core: 2, service: 1, flow: 1, bridge: 1
+};
+
+/** Charge l'annotation-cache depuis .cache/annotation-cache.json. */
+function loadAnnotCache(projectRoot: string): Record<string, { role?: string; description?: string }> {
+    const p = path.join(projectRoot, ".cache", "annotation-cache.json");
+    try {
+        return JSON.parse(fs.readFileSync(p, "utf-8")).annotations ?? {};
+    } catch { return {}; }
+}
 
 /**
  * Score un symbole individuel contre les mots-clés de la tâche.
  *   +5 : un mot-clé correspond à un part camelCase du nom
  *   +3 : un mot-clé apparaît dans la signature (paramètres)
  *   +1 : un mot-clé apparaît dans la description JSDoc
+ *   +ROLE_SCORE[role] : bonus selon le rôle de la méthode
  */
 function scoreSymbol(key: string, method: MethodEntry, keywords: string[]): number {
     if (!keywords.length) return 0;
@@ -70,6 +83,7 @@ function scoreSymbol(key: string, method: MethodEntry, keywords: string[]): numb
         if (sigLower.includes(kw)) score += 3;
         if (descLow.includes(kw))  score += 1;
     }
+    if (method.role) score += ROLE_SCORE[method.role] ?? 0;
     return score;
 }
 
@@ -85,6 +99,16 @@ function loadSymbolMap(projectRoot: string, query: string): Record<string, strin
     try {
         const raw = JSON.parse(fs.readFileSync(indexPath, "utf-8"));
         const methods: Record<string, MethodEntry> = raw.methods ?? {};
+        const annotCache = loadAnnotCache(projectRoot);
+
+        // Merger les annotations (role, description) dans les méthodes
+        for (const [key, method] of Object.entries(methods)) {
+            const cached = annotCache[key];
+            if (cached) {
+                method.role ??= cached.role;
+                method.description ??= cached.description;
+            }
+        }
         const keywords = extractKeywords(query);
 
         // 1. Scorer chaque symbole individuellement
@@ -173,7 +197,8 @@ export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: stri
     };
 
     const conceptMap = loadConceptMap(projectRoot) ?? undefined;
-    ctx.prompt = formatPrompt(ctx, { conceptMap });
+    const projectDiagram = loadProjectDiagram(projectRoot) ?? undefined;
+    ctx.prompt = formatPrompt(ctx, { conceptMap, projectDiagram });
 
     return ctx;
 }

@@ -7,7 +7,12 @@
       "Read(//c/lolve/**)",
       "Bash(node_modules/.bin/svelte-kit sync:*)",
       "Bash(node_modules/.bin/svelte-check:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(where:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(grep:*)"
     ]
   }
 }

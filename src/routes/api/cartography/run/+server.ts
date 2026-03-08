@@ -7,6 +7,7 @@ dotenv.config();
 const ALLOWED_CMDS: Record<string, string[]> = {
     "full":        ["annotate", "full"],
     "full:force":  ["annotate", "full", "--force"],
+    "diagram":     ["annotate", "diagram"],
     "index":       ["annotate", "index"],
     "enrich":      ["annotate", "enrich"],
     "scan":        ["annotate", "scan"],

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentState, notifyTaskCreated, agentRunState } from "$lib/stores/agent";
+    import DiagramViewer from "$lib/components/DiagramViewer.svelte";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -84,10 +85,13 @@
     const CMD_BUTTONS = [
         { id: "full",       label: "Full" },
         { id: "full:force", label: "Full --force" },
+        { id: "diagram",    label: "Diagram" },
         { id: "index",      label: "Index" },
         { id: "enrich",     label: "Enrich" },
         { id: "scan",       label: "Scan" },
     ];
+
+    let showDiagram = false;
 
     // ─── Collapse input / liste ───────────────────────────────────────────────
     let inputOpen = true;
@@ -307,6 +311,12 @@
                         {runningCmd === btn.id ? "…" : btn.label}
                     </button>
                 {/each}
+                <button
+                    class="cmd-btn map-btn"
+                    class:active={showDiagram}
+                    onclick={() => { showDiagram = !showDiagram; }}
+                    title="Visualiser la carte du projet"
+                >Map</button>
             </div>
 
             <!-- Logs commande -->
@@ -339,7 +349,15 @@
             </div>
     </div>
 
+    <!-- ══════════════ DIAGRAM VIEW ══════════════════════════════════════ -->
+    {#if showDiagram}
+        <div class="dv-panel">
+            <DiagramViewer />
+        </div>
+    {/if}
+
     <!-- ══════════════ AGENT WRAPPER (input + tabs + liste) ══════════════ -->
+    {#if !showDiagram}
     <div class="agent-wrapper">
 
         {#if inputOpen}
@@ -466,6 +484,7 @@
         {/if}
         </div>
     </div>
+    {/if}
 {/if}
 
 <style>
@@ -672,6 +691,17 @@
 .stat-fidx { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: #444; }
 .stat-fidx.ok { color: #4a6a4a; }
 .stat-ts { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: #333; }
+
+/* ── Diagram panel ────────────────────────────────────────────────── */
+.dv-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.map-btn { margin-left: auto; }
+.map-btn.active { background: #1a1a2e; color: #9181f9; border-color: #4a3a8a; }
 
 /* ── Boutons commandes ────────────────────────────────────────────── */
 .cmd-btn {

@@ -7,7 +7,7 @@
     import TaskList from "$lib/components/TaskList.svelte";
 
     /**
-     * TODO: Prompt contextuel de l'agent
+     * DONE: Prompt contextuel de l'agent
      * Voir plan détaillé : plans/todo-prompt-context.md
      *
      * Pipeline : item sélectionné → scan codebase → Context → prompt prérempli → lancement agent
@@ -42,6 +42,70 @@
      * Scoring par mots-clés du titre → top 12 classes pertinentes seulement.
      */
 
+    /**
+     * TODO: Automatiser le scoring de pertinence pour SYMBOL MAP via doc/mots-clés
+     *
+     * Pour réaliser ce to do il va falloir modifier et utiliser c:/cartography-lolve et ses facultées particulières
+     * par exemple ici on va utiliser le systeme d'annotation et enrichir la documentation du code
+     * pour toute méthode non décrite: soit n'apparaissant pas dans la liste de l'onglet "décrites 14/140",
+     * soit n'ayant pas de commentaire au dessus de la déclaration, on va lui attribuer automatiquement une annotation
+     * un commentaire via IA si besoin pour le décrire au regard de tout ce qu'on connait des autres listes.
+     *
+     * il faut que lolve-cartography enrichisse les elements qu'il créé lors d'un init full --force.
+     * Je veux un diagramme .md du maximum sur mon application pour tout monitorer et faire du scoring de pertinence dessus.
+     *
+     * Ensuite on va pouvoir faire du scoring de pertinence pour ne garder que les symboles les plus pertinents dans le SYMBOL MAP, et ainsi réduire le bruit dans le prompt envoyé à l'IA:
+     *
+     * Problème
+     * Certaines fonctions sont incluses dans le SYMBOL MAP même si elles ne sont
+     * pas pertinentes pour la tâche courante (ex: usePersistentPanZoom). Cela crée
+     * du bruit dans le prompt et réduit l’efficacité des suggestions IA.
+     *
+     * Objectif
+     * Prioriser automatiquement les symboles pertinents en utilisant :
+     *   - les commentaires/documentation des fonctions
+     *   - les mots-clés extraits de la TASK
+     *
+     * Étapes d’implémentation
+     *
+     * 1. Extraire les mots-clés de la TASK
+     *    - Nettoyer et tokeniser la phrase
+     *    - Supprimer les stopwords
+     *    - Conserver les mots significatifs
+     *    Exemple : "Pouvoir sélectionner et faire varier les options d’un cadre"
+     *      → ["sélectionner", "varier", "options", "cadre"]
+     *
+     * 2. Analyser les commentaires/doc des fonctions
+     *    - Vérifier la présence de mots-clés dans :
+     *        a) le commentaire au-dessus de la fonction
+     *        b) la signature (nom + params)
+     *    - Ajouter un score par mot-clé trouvé
+     *
+     * 3. Ajouter un scoring basé sur le voisinage structurel
+     *    - +2 points si la fonction est appelée par un symbole déjà retenu
+     *    - +1 point si dans le même fichier/module
+     *
+     * 4. Définir des tags facultatifs dans les commentaires pour guider le filtrage
+     *    - @task-relevant → pertinent pour la tâche
+     *    - @task-irrelevant → ignorer pour la tâche
+     *
+     * 5. Calculer un score final pour chaque symbole
+     *    - Score = points mots-clés + points voisinage + tags
+     *    - Filtrer pour ne garder que les N symboles les mieux scorés (N ≈ 10–15)
+     *
+     * 6. Générer le SYMBOL MAP final
+     *    - Inclure uniquement les symboles pertinents
+     *    - Fournir la signature / mini-contexte pour chaque symbole
+     *
+     * Résultat attendu
+     * - SYMBOL MAP plus compact et ciblé
+     * - Réduction du bruit (ex: usePersistentPanZoom disparaît si non pertinent)
+     * - Meilleure précision et efficacité des suggestions IA
+     *
+     * Bonus
+     * - Cette méthode peut être réutilisée pour toutes les tâches afin de créer
+     *   automatiquement un contexte optimisé pour Claude Code.
+     */
 
     /**
      * TODO: Console de l'agent:
