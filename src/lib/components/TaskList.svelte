@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, agentRunState, contextState, type RunLog, type ContextItem } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, agentRunState, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import AgentInput from "$lib/components/AgentInput.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type Task = {
@@ -15,6 +15,7 @@
         createdAt: string;
         updatedAt: string;
     };
+    type WfPanel = "plan" | "implement" | "commit" | "push";
 
     const STATUS_LABEL: Record<TaskStatus, string> = {
         pending: "en attente",
@@ -38,12 +39,60 @@
     let newTitle = "";
     let creating = false;
 
+
+    // Workflow state
+    let selectedPanel: WfPanel = "plan";
+    let wfError = "";
+
+    // Plan
+    let planContent: string | null = null;
+    let planLoading = false;
+    let implEdit = "";
+    let initialCommitting = false;
+
+    // Diff / commit
+    let diffContent: string | null = null;
+    let diffLoading = false;
+    let commitMsg = "";
+    let committing = false;
+    let reverting = false;
+    let revertConfirm = false;
+
     $: filtered = filter === "all" ? tasks : tasks.filter(t => t.status === filter);
     $: countOf = (f: Filter) => f === "all" ? tasks.length : tasks.filter(t => t.status === f).length;
 
+    // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
+    $: currentStep = (() => {
+        if (!planContent) return 0;
+        if (!selected?.branch) return 1;
+        if (diffLoading || diffContent === null) return 1;
+        if (diffContent.trim()) return 2;
+        return 3;
+    })();
+
+    // Variante d'un bouton workflow selon sa position
+    function btnVariant(idx: number): "active" | "secondary" | "disabled" {
+        if (idx === currentStep) return "active";
+        if (idx < currentStep) return "secondary";
+        return "disabled";
+    }
+
     onMount(() => { loadTasks(); });
 
-    $: if ($taskRefreshTick) loadTasks();
+    // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
+    // Svelte 4 les inclut comme dépendances et boucle à l'infini.
+    // On délègue à une fonction pour isoler le scope de tracking.
+    $: if ($taskRefreshTick) onRefreshTick();
+
+    function onRefreshTick() {
+        (async () => {
+            await loadTasksSilent();
+            if (selected && selected.status === "done" && !planContent && !planLoading) {
+                await loadPlan(selected.id);
+                if (planContent && selectedPanel === "plan") selectedPanel = "implement";
+            }
+        })();
+    }
 
     async function loadTasks() {
         loading = true;
@@ -56,14 +105,26 @@
         }
     }
 
+    /** Refresh silencieux : ne cache pas la liste pendant le chargement. */
+    async function loadTasksSilent() {
+        try {
+            const res = await fetch("/api/tasks");
+            const fresh = await res.json();
+            if (!Array.isArray(fresh)) return;
+            tasks = fresh;
+            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+        } catch { /* silencieux */ }
+    }
+
     async function createTask() {
         if (!newTitle.trim() || creating) return;
         creating = true;
         try {
+            const issueNumber = $agentState.issue?.number;
             await fetch("/api/tasks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: newTitle.trim() }),
+                body: JSON.stringify({ title: newTitle.trim(), issueNumber }),
             });
             newTitle = "";
             await loadTasks();
@@ -72,18 +133,9 @@
         }
     }
 
-    async function setStatus(task: Task, status: TaskStatus) {
-        await fetch(`/api/tasks/${task.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status }),
-        });
-        await loadTasks();
-    }
-
     async function remove(task: Task) {
         await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
-        if (selected?.id === task.id) selected = null;
+        if (selected?.id === task.id) { selected = null; planContent = null; diffContent = null; }
         await loadTasks();
     }
 
@@ -91,29 +143,98 @@
         if (e.key === "Enter") createTask();
     }
 
-    // ─── Lancer Claude sur une task ──────────────────────────────────────────
-    let showRunFor: string | null = null;
-    let runPrompt = "";
-
-    function serializeContext(label: string): string {
-        const ctx = get(contextState);
-        if (ctx.items.length === 0) return label;
-        const lines = ctx.items.slice(0, 15).map(item => {
-            if (item.kind === "method") {
-                const loc = item.startLine ? `:${item.startLine}` : "";
-                return `- ${item.file}${loc} — ${item.key}${item.summary ? ` : "${item.summary}"` : ""}`;
-            }
-            return `- ${item.file}:${item.line} — ${item.content.trim()}`;
-        });
-        return `Contexte du codebase pertinent :\n${lines.join("\n")}\n\nTâche : ${label}`;
+    async function loadPlan(taskId: string) {
+        planLoading = true;
+        planContent = null;
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/plan`);
+            const data = await res.json();
+            planContent = data.content ?? null;
+            if (planContent) implEdit = planContent;
+        } catch { planContent = null; }
+        finally { planLoading = false; }
     }
 
-    async function runTask(task: Task) {
-        const base   = runPrompt.trim() || task.title;
-        const prompt = serializeContext(base);
-        if (!base) return;
-        showRunFor = null;
-        runPrompt = "";
+    async function loadDiff(taskId: string) {
+        diffLoading = true;
+        diffContent = null;
+        const task = tasks.find(t => t.id === taskId);
+        if (task && !commitMsg) {
+            commitMsg = `feat: ${task.issueNumber ? `#${task.issueNumber} ` : ""}${task.title.slice(0, 60)}`;
+        }
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/diff`);
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            diffContent = data.diff ?? "";
+        } catch (e: any) {
+            wfError = e.message;
+        } finally {
+            diffLoading = false;
+        }
+    }
+
+    async function selectTask(task: Task) {
+        if (selected?.id === task.id) {
+            selected = null; planContent = null; diffContent = null;
+            implEdit = ""; commitMsg = ""; selectedPanel = "plan"; wfError = "";
+            return;
+        }
+        selected = task;
+        planContent = null; diffContent = null;
+        implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
+        selectedPanel = "plan";
+
+        const toLoad: Promise<void>[] = [loadPlan(task.id)];
+        if (task.branch) toLoad.push(loadDiff(task.id));
+        await Promise.all(toLoad);
+
+        // Auto-avance l'étape affichée
+        if (task.branch && diffContent !== null) {
+            selectedPanel = diffContent.trim() ? "commit" : "push";
+        } else if (planContent) {
+            selectedPanel = "implement";
+        }
+
+        if (task.issueNumber) {
+            agentState.update(s => ({ ...s, status: "loading", plan: null }));
+            const res = await fetch(`/api/issue?number=${task.issueNumber}`);
+            const full = await res.json();
+            agentState.update(s => ({
+                ...s, issue: full, status: "idle", navigationStack: [],
+                knownSubIssueNumbers: [
+                    ...new Set([...s.knownSubIssueNumbers, ...(full.subIssues?.map((si: any) => si.number) ?? [])])
+                ]
+            }));
+        }
+    }
+
+    async function clickImplement(task: Task) {
+        if (!implEdit.trim() || $agentRunState.running) return;
+        wfError = "";
+
+        // Initial commit si pas encore de branche
+        if (!task.branch) {
+            initialCommitting = true;
+            try {
+                const res = await fetch(`/api/tasks/${task.id}/initial-commit`, { method: "POST" });
+                const data = await res.json();
+                if (data.error && res.status !== 409) { wfError = data.error; return; }
+                await loadTasks();
+            } finally {
+                initialCommitting = false;
+            }
+        }
+
+        const currentTask = tasks.find(t => t.id === task.id) ?? task;
+        const prompt = [
+            "TASK", currentTask.title, "",
+            "OBJECTIF",
+            "Implémenter le plan ci-dessous étape par étape. Modifier le code dans le projet.",
+            "Ne pas produire de plan. Réaliser directement les modifications.", "",
+            "PLAN APPROUVÉ", implEdit
+        ].join("\n");
+
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
         try {
             const res = await fetch("/api/agent/run", {
@@ -121,14 +242,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt, taskId: task.id })
             });
-            if (!res.ok || !res.body) {
-                agentRunState.update(s => ({
-                    ...s,
-                    running: false,
-                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }]
-                }));
-                return;
-            }
+            if (!res.ok || !res.body) { agentRunState.update(s => ({ ...s, running: false })); return; }
             const reader = res.body.getReader();
             const dec = new TextDecoder();
             while (true) {
@@ -136,86 +250,61 @@
                 if (done) break;
                 for (const raw of dec.decode(value).split("\n")) {
                     if (raw.startsWith("data: ")) {
-                        try {
-                            const event = JSON.parse(raw.slice(6)) as RunLog;
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
-                        } catch { /* skip */ }
+                        try { agentRunState.update(s => ({ ...s, logs: [...s.logs, JSON.parse(raw.slice(6))] })); }
+                        catch { }
                     }
                 }
             }
         } finally {
             agentRunState.update(s => ({ ...s, running: false }));
-            await loadTasks();
+            taskRefreshTick.update(n => n + 1);
+            if (selected?.id === task.id) {
+                await loadDiff(task.id);
+                selectedPanel = diffContent?.trim() ? "commit" : "push";
+            }
         }
     }
 
-    function openRun(task: Task) {
-        showRunFor = task.id;
-        runPrompt = task.title;
-    }
-
-    async function selectTask(task: Task) {
-        if (selected?.id === task.id) { selected = null; contextState.set({ source: { kind: "task", label: "" }, items: [], loading: false, error: "" }); return; }
-        selected = task;
-        let issueBody = "";
-        if (task.issueNumber) {
-            agentState.update(s => ({ ...s, status: "loading", plan: null }));
-            const res  = await fetch(`/api/issue?number=${task.issueNumber}`);
-            const full = await res.json();
-            issueBody  = full.body ?? "";
-            agentState.update(s => ({
-                ...s,
-                issue: full,
-                status: "idle",
-                navigationStack: [],
-                knownSubIssueNumbers: [
-                    ...new Set([...s.knownSubIssueNumbers, ...(full.subIssues?.map((si: any) => si.number) ?? [])])
-                ]
-            }));
-        }
-        buildContext(task, issueBody);
-    }
-
-    async function buildContext(task: Task, issueBody = "") {
-        // Construire une query dense : titre + première ligne significative du corps de l'issue
-        const bodyLine = issueBody.split("\n").find(l => l.trim().length > 20)?.trim() ?? "";
-        const query    = bodyLine ? `${task.title} ${bodyLine}`.slice(0, 250) : task.title;
-        contextState.set({ source: { kind: "task", label: task.title }, items: [], loading: true, error: "" });
+    async function commitChanges(task: Task) {
+        if (!commitMsg.trim() || committing) return;
+        committing = true; wfError = "";
         try {
-            const res  = await fetch("/api/cartography", {
+            const res = await fetch(`/api/tasks/${task.id}/commit`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ message: commitMsg.trim() })
             });
             const data = await res.json();
-            if (data.error) { contextState.update(s => ({ ...s, loading: false, error: data.error })); return; }
-            const items: ContextItem[] = [
-                ...(data.grepMethods ?? []).map((m: any): ContextItem => ({
-                    kind: "method", key: m.key, file: m.file, startLine: m.startLine ?? null,
-                    summary: m.summary ?? "", snippet: m.codeSnippet ?? null
-                })),
-                ...(data.grepResults ?? []).map((g: any): ContextItem => ({
-                    kind: "grep", file: g.file, line: g.line, content: g.content
-                })),
-            ];
-            contextState.set({ source: { kind: "task", label: task.title }, items, loading: false, error: "" });
+            if (data.error) { wfError = data.error; return; }
+            commitMsg = "";
+            await loadDiff(task.id);
+            selectedPanel = diffContent?.trim() ? "commit" : "push";
         } catch (e: any) {
-            contextState.update(s => ({ ...s, loading: false, error: e.message }));
-        }
+            wfError = e.message;
+        } finally { committing = false; }
+    }
+
+    async function revertChanges(task: Task) {
+        if (!revertConfirm) { revertConfirm = true; return; }
+        revertConfirm = false; reverting = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/revert`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            await loadDiff(task.id);
+            selectedPanel = "commit";
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { reverting = false; }
     }
 </script>
 
 <div class="panel">
     <div class="panel-header">Tasks</div>
 
-    <!-- Filtres -->
     <div class="filter-bar">
         {#each FILTERS as f}
-            <button
-                class="filter-btn"
-                class:active={filter === f}
-                onclick={() => filter = f}
-            >
+            <button class="filter-btn" class:active={filter === f} onclick={() => filter = f}>
                 {f === "all" ? "toutes" : STATUS_LABEL[f as TaskStatus]}
                 {#if countOf(f) > 0}<span class="count">{countOf(f)}</span>{/if}
             </button>
@@ -223,7 +312,6 @@
         <button class="refresh-btn" onclick={loadTasks} title="Rafraîchir">↺</button>
     </div>
 
-    <!-- Nouvelle task -->
     <div class="new-task">
         <input
             class="new-input"
@@ -234,7 +322,6 @@
         />
     </div>
 
-    <!-- Liste toujours visible -->
     <div class="list">
         {#if loading}
             <p class="hint">Chargement…</p>
@@ -257,79 +344,151 @@
                         title="Supprimer"
                     >✕</button>
                 </div>
+
                 {#if selected?.id === task.id}
                     <div class="inline-detail">
+
+                        <!-- ── Meta ── -->
                         <div class="inline-meta">
                             {#if task.issueNumber}<span class="meta-tag">#{task.issueNumber}</span>{/if}
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
+                            <span class="meta-tag" style="color:#{STATUS_COLOR[task.status]};border-color:#1a1a1a">{STATUS_LABEL[task.status]}</span>
                         </div>
-                        <div class="inline-actions">
-                            {#if task.status === "running"}
-                                <button class="action-btn danger" onclick={() => setStatus(task, "failed")}>Annuler</button>
-                            {:else if task.status === "failed" || task.status === "pending"}
-                                <button class="action-btn" onclick={() => setStatus(task, "pending")}>Relancer</button>
-                            {/if}
+
+                        <!-- ── Barre workflow ── -->
+                        <div class="wf-bar">
                             <button
-                                class="action-btn run-btn"
-                                class:active={showRunFor === task.id}
-                                onclick={() => showRunFor === task.id ? showRunFor = null : openRun(task)}
-                                disabled={$agentRunState.running}
-                            >Claude →</button>
-                            <button class="action-btn danger" onclick={() => remove(task)}>Supprimer</button>
+                                class="wf-btn"
+                                class:wf-active={btnVariant(0) === "active"}
+                                class:wf-secondary={btnVariant(0) === "secondary"}
+                                class:wf-disabled={btnVariant(0) === "disabled"}
+                                onclick={() => selectedPanel = "plan"}
+                            >{currentStep > 0 ? "Re-planifier" : "Planifier"}</button>
+
+                            <span class="wf-arrow">›</span>
+
+                            <button
+                                class="wf-btn"
+                                class:wf-active={btnVariant(1) === "active"}
+                                class:wf-secondary={btnVariant(1) === "secondary"}
+                                class:wf-disabled={btnVariant(1) === "disabled"}
+                                disabled={btnVariant(1) === "disabled"}
+                                onclick={() => selectedPanel = "implement"}
+                            >Implémenter</button>
+
+                            <span class="wf-arrow">›</span>
+
+                            <button
+                                class="wf-btn"
+                                class:wf-active={btnVariant(2) === "active"}
+                                class:wf-secondary={btnVariant(2) === "secondary"}
+                                class:wf-disabled={btnVariant(2) === "disabled"}
+                                disabled={btnVariant(2) === "disabled"}
+                                onclick={() => selectedPanel = "commit"}
+                            >Commiter</button>
+
+                            <span class="wf-arrow">›</span>
+
+                            <button
+                                class="wf-btn"
+                                class:wf-active={btnVariant(3) === "active"}
+                                class:wf-secondary={btnVariant(3) === "secondary"}
+                                class:wf-disabled={btnVariant(3) === "disabled"}
+                                disabled={btnVariant(3) === "disabled"}
+                                onclick={() => selectedPanel = "push"}
+                            >Push</button>
+
+                            <span class="wf-arrow">›</span>
+
+                            <button class="wf-btn wf-disabled" disabled>Merge</button>
                         </div>
-                        {#if showRunFor === task.id}
-                            <div class="run-input-area">
-                                <textarea
-                                    class="run-textarea"
-                                    bind:value={runPrompt}
-                                    rows={3}
-                                    placeholder="Prompt pour Claude…"
-                                ></textarea>
-                                <button
-                                    class="run-submit"
-                                    onclick={() => runTask(task)}
-                                    disabled={!runPrompt.trim()}
-                                >Lancer</button>
-                            </div>
+
+                        {#if wfError}
+                            <div class="wf-error">{wfError}</div>
                         {/if}
-                        {#if $contextState.source.label === task.title}
-                            <div class="ctx-section">
-                                {#if $contextState.loading}
-                                    <span class="ctx-hint">Recherche contexte…</span>
-                                {:else if $contextState.error}
-                                    <span class="ctx-hint err">{$contextState.error}</span>
-                                {:else if $contextState.items.length > 0}
-                                    <div class="ctx-header">Contexte — {$contextState.items.length}</div>
-                                    {#each $contextState.items.slice(0, 8) as item}
-                                        {#if item.kind === "method"}
-                                            <div class="ctx-item">
-                                                <span class="ctx-key">{item.key}</span>
-                                                <span class="ctx-loc">{item.file}{item.startLine ? `:${item.startLine}` : ""}</span>
-                                                {#if item.summary}<span class="ctx-summary">{item.summary}</span>{/if}
-                                            </div>
-                                        {:else}
-                                            <div class="ctx-item">
-                                                <span class="ctx-loc">{item.file}:{item.line}</span>
-                                                <span class="ctx-content">{item.content.trim()}</span>
-                                            </div>
-                                        {/if}
-                                    {/each}
-                                    {#if $contextState.items.length > 8}
-                                        <span class="ctx-hint">+{$contextState.items.length - 8} autres</span>
+
+                        <!-- ── Contenu ── -->
+                        {#if selectedPanel === "plan"}
+                            <AgentInput {task} />
+
+                        {:else if selectedPanel === "implement"}
+                            <div class="impl-panel">
+                                <div class="impl-header">
+                                    <span class="impl-label">Plan approuvé</span>
+                                    <span class="impl-hint">Éditable avant lancement</span>
+                                    {#if planLoading}<span class="impl-hint">Chargement…</span>{/if}
+                                </div>
+                                <textarea
+                                    class="impl-textarea"
+                                    bind:value={implEdit}
+                                    rows={10}
+                                    placeholder={planLoading ? "Chargement du plan…" : "Coller ou écrire le plan…"}
+                                    disabled={planLoading}
+                                ></textarea>
+                                <div class="impl-footer">
+                                    <button
+                                        class="impl-launch"
+                                        onclick={() => clickImplement(task)}
+                                        disabled={!implEdit.trim() || $agentRunState.running || initialCommitting}
+                                    >
+                                        {initialCommitting ? "Création branche…" : $agentRunState.running ? "En cours…" : "Lancer l'implémentation →"}
+                                    </button>
+                                </div>
+                            </div>
+
+                        {:else if selectedPanel === "commit"}
+                            <div class="commit-panel">
+                                <div class="commit-bar">
+                                    <input
+                                        class="commit-msg-input"
+                                        placeholder="Message de commit…"
+                                        bind:value={commitMsg}
+                                        disabled={committing}
+                                    />
+                                    <button
+                                        class="commit-btn"
+                                        onclick={() => commitChanges(task)}
+                                        disabled={!commitMsg.trim() || committing}
+                                    >{committing ? "…" : "✓ Commiter"}</button>
+                                    <button
+                                        class="revert-btn"
+                                        onclick={() => revertChanges(task)}
+                                        disabled={reverting}
+                                    >{reverting ? "…" : revertConfirm ? "Confirmer ?" : "✕ Annuler"}</button>
+                                    <button class="diff-refresh-btn" onclick={() => loadDiff(task.id)} title="Rafraîchir">↺</button>
+                                </div>
+                                {#if diffLoading}
+                                    <span class="diff-hint">Chargement du diff…</span>
+                                {:else if diffContent !== null}
+                                    {#if diffContent.trim()}
+                                        <div class="diff-view">
+                                            {#each diffContent.split('\n') as line}
+                                                <div
+                                                    class="diff-line"
+                                                    class:add={line.startsWith('+') && !line.startsWith('+++')}
+                                                    class:del={line.startsWith('-') && !line.startsWith('---')}
+                                                    class:hunk={line.startsWith('@@')}
+                                                    class:meta={line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('---') || line.startsWith('+++')}
+                                                >{line || '\u200b'}</div>
+                                            {/each}
+                                        </div>
+                                    {:else}
+                                        <span class="diff-hint">Aucune modification non commitée</span>
                                     {/if}
-                                {:else}
-                                    <span class="ctx-hint">Aucun contexte trouvé</span>
                                 {/if}
                             </div>
-                        {/if}
-                        {#if task.logs.length > 0}
-                            <div class="inline-logs">
-                                {#each task.logs as log}
-                                    <div class="log-line">{log}</div>
-                                {/each}
+
+                        {:else if selectedPanel === "push"}
+                            <div class="push-panel">
+                                <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
+                                <div class="push-actions">
+                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">↑ Push</button>
+                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">⇒ Merge → main</button>
+                                </div>
                             </div>
                         {/if}
+
                     </div>
                 {/if}
             {/each}
@@ -379,11 +538,7 @@
 }
 .filter-btn:hover { color: #555; }
 .filter-btn.active { color: #777; }
-.count {
-    font-size: 0.5rem;
-    opacity: 0.6;
-    margin-left: 0.4rem;
-}
+.count { font-size: 0.5rem; opacity: 0.6; margin-left: 0.4rem; }
 .refresh-btn {
     background: none;
     border: none;
@@ -395,10 +550,7 @@
     line-height: 1;
 }
 .refresh-btn:hover { color: #555; }
-.new-task {
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-}
+.new-task { border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
 .new-input {
     display: block;
     width: 100%;
@@ -414,17 +566,11 @@
 }
 .new-input:focus { color: #aaa; }
 .new-input::placeholder { color: #222; }
-.list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-}
+.list { flex: 1; min-height: 0; overflow-y: auto; }
 .list::-webkit-scrollbar { width: 4px; }
 .list::-webkit-scrollbar-track { background: transparent; }
 .list::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
-.task-row-wrap {
-    position: relative;
-}
+.task-row-wrap { position: relative; }
 .task-delete-btn {
     position: absolute;
     right: 0.5rem;
@@ -443,14 +589,9 @@
 }
 .task-row-wrap:hover .task-delete-btn { opacity: 1; }
 .task-delete-btn:hover { color: #f44336; }
-.hint {
-    padding: 1rem;
-    color: #333;
-    font-size: 0.8rem;
-    font-family: 'JetBrains Mono', monospace;
-}
+.hint { padding: 1rem; color: #333; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
 
-/* ── Détail inline (accordéon) ── */
+/* ── Détail inline ── */
 .inline-detail {
     background: #0d0d16;
     border-bottom: 1px solid #1a1a1a;
@@ -464,7 +605,7 @@
     border-bottom: 1px solid #141414;
 }
 .meta-tag {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     padding: 0.05rem 0.4rem;
     border-radius: 10px;
     background: #1a1a2e;
@@ -473,105 +614,230 @@
 }
 .meta-tag.mono { font-family: 'JetBrains Mono', monospace; }
 .meta-tag.dim { color: #333; }
-.inline-actions {
+
+/* ── Barre workflow ── */
+.wf-bar {
     display: flex;
-    gap: 0.4rem;
-    padding: 0.35rem 1rem;
+    align-items: center;
+    gap: 0;
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid #141414;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
 }
-.action-btn {
+.wf-bar::-webkit-scrollbar { display: none; }
+.wf-arrow {
+    color: #1e1e2e;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    padding: 0 0.2rem;
+    line-height: 1;
+}
+.wf-btn {
     background: none;
-    border: 1px solid #2a2a2a;
-    color: #444;
-    font-size: 0.62rem;
-    padding: 0.15rem 0.5rem;
+    border: 1px solid transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.55rem;
     border-radius: 3px;
     cursor: pointer;
-    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s;
 }
-.action-btn:hover { color: #9181f9; border-color: #9181f9; }
-.action-btn.danger:hover { color: #f44336; border-color: #f44336; }
-.inline-logs {
-    padding: 0.3rem 1rem;
-    max-height: 120px;
-    overflow-y: auto;
+/* active = étape courante */
+.wf-btn.wf-active {
+    color: #9181f9;
+    border-color: #3a2a5a;
+    background: #0e0b1a;
 }
-.log-line {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.63rem;
+.wf-btn.wf-active:hover { border-color: #7c6af7; }
+/* secondary = étape déjà franchie, recliquable */
+.wf-btn.wf-secondary {
     color: #444;
-    line-height: 1.5;
+    border-color: #1e1e2e;
+    cursor: pointer;
+}
+.wf-btn.wf-secondary:hover { color: #777; border-color: #333; }
+/* disabled = pas encore accessible */
+.wf-btn.wf-disabled {
+    color: #222;
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ── Erreur workflow ── */
+.wf-error {
+    padding: 0.3rem 1rem;
+    font-size: 0.62rem;
+    color: #f44336;
+    font-style: italic;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+/* ── Panneau Implémenter ── */
+.impl-panel { display: flex; flex-direction: column; border-top: 1px solid #141414; }
+.impl-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1rem;
     border-bottom: 1px solid #111;
-    padding: 0.1rem 0;
 }
-/* ── Contexte ─────────────────────────────────────────────────────── */
-.ctx-section {
-    border-top: 1px solid #141414;
-    max-height: 160px;
-    overflow-y: auto;
-}
-.ctx-header {
-    padding: 0.25rem 1rem;
+.impl-label {
     font-size: 0.58rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: #333;
-    background: #0a0a16;
-    border-bottom: 1px solid #141414;
-    position: sticky;
-    top: 0;
 }
-.ctx-item {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem 0.5rem;
-    align-items: baseline;
-    padding: 0.2rem 1rem;
-    border-bottom: 1px solid #0f0f18;
-}
-.ctx-item:hover { background: #0c0c18; }
-.ctx-key  { font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; color: #7c6af7; }
-.ctx-loc  { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;  color: #333; }
-.ctx-summary { font-size: 0.63rem; color: #555; width: 100%; }
-.ctx-content { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: #444; }
-.ctx-hint { display: block; padding: 0.25rem 1rem; font-size: 0.62rem; color: #333; font-style: italic; }
-.ctx-hint.err { color: #f44336; }
-
-.run-btn { color: #7c6af7; border-color: #2a2a3a; }
-.run-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
-.run-btn.active { color: #9181f9; border-color: #9181f9; background: #0e0e1a; }
-.run-btn:disabled { opacity: 0.3; cursor: default; }
-.run-input-area {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 0.5rem 1rem;
-    border-top: 1px solid #141414;
-}
-.run-textarea {
-    background: #070710;
-    border: 1px solid #2a2a3a;
-    border-radius: 3px;
-    color: #888;
+.impl-hint { font-size: 0.6rem; color: #2a2a2a; font-style: italic; }
+.impl-textarea {
+    background: #07070f;
+    border: none;
+    border-bottom: 1px solid #111;
+    color: #777;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    padding: 0.4rem 0.6rem;
+    font-size: 0.67rem;
+    line-height: 1.55;
+    padding: 0.5rem 1rem;
     resize: vertical;
     outline: none;
-    line-height: 1.5;
+    min-height: 80px;
 }
-.run-textarea:focus { border-color: #7c6af7; color: #bbb; }
-.run-submit {
-    align-self: flex-end;
+.impl-textarea:focus { color: #bbb; }
+.impl-textarea::placeholder { color: #222; }
+.impl-textarea:disabled { opacity: 0.5; cursor: wait; }
+.impl-footer { display: flex; justify-content: flex-end; padding: 0.4rem 1rem; flex-shrink: 0; }
+.impl-launch {
     background: #7c6af7;
     border: none;
     border-radius: 3px;
     color: #fff;
     font-size: 0.65rem;
-    padding: 0.25rem 0.75rem;
+    padding: 0.3rem 0.9rem;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
 }
-.run-submit:hover:not(:disabled) { background: #9181f9; }
-.run-submit:disabled { opacity: 0.4; cursor: default; }
+.impl-launch:hover:not(:disabled) { background: #9181f9; }
+.impl-launch:disabled { opacity: 0.35; cursor: default; }
+
+/* ── Panneau Commit ── */
+.commit-panel { display: flex; flex-direction: column; border-top: 1px solid #141414; }
+.commit-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    border-bottom: 1px solid #141414;
+    flex-shrink: 0;
+}
+.commit-msg-input {
+    flex: 1;
+    min-width: 0;
+    background: #070710;
+    border: 1px solid #2a2a3a;
+    border-radius: 3px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.63rem;
+    padding: 0.25rem 0.5rem;
+    outline: none;
+}
+.commit-msg-input:focus { border-color: #4caf50; color: #bbb; }
+.commit-msg-input::placeholder { color: #2a2a3a; }
+.commit-msg-input:disabled { opacity: 0.4; }
+.commit-btn {
+    background: none;
+    border: 1px solid #2a4a2a;
+    color: #4caf50;
+    font-size: 0.62rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+}
+.commit-btn:hover:not(:disabled) { border-color: #4caf50; }
+.commit-btn:disabled { opacity: 0.35; cursor: default; }
+.revert-btn {
+    background: none;
+    border: 1px solid #2a2a2a;
+    color: #555;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+}
+.revert-btn:hover:not(:disabled) { color: #f44336; border-color: #f44336; }
+.revert-btn:disabled { opacity: 0.35; cursor: default; }
+.diff-refresh-btn {
+    background: none;
+    border: none;
+    color: #2a2a3a;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.diff-refresh-btn:hover { color: #555; }
+.diff-view {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.4rem 0;
+    background: #050510;
+}
+.diff-view::-webkit-scrollbar { width: 3px; }
+.diff-view::-webkit-scrollbar-thumb { background: #1a1a2a; }
+.diff-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.63rem;
+    line-height: 1.5;
+    padding: 0 1rem;
+    white-space: pre;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    color: #555;
+}
+.diff-line.add { color: #4caf50; background: rgba(76,175,80,0.05); }
+.diff-line.del { color: #f44336; background: rgba(244,67,54,0.05); }
+.diff-line.hunk { color: #7c6af7; }
+.diff-line.meta { color: #2a2a2a; }
+.diff-hint {
+    display: block;
+    padding: 0.4rem 1rem;
+    font-size: 0.62rem;
+    color: #333;
+    font-style: italic;
+}
+
+/* ── Panneau Push ── */
+.push-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #141414;
+}
+.push-hint {
+    font-size: 0.65rem;
+    color: #3a3a5a;
+    font-style: italic;
+}
+.push-hint code {
+    font-family: 'JetBrains Mono', monospace;
+    color: #555;
+    background: #1a1a2e;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+}
+.push-actions { display: flex; gap: 0.5rem; }
 </style>

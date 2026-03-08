@@ -73,3 +73,26 @@ export async function getSubIssues(owner: string, repo: string, number: number) 
     );
     return data as Array<{ number: number; title: string; state: string }>;
 }
+
+export async function listAccessibleRepos() {
+    const octokit = getOctokit();
+    const { data } = await octokit.apps.listReposAccessibleToInstallation({ per_page: 100 });
+    return data.repositories.map(r => ({
+        name:     r.name,
+        fullName: r.full_name,
+        owner:    r.owner.login,
+        private:  r.private,
+    }));
+}
+
+export async function createIssueComment(issueNumber: number, body: string) {
+    const { getCurrentProject } = await import("./projects");
+    const project = getCurrentProject();
+    const owner = project?.owner ?? process.env.TARGET_OWNER!;
+    const repo  = project?.repo  ?? process.env.TARGET_REPO!;
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.createComment({
+        owner, repo, issue_number: issueNumber, body
+    });
+    return data;
+}

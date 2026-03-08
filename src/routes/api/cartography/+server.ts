@@ -1,9 +1,8 @@
 import { json } from "@sveltejs/kit";
 import { execSync } from "child_process";
 import { resolve } from "path";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getProjectRoot } from "$lib/server/services/projects";
+import { getProjectConfig } from "$lib/server/services/project-config";
 
 export async function POST({ request }) {
     const { query } = await request.json();
@@ -12,9 +11,10 @@ export async function POST({ request }) {
         return json({ error: "Query manquant" }, { status: 400 });
     }
 
-    const projectPath    = process.env.TARGET_PROJECT_PATH  ?? "C:/lolve";
+    const projectPath    = getProjectRoot();
     const cartoPath      = process.env.CARTOGRAPHY_PATH     ?? "C:/lolve-cartography";
     const scriptPath     = resolve("scripts/cartography-search.cjs");
+    const config         = getProjectConfig();
 
     try {
         const escaped = query.replace(/"/g, '\\"');
@@ -23,7 +23,13 @@ export async function POST({ request }) {
             {
                 encoding: "utf-8",
                 maxBuffer: 1024 * 1024 * 10,
-                env: { ...process.env, LC_PROJECT_PATH: projectPath, CARTOGRAPHY_PATH: cartoPath }
+                env: {
+                    ...process.env,
+                    LC_PROJECT_PATH:           projectPath,
+                    CARTOGRAPHY_PATH:          cartoPath,
+                    LC_IGNORE_DIRS:            JSON.stringify(config.extraIgnoreDirs),
+                    LC_COMMENT_ONLY_KEYWORDS:  JSON.stringify(config.commentOnlyKeywords),
+                }
             }
         );
 

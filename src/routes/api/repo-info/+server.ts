@@ -1,11 +1,7 @@
 import { json } from "@sveltejs/kit";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getCurrentProject } from "$lib/server/services/projects";
 
 export function GET() {
-    return json({
-        owner: process.env.TARGET_OWNER ?? "",
-        repo:  process.env.TARGET_REPO  ?? ""
-    });
+    const p = getCurrentProject();
+    return json({ owner: p?.owner ?? "", repo: p?.repo ?? "", path: p?.path ?? "" });
 }

@@ -1,16 +1,15 @@
 import { json } from "@sveltejs/kit";
-import { getIssues } from "$lib/server/services/github";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getIssues, createIssue } from "$lib/server/services/github";
+import { getCurrentProject } from "$lib/server/services/projects";
 
 export async function GET() {
     try {
-        const owner = process.env.TARGET_OWNER;
-        const repo = process.env.TARGET_REPO;
+        const project = getCurrentProject();
+        const owner = project?.owner;
+        const repo  = project?.repo;
 
         if (!owner || !repo) {
-            return json({ error: "TARGET_OWNER ou TARGET_REPO manquant dans .env" }, { status: 500 });
+            return json({ error: "Aucun owner/repo configuré pour ce projet" }, { status: 500 });
         }
 
         const issues = await getIssues(owner, repo);
@@ -30,6 +29,24 @@ export async function GET() {
         );
     } catch (err: any) {
         console.error("[/api/issues]", err);
+        return json({ error: err.message ?? String(err) }, { status: 500 });
+    }
+}
+
+export async function POST({ request }) {
+    try {
+        const { title, body } = await request.json();
+        if (!title?.trim()) return json({ error: "Titre manquant" }, { status: 400 });
+
+        const project = getCurrentProject();
+        const owner = project?.owner;
+        const repo  = project?.repo;
+        if (!owner || !repo) return json({ error: "Aucun owner/repo configuré" }, { status: 500 });
+
+        const issue = await createIssue(owner, repo, title.trim(), body ?? "");
+        return json({ number: issue.number, title: issue.title, state: issue.state }, { status: 201 });
+    } catch (err: any) {
+        console.error("[POST /api/issues]", err);
         return json({ error: err.message ?? String(err) }, { status: 500 });
     }
 }

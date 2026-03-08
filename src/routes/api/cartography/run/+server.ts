@@ -1,12 +1,11 @@
 import { spawn } from "child_process";
 import { join } from "path";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getProjectRoot } from "$lib/server/services/projects";
 
 const ALLOWED_CMDS: Record<string, string[]> = {
     "full":        ["annotate", "full"],
     "full:force":  ["annotate", "full", "--force"],
+    "diagram":     ["annotate", "diagram"],
     "index":       ["annotate", "index"],
     "enrich":      ["annotate", "enrich"],
     "scan":        ["annotate", "scan"],
@@ -24,7 +23,7 @@ export async function POST({ request }) {
         });
     }
 
-    const projectPath = process.env.TARGET_PROJECT_PATH ?? "C:/lolve";
+    const projectPath = getProjectRoot();
     const cartoPath   = process.env.CARTOGRAPHY_PATH    ?? "C:/lolve-cartography";
     const cli         = join(cartoPath, "bin/cli.cjs");
     const encoder     = new TextEncoder();

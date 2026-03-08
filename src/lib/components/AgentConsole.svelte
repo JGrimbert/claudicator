@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentState, notifyTaskCreated, agentRunState } from "$lib/stores/agent";
+    import DiagramViewer from "$lib/components/DiagramViewer.svelte";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -82,16 +83,10 @@
     }
 
     const CMD_BUTTONS = [
-        { id: "full",       label: "Full" },
-        { id: "full:force", label: "Full --force" },
-        { id: "index",      label: "Index" },
-        { id: "enrich",     label: "Enrich" },
-        { id: "scan",       label: "Scan" },
+        { id: "full:force", label: "Init" },
     ];
 
-    // ─── Collapse input / liste ───────────────────────────────────────────────
-    let inputOpen = true;
-    let listOpen  = true;
+    let showDiagram = false;
 
     // ─── AGENT — recherche ────────────────────────────────────────────────────
     type SearchResult = {
@@ -263,23 +258,6 @@
 
 </script>
 
-<!-- ══════════════════════════════════════════════════ RUN CONSOLE ══ -->
-{#if $agentRunState.logs.length > 0}
-    <div class="run-console">
-        <div class="run-console-header">
-            <span class="run-title">{$agentRunState.taskTitle || "Claude"}</span>
-            {#if $agentRunState.running}
-                <span class="run-blink">●</span>
-            {/if}
-            <button class="run-clear" onclick={() => agentRunState.update(s => ({ ...s, logs: [] }))}>✕</button>
-        </div>
-        <div class="run-log-area">
-            {#each $agentRunState.logs as entry}
-                <div class="run-log-line" class:system={entry.type === "system"}>{entry.line}</div>
-            {/each}
-        </div>
-    </div>
-{/if}
 
 <!-- ═══════════════════════════════════════════════════════ PROJET ══ -->
 {#if expandedFile}
@@ -307,6 +285,12 @@
                         {runningCmd === btn.id ? "…" : btn.label}
                     </button>
                 {/each}
+                <button
+                    class="cmd-btn map-btn"
+                    class:active={showDiagram}
+                    onclick={() => { showDiagram = !showDiagram; }}
+                    title="Visualiser la carte du projet"
+                >Codebase</button>
             </div>
 
             <!-- Logs commande -->
@@ -318,54 +302,54 @@
                 </div>
             {/if}
 
-            <!-- Cards fichiers -->
-            <div class="cards-row">
-                {#each files as file}
-                    <button
-                        class="file-card"
-                        onclick={() => expandedFile = file}
-                        disabled={file.loading || !!file.error}
-                    >
-                        <div class="card-name">{file.name}</div>
-                        {#if file.loading}
-                            <span class="dim">Chargement…</span>
-                        {:else if file.error}
-                            <span class="card-err">{file.error}</span>
-                        {:else}
-                            <pre class="card-preview">{preview(file.content)}</pre>
-                        {/if}
-                    </button>
-                {/each}
+            <!-- Documentation fichiers -->
+            <div class="doc-section">
+                <span class="doc-label">Documentation</span>
+                <div class="doc-files">
+                    {#each files as file}
+                        <button
+                            class="doc-file-btn"
+                            onclick={() => expandedFile = file}
+                            disabled={file.loading || !!file.error}
+                        >
+                            {file.name}
+                        </button>
+                    {/each}
+                </div>
             </div>
     </div>
 
+    <!-- ══════════════ DIAGRAM VIEW ══════════════════════════════════════ -->
+    {#if showDiagram}
+        <div class="dv-panel">
+            <DiagramViewer />
+        </div>
+    {/if}
+
     <!-- ══════════════ AGENT WRAPPER (input + tabs + liste) ══════════════ -->
+    {#if !showDiagram}
     <div class="agent-wrapper">
 
-        {#if inputOpen}
-            <div class="agent-search-header">
-                <input
-                    class="agent-input"
-                    type="text"
-                    placeholder="Rechercher dans le code…"
-                    bind:value={searchQuery}
-                    onkeydown={onSearchKey}
-                />
-            </div>
-        {/if}
+        <div class="agent-search-header">
+            <input
+                class="agent-input"
+                type="text"
+                placeholder="Rechercher dans le code…"
+                bind:value={searchQuery}
+                onkeydown={onSearchKey}
+            />
+        </div>
 
         <div class="todos-section">
             <div class="section-header todos-header">
-                <button class="toggle-btn toggle-up" onclick={() => inputOpen = !inputOpen} title="Toggle input">▲</button>
                 {#each tabs as t}
                     <button class="tab" class:tab-active={activeTab === t.id} onclick={() => activeTab = t.id}>
                         {t.label}{#if t.count !== 0 && t.count !== ""}<span class="tab-count"> {t.count}</span>{/if}
                     </button>
                 {/each}
-                <button class="toggle-btn toggle-down" onclick={() => listOpen = !listOpen} title="Toggle liste">▼</button>
             </div>
 
-        {#if listOpen}
+
         {#if searchError && activeTab === "query"}
             <p class="err-line">{searchError}</p>
         {:else if activeTab === "todo" || activeTab === "query"}
@@ -374,7 +358,7 @@
             {@const sem     = activeTab === "todo" ? []          : querySemantic}
             <div class="result-area">
                 {#if grep.length > 0}
-                    <div class="result-group-header">Occurrences — {grep.length}</div>
+                    <div class="result-group-header">Occurrences</div>
                     <div class="result-list grouped">
                         {#each grep as g}
                             {@const key = `${g.file}:${g.line}`}
@@ -397,7 +381,7 @@
                     </div>
                 {/if}
                 {#if methods.length > 0}
-                    <div class="result-group-header">Méthodes — {methods.length}</div>
+                    <div class="result-group-header">Méthodes</div>
                     <div class="result-list grouped">
                         {#each methods as r}
                             <div class="result-item">
@@ -415,7 +399,7 @@
                     </div>
                 {/if}
                 {#if sem.length > 0}
-                    <div class="result-group-header">Méthodes pertinentes — {sem.length}</div>
+                    <div class="result-group-header">Méthodes pertinentes</div>
                     <div class="result-list grouped">
                         {#each sem as r}
                             <div class="result-item">
@@ -463,69 +447,12 @@
                 {/each}
             </div>
         {/if}
-        {/if}
         </div>
     </div>
+    {/if}
 {/if}
 
 <style>
-/* ── Run Console ──────────────────────────────────────────────────── */
-.run-console {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    max-height: 40%;
-    min-height: 80px;
-    border-bottom: 2px solid #2a2a3a;
-    background: #05050f;
-}
-.run-console-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    border-bottom: 1px solid #1a1a2a;
-    flex-shrink: 0;
-}
-.run-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #7c6af7;
-}
-.run-blink {
-    font-size: 0.6rem;
-    color: #7c6af7;
-    animation: blink 1.2s step-start infinite;
-}
-.run-clear {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: #333;
-    font-size: 0.7rem;
-    cursor: pointer;
-    padding: 0.1rem 0.3rem;
-    line-height: 1;
-}
-.run-clear:hover { color: #666; }
-.run-log-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.4rem 1rem;
-}
-.run-log-area::-webkit-scrollbar { width: 4px; }
-.run-log-area::-webkit-scrollbar-track { background: transparent; }
-.run-log-area::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
-.run-log-line {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    color: #888;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.run-log-line.system { color: #444; font-style: italic; }
 
 /* ── Layout ───────────────────────────────────────────────────────── */
 .projet-section {
@@ -541,19 +468,6 @@
     min-height: 0;
     overflow: hidden;
 }
-.toggle-btn {
-    background: none;
-    border: none;
-    color: #252525;
-    font-size: 0.45rem;
-    cursor: pointer;
-    padding: 0 0.5rem;
-    flex-shrink: 0;
-    height: 100%;
-}
-.toggle-btn:hover { color: #666; }
-.toggle-up  { border-right: 1px solid #1a1a1a; }
-.toggle-down { margin-left: auto; border-left: 1px solid #1a1a1a; }
 .agent-search-header {
     display: flex;
     align-items: center;
@@ -673,6 +587,17 @@
 .stat-fidx.ok { color: #4a6a4a; }
 .stat-ts { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: #333; }
 
+/* ── Diagram panel ────────────────────────────────────────────────── */
+.dv-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.map-btn { margin-left: auto; }
+.map-btn.active { background: #1a1a2e; color: #9181f9; border-color: #4a3a8a; }
+
 /* ── Boutons commandes ────────────────────────────────────────────── */
 .cmd-btn {
     padding: 0.2rem 0.55rem;
@@ -703,48 +628,40 @@
     line-height: 1.4;
 }
 
-/* ── Cards fichiers ───────────────────────────────────────────────── */
-.cards-row {
+/* ── Documentation fichiers ───────────────────────────────────────── */
+.doc-section {
     display: flex;
-}
-.file-card {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
-    background: none;
-    border: none;
-    border-right: 1px solid #1a1a1a;
-    cursor: pointer;
-    text-align: left;
-    height: 160px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    overflow: hidden;
-    transition: background 0.1s;
-}
-.file-card:last-child { border-right: none; }
-.file-card:hover:not(:disabled) { background: #111118; }
-.file-card:disabled { cursor: default; }
-.card-name {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #d2b292;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1rem;
+    border-bottom: 1px solid #1a1a1a;
     flex-shrink: 0;
 }
-.card-preview {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    color: #555;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow: hidden;
-    line-height: 1.45;
-    margin: 0;
-    flex: 1;
-    text-align: left;
+.doc-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #333;
+    flex-shrink: 0;
 }
-.card-err { font-size: 0.72rem; color: #f44336; }
+.doc-files {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+.doc-file-btn {
+    background: none;
+    border: 1px solid #222;
+    color: #555;
+    font-size: 0.62rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.15s, border-color 0.15s;
+}
+.doc-file-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.doc-file-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Expanded file ────────────────────────────────────────────────── */
 .exp-content {

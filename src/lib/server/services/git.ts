@@ -21,3 +21,30 @@ export async function getRemoteRepo() {
         repo: parts[parts.length - 1]
     };
 }
+
+export async function getDiff(root: string): Promise<string> {
+    const g = simpleGit(root);
+    const staged   = await g.diff(["--cached"]);
+    const unstaged = await g.diff();
+    return (staged + unstaged).trim();
+}
+
+export async function commitAll(root: string, message: string): Promise<void> {
+    const g = simpleGit(root);
+    await g.add(["-A"]);
+    await g.commit(message);
+}
+
+export async function revertAll(root: string): Promise<void> {
+    const g = simpleGit(root);
+    await g.raw(["checkout", "."]);
+    await g.raw(["clean", "-fd"]);
+}
+
+export async function mergeBranch(root: string, branch: string): Promise<void> {
+    const g = simpleGit(root);
+    const branches = await g.branchLocal();
+    const mainBranch = branches.all.includes("main") ? "main" : "master";
+    await g.checkout(mainBranch);
+    await g.merge(["--no-ff", branch]);
+}

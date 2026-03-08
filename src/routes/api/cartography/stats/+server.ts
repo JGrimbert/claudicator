@@ -1,12 +1,10 @@
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { getProjectRoot } from "$lib/server/services/projects";
 
 export async function GET() {
-    const projectPath = process.env.TARGET_PROJECT_PATH ?? "C:/lolve";
+    const projectPath = getProjectRoot();
     const indexPath   = join(projectPath, ".cache/method-index.json");
     const configPath  = join(projectPath, ".cache/lolve-cartography.json");
     const fileIdxPath = join(projectPath, ".cache/file-index.json");

@@ -31,10 +31,48 @@ const path = require('path');
 function grepProject(projectPath, query) {
     const hits    = [];
     const exts    = new Set(['.js', '.cjs', '.mjs', '.vue', '.ts', '.tsx', '.svelte']);
-    const ignored = new Set(['node_modules', 'dist', '.cache', '.git', '.backups', '.idea']);
-    // Chercher chaque mot de 4+ caractères pour ne pas dépendre d'une phrase exacte
-    const words   = [...new Set(query.toLowerCase().split(/\s+/).filter(w => w.length >= 4))];
-    const needle  = words.length > 0 ? words[0] : query.toLowerCase(); // fallback phrase exacte
+
+    // ── Liste des dossiers ignorés ─────────────────────────────────────────
+    // Défaut global + dossiers spécifiques passés via LC_IGNORE_DIRS (JSON array)
+    const ignored = new Set([
+        'node_modules', 'dist', '.cache', '.git', '.backups', '.idea',
+        // Extensions globales pour SvelteKit, Next, etc.
+        '.svelte-kit', 'build', 'coverage', '.next', '__pycache__', 'out', '.turbo', '.vercel'
+    ]);
+    try {
+        const extra = JSON.parse(process.env.LC_IGNORE_DIRS || '[]');
+        if (Array.isArray(extra)) extra.forEach(d => ignored.add(String(d)));
+    } catch { /* env invalide */ }
+
+    // .claudignore depuis la racine du projet
+    try {
+        const claudignorePath = path.join(projectPath, '.claudignore');
+        if (fs.existsSync(claudignorePath)) {
+            fs.readFileSync(claudignorePath, 'utf-8')
+                .split('\n')
+                .map(l => l.trim())
+                .filter(l => l && !l.startsWith('#'))
+                .forEach(l => ignored.add(l));
+        }
+    } catch { /* inaccessible */ }
+
+    // ── Filtre commentaires-seulement ──────────────────────────────────────
+    // Si le mot-clé cherché figure dans LC_COMMENT_ONLY_KEYWORDS, on ne garde
+    // que les lignes qui sont des commentaires (// # * /*).
+    const commentOnlyKeywords = new Set();
+    try {
+        const kws = JSON.parse(process.env.LC_COMMENT_ONLY_KEYWORDS || '[]');
+        if (Array.isArray(kws)) kws.forEach(k => commentOnlyKeywords.add(String(k).toLowerCase()));
+    } catch { /* env invalide */ }
+
+    const words  = [...new Set(query.toLowerCase().split(/\s+/).filter(w => w.length >= 4))];
+    const requireComment = words.some(w => commentOnlyKeywords.has(w))
+        || commentOnlyKeywords.has(query.toLowerCase().trim());
+
+    function isComment(line) {
+        const t = line.trimStart();
+        return t.startsWith('//') || t.startsWith('#') || t.startsWith('*') || t.startsWith('/*');
+    }
 
     function walk(dir) {
         let entries;
@@ -50,6 +88,7 @@ function grepProject(projectPath, query) {
                     for (let i = 0; i < lines.length; i++) {
                         const low = lines[i].toLowerCase();
                         if (words.some(w => low.includes(w))) {
+                            if (requireComment && !isComment(lines[i])) continue;
                             hits.push({
                                 file:    path.relative(projectPath, abs).replace(/\\/g, '/'),
                                 line:    i + 1,
