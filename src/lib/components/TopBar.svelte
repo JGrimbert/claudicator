@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentState } from "$lib/stores/agent";
+    import ProjectSettings from "./ProjectSettings.svelte";
 
     type Project = { id: string; name: string; path: string; owner?: string; repo?: string };
 
@@ -100,6 +101,10 @@
         adding = false; newPath = ""; addError = ""; selectedRepo = null; ghRepos = [];
     }
 
+    let settingsOpen = false;
+    function toggleSettings() { settingsOpen = !settingsOpen; adding = false; }
+    function closeSettings() { settingsOpen = false; }
+
     function onPathKey(e: KeyboardEvent) {
         if (e.key === "Enter") addProject();
         if (e.key === "Escape") cancelAdd();
@@ -137,6 +142,21 @@
 
             <!-- Bouton ajouter un projet -->
             <button class="add-btn" on:click={openAdd} title="Ajouter un projet">+</button>
+
+            <!-- Bouton paramètres projet -->
+            <button
+                class="add-btn"
+                class:active={settingsOpen}
+                on:click={toggleSettings}
+                title="Paramètres du projet"
+            >⚙</button>
+
+            <!-- Panneau paramètres -->
+            {#if settingsOpen}
+                <div class="add-panel settings-dropdown">
+                    <ProjectSettings />
+                </div>
+            {/if}
 
         {:else}
             <!-- Panneau d'ajout (dropdown) -->
@@ -270,6 +290,8 @@
     transition: color 0.15s, border-color 0.15s;
 }
 .add-btn:hover { color: #9181f9; border-color: #9181f9; }
+.add-btn.active { color: #9181f9; border-color: #7c6af7; }
+.settings-dropdown { left: auto; right: 0; min-width: 340px; max-width: 420px; }
 
 /* ── Panneau ajout ── */
 .add-panel {

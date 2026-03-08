@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, taskRefreshTick, agentRunState } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, agentRunState, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
 
@@ -38,6 +38,7 @@
     let selected: Task | null = null;
     let newTitle = "";
     let creating = false;
+
 
     // Workflow state
     let selectedPanel: WfPanel = "plan";
@@ -78,10 +79,14 @@
 
     onMount(() => { loadTasks(); });
 
-    $: if ($taskRefreshTick) {
+    // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
+    // Svelte 4 les inclut comme dépendances et boucle à l'infini.
+    // On délègue à une fonction pour isoler le scope de tracking.
+    $: if ($taskRefreshTick) onRefreshTick();
+
+    function onRefreshTick() {
         (async () => {
-            await loadTasks();
-            // Recharge le plan si la task vient de finir et qu'on est en plan step
+            await loadTasksSilent();
             if (selected && selected.status === "done" && !planContent && !planLoading) {
                 await loadPlan(selected.id);
                 if (planContent && selectedPanel === "plan") selectedPanel = "implement";
@@ -100,14 +105,26 @@
         }
     }
 
+    /** Refresh silencieux : ne cache pas la liste pendant le chargement. */
+    async function loadTasksSilent() {
+        try {
+            const res = await fetch("/api/tasks");
+            const fresh = await res.json();
+            if (!Array.isArray(fresh)) return;
+            tasks = fresh;
+            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+        } catch { /* silencieux */ }
+    }
+
     async function createTask() {
         if (!newTitle.trim() || creating) return;
         creating = true;
         try {
+            const issueNumber = $agentState.issue?.number;
             await fetch("/api/tasks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: newTitle.trim() }),
+                body: JSON.stringify({ title: newTitle.trim(), issueNumber }),
             });
             newTitle = "";
             await loadTasks();

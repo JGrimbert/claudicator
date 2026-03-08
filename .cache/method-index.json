@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "generated": "2026-03-08T17:18:52.309Z",
+  "files": {
+    "src\\hooks.server.ts": {
+      "mtime": 1772966119344.6917,
+      "size": 362,
+      "hash": "c5a38c9f2e35",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\lib\\index.js": {
+      "mtime": 1772885109315.4622,
+      "size": 75,
+      "hash": "ffcb0e97b69e",
+      "classCount": 0,
+      "methodCount": 0
+    },
+    "src\\routes\\api\\agent\\input\\+server.ts": {
+      "mtime": 1772966730818.1152,
+      "size": 503,
+      "hash": "39194a78a8c8",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\agent\\kill\\+server.ts": {
+      "mtime": 1772966727021.8042,
+      "size": 511,
+      "hash": "f8e8553ac419",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\context\\+server.ts": {
+      "mtime": 1772978779163.7666,
+      "size": 942,
+      "hash": "ae821931861b",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\github\\issues\\+server.ts": {
+      "mtime": 1772986133877.8481,
+      "size": 605,
+      "hash": "f4f95be35a0d",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issue\\+server.ts": {
+      "mtime": 1772986134044.5332,
+      "size": 1166,
+      "hash": "ec0834218f9b",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\plan\\+server.ts": {
+      "mtime": 1772909944046.091,
+      "size": 493,
+      "hash": "df975a610786",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\projects\\current\\+server.ts": {
+      "mtime": 1772978723512.8167,
+      "size": 531,
+      "hash": "bd86704e7607",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\projects\\github\\+server.ts": {
+      "mtime": 1772985829457.8381,
+      "size": 702,
+      "hash": "efdb45d7dfde",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\repo-info\\+server.ts": {
+      "mtime": 1772978728673.2275,
+      "size": 260,
+      "hash": "1d99fc13fb4c",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\+server.ts": {
+      "mtime": 1772922610033.5486,
+      "size": 556,
+      "hash": "ec2a46800b11",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\tasks\\[id]\\+server.ts": {
+      "mtime": 1772922613427.1653,
+      "size": 743,
+      "hash": "be071f3259a2",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts": {
+      "mtime": 1772978776079.8826,
+      "size": 709,
+      "hash": "7c8c75e67f9b",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
+      "mtime": 1772978777649.4092,
+      "size": 764,
+      "hash": "dea31d92d29e",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts": {
+      "mtime": 1772986027698.4675,
+      "size": 565,
+      "hash": "c48080b8ae70",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts": {
+      "mtime": 1772978778352.6755,
+      "size": 747,
+      "hash": "9398d4cd4c6a",
+      "classCount": 0,
+      "methodCount": 1
+    }
+  },
+  "methods": {
+    "POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4bbdc9089071",
+      "line": 6,
+      "endLine": 19
+    },
+    "GET": {
+      "file": "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5dc914a40519",
+      "line": 6,
+      "endLine": 17
+    },
+    "PATCH": {
+      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+      "class": null,
+      "name": "PATCH",
+      "signature": "PATCH({ params, request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6f5e88d51de2",
+      "line": 10,
+      "endLine": 15
+    },
+    "DELETE": {
+      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+      "class": null,
+      "name": "DELETE",
+      "signature": "DELETE({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b0e0de6868d4",
+      "line": 17,
+      "endLine": 21
+    },
+    "resetStaleTasks": {
+      "file": "src\\hooks.server.ts",
+      "class": null,
+      "name": "resetStaleTasks",
+      "signature": "resetStaleTasks()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Au démarrage du serveur, toute task \"running\" est orpheline → failed.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "907bd097312a",
+      "line": 4,
+      "endLine": 10
+    }
+  },
+  "classes": {}
+}

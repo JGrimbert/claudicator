@@ -8,11 +8,13 @@
     let prompt = $state("");
     let loadingContext = $state(false);
     let contextError = $state("");
+    let loadedId = $state("");
 
-    // Recharge le prompt contextuel chaque fois que la task change
+    // Recharge le prompt uniquement si l'ID de la task change réellement
     $effect(() => {
-        const id = task?.id;
-        if (!id) { prompt = ""; return; }
+        const id = task?.id ?? "";
+        if (!id || id === loadedId) return;
+        loadedId = id;
         loadContext(id);
     });
 
@@ -92,7 +94,7 @@
         {/if}
         <button
             class="ai-reload"
-            onclick={() => loadContext(task.id)}
+            onclick={() => { loadedId = ""; loadContext(task.id); }}
             disabled={loadingContext}
             title="Regénérer le contexte"
         >↺</button>

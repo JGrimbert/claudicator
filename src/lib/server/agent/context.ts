@@ -175,10 +175,11 @@ function expandWithCallees(
 
 /**
  * Assemble le contexte agent pour une tâche donnée.
- * @param task  - La tâche sélectionnée (id + title)
+ * @param task        - La tâche sélectionnée (id + title)
  * @param projectRoot - Racine du projet cible analysé par lolve-cartography
+ * @param description - Corps de l'issue GitHub associée (optionnel)
  */
-export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: string): AgentContext {
+export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: string, description?: string): AgentContext {
     const symbolMap = loadSymbolMap(projectRoot, task.title);
     const knownClasses = new Set(Object.keys(symbolMap));
 
@@ -204,7 +205,7 @@ export function buildContext(task: Pick<Task, "id" | "title">, projectRoot: stri
 
     const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
     const projectDocs = loadProjectDocs(projectRoot);
-    ctx.prompt = formatPrompt(ctx, { conceptMap, projectDocs });
+    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs });
 
     return ctx;
 }

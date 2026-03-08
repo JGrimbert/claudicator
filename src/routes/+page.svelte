@@ -296,7 +296,9 @@
 
     // ─── Colonnes redimensionnables ───────────────────────────────────────────
     const STORAGE_KEY = "claudicator:panel-widths";
+    const ASIDE_SPLIT_KEY = "claudicator:aside-split";
     const LIMITS = { aside: [180, 600], section: [200, 600] } as const;
+    const ASIDE_LIMITS = [20, 80] as const;
 
     function loadWidths() {
         try {
@@ -313,7 +315,18 @@
     }
 
     let widths = { aside: 300, section: 340 };
-    onMount(() => { widths = loadWidths(); });
+    let asideTopPct = 60;
+
+    onMount(() => {
+        widths = loadWidths();
+        try {
+            const raw = localStorage.getItem(ASIDE_SPLIT_KEY);
+            if (raw) {
+                const v = Number(raw);
+                if (!isNaN(v)) asideTopPct = Math.max(ASIDE_LIMITS[0], Math.min(ASIDE_LIMITS[1], v));
+            }
+        } catch { /* ignore */ }
+    });
 
     function saveWidths() {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(widths)); } catch { /* ignore */ }
@@ -330,7 +343,27 @@
         e.preventDefault();
     }
 
+    // Handle vertical (aside split)
+    let draggingV = false;
+    let dragVStartY = 0;
+    let dragVStartPct = 60;
+    let asideEl: HTMLElement | null = null;
+
+    function startDragV(e: MouseEvent) {
+        draggingV = true;
+        dragVStartY = e.clientY;
+        dragVStartPct = asideTopPct;
+        e.preventDefault();
+    }
+
     function onMove(e: MouseEvent) {
+        if (draggingV && asideEl) {
+            const asideH = asideEl.offsetHeight;
+            const delta = e.clientY - dragVStartY;
+            const deltaPct = (delta / asideH) * 100;
+            asideTopPct = Math.max(ASIDE_LIMITS[0], Math.min(ASIDE_LIMITS[1], dragVStartPct + deltaPct));
+            return;
+        }
         if (!dragging) return;
         const delta = e.clientX - dragStartX;
         const [min, max] = LIMITS[dragging];
@@ -341,17 +374,30 @@
     }
 
     function onUp() {
+        if (draggingV) {
+            draggingV = false;
+            try { localStorage.setItem(ASIDE_SPLIT_KEY, String(asideTopPct)); } catch { /* ignore */ }
+        }
         if (dragging) { saveWidths(); dragging = null; }
     }
 </script>
 
 <svelte:window onmousemove={onMove} onmouseup={onUp} />
 
-<div class="app" class:dragging>
+<div class="app" class:dragging class:dragging-v={draggingV}>
     <TopBar />
     <div class="panels">
-        <aside style="width: {widths.aside}px">
-            <ArtifactViewer />
+        <aside style="width: {widths.aside}px" bind:this={asideEl}>
+            <div class="aside-top" style="height: {asideTopPct}%">
+                <ArtifactViewer />
+            </div>
+            <div
+                class="vhandle"
+                role="separator"
+                aria-label="Redimensionner entre Artefact et Issues"
+                onmousedown={startDragV}
+                class:active={draggingV}
+            ></div>
             <IssueList />
         </aside>
         <div
@@ -423,4 +469,22 @@ section {
     transition: border-color 0.15s;
 }
 .handle:hover, .handle.active { border-color: #3a3a3a; }
+.vhandle {
+    flex-shrink: 0;
+    height: 6px;
+    cursor: row-resize;
+    border-top: 1px solid #1e1e1e;
+    border-bottom: 1px solid #1e1e1e;
+    background: transparent;
+    transition: border-color 0.15s;
+}
+.vhandle:hover, .vhandle.active { border-color: #3a3a3a; }
+.aside-top {
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.app.dragging-v { user-select: none; cursor: row-resize; }
 </style>
