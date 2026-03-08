@@ -41,6 +41,27 @@ export async function revertAll(root: string): Promise<void> {
     await g.raw(["clean", "-fd"]);
 }
 
+export async function pushBranch(root: string, branch: string): Promise<void> {
+    const g = simpleGit(root);
+    await g.push("origin", branch, ["--set-upstream"]);
+}
+
+export async function getBranchState(root: string, branch: string): Promise<{ pushed: boolean; merged: boolean }> {
+    const g = simpleGit(root);
+    const remote = await g.branch(["-r"]);
+    const pushed = remote.all.some(b => b.trim() === `origin/${branch}`);
+    const main = await getMainBranch(root);
+    const mergedResult = await g.branch(["--merged", main]);
+    const merged = mergedResult.all.map(b => b.trim()).includes(branch);
+    return { pushed, merged };
+}
+
+export async function getMainBranch(root: string): Promise<string> {
+    const g = simpleGit(root);
+    const branches = await g.branchLocal();
+    return branches.all.includes("main") ? "main" : "master";
+}
+
 export async function mergeBranch(root: string, branch: string): Promise<void> {
     const g = simpleGit(root);
     const branches = await g.branchLocal();

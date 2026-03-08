@@ -41,8 +41,6 @@
 .item-row:hover { background: #1a1a2e; }
 .item-row.active {
     background: #1e1e3a;
-    border-left: 2px solid #7c6af7;
-    padding-left: calc(1rem - 2px);
 }
 .item-row.closed { opacity: 0.55; }
 .item-top {

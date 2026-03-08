@@ -174,16 +174,31 @@
         }
     }
 
-    async function selectTask(task: Task) {
-        if (selected?.id === task.id) {
+    async function selectTask(initialTask: Task) {
+        if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             implEdit = ""; commitMsg = ""; selectedPanel = "plan"; wfError = "";
             return;
         }
-        selected = task;
+        selected = initialTask;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
+
+        let task = initialTask;
+
+        // Synchronise l'état git avant de charger le diff
+        if (task.branch) {
+            try {
+                const syncRes = await fetch(`/api/tasks/${task.id}/sync`, { method: "POST" });
+                const synced = await syncRes.json();
+                if (synced && !synced.error) {
+                    tasks = tasks.map(t => t.id === synced.id ? synced : t);
+                    selected = synced;
+                    task = synced;
+                }
+            } catch { /* silencieux */ }
+        }
 
         const toLoad: Promise<void>[] = [loadPlan(task.id)];
         if (task.branch) toLoad.push(loadDiff(task.id));
