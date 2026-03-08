@@ -20,6 +20,7 @@
     "| I2 | `IssueList.svelte` | `.new-btn` harmonisé : style `plan-btn` (border `#222`, couleur `#555`, font `0.62rem`, padding `0.15rem 0.5rem`) |"
   ],
   "createdAt": "2026-03-08T17:52:16.183Z",
-  "updatedAt": "2026-03-08T19:47:22.540Z",
-  "branch": "issue-1-details-inconsistance-ui"
+  "updatedAt": "2026-03-08T20:36:11.068Z",
+  "branch": "issue-1-details-inconsistance-ui",
+  "pushed": true
 }

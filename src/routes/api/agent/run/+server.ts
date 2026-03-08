@@ -5,6 +5,10 @@ import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import { register, unregister, killProcess } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+function stripAnsi(str: string): string {
+    return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
+}
+
 /** Sauvegarde la sortie de l'agent dans <taskId>.plan.md à côté du JSON de la task. */
 function savePlan(taskId: string, lines: string[]) {
     const agentLines = lines.filter(l => !l.startsWith("[") || !l.endsWith("]"));
@@ -82,7 +86,11 @@ export async function POST({ request }) {
                 stderrBuf += chunk.toString();
                 const lines = stderrBuf.split("\n");
                 stderrBuf = lines.pop() ?? "";
-                lines.filter(Boolean).forEach(l => emit(l, "system"));
+                lines.forEach(l => {
+                    const line = stripAnsi(l);
+                    if (!line || line.length < 2) return;
+                    emit(line, "system");
+                });
             });
             proc.on("error", (err: Error) => {
                 emit(`[erreur: ${err.message}]`, "system");

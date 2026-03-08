@@ -65,6 +65,22 @@
 
     // Filtre les lignes purement techniques ([pid:...])
     $: visibleLogs = $agentRunState.logs.filter(l => !/^\[pid:\d+\]$/.test(l.line));
+    $: systemLogs  = $agentRunState.logs.filter(l => l.type === 'system' && !/^\[pid:\d+\]$/.test(l.line));
+    $: agentLogs   = $agentRunState.logs.filter(l => l.type === 'agent');
+
+    // Debounce du dernier message système pour éviter le clignotement
+    let statusLine = "";
+    let statusDebounce: ReturnType<typeof setTimeout> | null = null;
+    $: {
+        if (systemLogs.length > 0) {
+            if (statusDebounce) clearTimeout(statusDebounce);
+            statusDebounce = setTimeout(() => {
+                statusLine = systemLogs[systemLogs.length - 1].line;
+            }, 150);
+        } else {
+            statusLine = "";
+        }
+    }
 </script>
 
 <div class="console">
@@ -94,10 +110,14 @@
         bind:this={logArea}
         onscroll={onScroll}
     >
-        {#if visibleLogs.length === 0}
+        {#if agentLogs.length === 0}
             {#if $agentRunState.running}
-                <span class="hint blink">{FRAMES[frame]} En attente de la première sortie…</span>
-            {:else}
+                {#if statusLine}
+                    <span class="hint status">{FRAMES[frame]} {statusLine}</span>
+                {:else}
+                    <span class="hint blink">{FRAMES[frame]} En attente de la première sortie…</span>
+                {/if}
+            {:else if visibleLogs.length === 0}
                 <span class="hint">Aucune sortie</span>
             {/if}
         {:else}
@@ -238,6 +258,12 @@
 }
 .blink { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
+.hint.status {
+    color: #4a9eff;
+    font-style: italic;
+    font-size: 0.7rem;
+    opacity: 0.75;
+}
 
 /* ── Input stdin ── */
 .input-bar {
