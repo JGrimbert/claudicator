@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, agentRunState, contextState, type RunLog, type ContextItem } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, agentRunState, contextState, type ContextItem } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
 
@@ -90,69 +89,6 @@
 
     function onKey(e: KeyboardEvent) {
         if (e.key === "Enter") createTask();
-    }
-
-    // ─── Lancer Claude sur une task ──────────────────────────────────────────
-    let showRunFor: string | null = null;
-    let runPrompt = "";
-
-    function serializeContext(label: string): string {
-        const ctx = get(contextState);
-        if (ctx.items.length === 0) return label;
-        const lines = ctx.items.slice(0, 15).map(item => {
-            if (item.kind === "method") {
-                const loc = item.startLine ? `:${item.startLine}` : "";
-                return `- ${item.file}${loc} — ${item.key}${item.summary ? ` : "${item.summary}"` : ""}`;
-            }
-            return `- ${item.file}:${item.line} — ${item.content.trim()}`;
-        });
-        return `Contexte du codebase pertinent :\n${lines.join("\n")}\n\nTâche : ${label}`;
-    }
-
-    async function runTask(task: Task) {
-        const base   = runPrompt.trim() || task.title;
-        const prompt = serializeContext(base);
-        if (!base) return;
-        showRunFor = null;
-        runPrompt = "";
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
-        try {
-            const res = await fetch("/api/agent/run", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt, taskId: task.id })
-            });
-            if (!res.ok || !res.body) {
-                agentRunState.update(s => ({
-                    ...s,
-                    running: false,
-                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }]
-                }));
-                return;
-            }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                for (const raw of dec.decode(value).split("\n")) {
-                    if (raw.startsWith("data: ")) {
-                        try {
-                            const event = JSON.parse(raw.slice(6)) as RunLog;
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
-                        } catch { /* skip */ }
-                    }
-                }
-            }
-        } finally {
-            agentRunState.update(s => ({ ...s, running: false }));
-            await loadTasks();
-        }
-    }
-
-    function openRun(task: Task) {
-        showRunFor = task.id;
-        runPrompt = task.title;
     }
 
     async function selectTask(task: Task) {

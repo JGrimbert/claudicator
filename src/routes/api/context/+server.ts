@@ -15,7 +15,7 @@ export async function POST({ request }) {
         return json({ error: "Task introuvable" }, { status: 404 });
     }
 
-    const root = projectRoot?.trim() || process.cwd();
+    const root = projectRoot?.trim() || process.env.TARGET_PROJECT_PATH || process.env.LC_PROJECT_PATH || process.cwd();
 
     try {
         const ctx = buildContext(task, root);

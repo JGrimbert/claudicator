@@ -35,6 +35,13 @@
      *    src/lib/components/AgentInput.svelte    — textarea + bouton lancement
      */
 
+    /**
+     * DONE: Réduire le bruit du contexte envoyé à l’IA
+     * Voir plans/todo-context-noise.md
+     * Implémenté dans src/lib/server/agent/context.ts — loadSymbolMap(projectRoot, query, maxClasses)
+     * Scoring par mots-clés du titre → top 12 classes pertinentes seulement.
+     */
+
 
     /**
      * TODO: Console de l'agent:
@@ -49,6 +56,103 @@
      * - permettre d'interrompre une tâche en cours
      * - permettre de rejouer une étape
      *
+     */
+    
+    /**
+     * DONE: Sélection automatique des symboles pertinents pour le SYMBOL MAP
+     *
+     * Problème
+     * Le SYMBOL MAP contient encore trop de symboles non liés à la tâche.
+     * L’IA doit filtrer elle-même les éléments pertinents, ce qui crée du bruit
+     * et réduit l’efficacité du prompt.
+     *
+     * Objectif
+     * Générer automatiquement un SYMBOL MAP réduit (≈5–15 symboles) contenant
+     * uniquement les éléments réellement pertinents pour la tâche décrite dans TASK.
+     *
+     * Principe général
+     * Utiliser la phrase TASK comme point d’ancrage sémantique pour filtrer
+     * les symboles de la codebase.
+     *
+     * Étapes d’implémentation
+     *
+     * 1. Extraire les mots-clés de TASK
+     *    - Convertir la phrase en minuscules
+     *    - Supprimer les mots très communs (stopwords)
+     *    - Garder les mots significatifs
+     *
+     *    Exemple :
+     *      TASK: "Sorted est devenu inutile puisque focused est géré séparément"
+     *
+     *      mots-clés retenus :
+     *      ["sorted", "focused"]
+     *
+     *
+     * 2. Rechercher les symboles liés à ces mots-clés
+     *    Parcourir l’index de symboles et sélectionner ceux dont :
+     *
+     *      - le nom contient un mot-clé
+     *      - ou dont la signature contient un mot-clé
+     *
+     *    Exemple :
+     *
+     *      useFocusedMap
+     *      useFocusedSeed
+     *
+     *
+     * 3. Ajouter le voisinage structurel
+     *    Pour chaque symbole trouvé :
+     *
+     *      - ajouter la classe ou le module parent
+     *      - ajouter les fonctions directement appelées (si CALL GRAPH disponible)
+     *
+     *    Objectif : fournir un minimum de contexte structurel.
+     *
+     *
+     * 4. Limiter la taille finale
+     *    Appliquer un plafond pour éviter le bruit :
+     *
+     *      SYMBOL_MAP_MAX = 15
+     *
+     *    Priorité de sélection :
+     *
+     *      1. symboles contenant directement un mot-clé
+     *      2. symboles appelés par ceux-ci
+     *      3. symboles parents
+     *
+     *
+     * 5. Générer le SYMBOL MAP final
+     *
+     *    Format attendu :
+     *
+     *    SYMBOL MAP
+     *
+     *    useFocusedMap
+     *      useFocusedMap(localKey = "focusedSeedsMap")
+     *
+     *    useFocusedSeed
+     *      useFocusedSeed(filteredLibraries, focusedMap, isLoadingFocus)
+     *
+     *
+     * Résultat attendu
+     *
+     * - SYMBOL MAP compact (~5–15 symboles)
+     * - contexte fortement lié à la tâche
+     * - réduction du bruit dans le prompt
+     * - meilleure efficacité des réponses IA
+     *
+     *
+     * Amélioration possible (optionnelle)
+     *
+     * Ajouter un scoring simple pour classer les symboles :
+     *
+     *    score =
+     *      +5 si nom contient un mot-clé
+     *      +3 si signature contient un mot-clé
+     *      +2 si appelé par un symbole sélectionné
+     *      +1 si dans le même fichier
+     *
+     * Puis garder les N meilleurs symboles.
      */
 
     /**
@@ -70,6 +174,10 @@
      * - les titres ne disparaissent pas mais s'affichent dans la section centrale quand on clique dessus, et c'est là que le prompt prérempli s'affiche
      * - les composant actules en dessous de la zone centrale (input recherche, liste méthodes/fichiers/todo etc, doit pouvoir être retrouvé qd on clique sur un onglet dans la section centrale, et ne pas disparaitre systématiquement à chaque click sur une task
      */
+
+    /** TODO: initial commit
+     * - premier PR <3
+     **/
 
     /**
      * TODO: Description de la issue dynamique

@@ -6,7 +6,8 @@
       "Read(//c/lolve/.cache/**)",
       "Read(//c/lolve/**)",
       "Bash(node_modules/.bin/svelte-kit sync:*)",
-      "Bash(node_modules/.bin/svelte-check:*)"
+      "Bash(node_modules/.bin/svelte-check:*)",
+      "Bash(python3:*)"
     ]
   }
 }
