@@ -16,6 +16,7 @@ export type Task = {
     status: TaskStatus;
     issueNumber?: number;
     branch?: string;
+    pushed?: boolean;
     logs: string[];
     usage?: TokenUsage;       // tokens du dernier run
     totalUsage?: TokenUsage;  // tokens cumulés (tous runs)
@@ -72,7 +73,7 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
     return task;
 }
 
-export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "usage" | "totalUsage">>): Task | null {
+export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage">>): Task | null {
     const task = getTask(id);
     if (!task) return null;
     const updated: Task = { ...task, ...patch, updatedAt: new Date().toISOString() };

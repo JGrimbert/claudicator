@@ -12,6 +12,7 @@
         status: TaskStatus;
         issueNumber?: number;
         branch?: string;
+        pushed?: boolean;
         logs: string[];
         usage?: TokenUsage;
         totalUsage?: TokenUsage;
@@ -60,6 +61,10 @@
     let committing = false;
     let reverting = false;
     let revertConfirm = false;
+
+    // Push / merge
+    let pushing = false;
+    let merging = false;
 
     $: filtered = filter === "all" ? tasks : tasks.filter(t => t.status === filter);
     $: countOf = (f: Filter) => f === "all" ? tasks.length : tasks.filter(t => t.status === f).length;
@@ -315,6 +320,33 @@
             wfError = e.message;
         } finally { reverting = false; }
     }
+
+    async function pushBranch(task: Task) {
+        if (pushing) return;
+        pushing = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/push`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            tasks = tasks.map(t => t.id === data.id ? data : t);
+            if (selected?.id === task.id) selected = data;
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { pushing = false; }
+    }
+
+    async function mergeBranch(task: Task) {
+        if (merging) return;
+        merging = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/merge`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            await loadTasks();
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { merging = false; }
+    }
 </script>
 
 <div class="panel">
@@ -510,8 +542,20 @@
                             <div class="push-panel">
                                 <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
                                 <div class="push-actions">
-                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">↑ Push</button>
-                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">⇒ Merge → main</button>
+                                    <button
+                                        class="wf-btn"
+                                        class:wf-active={!task.pushed && !pushing}
+                                        class:wf-secondary={task.pushed}
+                                        onclick={() => pushBranch(task)}
+                                        disabled={pushing}
+                                    >{pushing ? "…" : task.pushed ? "✓ Pushé" : "↑ Push"}</button>
+                                    <button
+                                        class="wf-btn"
+                                        class:wf-active={task.pushed && !merging}
+                                        class:wf-disabled={!task.pushed}
+                                        onclick={() => mergeBranch(task)}
+                                        disabled={!task.pushed || merging}
+                                    >{merging ? "…" : "⇒ Merge → main"}</button>
                                 </div>
                             </div>
                         {/if}
