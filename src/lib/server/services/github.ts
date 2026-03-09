@@ -127,6 +127,11 @@ export async function mergePullRequest(owner: string, repo: string, pullNumber: 
     return data;
 }
 
+export async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    const octokit = getOctokit();
+    await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
+}
+
 export async function createIssueComment(issueNumber: number, body: string) {
     const { getCurrentProject } = await import("./projects");
     const project = getCurrentProject();

@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 
 export type ContextItem =
     | { kind: "method"; key: string; file: string; startLine: number | null; summary: string; snippet: string | null }
@@ -35,7 +35,7 @@ export const agentRunState = writable<{
 export const taskRefreshTick = writable(0);
 export function notifyTaskCreated() { taskRefreshTick.update(n => n + 1); }
 
-export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
+export const hoveredIssueNumber = writable<number | null>(null);
 
 export const issueAnalysis = writable<{
     running: boolean;
@@ -47,6 +47,28 @@ export const issueAnalysis = writable<{
         modified: number[];
     } | null;
 }>({ running: false, result: null, logs: [], snapshotDiff: null });
+
+export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
+
+export type PlanGroup = { index: number; name: string; issues: number[] };
+
+function parseGroups(text: string): PlanGroup[] {
+    const groups: PlanGroup[] = [];
+    const blocks = text.split(/(?=### Groupe \d)/);
+    for (const block of blocks) {
+        const nameMatch = block.match(/### Groupe \d+ — (.+)/);
+        if (!nameMatch) continue;
+        const issueMatch = block.match(/Issues\s*:\s*((?:#\d+(?:,\s*)?)+)/);
+        const issues = issueMatch
+            ? [...issueMatch[1].matchAll(/#(\d+)/g)].map(m => parseInt(m[1]))
+            : [];
+        if (issues.length > 0)
+            groups.push({ index: groups.length + 1, name: nameMatch[1].trim(), issues });
+    }
+    return groups;
+}
+
+export const planGroups = derived(issueAnalysis, $a => $a.result ? parseGroups($a.result) : []);
 
 export type Log = {
     ts: string;

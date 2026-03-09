@@ -71,6 +71,16 @@
         await loadSnapshot();
     });
 
+    async function openAnalysis() {
+        try {
+            const r = await fetch("/api/issues/analysis");
+            if (r.ok) {
+                const text = await r.text();
+                if (text.trim()) issueAnalysis.update(s => ({ ...s, result: text }));
+            }
+        } catch { /* silencieux */ }
+    }
+
     async function startAnalysis() {
         issueAnalysis.update(s => ({ ...s, running: true, logs: [], result: null }));
         try {
@@ -187,6 +197,11 @@
             >
                 {$issueAnalysis.running ? "⟳ Analyse…" : hasResult ? "⟳ Màj" : "⊞ Analyser"}
             </button>
+            {#if hasResult && !$issueAnalysis.running}
+                <button class="plan-btn" on:click={openAnalysis} title="Voir le plan d'analyse">
+                    ⊟ Plan
+                </button>
+            {/if}
             <button class="new-btn" on:click={creating ? closeCreate : openCreate} title="Nouvelle issue">
                 {creating ? "✕" : "+"}
             </button>
@@ -284,6 +299,18 @@
 }
 .analyze-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
 .analyze-btn:disabled { opacity: 0.35; cursor: default; }
+.plan-btn {
+    background: none;
+    border: 1px solid #2a2a4a;
+    color: #4a4a7a;
+    font-size: 0.62rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.15s, border-color 0.15s;
+}
+.plan-btn:hover { color: #9181f9; border-color: #9181f9; }
 .new-btn {
     background: none;
     border: 1px solid #222;

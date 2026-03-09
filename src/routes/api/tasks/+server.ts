@@ -10,6 +10,11 @@ export async function POST({ request }) {
     if (!body.title?.trim()) {
         return json({ error: "Titre manquant" }, { status: 400 });
     }
+    const existing = body.issueNumber !== undefined
+        ? listTasks().find(t => t.issueNumber === body.issueNumber)
+        : undefined;
+    if (existing) return json({ ...existing, alreadyExisted: true }, { status: 200 });
+
     const task = createTask({
         title: body.title.trim(),
         issueNumber: body.issueNumber,
