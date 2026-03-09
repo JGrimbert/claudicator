@@ -343,6 +343,7 @@
             const data = await res.json();
             if (data.error) { wfError = data.error; return; }
             await loadTasks();
+            selected = null;
         } catch (e: any) {
             wfError = e.message;
         } finally { merging = false; }

@@ -1,17 +1,38 @@
 import { json } from "@sveltejs/kit";
-import { getTask } from "$lib/server/services/tasks";
-import { mergeBranch } from "$lib/server/services/git";
-import { getProjectRoot } from "$lib/server/services/projects";
+import { getTask, updateTask } from "$lib/server/services/tasks";
+import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";
+import { getMainBranch } from "$lib/server/services/git";
+import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
 
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });
     if (!task.branch) return json({ error: "Pas de branche associée" }, { status: 400 });
 
-    const root = getProjectRoot();
+    const project = getCurrentProject();
+    const owner = project?.owner;
+    const repo  = project?.repo;
+    if (!owner || !repo) return json({ error: "Projet sans owner/repo configuré" }, { status: 400 });
+
     try {
-        await mergeBranch(root, task.branch);
-        return json({ ok: true });
+        const root = getProjectRoot();
+        const base = await getMainBranch(root);
+
+        // Réutiliser une PR ouverte existante ou en créer une
+        let pr = await findOpenPullRequest(owner, repo, task.branch, base);
+        if (!pr) {
+            const issueRef = task.issueNumber ? `\n\nCloses #${task.issueNumber}` : "";
+            pr = await createPullRequest(
+                owner, repo,
+                task.title,
+                `Implémentation de : ${task.title}${issueRef}`,
+                task.branch,
+                base
+            );
+        }
+
+        await mergePullRequest(owner, repo, pr.number);
+        return json(updateTask(params.id, { status: "done" }));
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return json({ error: message }, { status: 500 });
