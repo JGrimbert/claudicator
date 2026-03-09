@@ -18,7 +18,7 @@ export const contextState = writable<Context>({
     error: "",
 });
 
-export type RunLog = { line: string; type: "agent" | "system" };
+export type RunLog = { line: string; type: "agent" | "system" | "usage" };
 
 export const agentRunState = writable<{
     taskId: string | null;
@@ -34,6 +34,8 @@ export const agentRunState = writable<{
 
 export const taskRefreshTick = writable(0);
 export function notifyTaskCreated() { taskRefreshTick.update(n => n + 1); }
+
+export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
 export type Log = {
     ts: string;

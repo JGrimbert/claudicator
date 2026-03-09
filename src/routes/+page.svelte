@@ -6,7 +6,7 @@
     import RunConsole from "$lib/components/RunConsole.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
-    import { agentRunState } from "$lib/stores/agent";
+    import { agentRunState, projectUsage } from "$lib/stores/agent";
 
     /**
      * DONE: Prompt contextuel de l'agent
@@ -222,13 +222,6 @@
      */
 
     /**
-     * TODO: Prise en compte du nombre de tokens
-     * - Nombre de tokens envoyés par l'agent à côté des btn qui lancent les tasks
-     * - Nombre de tokens utilisés pour réaliser une tâche
-     * - Total des tokens utilisés pour cette task
-     */
-
-    /**
      * TODO: Amélioration d'une task
      * - le bouton de retour est moche il faut trouver mieux
      * - transition animée douce au début
@@ -317,7 +310,15 @@
     let widths = { aside: 300, section: 340 };
     let asideTopPct = 60;
 
+    async function loadProjectUsage() {
+        try {
+            const res = await fetch("/api/usage");
+            if (res.ok) projectUsage.set(await res.json());
+        } catch { /* silencieux */ }
+    }
+
     onMount(() => {
+        loadProjectUsage();
         widths = loadWidths();
         try {
             const raw = localStorage.getItem(ASIDE_SPLIT_KEY);

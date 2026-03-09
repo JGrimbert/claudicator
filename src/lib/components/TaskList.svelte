@@ -5,13 +5,17 @@
     import AgentInput from "$lib/components/AgentInput.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
+    type TokenUsage = { inputTokens: number; outputTokens: number };
     type Task = {
         id: string;
         title: string;
         status: TaskStatus;
         issueNumber?: number;
         branch?: string;
+        pushed?: boolean;
         logs: string[];
+        usage?: TokenUsage;
+        totalUsage?: TokenUsage;
         createdAt: string;
         updatedAt: string;
     };
@@ -57,6 +61,10 @@
     let committing = false;
     let reverting = false;
     let revertConfirm = false;
+
+    // Push / merge
+    let pushing = false;
+    let merging = false;
 
     $: filtered = filter === "all" ? tasks : tasks.filter(t => t.status === filter);
     $: countOf = (f: Filter) => f === "all" ? tasks.length : tasks.filter(t => t.status === f).length;
@@ -312,6 +320,33 @@
             wfError = e.message;
         } finally { reverting = false; }
     }
+
+    async function pushBranch(task: Task) {
+        if (pushing) return;
+        pushing = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/push`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            tasks = tasks.map(t => t.id === data.id ? data : t);
+            if (selected?.id === task.id) selected = data;
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { pushing = false; }
+    }
+
+    async function mergeBranch(task: Task) {
+        if (merging) return;
+        merging = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/merge`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            await loadTasks();
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { merging = false; }
+    }
 </script>
 
 <div class="panel">
@@ -369,6 +404,15 @@
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
                             <span class="meta-tag" style="color:#{STATUS_COLOR[task.status]};border-color:#1a1a1a">{STATUS_LABEL[task.status]}</span>
+                            {#if task.totalUsage}
+                                <span class="meta-tag meta-tokens" title="Tokens cumulés : {task.totalUsage.inputTokens.toLocaleString('fr-FR')} in · {task.totalUsage.outputTokens.toLocaleString('fr-FR')} out">
+                                    {Math.round(task.totalUsage.inputTokens / 100) / 10}k / {Math.round(task.totalUsage.outputTokens / 100) / 10}k tok
+                                </span>
+                            {:else if task.usage}
+                                <span class="meta-tag meta-tokens" title="{task.usage.inputTokens.toLocaleString('fr-FR')} in · {task.usage.outputTokens.toLocaleString('fr-FR')} out">
+                                    {Math.round(task.usage.inputTokens / 100) / 10}k / {Math.round(task.usage.outputTokens / 100) / 10}k tok
+                                </span>
+                            {/if}
                         </div>
 
                         <!-- ── Barre workflow ── -->
@@ -498,8 +542,20 @@
                             <div class="push-panel">
                                 <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
                                 <div class="push-actions">
-                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">↑ Push</button>
-                                    <button class="wf-btn wf-disabled" disabled title="Bientôt disponible">⇒ Merge → main</button>
+                                    <button
+                                        class="wf-btn"
+                                        class:wf-active={!task.pushed && !pushing}
+                                        class:wf-secondary={task.pushed}
+                                        onclick={() => pushBranch(task)}
+                                        disabled={pushing}
+                                    >{pushing ? "…" : task.pushed ? "✓ Pushé" : "↑ Push"}</button>
+                                    <button
+                                        class="wf-btn"
+                                        class:wf-active={task.pushed && !merging}
+                                        class:wf-disabled={!task.pushed}
+                                        onclick={() => mergeBranch(task)}
+                                        disabled={!task.pushed || merging}
+                                    >{merging ? "…" : "⇒ Merge → main"}</button>
                                 </div>
                             </div>
                         {/if}
@@ -629,6 +685,7 @@
 }
 .meta-tag.mono { font-family: 'JetBrains Mono', monospace; }
 .meta-tag.dim { color: #333; }
+.meta-tag.meta-tokens { color: #3a3a5a; font-family: 'JetBrains Mono', monospace; cursor: help; }
 
 /* ── Barre workflow ── */
 .wf-bar {
