@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState } from "$lib/stores/agent";
+    import { agentState, projectUsage } from "$lib/stores/agent";
     import ProjectSettings from "./ProjectSettings.svelte";
 
     type Project = { id: string; name: string; path: string; owner?: string; repo?: string };
@@ -212,6 +212,12 @@
 
     </div>
 
+    {#if $projectUsage}
+        <span class="usage-total" title="Total projet : {$projectUsage.totalInputTokens.toLocaleString('fr-FR')} in · {$projectUsage.totalOutputTokens.toLocaleString('fr-FR')} out">
+            {Math.round(($projectUsage.totalInputTokens + $projectUsage.totalOutputTokens) / 1000)}k tok
+        </span>
+    {/if}
+
     <span class="status" data-status={$agentState.status}>
         {statusLabels[$agentState.status]}
     </span>
@@ -391,6 +397,15 @@
     color: #f44336;
     padding: 0 0.8rem 0.4rem;
     font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Usage global ── */
+.usage-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: #2a2a4a;
+    flex-shrink: 0;
+    cursor: help;
 }
 
 /* ── Statut ── */

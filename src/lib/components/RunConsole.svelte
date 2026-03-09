@@ -63,10 +63,19 @@
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendInput(); }
     }
 
-    // Filtre les lignes purement techniques ([pid:...])
-    $: visibleLogs = $agentRunState.logs.filter(l => !/^\[pid:\d+\]$/.test(l.line));
+    // Filtre les lignes purement techniques ([pid:...]) et les events usage
+    $: visibleLogs = $agentRunState.logs.filter(l => l.type !== 'usage' && !/^\[pid:\d+\]$/.test(l.line));
     $: systemLogs  = $agentRunState.logs.filter(l => l.type === 'system' && !/^\[pid:\d+\]$/.test(l.line));
     $: agentLogs   = $agentRunState.logs.filter(l => l.type === 'agent');
+
+    // Extraction des tokens depuis les events SSE de type "usage"
+    type TokenUsage = { inputTokens: number; outputTokens: number };
+    $: lastUsage = (() => {
+        const usageLogs = $agentRunState.logs.filter(l => l.type === 'usage');
+        if (usageLogs.length === 0) return null;
+        try { return JSON.parse(usageLogs[usageLogs.length - 1].line) as TokenUsage; }
+        catch { return null; }
+    })();
 
     // Debounce du dernier message système pour éviter le clignotement
     let statusLine = "";
@@ -126,6 +135,16 @@
             {/each}
         {/if}
     </div>
+
+    <!-- ── Tokens (affiché en fin de run si présent) ── -->
+    {#if !$agentRunState.running && lastUsage}
+        <div class="usage-bar">
+            <span class="usage-label">Tokens</span>
+            <span class="usage-val">{lastUsage.inputTokens.toLocaleString("fr-FR")} envoyés</span>
+            <span class="usage-sep">·</span>
+            <span class="usage-val">{lastUsage.outputTokens.toLocaleString("fr-FR")} reçus</span>
+        </div>
+    {/if}
 
     <!-- ── Input stdin (pour répondre à Claude) ── -->
     {#if $agentRunState.running}
@@ -263,6 +282,33 @@
     font-style: italic;
     font-size: 0.7rem;
     opacity: 0.75;
+}
+
+/* ── Usage tokens ── */
+.usage-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 1.2rem;
+    border-top: 1px solid #1a1a2a;
+    flex-shrink: 0;
+    background: #07070f;
+}
+.usage-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #2a2a3a;
+    flex-shrink: 0;
+}
+.usage-val {
+    font-size: 0.63rem;
+    color: #4a4a6a;
+    font-family: 'JetBrains Mono', monospace;
+}
+.usage-sep {
+    font-size: 0.6rem;
+    color: #222;
 }
 
 /* ── Input stdin ── */

@@ -5,6 +5,11 @@ import { getCurrentProject } from "./projects";
 
 export type TaskStatus = "pending" | "running" | "done" | "failed";
 
+export type TokenUsage = {
+    inputTokens: number;
+    outputTokens: number;
+};
+
 export type Task = {
     id: string;
     title: string;
@@ -12,6 +17,8 @@ export type Task = {
     issueNumber?: number;
     branch?: string;
     logs: string[];
+    usage?: TokenUsage;       // tokens du dernier run
+    totalUsage?: TokenUsage;  // tokens cumulés (tous runs)
     createdAt: string;
     updatedAt: string;
 };
@@ -65,7 +72,7 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
     return task;
 }
 
-export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch">>): Task | null {
+export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "usage" | "totalUsage">>): Task | null {
     const task = getTask(id);
     if (!task) return null;
     const updated: Task = { ...task, ...patch, updatedAt: new Date().toISOString() };
