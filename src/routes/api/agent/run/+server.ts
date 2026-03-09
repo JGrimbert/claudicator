@@ -69,7 +69,7 @@ export async function POST({ request }) {
 
             const proc = spawn(
                 "claude",
-                ["-p", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
+                ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
                 { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
             );
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }

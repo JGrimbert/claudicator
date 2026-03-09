@@ -119,14 +119,14 @@
         bind:this={logArea}
         onscroll={onScroll}
     >
-        {#if agentLogs.length === 0}
+        {#if visibleLogs.length === 0}
             {#if $agentRunState.running}
                 {#if statusLine}
                     <span class="hint status">{FRAMES[frame]} {statusLine}</span>
                 {:else}
                     <span class="hint blink">{FRAMES[frame]} En attente de la première sortie…</span>
                 {/if}
-            {:else if visibleLogs.length === 0}
+            {:else}
                 <span class="hint">Aucune sortie</span>
             {/if}
         {:else}

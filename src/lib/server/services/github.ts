@@ -47,6 +47,26 @@ export async function getIssues(owner: string, repo: string) {
     return data;
 }
 
+export async function getIssuesWithBodies(owner: string, repo: string): Promise<Array<{
+    number: number;
+    title: string;
+    body: string | null;
+    labels: string[];
+    updatedAt: string;
+}>> {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.listForRepo({
+        owner, repo, state: "open", per_page: 100
+    });
+    return data.map(i => ({
+        number:    i.number,
+        title:     i.title,
+        body:      i.body ?? null,
+        labels:    i.labels.map(l => typeof l === "string" ? l : (l.name ?? "")),
+        updatedAt: i.updated_at,
+    }));
+}
+
 export async function getRepoFile(owner: string, repo: string, path: string): Promise<string> {
     const octokit = getOctokit();
     const { data } = await octokit.repos.getContent({ owner, repo, path });

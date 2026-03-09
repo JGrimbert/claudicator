@@ -1,15 +1,26 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, type Issue } from "$lib/stores/agent";
+    import { agentState, agentRunState, issueAnalysis, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
 
     let issues: Issue[] = [];
     let loading = true;
     let error = "";
+    let hasResult = false;
 
     $: filteredIssues = issues.filter(i =>
         i.state === "open" && !$agentState.knownSubIssueNumbers.includes(i.number)
     );
+
+    $: diffBadge = (() => {
+        const diff = $issueAnalysis.snapshotDiff;
+        if (!diff) return null;
+        const parts: string[] = [];
+        if (diff.added.length)    parts.push(`${diff.added.length} nouvelle${diff.added.length > 1 ? "s" : ""}`);
+        if (diff.removed.length)  parts.push(`${diff.removed.length} fermée${diff.removed.length > 1 ? "s" : ""}`);
+        if (diff.modified.length) parts.push(`${diff.modified.length} modifiée${diff.modified.length > 1 ? "s" : ""}`);
+        return parts.length > 0 ? parts.join(" · ") + " depuis la dernière analyse" : null;
+    })();
 
     async function loadIssues() {
         loading = true;
@@ -25,7 +36,86 @@
         }
     }
 
-    onMount(loadIssues);
+    async function loadSnapshot() {
+        try {
+            const res = await fetch("/api/issues/snapshot");
+            if (!res.ok) return;
+            const { snapshot, hasResult: hr } = await res.json();
+            hasResult = hr;
+            if (!snapshot) return;
+
+            // Attendre que les issues soient chargées
+            await new Promise<void>(resolve => {
+                if (!loading) { resolve(); return; }
+                const unsub = agentRunState.subscribe(() => {});
+                const check = setInterval(() => { if (!loading) { clearInterval(check); unsub(); resolve(); } }, 100);
+            });
+
+            const snapshotNums = new Set(snapshot.map((s: any) => s.number));
+            const snapshotMap  = new Map(snapshot.map((s: any) => [s.number, s.updatedAt]));
+            const currentNums  = new Set(issues.map((i: Issue) => i.number));
+            const currentMap   = new Map(issues.map((i: Issue) => [i.number, i.created]));
+
+            const added    = issues.filter(i => !snapshotNums.has(i.number)).map(i => i.number);
+            const removed  = snapshot.filter((s: any) => !currentNums.has(s.number)).map((s: any) => s.number);
+            const modified = issues
+                .filter(i => snapshotNums.has(i.number) && i.created > (snapshotMap.get(i.number) ?? ""))
+                .map(i => i.number);
+
+            issueAnalysis.update(s => ({ ...s, snapshotDiff: { added, removed, modified } }));
+        } catch { /* silencieux */ }
+    }
+
+    onMount(async () => {
+        await loadIssues();
+        await loadSnapshot();
+    });
+
+    async function startAnalysis() {
+        issueAnalysis.update(s => ({ ...s, running: true, logs: [], result: null }));
+        try {
+            const res = await fetch("/api/issues/analyze", { method: "POST" });
+            if (!res.ok || !res.body) {
+                issueAnalysis.update(s => ({ ...s, running: false }));
+                return;
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+                    try {
+                        const { line, type } = JSON.parse(part.slice(5).trim());
+                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, { line, type }] }));
+                    } catch { /* ignore */ }
+                }
+            }
+        } finally {
+            // Charger le résultat depuis le serveur
+            try {
+                const r = await fetch("/api/issues/snapshot");
+                if (r.ok) {
+                    const { hasResult: hr } = await r.json();
+                    hasResult = hr;
+                }
+                if (hasResult) {
+                    const r2 = await fetch("/api/issues/analysis");
+                    if (r2.ok) {
+                        const text = await r2.text();
+                        issueAnalysis.update(s => ({ ...s, running: false, result: text, snapshotDiff: null }));
+                        return;
+                    }
+                }
+            } catch { /* silencieux */ }
+            issueAnalysis.update(s => ({ ...s, running: false }));
+        }
+    }
 
     // ── Création d'issue ──────────────────────────────────────────────────
     let creating = false;
@@ -88,10 +178,23 @@
 <div class="panel">
     <div class="panel-header">
         <span>Issues</span>
-        <button class="new-btn" on:click={creating ? closeCreate : openCreate} title="Nouvelle issue">
-            {creating ? "✕" : "+"}
-        </button>
+        <div class="header-actions">
+            <button
+                class="analyze-btn"
+                on:click={startAnalysis}
+                disabled={$issueAnalysis.running || $agentRunState.running}
+                title={hasResult ? "Mettre à jour l'analyse" : "Analyser les issues"}
+            >
+                {$issueAnalysis.running ? "⟳ Analyse…" : hasResult ? "⟳ Màj" : "⊞ Analyser"}
+            </button>
+            <button class="new-btn" on:click={creating ? closeCreate : openCreate} title="Nouvelle issue">
+                {creating ? "✕" : "+"}
+            </button>
+        </div>
     </div>
+    {#if diffBadge}
+        <div class="diff-badge">⚠ {diffBadge}</div>
+    {/if}
 
     {#if creating}
         <div class="create-form">
@@ -163,6 +266,24 @@
     align-items: center;
     justify-content: space-between;
 }
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.analyze-btn {
+    background: none;
+    border: 1px solid #222;
+    color: #555;
+    font-size: 0.62rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.15s, border-color 0.15s;
+}
+.analyze-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.analyze-btn:disabled { opacity: 0.35; cursor: default; }
 .new-btn {
     background: none;
     border: 1px solid #222;
@@ -175,6 +296,15 @@
     transition: color 0.15s, border-color 0.15s;
 }
 .new-btn:hover { color: #9181f9; border-color: #9181f9; }
+.diff-badge {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6rem;
+    color: #b8860b;
+    background: #1a1500;
+    border-bottom: 1px solid #2a2000;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+}
 .create-form {
     display: flex;
     flex-direction: column;

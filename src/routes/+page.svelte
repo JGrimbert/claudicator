@@ -4,9 +4,10 @@
     import IssueList from "$lib/components/IssueList.svelte";
     import AgentConsole from "$lib/components/AgentConsole.svelte";
     import RunConsole from "$lib/components/RunConsole.svelte";
+    import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
-    import { agentRunState, projectUsage } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage } from "$lib/stores/agent";
 
     /**
      * DONE: Prompt contextuel de l'agent
@@ -409,7 +410,9 @@
             class:active={dragging === "aside"}
         ></div>
         <main>
-            {#if $agentRunState.running || $agentRunState.logs.length > 0}
+            {#if $issueAnalysis.running || $issueAnalysis.result}
+                <IssueAnalysis />
+            {:else if $agentRunState.running || $agentRunState.logs.length > 0}
                 <RunConsole />
             {:else}
                 <AgentConsole />

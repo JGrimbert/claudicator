@@ -37,6 +37,17 @@ export function notifyTaskCreated() { taskRefreshTick.update(n => n + 1); }
 
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
+export const issueAnalysis = writable<{
+    running: boolean;
+    result: string | null;
+    logs: RunLog[];
+    snapshotDiff: {
+        added: number[];
+        removed: number[];
+        modified: number[];
+    } | null;
+}>({ running: false, result: null, logs: [], snapshotDiff: null });
+
 export type Log = {
     ts: string;
     level: "INFO" | "SUCCESS" | "ERROR";
