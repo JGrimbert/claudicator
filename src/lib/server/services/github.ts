@@ -43,7 +43,7 @@ export async function getIssue(owner: string, repo: string, number: number) {
 
 export async function getIssues(owner: string, repo: string) {
     const octokit = getOctokit();
-    const { data } = await octokit.issues.listForRepo({ owner, repo });
+    const { data } = await octokit.issues.listForRepo({ owner, repo, state: "open" });
     return data;
 }
 
@@ -83,6 +83,28 @@ export async function listAccessibleRepos() {
         owner:    r.owner.login,
         private:  r.private,
     }));
+}
+
+export async function findOpenPullRequest(owner: string, repo: string, head: string, base: string) {
+    const octokit = getOctokit();
+    const { data } = await octokit.pulls.list({ owner, repo, state: "open", head: `${owner}:${head}`, base });
+    return data[0] ?? null;
+}
+
+export async function createPullRequest(
+    owner: string, repo: string,
+    title: string, body: string,
+    head: string, base: string
+) {
+    const octokit = getOctokit();
+    const { data } = await octokit.pulls.create({ owner, repo, title, body, head, base });
+    return data;
+}
+
+export async function mergePullRequest(owner: string, repo: string, pullNumber: number) {
+    const octokit = getOctokit();
+    const { data } = await octokit.pulls.merge({ owner, repo, pull_number: pullNumber, merge_method: "squash" });
+    return data;
 }
 
 export async function createIssueComment(issueNumber: number, body: string) {

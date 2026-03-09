@@ -7,7 +7,9 @@
     let loading = true;
     let error = "";
 
-    $: filteredIssues = issues.filter(i => !$agentState.knownSubIssueNumbers.includes(i.number));
+    $: filteredIssues = issues.filter(i =>
+        i.state === "open" && !$agentState.knownSubIssueNumbers.includes(i.number)
+    );
 
     async function loadIssues() {
         loading = true;
