@@ -223,6 +223,14 @@ export function formatImplementationPrompt(
         }
     }
 
+    lines.push("NAVIGATION CARTOGRAPHIE");
+    lines.push("Les endpoints suivants permettent d'explorer le code du projet :");
+    lines.push("POST /api/cartography { query }        → trouver des méthodes par sémantique");
+    lines.push("GET  /api/cartography/snippet?key=...  → obtenir le code précis d'une méthode");
+    lines.push("POST /api/cartography/refresh          → mettre à jour l'index après modification");
+    lines.push("INTERDIT : ls -R, grep, find, cat pour naviguer le code source");
+    lines.push("");
+
     lines.push("PLAN APPROUVÉ");
     lines.push(plan);
 

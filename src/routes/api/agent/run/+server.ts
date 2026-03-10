@@ -34,7 +34,7 @@ export async function POST({ request }) {
         const task = getTask(taskId);
         if (task) {
             const symbolMap = loadSymbolMap(root, task.title);
-            const methods = loadMethodSnippets(root, symbolMap);
+            const methods = loadMethodSnippets(root, task.title);
             const docs = loadProjectDocs(root);
             prompt = formatImplementationPrompt(task, plan, methods, docs);
         } else {
