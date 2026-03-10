@@ -130,7 +130,10 @@ export function loadSymbolMap(projectRoot: string, query: string): Record<string
 
         // 2. Garder uniquement les symboles avec au moins un match de mot-clé.
         //    Le rôle seul ne suffit pas à justifier l'inclusion (évite le bruit).
-        const selected = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);
+        const strict = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);
+
+        // Fallback : aucun keyword match → top-N par roleBonus (évite retour vide)
+        const selected = strict.length > 0 ? strict : scored.slice(0, SYMBOL_MAP_MAX);
 
         // 3. Construire le map : méthode de classe → grouper sous la classe
         //    fonction standalone → clé = nom de la fonction

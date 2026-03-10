@@ -50,9 +50,10 @@ export async function GET() {
     const annotPath = join(PROJECT_PATH, ".cache/annotation-cache.json");
     const primaPath = join(PROJECT_PATH, "src/prima");
 
-    if (!existsSync(indexPath) || !existsSync(primaPath)) {
-        return json({ error: "Index ou src/prima introuvable" }, { status: 404 });
+    if (!existsSync(indexPath)) {
+        return json({ error: "Index introuvable — lance annotate index" }, { status: 404 });
     }
+    const isPrima = existsSync(primaPath);
 
     try {
         // ── 1. Load + merge method-index + annotation-cache ──────────────────
@@ -66,6 +67,50 @@ export async function GET() {
         for (const [key, m] of Object.entries(allMethods)) {
             const a = annots[key];
             if (a) { m.role ??= a.role; m.description ??= a.description; }
+        }
+
+        // ── Mode générique (pas de src/prima) ─────────────────────────────────
+        if (!isPrima) {
+            const entries = Object.entries(allMethods) as [string, any][];
+            const total     = entries.length;
+            const described = entries.filter(([, m]) => m.description).length;
+
+            const byFile = new Map<string, { methods: MethodInfo[]; role: string | null; description: string | null }>();
+            for (const [key, m] of entries) {
+                const filePath = (m.file ?? "unknown").replace(/\\/g, "/");
+                if (!byFile.has(filePath)) byFile.set(filePath, { methods: [], role: null, description: null });
+                const group = byFile.get(filePath)!;
+                group.methods.push({
+                    sig:         m.signature ?? m.name ?? key,
+                    role:        m.role ?? null,
+                    described:   !!(m.description),
+                    description: m.description ?? null,
+                    isPrivate:   m.isPrivate ?? false,
+                });
+                if (!group.role && m.role)             group.role        = m.role;
+                if (!group.description && m.description) group.description = m.description;
+            }
+
+            const tree: TreeNode[] = [];
+            const files = [...byFile.keys()].sort();
+            for (let i = 0; i < files.length; i++) {
+                const filePath = files[i];
+                const group    = byFile.get(filePath)!;
+                const name     = basename(filePath).replace(/\.(ts|js|svelte)$/, "");
+                tree.push({
+                    name,
+                    extendsClass: null,
+                    depth:        0,
+                    prefix:       "",
+                    isLast:       i === files.length - 1,
+                    file:         filePath,
+                    role:         group.role,
+                    description:  group.description,
+                    methods:      group.methods,
+                });
+            }
+
+            return json({ summary: { total, described }, tree });
         }
 
         // ── 2. Filter to prima only ───────────────────────────────────────────
