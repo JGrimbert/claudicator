@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, type Issue } from "$lib/stores/agent";
+    import { onMount, onDestroy } from "svelte";
+    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import MethodsViewer from "$lib/components/MethodsViewer.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type TokenUsage = { inputTokens: number; outputTokens: number };
@@ -19,7 +20,7 @@
         createdAt: string;
         updatedAt: string;
     };
-    type WfPanel = "plan" | "implement" | "commit" | "push";
+    type WfPanel = "plan" | "implement" | "commit" | "push" | "methods";
 
     const STATUS_LABEL: Record<TaskStatus, string> = {
         pending: "en attente",
@@ -182,17 +183,28 @@
     onMount(async () => {
         await loadTasks();
         const savedId = localStorage.getItem(SELECTED_KEY);
-        const toSelect = (savedId ? tasks.find(t => t.id === savedId) : null)
+        // Priorité : task "running" > task sauvegardée > première task avec plan
+        const toSelect = tasks.find(t => t.status === "running")
+            ?? (savedId ? tasks.find(t => t.id === savedId) : null)
             ?? tasks.find(t => t.hasPlan);
         if (toSelect) await selectTask(toSelect);
+        tasksReady.set(true);
     });
+
+    // Recharger les tasks quand la roadMap est fermée
+    let _prevResult = $issueAnalysis.result;
+    const _unsubAnalysis = issueAnalysis.subscribe(s => {
+        if (_prevResult !== null && s.result === null && !s.running) loadTasksSilent();
+        _prevResult = s.result;
+    });
+    onDestroy(_unsubAnalysis);
 
     // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
     // Svelte 4 les inclut comme dépendances et boucle à l'infini.
     // On délègue à une fonction pour isoler le scope de tracking.
     $: if ($taskRefreshTick) onRefreshTick();
 
-    $: planModeTask.set(selected && selectedPanel === "plan" ? { id: selected.id, title: selected.title } : null);
+    $: planModeTask.set(selected ? { id: selected.id, title: selected.title } : null);
 
     function onRefreshTick() {
         (async () => {
@@ -597,6 +609,14 @@
                             <span class="wf-arrow">›</span>
 
                             <button class="wf-btn wf-disabled" disabled>Merge</button>
+
+                            <span class="wf-sep">|</span>
+
+                            <button
+                                class="wf-btn"
+                                class:wf-active={selectedPanel === "methods"}
+                                onclick={() => selectedPanel = "methods"}
+                            >Symboles</button>
                         </div>
 
                         {#if wfError}
@@ -679,6 +699,9 @@
                                     {/if}
                                 {/if}
                             </div>
+
+                        {:else if selectedPanel === "methods"}
+                            <MethodsViewer taskId={task.id} />
 
                         {:else if selectedPanel === "push"}
                             <div class="push-panel">
@@ -921,6 +944,14 @@
     cursor: pointer;
 }
 .wf-btn.wf-secondary:hover { color: #777; border-color: #333; }
+.wf-sep {
+    color: #1e1e2e;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    padding: 0 0.4rem;
+    line-height: 1;
+    user-select: none;
+}
 /* disabled = pas encore accessible */
 .wf-btn.wf-disabled {
     color: #222;

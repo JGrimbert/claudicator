@@ -8,7 +8,7 @@
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady } from "$lib/stores/agent";
 
     /**
      * DONE: Prompt contextuel de l'agent
@@ -445,7 +445,7 @@
         <main bind:this={mainEl}>
             <!-- ── PLAN (haut) ── -->
             <div class="main-top" style="height: {mainTopPct}%">
-                {#if $issueAnalysis.running || $issueAnalysis.result}
+                {#if ($issueAnalysis.running || $issueAnalysis.result) && $tasksReady && !$planModeTask}
                     <IssueAnalysis />
                 {:else if $agentRunState.running || $agentRunState.logs.length > 0}
                     <RunConsole />

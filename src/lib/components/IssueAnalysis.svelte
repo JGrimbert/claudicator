@@ -37,7 +37,7 @@
 
     // Charger le résultat existant depuis le serveur au montage
     async function loadResult() {
-        if ($issueAnalysis.result) return;
+        if ($issueAnalysis.result || $issueAnalysis.dismissed) return;
         try {
             const r = await fetch("/api/issues/analysis");
             if (r.ok) {
@@ -248,7 +248,7 @@
     }
 
     function dismiss() {
-        issueAnalysis.update(s => ({ ...s, result: null, logs: [], running: false, snapshotDiff: null }));
+        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, snapshotDiff: null }));
         mermaidRendered = false;
         createFeedback = "";
         groupFeedback = {};

@@ -73,6 +73,7 @@
     });
 
     async function openAnalysis() {
+        if ($issueAnalysis.dismissed) return;
         try {
             const r = await fetch("/api/issues/analysis");
             if (r.ok) {
@@ -83,7 +84,7 @@
     }
 
     async function startAnalysis() {
-        issueAnalysis.update(s => ({ ...s, running: true, logs: [], result: null }));
+        issueAnalysis.update(s => ({ ...s, running: true, dismissed: false, logs: [], result: null }));
         try {
             const res = await fetch("/api/issues/analyze", { method: "POST" });
             if (!res.ok || !res.body) {
@@ -199,7 +200,7 @@
                 {$issueAnalysis.running ? "⟳ Analyse…" : hasResult ? "⟳ Màj" : "⊞ Analyser"}
             </button>
             {#if hasResult && !$issueAnalysis.running}
-                <button class="plan-btn" on:click={openAnalysis} title="Voir la roadmap">
+                <button class="plan-btn" on:click={() => { issueAnalysis.update(s => ({ ...s, dismissed: false })); openAnalysis(); }} title="Voir la roadmap">
                     ⊟ Roadmap
                 </button>
             {/if}

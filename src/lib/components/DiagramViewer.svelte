@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
 
     type M = { sig: string; role: string | null; described: boolean; description: string | null; isPrivate: boolean };
     type Node = {
@@ -14,12 +14,33 @@
         methods: M[];
     };
 
+    interface MethodSnippet {
+        key: string;
+        file: string;
+        startLine: number;
+        endLine: number;
+        snippet: string;
+        signature: string;
+        role: string | null;
+        description: string | null;
+    }
+
     let summary: { total: number; described: number } | null = null;
     let tree:    Node[] = [];
     let error    = "";
     let loading  = true;
     let expanded = new Set<string>();
     let copied   = false;
+
+    // Monaco state
+    let selectedMethod: { nodeName: string; sig: string; key: string } | null = null;
+    let snippetData: MethodSnippet | null = null;
+    let snippetLoading = false;
+    let snippetError: string | null = null;
+    let editorContainer: HTMLDivElement | null = null;
+    let editor: any = null;
+    let monacoReady = false;
+    let monacoFailed = false;
 
     const RC: Record<string, string> = {
         entry:    "#f7c948",
@@ -33,6 +54,103 @@
     };
     const rc  = (r: string | null) => RC[r ?? ""] ?? "#3a3a4a";
     const pct = (n: number, d: number) => d > 0 ? Math.round(n / d * 100) : 0;
+
+    function getLanguage(file: string): string {
+        if (file.endsWith(".ts") || file.endsWith(".tsx")) return "typescript";
+        if (file.endsWith(".js") || file.endsWith(".jsx")) return "javascript";
+        if (file.endsWith(".py")) return "python";
+        if (file.endsWith(".java")) return "java";
+        if (file.endsWith(".go")) return "go";
+        if (file.endsWith(".cs")) return "csharp";
+        return "javascript";
+    }
+
+    async function loadMonaco(): Promise<void> {
+        if ((window as any).monaco) return;
+        await new Promise<void>((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js";
+            s.onload = () => {
+                (window as any).require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs" } });
+                (window as any).require(["vs/editor/editor.main"], () => resolve());
+            };
+            s.onerror = () => reject();
+            document.head.appendChild(s);
+        });
+    }
+
+    function initEditor(snippet: MethodSnippet) {
+        if (!editorContainer) return;
+        const monaco = (window as any).monaco;
+        if (editor) {
+            const model = editor.getModel();
+            if (model) monaco.editor.setModelLanguage(model, getLanguage(snippet.file));
+            editor.setValue(snippet.snippet);
+            editor.revealLine(1);
+        } else {
+            editor = monaco.editor.create(editorContainer, {
+                value: snippet.snippet,
+                language: getLanguage(snippet.file),
+                readOnly: true,
+                theme: "vs-dark",
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                fontSize: 11,
+                fontFamily: "'JetBrains Mono', monospace",
+                lineNumbers: "on",
+                renderLineHighlight: "none",
+                overviewRulerLanes: 0,
+                folding: false,
+                glyphMargin: false,
+                lineDecorationsWidth: 4,
+                lineNumbersMinChars: 3,
+                scrollbar: { vertical: "auto", horizontal: "hidden" },
+            });
+        }
+    }
+
+    async function selectMethodSnippet(nodeName: string, m: M) {
+        const key = `${nodeName}.${m.sig.split("(")[0].trim()}`;
+        selectedMethod = { nodeName, sig: m.sig, key };
+        snippetData = null;
+        snippetError = null;
+        snippetLoading = true;
+
+        try {
+            const res = await fetch(`/api/cartography/snippet?key=${encodeURIComponent(key)}`);
+            const data = await res.json();
+            if (data.error) { snippetError = data.error; return; }
+            snippetData = data;
+        } catch (e: any) {
+            snippetError = e.message ?? "Erreur réseau";
+            return;
+        } finally {
+            snippetLoading = false;
+        }
+
+        if (!snippetData) return;
+
+        if (!monacoReady && !monacoFailed) {
+            try {
+                await loadMonaco();
+                monacoReady = true;
+            } catch {
+                monacoFailed = true;
+            }
+        }
+
+        await tick();
+        if (monacoReady && snippetData) initEditor(snippetData);
+    }
+
+    function closeSnippet() {
+        selectedMethod = null;
+        snippetData = null;
+        editor?.dispose();
+        editor = null;
+    }
+
+    onDestroy(() => { editor?.dispose(); });
 
     onMount(load);
 
@@ -129,6 +247,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
         <div class="dv-hint err">{error}</div>
     {:else if summary}
 
+
         <!-- ── Header ──────────────────────────────────────────────────── -->
         <div class="dv-header">
             <div class="dv-stat-row">
@@ -208,7 +327,17 @@ Règles : ne jamais modifier le corps des méthodes.`;
                         {@const methodIndent = node.prefix + (node.isLast ? "    " : "│   ")}
                         <div class="dv-methods-block">
                             {#each node.methods as m}
-                                <div class="dv-mrow" class:priv={m.isPrivate} title={m.description ?? ""}>
+                                {@const isActive = selectedMethod?.nodeName === node.name && selectedMethod?.sig === m.sig}
+                                <div
+                                    class="dv-mrow"
+                                    class:priv={m.isPrivate}
+                                    class:active={isActive}
+                                    title={m.description ?? ""}
+                                    role="button"
+                                    tabindex="0"
+                                    onclick={() => selectMethodSnippet(node.name, m)}
+                                    onkeydown={(e) => e.key === "Enter" && selectMethodSnippet(node.name, m)}
+                                >
                                     <span class="dv-mpfx">{methodIndent}</span>
                                     <span class="dv-mdot" style="background:{m.described ? rc(m.role) : 'transparent'}; border-color:{rc(m.role)}"></span>
                                     <span class="dv-msig" class:described={m.described}>{m.sig}</span>
@@ -222,6 +351,28 @@ Règles : ne jamais modifier le corps des méthodes.`;
                 {/if}
             {/each}
         </div>
+
+        <!-- ── Monaco snippet panel ──────────────────────────────── -->
+        {#if selectedMethod}
+            <div class="dv-snippet">
+                <div class="dv-snippet-header">
+                    {#if snippetData}
+                        <span class="dv-snippet-file">{snippetData.file}:{snippetData.startLine}</span>
+                        <span class="dv-snippet-sig">{snippetData.signature}</span>
+                    {:else if snippetLoading}
+                        <span class="dv-snippet-file">Chargement…</span>
+                    {:else if snippetError}
+                        <span class="dv-snippet-file dv-snippet-err">{snippetError}</span>
+                    {/if}
+                    <button class="dv-snippet-close" onclick={closeSnippet} title="Fermer">✕</button>
+                </div>
+                {#if monacoFailed && snippetData}
+                    <pre class="dv-pre">{snippetData.snippet}</pre>
+                {:else}
+                    <div class="dv-monaco" bind:this={editorContainer}></div>
+                {/if}
+            </div>
+        {/if}
     {/if}
 </div>
 
@@ -452,4 +603,81 @@ Règles : ne jamais modifier le corps des méthodes.`;
 
 .dv-hint { padding: 1rem; color: #222; font-size: 0.72rem; }
 .dv-hint.err { color: #7a2020; }
+
+/* ── Méthode active ──────────────────────────────────────── */
+.dv-mrow {
+    cursor: pointer;
+}
+.dv-mrow.active {
+    background: #0e0e22;
+}
+.dv-mrow.active .dv-msig {
+    color: #9181f9;
+}
+
+/* ── Panneau snippet Monaco ──────────────────────────────── */
+.dv-snippet {
+    flex-shrink: 0;
+    height: 260px;
+    border-top: 1px solid #1a1a30;
+    display: flex;
+    flex-direction: column;
+    background: #05050f;
+}
+.dv-snippet-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.2rem 0.6rem;
+    border-bottom: 1px solid #0f0f20;
+    flex-shrink: 0;
+    background: #07071a;
+}
+.dv-snippet-file {
+    font-size: 0.55rem;
+    color: #2a2a4a;
+    font-style: italic;
+    flex-shrink: 0;
+}
+.dv-snippet-sig {
+    font-size: 0.6rem;
+    color: #444;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dv-snippet-err { color: #7a2a2a; }
+.dv-snippet-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #2a2a3a;
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    line-height: 1;
+    transition: color 0.1s;
+}
+.dv-snippet-close:hover { color: #9181f9; }
+.dv-monaco {
+    flex: 1;
+    min-height: 0;
+}
+.dv-pre {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.65rem;
+    color: #777;
+    line-height: 1.55;
+    white-space: pre;
+    background: #07070f;
+    font-family: 'JetBrains Mono', monospace;
+}
+.dv-pre::-webkit-scrollbar { width: 3px; height: 3px; }
+.dv-pre::-webkit-scrollbar-thumb { background: #1a1a2a; }
 </style>

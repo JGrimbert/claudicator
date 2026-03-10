@@ -68,8 +68,9 @@ export async function POST({ request }) {
             //   CLAUDECODE        : empêche les sessions imbriquées (Claude Code)
             const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
 
+            const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
             const proc = spawn(
-                "claude",
+                claudeCmd,
                 ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
                 { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
             );
