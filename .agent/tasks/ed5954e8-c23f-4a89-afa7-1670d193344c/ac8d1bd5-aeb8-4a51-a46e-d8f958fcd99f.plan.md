@@ -17,3 +17,4 @@ Les 3 modifications sont faites :
 - Si une task en cours est trouvée → elle est sélectionnée → `planModeTask` non null → la RoadMap ne s'affiche pas, l'écran du workflow de la task s'affiche
 - Si aucune task en cours → `planModeTask` reste null → la RoadMap s'affiche normalement (comme avant)
 - Pas de flash : la RoadMap est bloquée jusqu'à ce que `tasksReady` soit true, donc le temps que TaskList finisse de chercher la task active
+

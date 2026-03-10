@@ -82,12 +82,17 @@ function scoreSymbol(key: string, method: MethodEntry, keywords: string[]): { kw
     const parts    = camelParts(rawName);
     const sigLower = (method.signature ?? '').toLowerCase();
     const descLow  = (method.description ?? '').toLowerCase();
+    // Chemin de fichier et composants du chemin de clé (pour les handlers de routes)
+    const fileParts = (method.file ?? '').toLowerCase().split(/[/\\.]/).flatMap(p => camelParts(p));
+    const keyParts  = key.split('.').flatMap(p => camelParts(p));
 
     let kwScore = 0;
     for (const kw of keywords) {
-        if (parts.includes(kw))    kwScore += 5;
-        if (sigLower.includes(kw)) kwScore += 3;
-        if (descLow.includes(kw))  kwScore += 1;
+        if (parts.includes(kw))         kwScore += 5;  // nom de la méthode
+        if (keyParts.includes(kw))      kwScore += 4;  // composant du chemin de clé (ex: "merge" dans tasks.merge.POST)
+        if (fileParts.includes(kw))     kwScore += 3;  // chemin de fichier
+        if (sigLower.includes(kw))      kwScore += 3;  // paramètres de signature
+        if (descLow.includes(kw))       kwScore += 1;  // description JSDoc
     }
     const roleBonus = method.role ? (ROLE_SCORE[method.role] ?? 0) : 0;
     return { kwScore, total: kwScore + roleBonus };
@@ -125,7 +130,10 @@ export function loadSymbolMap(projectRoot: string, query: string): Record<string
 
         // 2. Garder uniquement les symboles avec au moins un match de mot-clé.
         //    Le rôle seul ne suffit pas à justifier l'inclusion (évite le bruit).
-        const selected = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);
+        const strict = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);
+
+        // Fallback : aucun keyword match → top-N par roleBonus (évite retour vide)
+        const selected = strict.length > 0 ? strict : scored.slice(0, SYMBOL_MAP_MAX);
 
         // 3. Construire le map : méthode de classe → grouper sous la classe
         //    fonction standalone → clé = nom de la fonction

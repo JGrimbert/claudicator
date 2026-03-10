@@ -5,6 +5,26 @@ import { getTask } from "$lib/server/services/tasks";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { loadSymbolMap } from "$lib/server/agent/context";
 
+/**
+ * Pour les fichiers Vue SFC, le method-indexer stocke des numéros de ligne relatifs
+ * au contenu trimmé du bloc <script>. Retourne l'offset à ajouter pour obtenir
+ * la ligne réelle dans le fichier. Retourne 0 pour les fichiers non-Vue.
+ */
+function getVueScriptOffset(filePath: string): number {
+    if (!filePath.endsWith(".vue")) return 0;
+    try {
+        const content = readFileSync(filePath, "utf-8");
+        const match = content.match(/<script(?:\s+setup)?[^>]*>/i);
+        if (!match || match.index == null) return 0;
+        const afterTagIdx = match.index + match[0].length;
+        const leadingWS = content.substring(afterTagIdx).match(/^\s*/)?.[0] ?? "";
+        const firstCodeIdx = afterTagIdx + leadingWS.length;
+        return content.substring(0, firstCodeIdx).split("\n").length - 1;
+    } catch {
+        return 0;
+    }
+}
+
 interface RawMethod {
     file?: string;
     startLine?: number;
@@ -84,13 +104,16 @@ export async function GET({ params }) {
         if (!symbolMap[cls] || !symbolMap[cls].sigs.includes(sig)) continue;
 
         const filePath = join(root, method.file);
-        const snippet = extractSnippet(filePath, startLine, method.endLine);
-        const endLine = method.endLine ?? startLine + snippet.split("\n").length - 1;
+        const vueOffset = getVueScriptOffset(filePath);
+        const adjStart = startLine + vueOffset;
+        const adjEnd = method.endLine ? method.endLine + vueOffset : undefined;
+        const snippet = extractSnippet(filePath, adjStart, adjEnd);
+        const endLine = adjEnd ?? adjStart + snippet.split("\n").length - 1;
 
         methods.push({
             key,
             file: method.file,
-            startLine,
+            startLine: adjStart,
             endLine,
             snippet,
             signature: sig,

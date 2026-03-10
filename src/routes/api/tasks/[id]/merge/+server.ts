@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";
-import { getMainBranch } from "$lib/server/services/git";
+import { getMainBranch, checkoutMain } from "$lib/server/services/git";
 import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
 
 export async function POST({ params }) {
@@ -32,6 +32,7 @@ export async function POST({ params }) {
         }
 
         await mergePullRequest(owner, repo, pr.number);
+        await checkoutMain(root);
         return json(updateTask(params.id, { status: "done" }));
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
