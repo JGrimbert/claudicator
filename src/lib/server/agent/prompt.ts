@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { AgentContext } from "./context";
+import type { AgentContext, MethodSnippet } from "./context";
 
 export type PromptOptions = {
     /** Description longue de la tâche ou corps de l'issue GitHub */
@@ -168,6 +168,63 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         }
         lines.push("");
     }
+
+    return lines.join("\n");
+}
+
+/**
+ * Formate le prompt d'implémentation enrichi avec le contexte (snippets de code).
+ * Utilisé par /api/agent/run quand un plan est fourni.
+ */
+export function formatImplementationPrompt(
+    task: { title: string },
+    plan: string,
+    methods: MethodSnippet[],
+    docs?: ProjectDocs
+): string {
+    const lines: string[] = [];
+
+    lines.push("TASK");
+    lines.push(task.title);
+    lines.push("");
+
+    lines.push("OBJECTIF");
+    lines.push("Implémenter le plan ci-dessous étape par étape. Modifier le code dans le projet.");
+    lines.push("Ne pas produire de plan. Réaliser directement les modifications.");
+    lines.push("");
+
+    if (methods.length > 0) {
+        lines.push("CODE PERTINENT");
+        const byFile = new Map<string, MethodSnippet[]>();
+        for (const m of methods) {
+            if (!byFile.has(m.file)) byFile.set(m.file, []);
+            byFile.get(m.file)!.push(m);
+        }
+        for (const [file, items] of byFile) {
+            lines.push(`\n## ${file}`);
+            for (const m of items) {
+                lines.push(`### ${m.key}${m.description ? `  — ${m.description}` : ""}`);
+                lines.push("```");
+                lines.push(m.snippet);
+                lines.push("```");
+            }
+        }
+        lines.push("");
+    }
+
+    if (docs) {
+        const docLines: string[] = [];
+        for (const f of docs.agents) docLines.push(`- Agent expert : ${f}`);
+        for (const f of docs.theoryFiles) docLines.push(`- Théorie : ${f}`);
+        if (docLines.length > 0) {
+            lines.push("DOCUMENTATION");
+            lines.push(...docLines);
+            lines.push("");
+        }
+    }
+
+    lines.push("PLAN APPROUVÉ");
+    lines.push(plan);
 
     return lines.join("\n");
 }

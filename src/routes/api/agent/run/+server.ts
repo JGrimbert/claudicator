@@ -6,6 +6,8 @@ import type { TokenUsage } from "$lib/server/services/tasks";
 import { register, unregister, killProcess } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
+import { loadSymbolMap, loadMethodSnippets } from "$lib/server/agent/context";
+import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
 
 function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
@@ -23,8 +25,22 @@ function savePlan(taskId: string, lines: string[]) {
 
 export async function POST({ request }) {
     const body = await request.json();
-    const { prompt, taskId, projectRoot } = body;
+    const { prompt: rawPrompt, plan, taskId, projectRoot } = body;
     const root = projectRoot?.trim() || getProjectRoot();
+
+    // Si un plan est fourni, construire le prompt enrichi côté serveur
+    let prompt: string = rawPrompt ?? "";
+    if (plan?.trim() && taskId) {
+        const task = getTask(taskId);
+        if (task) {
+            const symbolMap = loadSymbolMap(root, task.title);
+            const methods = loadMethodSnippets(root, symbolMap);
+            const docs = loadProjectDocs(root);
+            prompt = formatImplementationPrompt(task, plan, methods, docs);
+        } else {
+            prompt = plan;
+        }
+    }
 
     if (!prompt?.trim()) {
         return new Response(JSON.stringify({ error: "Prompt manquant" }), {
