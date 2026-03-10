@@ -76,6 +76,7 @@ export function GET({ url }) {
     }
 
     const filePath = join(root, method.file);
+
     const vueOffset = getVueScriptOffset(filePath);
     const adjStart = startLine + vueOffset;
     const adjEnd = method.endLine ? method.endLine + vueOffset : undefined;

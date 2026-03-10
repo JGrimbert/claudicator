@@ -1,20 +1,20 @@
-Laisse-moi d'abord regarder l'état actuel des tasks et le code concerné.
-La task est en `status: "running"` dans un sous-dossier de projet. Regardons le composant TaskList et les routes de merge.
-Maintenant voyons le service git pour les fonctions disponibles.
-Très clair. Il faut :
-1. Corriger la task actuelle (status `running` → `done`) manuellement
-2. Dans la route merge, ajouter `git checkout main` + `git pull` après le merge GitHub
+Maintenant je vois le code. Laissez-moi lire la suite de `TaskList.svelte` pour voir la fonction `selectTask` :
+J'ai tout ce qu'il faut. Voici les modifications à faire :
 
-Commençons par corriger la task stale :
-Maintenant ajoutons `checkoutMain` à git.ts et mettons à jour la route merge pour checkout main après le merge GitHub :
-Maintenant mettons à jour la route merge pour appeler `checkoutMain` :
-Vérifions le résultat final :
-Voilà. Résumé des changements :
+1. **`agent.ts`** : ajouter un store `tasksReady`
+2. **`TaskList.svelte`** : priorité task `running` au `onMount` + signaler `tasksReady`
+3. **`+page.svelte`** : ne montrer `IssueAnalysis` que si `tasksReady && !planModeTask`
+Maintenant je fais les 3 modifications :
+Les 3 modifications sont faites :
 
-1. **Task #13 corrigée** : `status: "running"` → `"done"` directement dans le JSON (`.agent/tasks/.../ac8d1bd5....json`) puisque le merge avait été fait hors de l'app.
+1. **`agent.ts`** : nouveau store `tasksReady` (démarre à `false`)
 
-2. **`checkoutMain(root)`** ajouté à `git.ts` : fait un `git checkout main` + `git pull origin main` sur le projet cible.
+2. **`TaskList.svelte` > `onMount`** : cherche d'abord une task `running`, puis celle en localStorage, puis la première avec un plan. Après sélection, passe `tasksReady` à `true`.
 
-3. **Route `/api/tasks/[id]/merge`** : appelle `checkoutMain(root)` après le merge GitHub PR, avant de retourner le task mis à jour en `"done"`.
+3. **`+page.svelte`** : la RoadMap ne s'affiche que si `$tasksReady && !$planModeTask`, c'est-à-dire une fois les tasks chargées ET seulement si aucune task n'est active.
 
-Désormais, chaque fois qu'un merge est déclenché via Claudicator, le repo cible se repositionne automatiquement sur `main` à jour.
+**Comportement au démarrage :**
+- Si une task en cours est trouvée → elle est sélectionnée → `planModeTask` non null → la RoadMap ne s'affiche pas, l'écran du workflow de la task s'affiche
+- Si aucune task en cours → `planModeTask` reste null → la RoadMap s'affiche normalement (comme avant)
+- Pas de flash : la RoadMap est bloquée jusqu'à ce que `tasksReady` soit true, donc le temps que TaskList finisse de chercher la task active
+
