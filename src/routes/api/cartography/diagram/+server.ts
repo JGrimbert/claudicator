@@ -3,8 +3,6 @@ import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join, basename } from "path";
 import { getProjectRoot } from "$lib/server/services/projects";
 
-const PROJECT_PATH = getProjectRoot();
-
 interface MethodInfo {
     sig: string;
     role: string | null;
@@ -47,6 +45,7 @@ function extractExtends(content: string): string | null {
 function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 export async function GET() {
+    const PROJECT_PATH = getProjectRoot();
     const indexPath = join(PROJECT_PATH, ".cache/method-index.json");
     const annotPath = join(PROJECT_PATH, ".cache/annotation-cache.json");
     const primaPath = join(PROJECT_PATH, "src/prima");

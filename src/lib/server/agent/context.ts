@@ -100,7 +100,7 @@ const SYMBOL_MAP_MAX = 15;
  * et retourne les SYMBOL_MAP_MAX plus pertinents.
  * Fonctionne aussi bien pour les méthodes de classe que les fonctions standalone.
  */
-function loadSymbolMap(projectRoot: string, query: string): Record<string, string[]> {
+export function loadSymbolMap(projectRoot: string, query: string): Record<string, SymbolGroup> {
     const indexPath = path.join(projectRoot, ".cache", "method-index.json");
     try {
         const raw = JSON.parse(fs.readFileSync(indexPath, "utf-8"));

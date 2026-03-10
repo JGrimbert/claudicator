@@ -40,17 +40,21 @@ export const hoveredIssueNumber = writable<number | null>(null);
 export const issueAnalysis = writable<{
     running: boolean;
     result: string | null;
+    dismissed: boolean;
     logs: RunLog[];
     snapshotDiff: {
         added: number[];
         removed: number[];
         modified: number[];
     } | null;
-}>({ running: false, result: null, logs: [], snapshotDiff: null });
+}>({ running: false, result: null, dismissed: false, logs: [], snapshotDiff: null });
 
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
 export const planModeTask = writable<{ id: string; title: string } | null>(null);
+
+/** Passe à true une fois que TaskList a chargé les tasks et sélectionné l'éventuelle task en cours */
+export const tasksReady = writable(false);
 
 export const planAllState = writable<{
     running: boolean;

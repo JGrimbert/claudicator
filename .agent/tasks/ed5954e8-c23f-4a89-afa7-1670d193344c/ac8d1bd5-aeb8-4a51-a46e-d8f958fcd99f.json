@@ -1,9 +1,52 @@
 {
   "id": "ac8d1bd5-aeb8-4a51-a46e-d8f958fcd99f",
   "title": "Afficher les méthodes concernées",
-  "status": "pending",
+  "status": "done",
   "issueNumber": 13,
-  "logs": [],
+  "logs": [
+    "[pid:25444]",
+    "⚙ Agent Explorer le démarrage et la gestion des tâches",
+    "⚙ Read C:/claudicator/src/lib/stores/agent.ts",
+    "⚙ Read C:/claudicator/src/routes/+page.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Glob src/lib/components/*.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/src/routes/+layout.svelte",
+    "⚙ Read C:/claudicator/src/app.html",
+    "⚙ Bash find /c/claudicator/src -name \"+page.svelte\" -o -name \"App.svelte\" -o -name \"hoo",
+    "⚙ Read C:/claudicator/src/routes/+page.svelte",
+    "⚙ Read C:/claudicator/src/hooks.server.ts",
+    "⚙ Bash head -200 \"/c/claudicator/src/lib/components/TaskList.svelte\" | tail -100",
+    "⚙ Read C:/claudicator/src/lib/server/services/tasks.ts",
+    "⚙ Bash find /c/claudicator/.agent -type f -name \"*.json\" | head -5",
+    "⚙ Read C:/claudicator/.agent/tasks/6b022ef0-c7b7-471b-ae81-782e164237a1.json",
+    "⚙ Read C:/claudicator/src/lib/components/TopBar.svelte",
+    "⚙ Bash head -150 \"/c/claudicator/src/lib/components/TaskList.svelte\" | tail -50",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/IssueAnalysis.svelte",
+    "⚙ Read C:\\Users\\33688\\.claude\\projects\\C--claudicator\\4ec4e647-e08c-4d87-8226-fe5ec6411",
+    "⚙ Read C:/claudicator/src/routes/+page.svelte",
+    "Maintenant je vois le code. Laissez-moi lire la suite de `TaskList.svelte` pour voir la fonction `selectTask` :",
+    "⚙ Read C:\\Users\\33688\\.claude\\projects\\C--claudicator\\4ec4e647-e08c-4d87-8226-fe5ec6411",
+    "J'ai tout ce qu'il faut. Voici les modifications à faire :\n\n1. **`agent.ts`** : ajouter un store `tasksReady`\n2. **`TaskList.svelte`** : priorité task `running` au `onMount` + signaler `tasksReady`\n3. **`+page.svelte`** : ne montrer `IssueAnalysis` que si `tasksReady && !planModeTask`",
+    "⚙ Read C:/claudicator/src/lib/stores/agent.ts",
+    "Maintenant je fais les 3 modifications :",
+    "⚙ Edit C:/claudicator/src/lib/stores/agent.ts",
+    "⚙ Edit C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Edit C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Edit C:/claudicator/src/routes/+page.svelte",
+    "⚙ Edit C:/claudicator/src/routes/+page.svelte",
+    "Les 3 modifications sont faites :\n\n1. **`agent.ts`** : nouveau store `tasksReady` (démarre à `false`)\n\n2. **`TaskList.svelte` > `onMount`** : cherche d'abord une task `running`, puis celle en localStorage, puis la première avec un plan. Après sélection, passe `tasksReady` à `true`.\n\n3. **`+page.svelte`** : la RoadMap ne s'affiche que si `$tasksReady && !$planModeTask`, c'est-à-dire une fois les tasks chargées ET seulement si aucune task n'est active.\n\n**Comportement au démarrage :**\n- Si une task en cours est trouvée → elle est sélectionnée → `planModeTask` non null → la RoadMap ne s'affiche pas, l'écran du workflow de la task s'affiche\n- Si aucune task en cours → `planModeTask` reste null → la RoadMap s'affiche normalement (comme avant)\n- Pas de flash : la RoadMap est bloquée jusqu'à ce que `tasksReady` soit true, donc le temps que TaskList finisse de chercher la task active"
+  ],
   "createdAt": "2026-03-09T18:16:55.077Z",
-  "updatedAt": "2026-03-09T18:16:55.077Z"
+  "updatedAt": "2026-03-10T15:35:40.795Z",
+  "usage": {
+    "inputTokens": 1372,
+    "outputTokens": 9432
+  },
+  "totalUsage": {
+    "inputTokens": 1676,
+    "outputTokens": 37531
+  },
+  "branch": "issue-13-afficher-les-methodes-concernees"
 }
