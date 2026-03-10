@@ -117,7 +117,6 @@
     <textarea
         class="ai-textarea"
         bind:value={prompt}
-        rows={8}
         placeholder={loadingContext ? "Génération du contexte…" : "Prompt pour Claude…"}
         disabled={loadingContext}
     ></textarea>
@@ -137,6 +136,7 @@
 .agent-input {
     display: flex;
     flex-direction: column;
+    height: 100%;
     border-top: 1px solid #141414;
 }
 .ai-header {
@@ -173,6 +173,8 @@
 .ai-reload:hover:not(:disabled) { color: #7c6af7; }
 .ai-reload:disabled { opacity: 0.3; cursor: default; }
 .ai-textarea {
+    flex: 1;
+    min-height: 0;
     background: #07070f;
     border: none;
     border-bottom: 1px solid #111;
@@ -181,9 +183,8 @@
     font-size: 0.67rem;
     line-height: 1.55;
     padding: 0.5rem 1rem;
-    resize: vertical;
+    resize: none;
     outline: none;
-    min-height: 80px;
 }
 .ai-textarea:focus { color: #bbb; }
 .ai-textarea::placeholder { color: #222; }
