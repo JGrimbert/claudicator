@@ -105,7 +105,7 @@
     "Les trois cas de test passent. La correction est validée.\n\n**Ce qui était le problème** : le `method-indexer` de `lolve-cartography` extrait le bloc `<script>` des fichiers Vue SFC, le `trim()`, et parse ce contenu. Les numéros de ligne stockés dans l'index sont donc **relatifs au bloc script**, pas au fichier entier. `extractSnippet` lisait le fichier entier avec ces numéros bruts → mauvaise ligne, mauvaise fonction, signature manquante.\n\n**La correction** : `getVueScriptOffset()` calcule l'offset entre la ligne 1 du contenu trimmé et la ligne réelle dans le fichier. Cet offset est ajouté à `startLine` et `endLine` avant l'extraction. Résultat : `onMouseMove` à l'index ligne 119 → fichier ligne 215 (la vraie signature `function onMouseMove(e) {`)."
   ],
   "createdAt": "2026-03-10T16:07:55.446Z",
-  "updatedAt": "2026-03-10T16:46:26.751Z",
+  "updatedAt": "2026-03-10T16:58:37.645Z",
   "usage": {
     "inputTokens": 81,
     "outputTokens": 51990
@@ -114,5 +114,6 @@
     "inputTokens": 104,
     "outputTokens": 70022
   },
-  "branch": "issue-45-snippets-code"
+  "branch": "issue-45-snippets-code",
+  "pushed": true
 }
