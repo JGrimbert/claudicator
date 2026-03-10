@@ -27,3 +27,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+.agent/analysis.md
+.agent/analysis-snapshot.json

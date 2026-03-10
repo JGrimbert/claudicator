@@ -22,7 +22,8 @@
       "Read(//c/claudicator/**)",
       "Bash(sed -i '1s|^|import { getProjectRoot } from \"\"$lib/server/services/projects\"\";\\\\n|' \"$f\")",
       "Bash(done)",
-      "Bash(for f in \"C:/claudicator/src/routes/api/github/issues/+server.ts\" \"C:/claudicator/src/routes/api/issue/+server.ts\" \"C:/claudicator/src/routes/api/repo-file/+server.ts\")"
+      "Bash(for f in \"C:/claudicator/src/routes/api/github/issues/+server.ts\" \"C:/claudicator/src/routes/api/issue/+server.ts\" \"C:/claudicator/src/routes/api/repo-file/+server.ts\")",
+      "Bash(find:*)"
     ]
   }
 }

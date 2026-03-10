@@ -11,14 +11,13 @@ function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
 }
 
-/** Sauvegarde la sortie de l'agent dans <taskId>.plan.md à côté du JSON de la task. */
+/** Sauvegarde uniquement le texte produit par l'agent (type "agent") dans <taskId>.plan.md. */
 function savePlan(taskId: string, lines: string[]) {
-    const agentLines = lines.filter(l => !l.startsWith("[") || !l.endsWith("]"));
-    if (agentLines.length === 0) return;
+    if (lines.length === 0) return;
     try {
         const dir = getTasksDir();
         fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(path.join(dir, `${taskId}.plan.md`), agentLines.join("\n"), "utf-8");
+        fs.writeFileSync(path.join(dir, `${taskId}.plan.md`), lines.join("\n"), "utf-8");
     } catch { /* silencieux */ }
 }
 
@@ -47,6 +46,7 @@ export async function POST({ request }) {
 
     const encoder = new TextEncoder();
     const allLogs: string[] = [];
+    const planLines: string[] = []; // uniquement le texte agent (hors ⚙, hors system)
     let capturedUsage: TokenUsage | null = null;
     let resultSubtype: string | null = null;
 
@@ -57,6 +57,7 @@ export async function POST({ request }) {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`));
                 } catch { /* stream fermé */ }
                 if (type !== "usage") allLogs.push(line);
+                if (type === "agent") planLines.push(line);
             };
 
             // -p : mode non-interactif (print).
@@ -69,7 +70,7 @@ export async function POST({ request }) {
 
             const proc = spawn(
                 "claude",
-                ["-p", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
+                ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
                 { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
             );
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
@@ -184,7 +185,7 @@ export async function POST({ request }) {
                     } else {
                         updateTask(taskId, { status, logs: allLogs });
                     }
-                    if (success) savePlan(taskId, allLogs);
+                    if (success) savePlan(taskId, planLines);
                 }
                 const msg = success ? "✓ terminé" : `erreur (code ${code})`;
                 emit(`[${msg}]`, "system");

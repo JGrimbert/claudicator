@@ -47,6 +47,26 @@ export async function getIssues(owner: string, repo: string) {
     return data;
 }
 
+export async function getIssuesWithBodies(owner: string, repo: string): Promise<Array<{
+    number: number;
+    title: string;
+    body: string | null;
+    labels: string[];
+    updatedAt: string;
+}>> {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.listForRepo({
+        owner, repo, state: "open", per_page: 100
+    });
+    return data.map(i => ({
+        number:    i.number,
+        title:     i.title,
+        body:      i.body ?? null,
+        labels:    i.labels.map(l => typeof l === "string" ? l : (l.name ?? "")),
+        updatedAt: i.updated_at,
+    }));
+}
+
 export async function getRepoFile(owner: string, repo: string, path: string): Promise<string> {
     const octokit = getOctokit();
     const { data } = await octokit.repos.getContent({ owner, repo, path });
@@ -105,6 +125,11 @@ export async function mergePullRequest(owner: string, repo: string, pullNumber: 
     const octokit = getOctokit();
     const { data } = await octokit.pulls.merge({ owner, repo, pull_number: pullNumber, merge_method: "squash" });
     return data;
+}
+
+export async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    const octokit = getOctokit();
+    await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
 }
 
 export async function createIssueComment(issueNumber: number, body: string) {

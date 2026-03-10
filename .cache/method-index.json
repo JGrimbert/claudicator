@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "generated": "2026-03-08T17:18:52.309Z",
+  "generated": "2026-03-10T00:03:51.237Z",
   "files": {
+    "src\\routes\\api\\context\\+server.ts": {
+      "mtime": 1772978779163.7666,
+      "size": 942,
+      "hash": "ae821931861b",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\hooks.server.ts": {
       "mtime": 1772966119344.6917,
       "size": 362,
@@ -30,13 +37,6 @@
       "classCount": 0,
       "methodCount": 1
     },
-    "src\\routes\\api\\context\\+server.ts": {
-      "mtime": 1772978779163.7666,
-      "size": 942,
-      "hash": "ae821931861b",
-      "classCount": 0,
-      "methodCount": 1
-    },
     "src\\routes\\api\\github\\issues\\+server.ts": {
       "mtime": 1772986133877.8481,
       "size": 605,
@@ -50,6 +50,20 @@
       "hash": "ec0834218f9b",
       "classCount": 0,
       "methodCount": 2
+    },
+    "src\\routes\\api\\issues\\analysis\\+server.ts": {
+      "mtime": 1773059570979.0266,
+      "size": 490,
+      "hash": "82165af8aadd",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\[number]\\close\\+server.ts": {
+      "mtime": 1773060465104.7043,
+      "size": 834,
+      "hash": "c08217e0ac2a",
+      "classCount": 0,
+      "methodCount": 1
     },
     "src\\routes\\api\\plan\\+server.ts": {
       "mtime": 1772909944046.091,
@@ -80,9 +94,9 @@
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\+server.ts": {
-      "mtime": 1772922610033.5486,
-      "size": 556,
-      "hash": "ec2a46800b11",
+      "mtime": 1773060292936.347,
+      "size": 790,
+      "hash": "64c2f4862bc0",
       "classCount": 0,
       "methodCount": 2
     },
@@ -101,9 +115,9 @@
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
-      "mtime": 1772978777649.4092,
-      "size": 764,
-      "hash": "dea31d92d29e",
+      "mtime": 1773054707962.5586,
+      "size": 1714,
+      "hash": "461bdd05e66e",
       "classCount": 0,
       "methodCount": 1
     },
@@ -114,10 +128,24 @@
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\tasks\\[id]\\push\\+server.ts": {
+      "mtime": 1773054131988.864,
+      "size": 801,
+      "hash": "dec6421ab0b7",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts": {
       "mtime": 1772978778352.6755,
       "size": 747,
       "hash": "9398d4cd4c6a",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\usage\\+server.ts": {
+      "mtime": 1773053130234.4304,
+      "size": 247,
+      "hash": "815b214c6252",
       "classCount": 0,
       "methodCount": 1
     }
@@ -145,13 +173,13 @@
       "endLine": 19
     },
     "GET": {
-      "file": "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts",
+      "file": "src\\routes\\api\\usage\\+server.ts",
       "class": null,
       "name": "GET",
-      "signature": "GET({ params })",
+      "signature": "GET()",
       "isStatic": false,
       "isPrivate": false,
-      "isAsync": true,
+      "isAsync": false,
       "isExported": true,
       "role": "helper",
       "description": null,
@@ -161,9 +189,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "5dc914a40519",
-      "line": 6,
-      "endLine": 17
+      "bodyHash": "b27c9d7c8b3f",
+      "line": 3,
+      "endLine": 8
     },
     "PATCH": {
       "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",

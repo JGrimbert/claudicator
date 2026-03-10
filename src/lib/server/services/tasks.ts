@@ -20,6 +20,7 @@ export type Task = {
     logs: string[];
     usage?: TokenUsage;       // tokens du dernier run
     totalUsage?: TokenUsage;  // tokens cumulés (tous runs)
+    hasPlan?: boolean;        // fichier .plan.md présent
     createdAt: string;
     updatedAt: string;
 };
@@ -41,9 +42,14 @@ function taskPath(id: string) {
 
 export function listTasks(): Task[] {
     ensureDir();
-    return fs.readdirSync(getTasksDir())
+    const dir = getTasksDir();
+    return fs.readdirSync(dir)
         .filter(f => f.endsWith(".json"))
-        .map(f => JSON.parse(fs.readFileSync(path.join(getTasksDir(), f), "utf-8")) as Task)
+        .map(f => {
+            const task = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")) as Task;
+            task.hasPlan = fs.existsSync(path.join(dir, `${task.id}.plan.md`));
+            return task;
+        })
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

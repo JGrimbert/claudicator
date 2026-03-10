@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, taskRefreshTick, agentRunState, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
-    import AgentInput from "$lib/components/AgentInput.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type TokenUsage = { inputTokens: number; outputTokens: number };
@@ -16,6 +15,7 @@
         logs: string[];
         usage?: TokenUsage;
         totalUsage?: TokenUsage;
+        hasPlan?: boolean;
         createdAt: string;
         updatedAt: string;
     };
@@ -66,7 +66,99 @@
     let pushing = false;
     let merging = false;
 
-    $: filtered = filter === "all" ? tasks : tasks.filter(t => t.status === filter);
+    // Reset task bloquée
+    let resetting = false;
+    async function resetTask(task: Task) {
+        if (resetting) return;
+        resetting = true;
+        try {
+            const res = await fetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "pending" })
+            });
+            const data = await res.json();
+            if (!data.error) await loadTasks();
+        } finally { resetting = false; }
+    }
+
+    // Issue liée
+    let linkedIssueState: "open" | "closed" | null = null;
+    let closingIssue = false;
+
+    async function loadLinkedIssueState(issueNumber: number) {
+        linkedIssueState = null;
+        try {
+            const res = await fetch(`/api/issue?number=${issueNumber}`);
+            if (res.ok) {
+                const data = await res.json();
+                linkedIssueState = data.state === "closed" ? "closed" : "open";
+            }
+        } catch { /* silencieux */ }
+    }
+
+    async function closeLinkedIssue(task: Task) {
+        if (!task.issueNumber || closingIssue) return;
+        closingIssue = true; wfError = "";
+        try {
+            const res = await fetch(`/api/issues/${task.issueNumber}/close`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            linkedIssueState = "closed";
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { closingIssue = false; }
+    }
+
+    function taskPrefix(task: Task): string {
+        if (!task.issueNumber) return "";
+        const grp = $planGroups.find(g => g.issues.includes(task.issueNumber!));
+        return grp ? `P${grp.index} #${task.issueNumber}` : `#${task.issueNumber}`;
+    }
+
+    function pipelineLabel(task: Task): { name: string; color: string } {
+        if (task.status === "running") return { name: "en cours",       color: "f7c948" };
+        if (task.status === "failed")  return { name: "échoué",         color: "f44336" };
+        if (task.status === "done" && task.pushed)  return { name: "push",  color: "7c6af7" };
+        if (task.status === "done" && task.branch)  return { name: "commit", color: "4caf50" };
+        if (task.status === "done")                 return { name: "impl.",  color: "9181f9" };
+        return { name: "plan", color: "444455" };
+    }
+
+    function rowLabels(task: Task, isActive: boolean): { name: string; color: string }[] {
+        if (isActive) return [pipelineLabel(task)];
+        if (task.status === "failed")  return [{ name: "échoué",   color: "f44336" }];
+        if (task.status === "running") return [{ name: "en cours", color: "f7c948" }];
+        if (task.status === "done" && task.hasPlan) {
+            const tokens = task.totalUsage ?? task.usage;
+            const tokStr = tokens ? ` · ${Math.round(tokens.inputTokens / 100) / 10}k` : "";
+            return [{ name: `impl.${tokStr}`, color: "9181f9" }];
+        }
+        return [];
+    }
+
+    // 0=plan 1=impl 2=commit 3=push
+    function taskPipelineStep(task: Task): number {
+        if (task.pushed)               return 3;
+        if (task.branch)               return 2;
+        if (task.status === "done")    return 1;
+        return 0;
+    }
+
+    $: filtered = (() => {
+        const groups = $planGroups;
+        function pos(n: number | undefined): number {
+            if (!n || !groups.length) return Infinity;
+            for (let gi = 0; gi < groups.length; gi++) {
+                const p = groups[gi].issues.indexOf(n);
+                if (p >= 0) return gi * 1000 + p;
+            }
+            return Infinity;
+        }
+        return (filter === "all" ? tasks : tasks.filter(t => t.status === filter))
+            .slice()
+            .sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
+    })();
     $: countOf = (f: Filter) => f === "all" ? tasks.length : tasks.filter(t => t.status === f).length;
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
@@ -85,12 +177,22 @@
         return "disabled";
     }
 
-    onMount(() => { loadTasks(); });
+    const SELECTED_KEY = "claudicator:selected-task";
+
+    onMount(async () => {
+        await loadTasks();
+        const savedId = localStorage.getItem(SELECTED_KEY);
+        const toSelect = (savedId ? tasks.find(t => t.id === savedId) : null)
+            ?? tasks.find(t => t.hasPlan);
+        if (toSelect) await selectTask(toSelect);
+    });
 
     // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
     // Svelte 4 les inclut comme dépendances et boucle à l'infini.
     // On délègue à une fonction pour isoler le scope de tracking.
     $: if ($taskRefreshTick) onRefreshTick();
+
+    $: planModeTask.set(selected && selectedPanel === "plan" ? { id: selected.id, title: selected.title } : null);
 
     function onRefreshTick() {
         (async () => {
@@ -186,14 +288,19 @@
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             implEdit = ""; commitMsg = ""; selectedPanel = "plan"; wfError = "";
+            localStorage.removeItem(SELECTED_KEY);
             return;
         }
+        localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
+        linkedIssueState = null;
 
         let task = initialTask;
+
+        if (task.issueNumber) loadLinkedIssueState(task.issueNumber);
 
         // Synchronise l'état git avant de charger le diff
         if (task.branch) {
@@ -380,13 +487,18 @@
             <p class="hint">Aucune task</p>
         {:else}
             {#each filtered as task}
-                <div class="task-row-wrap">
+                <div
+                    class="task-row-wrap"
+                    onmouseenter={() => task.issueNumber && hoveredIssueNumber.set(task.issueNumber)}
+                    onmouseleave={() => hoveredIssueNumber.set(null)}
+                >
                     <ItemRow
-                        prefix={task.issueNumber ? `#${task.issueNumber}` : ""}
+                        prefix={taskPrefix(task)}
                         title={task.title}
-                        labels={[{ name: STATUS_LABEL[task.status], color: STATUS_COLOR[task.status] }]}
+                        labels={rowLabels(task, selected?.id === task.id)}
+                        pipelineStep={task.status !== "failed" ? taskPipelineStep(task) : null}
                         state={task.status === "failed" ? "closed" : "open"}
-                        active={selected?.id === task.id}
+                        active={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id)}
                         onclick={() => selectTask(task)}
                     />
                     <button
@@ -401,7 +513,16 @@
 
                         <!-- ── Meta ── -->
                         <div class="inline-meta">
-                            {#if task.issueNumber}<span class="meta-tag">#{task.issueNumber}</span>{/if}
+                            {#if task.issueNumber}
+                                <span class="meta-tag meta-issue" title="Issue GitHub #{task.issueNumber}">
+                                    #{task.issueNumber}
+                                    {#if linkedIssueState === "closed"}
+                                        <span class="issue-state closed">✓ fermée</span>
+                                    {:else if linkedIssueState === "open"}
+                                        <span class="issue-state open">ouverte</span>
+                                    {/if}
+                                </span>
+                            {/if}
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
                             <span class="meta-tag" style="color:#{STATUS_COLOR[task.status]};border-color:#1a1a1a">{STATUS_LABEL[task.status]}</span>
@@ -415,6 +536,20 @@
                                 </span>
                             {/if}
                         </div>
+
+                        <!-- ── Task bloquée / échouée ── -->
+                        {#if task.status === "running" || task.status === "failed"}
+                            <div class="stuck-bar">
+                                <span class="stuck-label">
+                                    {task.status === "running" ? "⚠ agent inactif — task bloquée" : "✕ planification échouée"}
+                                </span>
+                                <button
+                                    class="stuck-reset"
+                                    onclick={() => resetTask(task)}
+                                    disabled={resetting}
+                                >{resetting ? "…" : "↺ Réinitialiser → pending"}</button>
+                            </div>
+                        {/if}
 
                         <!-- ── Barre workflow ── -->
                         <div class="wf-bar">
@@ -470,7 +605,7 @@
 
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
-                            <AgentInput {task} />
+                            <div class="plan-scene-hint">↗ Scène principale</div>
 
                         {:else if selectedPanel === "implement"}
                             <div class="impl-panel">
@@ -492,7 +627,13 @@
                                         onclick={() => clickImplement(task)}
                                         disabled={!implEdit.trim() || $agentRunState.running || initialCommitting}
                                     >
-                                        {initialCommitting ? "Création branche…" : $agentRunState.running ? "En cours…" : "Lancer l'implémentation →"}
+                                        {#if initialCommitting}
+                                            Création branche…
+                                        {:else if $agentRunState.running}
+                                            En cours…
+                                        {:else}
+                                            <span class="impl-launch-label">Lancer l'agent</span><span class="impl-launch-arrow"> →</span>
+                                        {/if}
                                     </button>
                                 </div>
                             </div>
@@ -557,6 +698,16 @@
                                         onclick={() => mergeBranch(task)}
                                         disabled={!task.pushed || merging}
                                     >{merging ? "…" : "⇒ Merge → main"}</button>
+                                    {#if task.issueNumber && linkedIssueState === "open"}
+                                        <button
+                                            class="wf-btn close-issue-btn"
+                                            onclick={() => closeLinkedIssue(task)}
+                                            disabled={closingIssue}
+                                            title="Fermer l'issue #{task.issueNumber} sur GitHub"
+                                        >{closingIssue ? "…" : "✕ Fermer #" + task.issueNumber}</button>
+                                    {:else if task.issueNumber && linkedIssueState === "closed"}
+                                        <span class="wf-btn wf-secondary" style="cursor:default">✓ Issue fermée</span>
+                                    {/if}
                                 </div>
                             </div>
                         {/if}
@@ -687,6 +838,42 @@
 .meta-tag.mono { font-family: 'JetBrains Mono', monospace; }
 .meta-tag.dim { color: #333; }
 .meta-tag.meta-tokens { color: #3a3a5a; font-family: 'JetBrains Mono', monospace; cursor: help; }
+.meta-tag.meta-issue { display: inline-flex; align-items: center; gap: 0.3rem; }
+.issue-state { font-size: 0.55rem; padding: 0.05rem 0.3rem; border-radius: 2px; }
+.issue-state.open { color: #4caf50; background: rgba(76,175,80,0.1); }
+.issue-state.closed { color: #7c6af7; background: rgba(124,106,247,0.1); }
+.close-issue-btn { color: #a04040 !important; border-color: #3a2a2a !important; }
+.close-issue-btn:hover:not(:disabled) { color: #f44336 !important; border-color: #f44336 !important; }
+
+/* ── Task bloquée ── */
+.stuck-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 1rem;
+    border-bottom: 1px solid #2a1a1a;
+    background: #110808;
+}
+.stuck-label {
+    font-size: 0.6rem;
+    color: #7a3a2a;
+    font-style: italic;
+    flex: 1;
+}
+.stuck-reset {
+    background: none;
+    border: 1px solid #3a2020;
+    color: #a05040;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.stuck-reset:hover:not(:disabled) { color: #f44336; border-color: #f44336; }
+.stuck-reset:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Barre workflow ── */
 .wf-bar {
@@ -785,17 +972,20 @@
 .impl-textarea:disabled { opacity: 0.5; cursor: wait; }
 .impl-footer { display: flex; justify-content: flex-end; padding: 0.4rem 1rem; flex-shrink: 0; }
 .impl-launch {
-    background: #7c6af7;
-    border: none;
+    background: #1e1540;
+    border: 1px solid #3a2e70;
     border-radius: 3px;
-    color: #fff;
     font-size: 0.65rem;
     padding: 0.3rem 0.9rem;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
 }
-.impl-launch:hover:not(:disabled) { background: #9181f9; }
+.impl-launch-label { color: cornsilk; }
+.impl-launch-arrow { color: #fff; }
+.impl-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 .impl-launch:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Panneau Commit ── */
@@ -890,6 +1080,16 @@
     font-size: 0.62rem;
     color: #333;
     font-style: italic;
+}
+
+/* ── Placeholder plan scène ── */
+.plan-scene-hint {
+    padding: 0.6rem 1rem;
+    font-size: 0.6rem;
+    color: #2a2a3a;
+    font-style: italic;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid #141414;
 }
 
 /* ── Panneau Push ── */

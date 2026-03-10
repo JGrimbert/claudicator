@@ -270,7 +270,7 @@
     </div>
 {:else}
     <div class="projet-section">
-        <div class="section-header">Projet</div>
+        <div class="section-header">Carto</div>
 
         <!-- Boutons commandes -->
             <div class="cmd-bar">
@@ -343,9 +343,12 @@
         <div class="todos-section">
             <div class="section-header todos-header">
                 {#each tabs as t}
-                    <button class="tab" class:tab-active={activeTab === t.id} onclick={() => activeTab = t.id}>
-                        {t.label}{#if t.count !== 0 && t.count !== ""}<span class="tab-count"> {t.count}</span>{/if}
-                    </button>
+                    <button
+                        class="tab"
+                        class:tab-active={activeTab === t.id}
+                        class:tab-todo={t.id === "todo"}
+                        onclick={() => activeTab = t.id}
+                    >{t.label}{#if t.count !== 0 && t.count !== ""}<span class="tab-count"> {t.count}</span>{/if}</button>
                 {/each}
             </div>
 
@@ -533,6 +536,9 @@
 }
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
+.tab-todo { color: #4a3a00; }
+.tab-todo:hover { color: cornsilk; }
+.tab-todo.tab-active { color: cornsilk; }
 .tab-count { font-size: 0.5rem; opacity: 0.6; margin-left:1em; }
 .search-submit {
     background: none;
