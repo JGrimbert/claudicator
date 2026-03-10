@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
-    import MethodsViewer from "$lib/components/MethodsViewer.svelte";
+
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type TokenUsage = { inputTokens: number; outputTokens: number };
@@ -20,7 +20,7 @@
         createdAt: string;
         updatedAt: string;
     };
-    type WfPanel = "plan" | "implement" | "commit" | "push" | "methods";
+    type WfPanel = "plan" | "implement" | "commit" | "push";
 
     const STATUS_LABEL: Record<TaskStatus, string> = {
         pending: "en attente",
@@ -66,6 +66,31 @@
     // Push / merge
     let pushing = false;
     let merging = false;
+
+    // Preview prompt
+    let promptPreview = "";
+    let showPromptPreview = false;
+    let previewLoading = false;
+
+    async function openPromptPreview(task: Task) {
+        if (previewLoading) return;
+        previewLoading = true;
+        promptPreview = "";
+        try {
+            const res = await fetch("/api/agent/preview-prompt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ plan: implEdit, taskId: task.id })
+            });
+            const data = await res.json();
+            promptPreview = data.prompt ?? data.error ?? "Erreur";
+        } catch (e: any) {
+            promptPreview = e.message;
+        } finally {
+            previewLoading = false;
+            showPromptPreview = true;
+        }
+    }
 
     // Reset task bloquée
     let resetting = false;
@@ -368,21 +393,12 @@
             }
         }
 
-        const currentTask = tasks.find(t => t.id === task.id) ?? task;
-        const prompt = [
-            "TASK", currentTask.title, "",
-            "OBJECTIF",
-            "Implémenter le plan ci-dessous étape par étape. Modifier le code dans le projet.",
-            "Ne pas produire de plan. Réaliser directement les modifications.", "",
-            "PLAN APPROUVÉ", implEdit
-        ].join("\n");
-
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt, taskId: task.id })
+                body: JSON.stringify({ plan: implEdit, taskId: task.id })
             });
             if (!res.ok || !res.body) { agentRunState.update(s => ({ ...s, running: false })); return; }
             const reader = res.body.getReader();
@@ -610,13 +626,6 @@
 
                             <button class="wf-btn wf-disabled" disabled>Merge</button>
 
-                            <span class="wf-sep">|</span>
-
-                            <button
-                                class="wf-btn"
-                                class:wf-active={selectedPanel === "methods"}
-                                onclick={() => selectedPanel = "methods"}
-                            >Symboles</button>
                         </div>
 
                         {#if wfError}
@@ -642,6 +651,12 @@
                                     disabled={planLoading}
                                 ></textarea>
                                 <div class="impl-footer">
+                                    <button
+                                        class="impl-preview-btn"
+                                        onclick={() => openPromptPreview(task)}
+                                        disabled={!implEdit.trim() || previewLoading}
+                                        title="Voir le prompt complet envoyé à Claude"
+                                    >{previewLoading ? "…" : "{ prompt }"}</button>
                                     <button
                                         class="impl-launch"
                                         onclick={() => clickImplement(task)}
@@ -700,9 +715,6 @@
                                 {/if}
                             </div>
 
-                        {:else if selectedPanel === "methods"}
-                            <MethodsViewer taskId={task.id} />
-
                         {:else if selectedPanel === "push"}
                             <div class="push-panel">
                                 <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
@@ -741,6 +753,19 @@
         {/if}
     </div>
 </div>
+
+<!-- ── Overlay preview prompt ── -->
+{#if showPromptPreview}
+    <div class="prompt-overlay" role="dialog" aria-modal="true">
+        <div class="prompt-overlay-box">
+            <div class="prompt-overlay-header">
+                <span class="prompt-overlay-title">Prompt envoyé à Claude</span>
+                <button class="prompt-overlay-close" onclick={() => showPromptPreview = false}>✕</button>
+            </div>
+            <pre class="prompt-overlay-content">{promptPreview}</pre>
+        </div>
+    </div>
+{/if}
 
 <style>
 .panel {
@@ -1144,4 +1169,77 @@
     border-radius: 3px;
 }
 .push-actions { display: flex; gap: 0.5rem; }
+
+/* ── Bouton preview prompt ── */
+.impl-preview-btn {
+    margin-right: auto;
+    background: none;
+    border: 1px solid #2a2a2a;
+    color: #3a3a5a;
+    font-size: 0.62rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.1s, border-color 0.1s;
+}
+.impl-preview-btn:hover:not(:disabled) { color: #9181f9; border-color: #4a3a8a; }
+.impl-preview-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* ── Overlay prompt preview ── */
+.prompt-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.prompt-overlay-box {
+    background: #0c0c14;
+    border: 1px solid #2a2a3a;
+    border-radius: 6px;
+    width: min(900px, 92vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.prompt-overlay-header {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #1e1e2e;
+    flex-shrink: 0;
+}
+.prompt-overlay-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #555;
+}
+.prompt-overlay-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    line-height: 1;
+}
+.prompt-overlay-close:hover { color: #9181f9; }
+.prompt-overlay-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.67rem;
+    color: #777;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 0;
+}
 </style>

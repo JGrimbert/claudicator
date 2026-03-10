@@ -16,6 +16,8 @@ Thumbs.db
 .env
 .env.*
 
+.agent/
+
 # GitHub App private key
 .keys/
 !.env.example

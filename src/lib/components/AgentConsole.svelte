@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, notifyTaskCreated, agentRunState } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, agentRunState, planModeTask } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
+    import ContextViewer from "$lib/components/ContextViewer.svelte";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -87,6 +88,8 @@
     ];
 
     let showDiagram = false;
+    let showContext = false;
+    $: if (!$planModeTask) showContext = false;
 
     // ─── AGENT — recherche ────────────────────────────────────────────────────
     type SearchResult = {
@@ -269,8 +272,22 @@
         <pre class="exp-content">{expandedFile.content}</pre>
     </div>
 {:else}
+    {#if showContext && $planModeTask}
+        <div class="cv-wrap">
+            <div class="section-header">
+                Carto
+                <button class="ctx-toggle ctx-active" onclick={() => showContext = false}>{"{ contexte }"}</button>
+            </div>
+            <ContextViewer taskId={$planModeTask.id} />
+        </div>
+    {:else}
     <div class="projet-section">
-        <div class="section-header">Carto</div>
+        <div class="section-header">
+            Carto
+            {#if $planModeTask}
+                <button class="ctx-toggle" onclick={() => showContext = true}>{"{ contexte }"}</button>
+            {/if}
+        </div>
 
         <!-- Boutons commandes -->
             <div class="cmd-bar">
@@ -452,6 +469,7 @@
         {/if}
         </div>
     </div>
+    {/if}
     {/if}
 {/if}
 
@@ -834,4 +852,27 @@
 .small { font-size: 0.68rem; }
 .blink { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
+
+/* ── Onglet contexte ──────────────────────────────────────────────── */
+.cv-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.ctx-toggle {
+    margin-left: auto;
+    background: none;
+    border: 1px solid #2a2a2a;
+    color: #444;
+    font-size: 0.62rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.1s, border-color 0.1s;
+}
+.ctx-toggle:hover { color: #9181f9; border-color: #9181f9; }
+.ctx-toggle.ctx-active { color: #9181f9; border-color: #4a3a8a; background: #1a1a2e; }
 </style>
