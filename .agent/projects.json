@@ -14,6 +14,13 @@
       "path": "C:/claudicator",
       "owner": "JGrimbert",
       "repo": "claudicator"
+    },
+    {
+      "id": "c172efea-482c-4998-b199-b3038093c3c6",
+      "name": "lolve-cartography",
+      "path": "C:/lolve-cartography",
+      "owner": "git@github.com:JGrimbert",
+      "repo": "lolve-cartography"
     }
   ]
 }

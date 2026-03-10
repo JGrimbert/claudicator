@@ -1,14 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-03-10T00:03:51.237Z",
+  "generated": "2026-03-10T16:07:09.288Z",
   "files": {
-    "src\\routes\\api\\context\\+server.ts": {
-      "mtime": 1772978779163.7666,
-      "size": 942,
-      "hash": "ae821931861b",
-      "classCount": 0,
-      "methodCount": 1
-    },
     "src\\hooks.server.ts": {
       "mtime": 1772966119344.6917,
       "size": 362,
@@ -23,6 +16,104 @@
       "classCount": 0,
       "methodCount": 0
     },
+    "src\\lib\\server\\agent\\context.ts": {
+      "mtime": 1773158698072.6052,
+      "size": 9478,
+      "hash": "8cc85032e25b",
+      "classCount": 0,
+      "methodCount": 7
+    },
+    "src\\lib\\server\\agent\\issue-analysis.ts": {
+      "mtime": 1773142834223.6714,
+      "size": 4448,
+      "hash": "bdf8fbe1c683",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\lib\\server\\agent\\issue.ts": {
+      "mtime": 1772905480957.7397,
+      "size": 1465,
+      "hash": "3f755041d122",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\lib\\server\\agent\\prompt.ts": {
+      "mtime": 1772944590290.985,
+      "size": 7332,
+      "hash": "32492539b885",
+      "classCount": 0,
+      "methodCount": 5
+    },
+    "src\\lib\\server\\logs.ts": {
+      "mtime": 1772905468636.9487,
+      "size": 452,
+      "hash": "f04b1785ec66",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\lib\\server\\services\\claude.ts": {
+      "mtime": 1772905294197.5757,
+      "size": 294,
+      "hash": "6862d9afac63",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\lib\\server\\services\\git.ts": {
+      "mtime": 1773157368791.16,
+      "size": 2553,
+      "hash": "f41bb4afc223",
+      "classCount": 0,
+      "methodCount": 11
+    },
+    "src\\lib\\server\\services\\github.ts": {
+      "mtime": 1773142834223.6714,
+      "size": 5064,
+      "hash": "b8116da78d43",
+      "classCount": 0,
+      "methodCount": 14
+    },
+    "src\\lib\\server\\services\\processes.ts": {
+      "mtime": 1772966702107.7307,
+      "size": 1347,
+      "hash": "a8cbf38d93fa",
+      "classCount": 0,
+      "methodCount": 6
+    },
+    "src\\lib\\server\\services\\project-config.ts": {
+      "mtime": 1773001722925.297,
+      "size": 1593,
+      "hash": "b05ca6b233a4",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\lib\\server\\services\\projects.ts": {
+      "mtime": 1772978894450.4824,
+      "size": 2902,
+      "hash": "f4e67880191c",
+      "classCount": 0,
+      "methodCount": 8
+    },
+    "src\\lib\\server\\services\\tasks.ts": {
+      "mtime": 1773142834224.6724,
+      "size": 3121,
+      "hash": "447ee9aa3a83",
+      "classCount": 0,
+      "methodCount": 8
+    },
+    "src\\lib\\server\\services\\usage.ts": {
+      "mtime": 1773142834224.6724,
+      "size": 1139,
+      "hash": "10a10610d1a2",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\lib\\stores\\agent.ts": {
+      "mtime": 1773156914520.621,
+      "size": 3620,
+      "hash": "a149b0c537f9",
+      "classCount": 0,
+      "methodCount": 2
+    },
     "src\\routes\\api\\agent\\input\\+server.ts": {
       "mtime": 1772966730818.1152,
       "size": 503,
@@ -34,6 +125,69 @@
       "mtime": 1772966727021.8042,
       "size": 511,
       "hash": "f8e8553ac419",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\agent\\run\\+server.ts": {
+      "mtime": 1773145919433.79,
+      "size": 10514,
+      "hash": "c3e9d7327771",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\cartography\\+server.ts": {
+      "mtime": 1773001722926.2979,
+      "size": 1858,
+      "hash": "199fbc4c4e80",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\diagram\\+server.ts": {
+      "mtime": 1773145388845.4165,
+      "size": 6676,
+      "hash": "8cefd1d06b6b",
+      "classCount": 0,
+      "methodCount": 4
+    },
+    "src\\routes\\api\\cartography\\enrich\\+server.ts": {
+      "mtime": 1772985578152.01,
+      "size": 1895,
+      "hash": "c7529f596cce",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\methods\\+server.ts": {
+      "mtime": 1772985561359.6487,
+      "size": 1151,
+      "hash": "fdf2d5a91d82",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\run\\+server.ts": {
+      "mtime": 1772985581690.8386,
+      "size": 2142,
+      "hash": "57dec0354d51",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\snippet\\+server.ts": {
+      "mtime": 1773154499434.5708,
+      "size": 2504,
+      "hash": "15b43183a8ad",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\cartography\\stats\\+server.ts": {
+      "mtime": 1772985557637.118,
+      "size": 2173,
+      "hash": "995afb024d15",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\context\\+server.ts": {
+      "mtime": 1773001722927.2966,
+      "size": 1593,
+      "hash": "22f74ea277cb",
       "classCount": 0,
       "methodCount": 1
     },
@@ -51,17 +205,45 @@
       "classCount": 0,
       "methodCount": 2
     },
+    "src\\routes\\api\\issues\\+server.ts": {
+      "mtime": 1773001722927.2966,
+      "size": 1974,
+      "hash": "4dd64195c938",
+      "classCount": 0,
+      "methodCount": 2
+    },
     "src\\routes\\api\\issues\\analysis\\+server.ts": {
-      "mtime": 1773059570979.0266,
+      "mtime": 1773142834227.6711,
       "size": 490,
       "hash": "82165af8aadd",
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\issues\\analyze\\+server.ts": {
+      "mtime": 1773142834228.6724,
+      "size": 6687,
+      "hash": "227046a670a3",
+      "classCount": 0,
+      "methodCount": 4
+    },
+    "src\\routes\\api\\issues\\snapshot\\+server.ts": {
+      "mtime": 1773142834228.6724,
+      "size": 699,
+      "hash": "f5e5d4f7dfb0",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\issues\\[number]\\close\\+server.ts": {
-      "mtime": 1773060465104.7043,
+      "mtime": 1773142834227.6711,
       "size": 834,
       "hash": "c08217e0ac2a",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\logs\\+server.ts": {
+      "mtime": 1772905491986.6812,
+      "size": 963,
+      "hash": "61086682886f",
       "classCount": 0,
       "methodCount": 1
     },
@@ -71,6 +253,20 @@
       "hash": "df975a610786",
       "classCount": 0,
       "methodCount": 1
+    },
+    "src\\routes\\api\\project-config\\+server.ts": {
+      "mtime": 1773001722928.297,
+      "size": 566,
+      "hash": "3c825750831a",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\projects\\+server.ts": {
+      "mtime": 1772978719425.4,
+      "size": 665,
+      "hash": "4f91143f5769",
+      "classCount": 0,
+      "methodCount": 2
     },
     "src\\routes\\api\\projects\\current\\+server.ts": {
       "mtime": 1772978723512.8167,
@@ -86,6 +282,13 @@
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\repo-file\\+server.ts": {
+      "mtime": 1772986134210.6335,
+      "size": 629,
+      "hash": "6d011314e531",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\repo-info\\+server.ts": {
       "mtime": 1772978728673.2275,
       "size": 260,
@@ -94,7 +297,7 @@
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\+server.ts": {
-      "mtime": 1773060292936.347,
+      "mtime": 1773142834229.672,
       "size": 790,
       "hash": "64c2f4862bc0",
       "classCount": 0,
@@ -107,6 +310,13 @@
       "classCount": 0,
       "methodCount": 3
     },
+    "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts": {
+      "mtime": 1772978775301.33,
+      "size": 964,
+      "hash": "9cf8a27a64a7",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts": {
       "mtime": 1772978776079.8826,
       "size": 709,
@@ -114,12 +324,26 @@
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts": {
+      "mtime": 1772986041704.5469,
+      "size": 2756,
+      "hash": "8e4c3c10245e",
+      "classCount": 0,
+      "methodCount": 2
+    },
     "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
-      "mtime": 1773054707962.5586,
-      "size": 1714,
-      "hash": "461bdd05e66e",
+      "mtime": 1773157374736.6123,
+      "size": 1763,
+      "hash": "504b533f9287",
       "classCount": 0,
       "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts": {
+      "mtime": 1773148188540.22,
+      "size": 3408,
+      "hash": "cb7140abccc0",
+      "classCount": 0,
+      "methodCount": 2
     },
     "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts": {
       "mtime": 1772986027698.4675,
@@ -129,7 +353,7 @@
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\push\\+server.ts": {
-      "mtime": 1773054131988.864,
+      "mtime": 1773142834231.6743,
       "size": 801,
       "hash": "dec6421ab0b7",
       "classCount": 0,
@@ -142,8 +366,15 @@
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts": {
+      "mtime": 1773001722999.835,
+      "size": 947,
+      "hash": "d28c82c5521f",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\usage\\+server.ts": {
-      "mtime": 1773053130234.4304,
+      "mtime": 1773142834231.6743,
       "size": 247,
       "hash": "815b214c6252",
       "classCount": 0,
@@ -151,37 +382,16 @@
     }
   },
   "methods": {
-    "POST": {
-      "file": "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts",
+    "stripAnsi": {
+      "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
       "class": null,
-      "name": "POST",
-      "signature": "POST({ params })",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": true,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "4bbdc9089071",
-      "line": 6,
-      "endLine": 19
-    },
-    "GET": {
-      "file": "src\\routes\\api\\usage\\+server.ts",
-      "class": null,
-      "name": "GET",
-      "signature": "GET()",
+      "name": "stripAnsi",
+      "signature": "stripAnsi(str)",
       "isStatic": false,
       "isPrivate": false,
       "isAsync": false,
-      "isExported": true,
-      "role": "helper",
+      "isExported": false,
+      "role": "internal",
       "description": null,
       "effects": {},
       "consumers": [],
@@ -189,20 +399,20 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "b27c9d7c8b3f",
-      "line": 3,
-      "endLine": 8
+      "bodyHash": "68d1d42849bd",
+      "line": 11,
+      "endLine": 13
     },
-    "PATCH": {
-      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+    "extractSnippet": {
+      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
       "class": null,
-      "name": "PATCH",
-      "signature": "PATCH({ params, request })",
+      "name": "extractSnippet",
+      "signature": "extractSnippet(filePath, startLine, endLine)",
       "isStatic": false,
       "isPrivate": false,
-      "isAsync": true,
-      "isExported": true,
-      "role": "helper",
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
       "description": null,
       "effects": {},
       "consumers": [],
@@ -210,30 +420,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "6f5e88d51de2",
-      "line": 10,
-      "endLine": 15
-    },
-    "DELETE": {
-      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
-      "class": null,
-      "name": "DELETE",
-      "signature": "DELETE({ params })",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": true,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "b0e0de6868d4",
-      "line": 17,
-      "endLine": 21
+      "bodyHash": "7b450cb99cad",
+      "line": 19,
+      "endLine": 43
     },
     "resetStaleTasks": {
       "file": "src\\hooks.server.ts",
@@ -255,6 +444,2652 @@
       "bodyHash": "907bd097312a",
       "line": 4,
       "endLine": 10
+    },
+    "extractKeywords": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "extractKeywords",
+      "signature": "extractKeywords(title)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Extrait les mots-clés significatifs d'un titre (stopwords supprimés).",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ecce969a6e66",
+      "line": 36,
+      "endLine": 41
+    },
+    "camelParts": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "camelParts",
+      "signature": "camelParts(name)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Découpe un nom camelCase en parties : useFocusedMap → ['use','focused','map'].",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "07695c573599",
+      "line": 44,
+      "endLine": 51
+    },
+    "loadAnnotCache": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "loadAnnotCache",
+      "signature": "loadAnnotCache(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Charge l'annotation-cache depuis .cache/annotation-cache.json.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "45286c513a9e",
+      "line": 60,
+      "endLine": 65
+    },
+    "scoreSymbol": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "scoreSymbol",
+      "signature": "scoreSymbol(key, method, keywords)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "48eb4ecba08b",
+      "line": 79,
+      "endLine": 99
+    },
+    "loadSymbolMap": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "loadSymbolMap",
+      "signature": "loadSymbolMap(projectRoot, query)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "575fa5b02e2d",
+      "line": 108,
+      "endLine": 149
+    },
+    "expandWithCallees": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "expandWithCallees",
+      "signature": "expandWithCallees(symbolMap, callGraph, allMethods)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Après le call graph, ajoute les callees directs des symboles sélectionnés\npour fournir le voisinage structurel (+2 score implicite).\nLimite l'expansion pour ne pas dépasser SYMBOL_MAP_MAX.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ddfb681e4c07",
+      "line": 156,
+      "endLine": 179
+    },
+    "buildContext": {
+      "file": "src\\lib\\server\\agent\\context.ts",
+      "class": null,
+      "name": "buildContext",
+      "signature": "buildContext(task, projectRoot, description)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c7929beed834",
+      "line": 187,
+      "endLine": 216
+    },
+    "summarizeIssueBody": {
+      "file": "src\\lib\\server\\agent\\issue-analysis.ts",
+      "class": null,
+      "name": "summarizeIssueBody",
+      "signature": "summarizeIssueBody(body)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "3841473baa56",
+      "line": 15,
+      "endLine": 37
+    },
+    "prepareIssues": {
+      "file": "src\\lib\\server\\agent\\issue-analysis.ts",
+      "class": null,
+      "name": "prepareIssues",
+      "signature": "prepareIssues(issues)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "424f27e59aa8",
+      "line": 40,
+      "endLine": 69
+    },
+    "buildAnalysisPrompt": {
+      "file": "src\\lib\\server\\agent\\issue-analysis.ts",
+      "class": null,
+      "name": "buildAnalysisPrompt",
+      "signature": "buildAnalysisPrompt(issues)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "057a46df6312",
+      "line": 72,
+      "endLine": 114
+    },
+    "createIssuePlan": {
+      "file": "src\\lib\\server\\agent\\issue.ts",
+      "class": null,
+      "name": "createIssuePlan",
+      "signature": "createIssuePlan(issueNumber)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "96ce7ea1f534",
+      "line": 7,
+      "endLine": 57
+    },
+    "loadConceptMap": {
+      "file": "src\\lib\\server\\agent\\prompt.ts",
+      "class": null,
+      "name": "loadConceptMap",
+      "signature": "loadConceptMap(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c7f45b562723",
+      "line": 27,
+      "endLine": 34
+    },
+    "loadProjectDiagram": {
+      "file": "src\\lib\\server\\agent\\prompt.ts",
+      "class": null,
+      "name": "loadProjectDiagram",
+      "signature": "loadProjectDiagram(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "7dd7a7b2d8f9",
+      "line": 37,
+      "endLine": 45
+    },
+    "loadProjectDocs": {
+      "file": "src\\lib\\server\\agent\\prompt.ts",
+      "class": null,
+      "name": "loadProjectDocs",
+      "signature": "loadProjectDocs(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6f23f5013efe",
+      "line": 51,
+      "endLine": 72
+    },
+    "srcCategory": {
+      "file": "src\\lib\\server\\agent\\prompt.ts",
+      "class": null,
+      "name": "srcCategory",
+      "signature": "srcCategory(file)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Dérive la catégorie d'un symbole depuis son chemin de fichier.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4a1e5c94a58e",
+      "line": 75,
+      "endLine": 84
+    },
+    "formatPrompt": {
+      "file": "src\\lib\\server\\agent\\prompt.ts",
+      "class": null,
+      "name": "formatPrompt",
+      "signature": "formatPrompt(ctx, opts: PromptOptions = {})",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ab8bb4d4834b",
+      "line": 92,
+      "endLine": 173
+    },
+    "emitLog": {
+      "file": "src\\lib\\server\\logs.ts",
+      "class": null,
+      "name": "emitLog",
+      "signature": "emitLog(level, message)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "688b966af269",
+      "line": 12,
+      "endLine": 19
+    },
+    "askClaude": {
+      "file": "src\\lib\\server\\services\\claude.ts",
+      "class": null,
+      "name": "askClaude",
+      "signature": "askClaude(prompt)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f654e57c1f05",
+      "line": 3,
+      "endLine": 12
+    },
+    "createBranch": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "createBranch",
+      "signature": "createBranch(name)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "65f39ae2a0fb",
+      "line": 5,
+      "endLine": 7
+    },
+    "commit": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "commit",
+      "signature": "commit(files, message)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "733a3020abf8",
+      "line": 9,
+      "endLine": 12
+    },
+    "getRemoteRepo": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getRemoteRepo",
+      "signature": "getRemoteRepo()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "099203d3fea5",
+      "line": 14,
+      "endLine": 23
+    },
+    "getDiff": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getDiff",
+      "signature": "getDiff(root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "97846142c6e0",
+      "line": 25,
+      "endLine": 30
+    },
+    "commitAll": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "commitAll",
+      "signature": "commitAll(root, message)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "147d98119a45",
+      "line": 32,
+      "endLine": 36
+    },
+    "revertAll": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "revertAll",
+      "signature": "revertAll(root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8af65d1b3234",
+      "line": 38,
+      "endLine": 42
+    },
+    "pushBranch": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "pushBranch",
+      "signature": "pushBranch(root, branch)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "543d81f690ea",
+      "line": 44,
+      "endLine": 47
+    },
+    "getBranchState": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getBranchState",
+      "signature": "getBranchState(root, branch)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d3f9d1dd0f6d",
+      "line": 49,
+      "endLine": 57
+    },
+    "getMainBranch": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getMainBranch",
+      "signature": "getMainBranch(root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c7c9ff63b3ca",
+      "line": 59,
+      "endLine": 63
+    },
+    "mergeBranch": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "mergeBranch",
+      "signature": "mergeBranch(root, branch)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "3e461ea31eff",
+      "line": 65,
+      "endLine": 71
+    },
+    "checkoutMain": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "checkoutMain",
+      "signature": "checkoutMain(root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "86c1fb5a7940",
+      "line": 73,
+      "endLine": 78
+    },
+    "getPrivateKey": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getPrivateKey",
+      "signature": "getPrivateKey()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "78e608654f77",
+      "line": 9,
+      "endLine": 15
+    },
+    "getOctokit": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getOctokit",
+      "signature": "getOctokit()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "07f0029047d0",
+      "line": 17,
+      "endLine": 32
+    },
+    "getIssue": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getIssue",
+      "signature": "getIssue(owner, repo, number)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "66344182c8ef",
+      "line": 34,
+      "endLine": 42
+    },
+    "getIssues": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getIssues",
+      "signature": "getIssues(owner, repo)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c16b4950ecae",
+      "line": 44,
+      "endLine": 48
+    },
+    "getIssuesWithBodies": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getIssuesWithBodies",
+      "signature": "getIssuesWithBodies(owner, repo)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6b26034915d0",
+      "line": 50,
+      "endLine": 68
+    },
+    "getRepoFile": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getRepoFile",
+      "signature": "getRepoFile(owner, repo, path)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "683d8c6352e2",
+      "line": 70,
+      "endLine": 75
+    },
+    "createIssue": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "createIssue",
+      "signature": "createIssue(owner, repo, title, body)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1342f6f62993",
+      "line": 77,
+      "endLine": 81
+    },
+    "getSubIssues": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "getSubIssues",
+      "signature": "getSubIssues(owner, repo, number)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ccdd3320f79c",
+      "line": 83,
+      "endLine": 95
+    },
+    "listAccessibleRepos": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "listAccessibleRepos",
+      "signature": "listAccessibleRepos()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "14c23deb0946",
+      "line": 97,
+      "endLine": 106
+    },
+    "findOpenPullRequest": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "findOpenPullRequest",
+      "signature": "findOpenPullRequest(owner, repo, head, base)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1a33371d7ef5",
+      "line": 108,
+      "endLine": 112
+    },
+    "createPullRequest": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "createPullRequest",
+      "signature": "createPullRequest(owner, repo, title, body, head, base)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d90699e12faa",
+      "line": 114,
+      "endLine": 122
+    },
+    "mergePullRequest": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "mergePullRequest",
+      "signature": "mergePullRequest(owner, repo, pullNumber)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "dd8af44b3138",
+      "line": 124,
+      "endLine": 128
+    },
+    "closeIssue": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "closeIssue",
+      "signature": "closeIssue(owner, repo, issueNumber)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "61e3175f8e26",
+      "line": 130,
+      "endLine": 133
+    },
+    "createIssueComment": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "createIssueComment",
+      "signature": "createIssueComment(issueNumber, body)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "7b622118ca92",
+      "line": 135,
+      "endLine": 145
+    },
+    "register": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "register",
+      "signature": "register(taskId, proc)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "abbb134fe718",
+      "line": 7,
+      "endLine": 9
+    },
+    "unregister": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "unregister",
+      "signature": "unregister(taskId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d89192856911",
+      "line": 11,
+      "endLine": 13
+    },
+    "getProcess": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "getProcess",
+      "signature": "getProcess(taskId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9899182bc231",
+      "line": 15,
+      "endLine": 17
+    },
+    "isRunning": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "isRunning",
+      "signature": "isRunning(taskId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "3b18b280d2f6",
+      "line": 19,
+      "endLine": 21
+    },
+    "writeInput": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "writeInput",
+      "signature": "writeInput(taskId, input)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "db3d3848e87f",
+      "line": 24,
+      "endLine": 29
+    },
+    "killProcess": {
+      "file": "src\\lib\\server\\services\\processes.ts",
+      "class": null,
+      "name": "killProcess",
+      "signature": "killProcess(taskId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "21dcd14478a0",
+      "line": 35,
+      "endLine": 45
+    },
+    "configFilePath": {
+      "file": "src\\lib\\server\\services\\project-config.ts",
+      "class": null,
+      "name": "configFilePath",
+      "signature": "configFilePath()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9addf264ab40",
+      "line": 22,
+      "endLine": 27
+    },
+    "getProjectConfig": {
+      "file": "src\\lib\\server\\services\\project-config.ts",
+      "class": null,
+      "name": "getProjectConfig",
+      "signature": "getProjectConfig()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f7ceee4b2621",
+      "line": 29,
+      "endLine": 38
+    },
+    "setProjectConfig": {
+      "file": "src\\lib\\server\\services\\project-config.ts",
+      "class": null,
+      "name": "setProjectConfig",
+      "signature": "setProjectConfig(patch)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c0c6cc739aba",
+      "line": 40,
+      "endLine": 47
+    },
+    "load": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "load",
+      "signature": "load()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "21dda0a597a7",
+      "line": 18,
+      "endLine": 35
+    },
+    "save": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "save",
+      "signature": "save(state)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c22b86b45a91",
+      "line": 37,
+      "endLine": 40
+    },
+    "listProjects": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "listProjects",
+      "signature": "listProjects()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "cf662ed0047a",
+      "line": 42,
+      "endLine": 45
+    },
+    "getCurrentProject": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "getCurrentProject",
+      "signature": "getCurrentProject()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "29bea151c457",
+      "line": 47,
+      "endLine": 50
+    },
+    "getProjectRoot": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "getProjectRoot",
+      "signature": "getProjectRoot()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d6509615d5e8",
+      "line": 52,
+      "endLine": 54
+    },
+    "setCurrentProject": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "setCurrentProject",
+      "signature": "setCurrentProject(id)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "602008696289",
+      "line": 56,
+      "endLine": 62
+    },
+    "addProject": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "addProject",
+      "signature": "addProject(projectPath)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9673c0c807b7",
+      "line": 64,
+      "endLine": 82
+    },
+    "removeProject": {
+      "file": "src\\lib\\server\\services\\projects.ts",
+      "class": null,
+      "name": "removeProject",
+      "signature": "removeProject(id)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "06078d15fad5",
+      "line": 84,
+      "endLine": 89
+    },
+    "getTasksDir": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "getTasksDir",
+      "signature": "getTasksDir()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4c6d05532b59",
+      "line": 30,
+      "endLine": 33
+    },
+    "ensureDir": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "ensureDir",
+      "signature": "ensureDir()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f2bb140d69a9",
+      "line": 35,
+      "endLine": 37
+    },
+    "taskPath": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "taskPath",
+      "signature": "taskPath(id)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f3435e50153d",
+      "line": 39,
+      "endLine": 41
+    },
+    "listTasks": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "listTasks",
+      "signature": "listTasks()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b9072f789dbc",
+      "line": 43,
+      "endLine": 54
+    },
+    "getTask": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "getTask",
+      "signature": "getTask(id)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "3b4cd8751a29",
+      "line": 56,
+      "endLine": 60
+    },
+    "createTask": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "createTask",
+      "signature": "createTask(data)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d46535ddd2c8",
+      "line": 62,
+      "endLine": 80
+    },
+    "updateTask": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "updateTask",
+      "signature": "updateTask(id, patch)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ddc52153e76c",
+      "line": 82,
+      "endLine": 88
+    },
+    "deleteTask": {
+      "file": "src\\lib\\server\\services\\tasks.ts",
+      "class": null,
+      "name": "deleteTask",
+      "signature": "deleteTask(id)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "87a4366ec36b",
+      "line": 90,
+      "endLine": 95
+    },
+    "loadUsage": {
+      "file": "src\\lib\\server\\services\\usage.ts",
+      "class": null,
+      "name": "loadUsage",
+      "signature": "loadUsage()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "226774ce4921",
+      "line": 12,
+      "endLine": 19
+    },
+    "getProjectUsage": {
+      "file": "src\\lib\\server\\services\\usage.ts",
+      "class": null,
+      "name": "getProjectUsage",
+      "signature": "getProjectUsage()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "965f72c1d485",
+      "line": 21,
+      "endLine": 23
+    },
+    "addProjectUsage": {
+      "file": "src\\lib\\server\\services\\usage.ts",
+      "class": null,
+      "name": "addProjectUsage",
+      "signature": "addProjectUsage(input, output)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d1cf64c1e4fc",
+      "line": 25,
+      "endLine": 36
+    },
+    "notifyTaskCreated": {
+      "file": "src\\lib\\stores\\agent.ts",
+      "class": null,
+      "name": "notifyTaskCreated",
+      "signature": "notifyTaskCreated()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "99eeaff83b52",
+      "line": 36,
+      "endLine": 36
+    },
+    "parseGroups": {
+      "file": "src\\lib\\stores\\agent.ts",
+      "class": null,
+      "name": "parseGroups",
+      "signature": "parseGroups(text)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ab320a0ffc59",
+      "line": 66,
+      "endLine": 80
+    },
+    "api.agent.input.POST": {
+      "file": "src\\routes\\api\\agent\\input\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "aa235d5b7fd6",
+      "line": 4,
+      "endLine": 11
+    },
+    "api.agent.kill.POST": {
+      "file": "src\\routes\\api\\agent\\kill\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4b65a2df68d3",
+      "line": 5,
+      "endLine": 14
+    },
+    "savePlan": {
+      "file": "src\\routes\\api\\agent\\run\\+server.ts",
+      "class": null,
+      "name": "savePlan",
+      "signature": "savePlan(taskId, lines)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Sauvegarde uniquement le texte produit par l'agent (type \"agent\") dans <taskId>.plan.md.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5d3ec460813e",
+      "line": 15,
+      "endLine": 22
+    },
+    "api.agent.run.POST": {
+      "file": "src\\routes\\api\\agent\\run\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8049ddb62b3e",
+      "line": 24,
+      "endLine": 205
+    },
+    "api.cartography.POST": {
+      "file": "src\\routes\\api\\cartography\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "655a3407f244",
+      "line": 7,
+      "endLine": 51
+    },
+    "scanJs": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "scanJs",
+      "signature": "scanJs(dir, rel)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6670c3c01fde",
+      "line": 26,
+      "endLine": 39
+    },
+    "extractExtends": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "extractExtends",
+      "signature": "extractExtends(content)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a9eecb26bf5e",
+      "line": 41,
+      "endLine": 43
+    },
+    "capitalize": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "capitalize",
+      "signature": "capitalize(s)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4bda8c2eda94",
+      "line": 45,
+      "endLine": 45
+    },
+    "api.cartography.diagram.GET": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "de3aca3807d7",
+      "line": 47,
+      "endLine": 158
+    },
+    "api.cartography.enrich.POST": {
+      "file": "src\\routes\\api\\cartography\\enrich\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ab02426851a2",
+      "line": 5,
+      "endLine": 52
+    },
+    "api.cartography.methods.GET": {
+      "file": "src\\routes\\api\\cartography\\methods\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9fff4976fb36",
+      "line": 6,
+      "endLine": 32
+    },
+    "api.cartography.run.POST": {
+      "file": "src\\routes\\api\\cartography\\run\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6e8a0f99f64e",
+      "line": 15,
+      "endLine": 61
+    },
+    "api.cartography.snippet.GET": {
+      "file": "src\\routes\\api\\cartography\\snippet\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ url })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "02e98c85a2a6",
+      "line": 31,
+      "endLine": 74
+    },
+    "api.cartography.stats.GET": {
+      "file": "src\\routes\\api\\cartography\\stats\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8a02ff5abf92",
+      "line": 6,
+      "endLine": 61
+    },
+    "api.context.POST": {
+      "file": "src\\routes\\api\\context\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "161b411496c1",
+      "line": 7,
+      "endLine": 43
+    },
+    "api.github.issues.POST": {
+      "file": "src\\routes\\api\\github\\issues\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f641a565d659",
+      "line": 7,
+      "endLine": 16
+    },
+    "api.issue.GET": {
+      "file": "src\\routes\\api\\issue\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ url })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "08682e650afb",
+      "line": 8,
+      "endLine": 35
+    },
+    "api.issue.POST": {
+      "file": "src\\routes\\api\\issue\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6c060a7225e1",
+      "line": 37,
+      "endLine": 41
+    },
+    "api.issues.GET": {
+      "file": "src\\routes\\api\\issues\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8d2429b0f944",
+      "line": 5,
+      "endLine": 34
+    },
+    "api.issues.POST": {
+      "file": "src\\routes\\api\\issues\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ebee8d81824f",
+      "line": 36,
+      "endLine": 52
+    },
+    "api.issues.analysis.GET": {
+      "file": "src\\routes\\api\\issues\\analysis\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1b0c678fee56",
+      "line": 5,
+      "endLine": 17
+    },
+    "saveAnalysis": {
+      "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
+      "class": null,
+      "name": "saveAnalysis",
+      "signature": "saveAnalysis(content)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "2d0279c0e7d4",
+      "line": 15,
+      "endLine": 18
+    },
+    "saveSnapshot": {
+      "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
+      "class": null,
+      "name": "saveSnapshot",
+      "signature": "saveSnapshot(issues)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "dba0fced18bc",
+      "line": 20,
+      "endLine": 23
+    },
+    "api.issues.analyze.POST": {
+      "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1b755bfe486f",
+      "line": 25,
+      "endLine": 153
+    },
+    "api.issues.snapshot.GET": {
+      "file": "src\\routes\\api\\issues\\snapshot\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c1084457fe90",
+      "line": 9,
+      "endLine": 20
+    },
+    "api.issues.[number].close.POST": {
+      "file": "src\\routes\\api\\issues\\[number]\\close\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "cfb53ebb175e",
+      "line": 5,
+      "endLine": 21
+    },
+    "api.logs.GET": {
+      "file": "src\\routes\\api\\logs\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1073c3239fe9",
+      "line": 4,
+      "endLine": 33
+    },
+    "api.plan.GET": {
+      "file": "src\\routes\\api\\plan\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ url })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "bb42b0950ba0",
+      "line": 4,
+      "endLine": 15
+    },
+    "api.project-config.GET": {
+      "file": "src\\routes\\api\\project-config\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9e0858f35ddf",
+      "line": 8,
+      "endLine": 10
+    },
+    "api.project-config.PATCH": {
+      "file": "src\\routes\\api\\project-config\\+server.ts",
+      "class": null,
+      "name": "PATCH",
+      "signature": "PATCH({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "85a89e0e4f75",
+      "line": 12,
+      "endLine": 20
+    },
+    "api.projects.GET": {
+      "file": "src\\routes\\api\\projects\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a223bb772648",
+      "line": 4,
+      "endLine": 6
+    },
+    "api.projects.POST": {
+      "file": "src\\routes\\api\\projects\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "74b97c288fc1",
+      "line": 8,
+      "endLine": 19
+    },
+    "api.projects.current.PATCH": {
+      "file": "src\\routes\\api\\projects\\current\\+server.ts",
+      "class": null,
+      "name": "PATCH",
+      "signature": "PATCH({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "293fadc9cbfa",
+      "line": 4,
+      "endLine": 8
+    },
+    "api.projects.current.DELETE": {
+      "file": "src\\routes\\api\\projects\\current\\+server.ts",
+      "class": null,
+      "name": "DELETE",
+      "signature": "DELETE({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "2677c4c6ee78",
+      "line": 10,
+      "endLine": 14
+    },
+    "api.projects.github.GET": {
+      "file": "src\\routes\\api\\projects\\github\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "fac4f66968c4",
+      "line": 5,
+      "endLine": 16
+    },
+    "api.repo-file.GET": {
+      "file": "src\\routes\\api\\repo-file\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ url })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8e29e0415c95",
+      "line": 7,
+      "endLine": 20
+    },
+    "api.repo-info.GET": {
+      "file": "src\\routes\\api\\repo-info\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "13422cbf4f7f",
+      "line": 4,
+      "endLine": 7
+    },
+    "api.tasks.GET": {
+      "file": "src\\routes\\api\\tasks\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "495867a10ad1",
+      "line": 4,
+      "endLine": 6
+    },
+    "api.tasks.POST": {
+      "file": "src\\routes\\api\\tasks\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "e41307630f54",
+      "line": 8,
+      "endLine": 24
+    },
+    "api.tasks.[id].GET": {
+      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c23aee42c103",
+      "line": 4,
+      "endLine": 8
+    },
+    "api.tasks.[id].PATCH": {
+      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+      "class": null,
+      "name": "PATCH",
+      "signature": "PATCH({ params, request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6f5e88d51de2",
+      "line": 10,
+      "endLine": 15
+    },
+    "api.tasks.[id].DELETE": {
+      "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
+      "class": null,
+      "name": "DELETE",
+      "signature": "DELETE({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b0e0de6868d4",
+      "line": 17,
+      "endLine": 21
+    },
+    "api.tasks.[id].commit.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params, request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4d4a737b76c4",
+      "line": 6,
+      "endLine": 23
+    },
+    "api.tasks.[id].diff.GET": {
+      "file": "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "716a2536f2f5",
+      "line": 6,
+      "endLine": 19
+    },
+    "toBranchName": {
+      "file": "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts",
+      "class": null,
+      "name": "toBranchName",
+      "signature": "toBranchName(issueNumber, title)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f18d50f66e1d",
+      "line": 9,
+      "endLine": 20
+    },
+    "api.tasks.[id].initial-commit.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8039b4f0f189",
+      "line": 22,
+      "endLine": 68
+    },
+    "api.tasks.[id].merge.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6b13401afa0a",
+      "line": 7,
+      "endLine": 41
+    },
+    "api.tasks.[id].methods.GET": {
+      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "460f22750044",
+      "line": 45,
+      "endLine": 103
+    },
+    "api.tasks.[id].plan.GET": {
+      "file": "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5dc914a40519",
+      "line": 6,
+      "endLine": 17
+    },
+    "api.tasks.[id].push.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\push\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "fc18644313e3",
+      "line": 6,
+      "endLine": 19
+    },
+    "api.tasks.[id].revert.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4bbdc9089071",
+      "line": 6,
+      "endLine": 19
+    },
+    "api.tasks.[id].sync.POST": {
+      "file": "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ params })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b08f9ebd785d",
+      "line": 6,
+      "endLine": 27
+    },
+    "api.usage.GET": {
+      "file": "src\\routes\\api\\usage\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b27c9d7c8b3f",
+      "line": 3,
+      "endLine": 8
     }
   },
   "classes": {}

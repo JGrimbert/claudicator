@@ -69,3 +69,10 @@ export async function mergeBranch(root: string, branch: string): Promise<void> {
     await g.checkout(mainBranch);
     await g.merge(["--no-ff", branch]);
 }
+
+export async function checkoutMain(root: string): Promise<void> {
+    const g = simpleGit(root);
+    const main = await getMainBranch(root);
+    await g.checkout(main);
+    await g.pull("origin", main);
+}

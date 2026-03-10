@@ -1,0 +1,46 @@
+{
+  "id": "f3e0721b-a85e-43ea-b580-82f14389e3d0",
+  "title": "snippets code",
+  "status": "done",
+  "issueNumber": 45,
+  "logs": [
+    "[pid:26596]",
+    "⚙ Read C:/claudicator/.cache/project-diagram.md",
+    "⚙ Glob **/*.ts",
+    "⚙ Glob **/*.ts",
+    "⚙ Read C:/claudicator/src/lib/server/agent/context.ts",
+    "⚙ Read C:/claudicator/src/routes/api/cartography/run/+server.ts",
+    "⚙ Read C:/claudicator/src/routes/api/cartography/+server.ts",
+    "⚙ Read C:/claudicator/.cache/method-index.json",
+    "⚙ Read C:/claudicator/src/lib/server/services/projects.ts",
+    "⚙ Read C:/claudicator/src/routes/api/tasks/[id]/methods/+server.ts",
+    "⚙ Read C:/claudicator/src/routes/api/context/+server.ts",
+    "⚙ Grep Index ou src",
+    "⚙ Grep Symboles|symbols|methods",
+    "⚙ Read C:/claudicator/src/routes/api/cartography/diagram/+server.ts",
+    "⚙ Read C:/claudicator/src/lib/components/MethodsViewer.svelte",
+    "⚙ Read C:/claudicator/.agent/projects.json",
+    "⚙ Glob .env*",
+    "⚙ Read C:/claudicator/.cache/method-index.json",
+    "⚙ Grep Symboles|MethodsViewer|methods",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/.cache/method-index.json",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/src/routes/api/cartography/stats/+server.ts",
+    "⚙ Read C:/claudicator/src/lib/components/DiagramViewer.svelte",
+    "⚙ Grep \"methods\"",
+    "⚙ Read C:/claudicator/.cache/method-index.json",
+    "J'ai maintenant une vue complète des trois problèmes. Voici le plan.\n\n---\n\n## Plan : Cartographie claudicator — 3 bugs à corriger\n\n### 1. Analyse du problème\n\n**Bug A — `project-diagram.md` : seulement 5 méthodes**\nLa commande `annotate diagram` de lolve-cartography est conçue pour des projets ayant une structure `src/prima` (lolve). Elle filtre explicitement sur ce dossier. Pour claudicator, elle ne trouve que les rares méthodes qu'elle considère comme \"classes\" (DELETE, PATCH, GET, POST des routes). Le `method-index.json` lui, contient bien ~100+ méthodes.\n\n**Bug B — \"Index ou src/prima introuvable\"**\nL'endpoint `GET /api/cartography/diagram` (`diagram/+server.ts:53`) vérifie `existsSync(join(PROJECT_PATH, \"src/prima\"))`. Claudicator n'a pas de `src/prima` → l'endpoint échoue systématiquement → la vue \"codebase\" (DiagramViewer) affiche cette erreur.\n\n**Bug C — Symboles: rien**\n`loadSymbolMap` filtre strictement sur `kwScore > 0`. Les méthodes de claudicator n'ont pas de `description` (rôle `internal` partout, pas d'enrichissement via `annotate full`). Pour un titre de tâche générique, les mots-clés peuvent ne matcher aucun nom/fichier de méthode → 0 résultats.\n\n---\n\n### 2. Localisation des usages\n\n| Fichier | Ligne | Rôle |\n|---|---|---|\n| `src/routes/api/cartography/diagram/+server.ts` | 53 | Vérification `existsSync(primaPath)` — bloquante |\n| `src/routes/api/cartography/diagram/+server.ts` | 72–73 | Filtre sur `src/prima` uniquement |\n| `src/lib/server/agent/context.ts` | 133 | `scored.filter(s => s.kwScore > 0)` — filtre strict |\n| `src/lib/components/DiagramViewer.svelte` | `onMount` | Appelle `GET /api/cartography/diagram` |\n| `src/lib/components/MethodsViewer.svelte` | `onMount` | Appelle `GET /api/tasks/{id}/methods` |\n| `.cache/project-diagram.md` | — | Stale, généré pour prima uniquement |\n\n---\n\n### 3. Stratégie de remplacement\n\n**Bug B (prioritaire)** : Rendre le mode `prima` optionnel dans `diagram/+server.ts`.\n- Si `src/prima` existe → comportement actuel (arbre d'héritage prima)\n- Si `src/prima` absent → mode générique : grouper les méthodes par module (basé sur le chemin du fichier), sans filtrage prima, sans arbre d'héritage. Retourner un `tree` plat par dossier.\n\n**Bug A** : Après correction du Bug B, la commande `annotate diagram` (côté lolve-cartography) peut être rejouée. Mais ce n'est pas urgent : `DiagramViewer` affiche le tree retourné par l'API, pas le fichier `.cache/project-diagram.md` directement. Le `project-diagram.md` est utilisé comme contexte dans les prompts (`loadConceptMap`). Voir Bug A — étape 3.\n\n**Bug C** : Ajouter un fallback dans `loadSymbolMap` — si aucun symbole n'a `kwScore > 0`, ne pas retourner vide mais retourner les top-N méthodes non-privées triées par `total` (roleBonus). Ceci est hors de la contrainte \"rôle seul ne suffit pas\" : le fallback ne s'active que si vraiment aucun keyword ne matche. Autre option moins préférée : lancer `annotate full` sur claudicator pour enrichir les descriptions.\n\n---\n\n### 4. Étapes de modification du code\n\n**Étape 4.1 — `diagram/+server.ts` : mode générique si pas de prima** *(Bug B)*\n\n```\ndiff: diagram/+server.ts\n- if (!existsSync(indexPath) || !existsSync(primaPath)) {\n-     return json({ error: \"Index ou src/prima introuvable\" }, { status: 404 });\n- }\n+ if (!existsSync(indexPath)) {\n+     return json({ error: \"Index introuvable — lance annotate index\" }, { status: 404 });\n+ }\n+ const isPrima = existsSync(primaPath);\n```\n\nPuis ajouter une branche `if (!isPrima)` après le chargement de `allMethods` :\n- Grouper les méthodes par fichier (clé = dossier relatif)\n- Construire un `tree` plat (1 `TreeNode` par fichier, `depth: 0`, `extendsClass: null`)\n- Retourner `{ summary: { total, described }, tree }`\n\n**Étape 4.2 — `project-diagram.md` : mettre à jour** *(Bug A)*\n\nLe fichier `.cache/project-diagram.md` est lu par `loadConceptMap` dans `prompt.ts` et injecté dans le prompt agent. Sa valeur actuelle (5 méthodes) est trompeuse.\n\nOption retenue : après correction de 4.1, relancer `annotate diagram` via l'UI → le fichier sera régénéré avec la vraie structure. Alternativement, mettre à jour `loadConceptMap` pour lire les stats depuis le `method-index.json` si `project-diagram.md` ne contient que peu de méthodes (heuristique `< 10`).\n\n**Étape 4.3 — `context.ts` : fallback loadSymbolMap** *(Bug C)*\n\n```\ndiff: context.ts (loadSymbolMap)\n  const selected = scored.filter(s => s.kwScore > 0).slice(0, SYMBOL_MAP_MAX);\n+\n+ // Fallback : aucun keyword match → top-N par rôle (évite retour vide)\n+ if (selected.length === 0) {\n+     return scored.slice(0, SYMBOL_MAP_MAX);  // déjà triés par total (roleBonus)\n+ }\n```\n\nNote : ce fallback retourne les méthodes les mieux scorées par rôle uniquement, ce qui reste utile mais moins précis. Le flag `kwScore > 0` reste la règle principale.\n\n---\n\n### 5. Vérifications et nettoyage\n\n- [ ] `GET /api/cartography/diagram` → retourne 200 avec `tree` générique pour claudicator (groupé par fichier)\n- [ ] `DiagramViewer` affiche les méthodes de claudicator sans erreur\n- [ ] `GET /api/tasks/{id}/methods` → retourne au moins N méthodes pour toute tâche de claudicator (fallback activé si 0 match)\n- [ ] Bouton \"Symboles\" affiche bien le MethodsViewer avec des résultats\n- [ ] Relancer `annotate diagram` via l'UI → `project-diagram.md` mis à jour avec les vraies stats\n- [ ] Vérifier que `loadConceptMap` lit le fichier régénéré correctement dans les prompts\n- [ ] Aucune régression sur lolve : les projets avec `src/prima` doivent continuer à utiliser le mode héritage"
+  ],
+  "createdAt": "2026-03-10T16:07:55.446Z",
+  "updatedAt": "2026-03-10T16:15:21.492Z",
+  "usage": {
+    "inputTokens": 16,
+    "outputTokens": 14055
+  },
+  "totalUsage": {
+    "inputTokens": 16,
+    "outputTokens": 14055
+  }
+}
