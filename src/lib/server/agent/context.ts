@@ -77,6 +77,7 @@ export function buildContext(
     description?: string
 ): AgentContext {
     const symbolMap = loadSymbolMap(projectRoot, task.title);
+    const methods   = loadMethodSnippets(projectRoot, task.title);
     const ctx: AgentContext = {
         task: { id: task.id, title: task.title },
         symbolMap,
@@ -85,7 +86,7 @@ export function buildContext(
 
     const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
     const projectDocs = loadProjectDocs(projectRoot);
-    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs });
+    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, methods });
 
     return ctx;
 }

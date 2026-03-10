@@ -9,6 +9,8 @@ export type PromptOptions = {
     conceptMap?: Record<string, string>;
     /** Ressources de documentation disponibles dans le projet */
     projectDocs?: ProjectDocs;
+    /** Snippets de code des entrées principales (symbol map) */
+    methods?: MethodSnippet[];
 };
 
 export type ProjectDocs = {
@@ -71,18 +73,6 @@ export function loadProjectDocs(projectRoot: string): ProjectDocs {
     return { agents, theoryFiles, hasDiagram };
 }
 
-/** Dérive la catégorie d'un symbole depuis son chemin de fichier. */
-function srcCategory(file: string): string {
-    const norm = file.replace(/\\/g, '/');
-    if (/\/composables\//i.test(norm)) return 'composable';
-    if (/\/components\//i.test(norm))  return 'component';
-    if (/\/prima\//i.test(norm))       return 'prima';
-    if (/\/stores?\//i.test(norm))     return 'store';
-    if (/\/utils?\//i.test(norm))      return 'util';
-    if (/\/data\//i.test(norm))        return 'data';
-    return '';
-}
-
 /**
  * Formate un AgentContext en prompt texte complet prêt à envoyer à Claude.
  *
@@ -90,7 +80,7 @@ function srcCategory(file: string): string {
  *   TASK / DESCRIPTION / OBJECTIF / CONTRAINTES / FORMAT DU PLAN / DOCUMENTATION / CONCEPTS / SYMBOL MAP
  */
 export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): string {
-    const { description, conceptMap, projectDocs } = opts;
+    const { description, conceptMap, projectDocs, methods } = opts;
     const lines: string[] = [];
 
     // ── En-tête ──────────────────────────────────────────────────────────────
@@ -147,24 +137,31 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         }
     }
 
+    // ── Code pertinent (snippets des entrées principales) ─────────────────────
+    if (methods && methods.length > 0) {
+        lines.push("CODE PERTINENT");
+        const byFile = new Map<string, MethodSnippet[]>();
+        for (const m of methods) {
+            if (!byFile.has(m.file)) byFile.set(m.file, []);
+            byFile.get(m.file)!.push(m);
+        }
+        for (const [file, items] of byFile) {
+            lines.push(`\n## ${file}`);
+            for (const m of items) {
+                lines.push(`### ${m.key}${m.description ? `  — ${m.description}` : ""}`);
+                lines.push("```");
+                lines.push(m.snippet);
+                lines.push("```");
+            }
+        }
+        lines.push("");
+    }
+
     // ── Concepts ─────────────────────────────────────────────────────────────
     if (conceptMap && Object.keys(conceptMap).length > 0) {
         lines.push("CONCEPTS");
         for (const [name, def] of Object.entries(conceptMap)) {
             lines.push(`${name} : ${def}`);
-        }
-        lines.push("");
-    }
-
-    // ── Symbol Map ───────────────────────────────────────────────────────────
-    if (Object.keys(ctx.symbolMap).length > 0) {
-        lines.push("SYMBOL MAP");
-        for (const [cls, group] of Object.entries(ctx.symbolMap).sort()) {
-            const filePath = group.file ? group.file.replace(/\\/g, '/') : '';
-            const cat      = filePath ? srcCategory(filePath) : '';
-            const meta     = [cat, filePath].filter(Boolean).join(' · ');
-            lines.push(meta ? `${cls}  [${meta}]` : cls);
-            for (const sig of group.sigs) lines.push(`  ${sig}`);
         }
         lines.push("");
     }
