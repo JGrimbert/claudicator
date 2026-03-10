@@ -39,6 +39,7 @@ export const hoveredIssueNumber = writable<number | null>(null);
 
 export const issueAnalysis = writable<{
     running: boolean;
+    updating: boolean;
     result: string | null;
     dismissed: boolean;
     logs: RunLog[];
@@ -47,7 +48,7 @@ export const issueAnalysis = writable<{
         removed: number[];
         modified: number[];
     } | null;
-}>({ running: false, result: null, dismissed: false, logs: [], snapshotDiff: null });
+}>({ running: false, updating: false, result: null, dismissed: false, logs: [], snapshotDiff: null });
 
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 

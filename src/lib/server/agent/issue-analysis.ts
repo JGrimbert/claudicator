@@ -68,6 +68,57 @@ export async function prepareIssues(issues: IssueInput[]): Promise<Array<IssueIn
     return results;
 }
 
+export type PreparedIssue = IssueInput & { preparedBody: string };
+
+/** Construit un prompt pour intégrer des issues nouvelles/modifiées dans une analyse existante. */
+export function buildUpdatePrompt(existingAnalysis: string, newIssues: PreparedIssue[]): string {
+    const lines: string[] = [];
+
+    lines.push("TASK");
+    lines.push("Mise à jour de l'analyse des issues GitHub");
+    lines.push("");
+    lines.push("OBJECTIF");
+    lines.push("Tu disposes d'une analyse existante (groupes thématiques + roadmap Mermaid).");
+    lines.push("Intègre les nouvelles issues ou les issues modifiées listées ci-dessous dans cette analyse.");
+    lines.push("Produis une version mise à jour complète en conservant la structure existante.");
+    lines.push("");
+    lines.push("CONTRAINTES");
+    lines.push("- Conserver les groupes existants autant que possible");
+    lines.push("- Placer chaque nouvelle issue dans le groupe le plus pertinent");
+    lines.push("- Créer un nouveau groupe uniquement si vraiment nécessaire");
+    lines.push("- Mettre à jour le diagramme Mermaid si de nouveaux groupes apparaissent");
+    lines.push("- Pas de notion de temps ou de durée");
+    lines.push("- Garder les titres des groupes courts (3-4 mots max)");
+    lines.push("");
+    lines.push("FORMAT DE SORTIE");
+    lines.push("Reproduire exactement la structure :");
+    lines.push("## Analyse thématique");
+    lines.push("### Groupe N — Nom");
+    lines.push("Issues : #X, #Y");
+    lines.push("Résumé : <1 phrase>");
+    lines.push("Dépend de : <Groupe X si applicable>");
+    lines.push("");
+    lines.push("## Roadmap recommandée");
+    lines.push("```mermaid");
+    lines.push("graph TD");
+    lines.push("  G1[Nom1] --> G2[Nom2]");
+    lines.push("```");
+    lines.push("");
+    lines.push("ANALYSE EXISTANTE");
+    lines.push(existingAnalysis);
+    lines.push("");
+    lines.push("NOUVELLES ISSUES À INTÉGRER");
+
+    for (const issue of newIssues) {
+        lines.push(`#${issue.number} — ${issue.title}`);
+        if (issue.labels.length > 0) lines.push(`Labels : ${issue.labels.join(", ")}`);
+        lines.push(`Description : ${issue.preparedBody}`);
+        lines.push("");
+    }
+
+    return lines.join("\n");
+}
+
 /** Construit le prompt d'analyse à partir de la liste enrichie. */
 export function buildAnalysisPrompt(issues: Array<IssueInput & { preparedBody: string }>): string {
     const lines: string[] = [];
