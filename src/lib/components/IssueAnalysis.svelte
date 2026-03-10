@@ -248,7 +248,7 @@
     }
 
     function dismiss() {
-        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, snapshotDiff: null }));
+        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, updating: false, snapshotDiff: null }));
         mermaidRendered = false;
         createFeedback = "";
         groupFeedback = {};
@@ -463,22 +463,23 @@
     $: lastStatus  = systemLogs.length > 0 ? systemLogs[systemLogs.length - 1].line : "";
     $: groups = $issueAnalysis.result ? parseGroups($issueAnalysis.result) : [];
     $: planLogs = $agentRunState.logs.filter(l => l.type !== "usage" && !/^\[pid:\d+\]$/.test(l.line));
+    $: isActive = $issueAnalysis.running || $issueAnalysis.updating;
 </script>
 
 <div class="analysis">
     <div class="analysis-header">
-        <span class="dot" class:running={$issueAnalysis.running}></span>
-        <span class="label">Analyse des issues</span>
-        {#if !$issueAnalysis.running}
+        <span class="dot" class:running={isActive}></span>
+        <span class="label">{$issueAnalysis.updating ? "Intégration des issues" : "Analyse des issues"}</span>
+        {#if !isActive}
             <button class="btn-dismiss" onclick={dismiss}>✕ Fermer</button>
         {/if}
     </div>
 
-    {#if $issueAnalysis.running}
+    {#if isActive}
         <!-- Console de logs temps réel -->
         <div class="log-area" bind:this={logArea} onscroll={onScroll}>
             {#if visibleLogs.length === 0}
-                <span class="hint blink">{FRAMES[frame]} Initialisation de l'analyse…</span>
+                <span class="hint blink">{FRAMES[frame]} {$issueAnalysis.updating ? "Intégration des nouvelles issues…" : "Initialisation de l'analyse…"}</span>
             {:else}
                 {#each visibleLogs as entry}
                     <div class="log-line" class:sys={entry.type === "system"}>{entry.line}</div>
