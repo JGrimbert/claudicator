@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
-    import AgentInput from "$lib/components/AgentInput.svelte";
 
     type TaskStatus = "pending" | "running" | "done" | "failed";
     type TokenUsage = { inputTokens: number; outputTokens: number };
@@ -16,6 +15,7 @@
         logs: string[];
         usage?: TokenUsage;
         totalUsage?: TokenUsage;
+        hasPlan?: boolean;
         createdAt: string;
         updatedAt: string;
     };
@@ -66,6 +66,22 @@
     let pushing = false;
     let merging = false;
 
+    // Reset task bloquée
+    let resetting = false;
+    async function resetTask(task: Task) {
+        if (resetting) return;
+        resetting = true;
+        try {
+            const res = await fetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "pending" })
+            });
+            const data = await res.json();
+            if (!data.error) await loadTasks();
+        } finally { resetting = false; }
+    }
+
     // Issue liée
     let linkedIssueState: "open" | "closed" | null = null;
     let closingIssue = false;
@@ -109,6 +125,26 @@
         return { name: "plan", color: "444455" };
     }
 
+    function rowLabels(task: Task, isActive: boolean): { name: string; color: string }[] {
+        if (isActive) return [pipelineLabel(task)];
+        if (task.status === "failed")  return [{ name: "échoué",   color: "f44336" }];
+        if (task.status === "running") return [{ name: "en cours", color: "f7c948" }];
+        if (task.status === "done" && task.hasPlan) {
+            const tokens = task.totalUsage ?? task.usage;
+            const tokStr = tokens ? ` · ${Math.round(tokens.inputTokens / 100) / 10}k` : "";
+            return [{ name: `impl.${tokStr}`, color: "9181f9" }];
+        }
+        return [];
+    }
+
+    // 0=plan 1=impl 2=commit 3=push
+    function taskPipelineStep(task: Task): number {
+        if (task.pushed)               return 3;
+        if (task.branch)               return 2;
+        if (task.status === "done")    return 1;
+        return 0;
+    }
+
     $: filtered = (() => {
         const groups = $planGroups;
         function pos(n: number | undefined): number {
@@ -141,12 +177,22 @@
         return "disabled";
     }
 
-    onMount(() => { loadTasks(); });
+    const SELECTED_KEY = "claudicator:selected-task";
+
+    onMount(async () => {
+        await loadTasks();
+        const savedId = localStorage.getItem(SELECTED_KEY);
+        const toSelect = (savedId ? tasks.find(t => t.id === savedId) : null)
+            ?? tasks.find(t => t.hasPlan);
+        if (toSelect) await selectTask(toSelect);
+    });
 
     // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
     // Svelte 4 les inclut comme dépendances et boucle à l'infini.
     // On délègue à une fonction pour isoler le scope de tracking.
     $: if ($taskRefreshTick) onRefreshTick();
+
+    $: planModeTask.set(selected && selectedPanel === "plan" ? { id: selected.id, title: selected.title } : null);
 
     function onRefreshTick() {
         (async () => {
@@ -242,8 +288,10 @@
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             implEdit = ""; commitMsg = ""; selectedPanel = "plan"; wfError = "";
+            localStorage.removeItem(SELECTED_KEY);
             return;
         }
+        localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
@@ -447,9 +495,10 @@
                     <ItemRow
                         prefix={taskPrefix(task)}
                         title={task.title}
-                        labels={[pipelineLabel(task)]}
+                        labels={rowLabels(task, selected?.id === task.id)}
+                        pipelineStep={task.status !== "failed" ? taskPipelineStep(task) : null}
                         state={task.status === "failed" ? "closed" : "open"}
-                        active={selected?.id === task.id}
+                        active={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id)}
                         onclick={() => selectTask(task)}
                     />
                     <button
@@ -487,6 +536,20 @@
                                 </span>
                             {/if}
                         </div>
+
+                        <!-- ── Task bloquée / échouée ── -->
+                        {#if task.status === "running" || task.status === "failed"}
+                            <div class="stuck-bar">
+                                <span class="stuck-label">
+                                    {task.status === "running" ? "⚠ agent inactif — task bloquée" : "✕ planification échouée"}
+                                </span>
+                                <button
+                                    class="stuck-reset"
+                                    onclick={() => resetTask(task)}
+                                    disabled={resetting}
+                                >{resetting ? "…" : "↺ Réinitialiser → pending"}</button>
+                            </div>
+                        {/if}
 
                         <!-- ── Barre workflow ── -->
                         <div class="wf-bar">
@@ -542,7 +605,7 @@
 
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
-                            <AgentInput {task} />
+                            <div class="plan-scene-hint">↗ Scène principale</div>
 
                         {:else if selectedPanel === "implement"}
                             <div class="impl-panel">
@@ -782,6 +845,36 @@
 .close-issue-btn { color: #a04040 !important; border-color: #3a2a2a !important; }
 .close-issue-btn:hover:not(:disabled) { color: #f44336 !important; border-color: #f44336 !important; }
 
+/* ── Task bloquée ── */
+.stuck-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 1rem;
+    border-bottom: 1px solid #2a1a1a;
+    background: #110808;
+}
+.stuck-label {
+    font-size: 0.6rem;
+    color: #7a3a2a;
+    font-style: italic;
+    flex: 1;
+}
+.stuck-reset {
+    background: none;
+    border: 1px solid #3a2020;
+    color: #a05040;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.stuck-reset:hover:not(:disabled) { color: #f44336; border-color: #f44336; }
+.stuck-reset:disabled { opacity: 0.4; cursor: default; }
+
 /* ── Barre workflow ── */
 .wf-bar {
     display: flex;
@@ -987,6 +1080,16 @@
     font-size: 0.62rem;
     color: #333;
     font-style: italic;
+}
+
+/* ── Placeholder plan scène ── */
+.plan-scene-hint {
+    padding: 0.6rem 1rem;
+    font-size: 0.6rem;
+    color: #2a2a3a;
+    font-style: italic;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid #141414;
 }
 
 /* ── Panneau Push ── */

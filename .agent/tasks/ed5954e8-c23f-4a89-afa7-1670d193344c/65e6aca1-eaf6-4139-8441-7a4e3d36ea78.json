@@ -1,9 +1,34 @@
 {
   "id": "65e6aca1-eaf6-4139-8441-7a4e3d36ea78",
   "title": "Comportement \"artefacts/issues\"",
-  "status": "pending",
+  "status": "done",
   "issueNumber": 2,
-  "logs": [],
+  "logs": [
+    "[pid:30004]",
+    "Laisse-moi lire les fichiers concernés pour produire un plan précis.",
+    "⚙ Read C:/claudicator/src/lib/stores/agent.ts",
+    "⚙ Read C:/claudicator/src/routes/+page.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/AgentConsole.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/IssueAnalysis.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/ItemRow.svelte",
+    "⚙ Glob src/lib/components/IssueList.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/IssueList.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "Maintenant je dois lire les composants restants pour comprendre le header.",
+    "⚙ Glob src/lib/components/*.svelte",
+    "⚙ Glob src/routes/api/issues/**",
+    "⚙ Read C:/claudicator/src/lib/components/ArtifactViewer.svelte",
+    "⚙ Read C:/claudicator/src/routes/api/issues/+server.ts",
+    "J'ai maintenant tous les éléments. Voici le plan détaillé.\n\n---\n\n## Plan — Corrections artefacts/issues\n\n### 1. Analyse du problème\n\n**Trois dysfonctionnements identifiés :**\n\n**A. Création d'issue → liste non rafraîchie**\nDans `IssueList.svelte:submitCreate()` (ligne 153), `await loadIssues()` est bien appelé après la création. Mais `GET /api/issues` interroge l'API GitHub (`getIssues(owner, repo)`) — si le cache Octokit ou GitHub lui-même tarde, la nouvelle issue n'apparaît pas. La solution propre est d'injecter directement l'issue créée dans `issues[]` depuis la réponse du POST, sans dépendre d'un re-fetch.\n\n**B. Bouton \"Générer\" inconnu**\nLocalisé dans `ArtifactViewer.svelte:142` — section `plan-section`. Il appelle `generatePlan()` qui fait `POST /api/issue` pour produire un plan Claude associé à l'issue, stocké côté serveur. Ce bouton est invisible depuis la liste des issues, il n'est visible que quand une issue est sélectionnée dans le panneau Artefact. Il n'est pas intuitif car son rôle (générer un plan global ≠ planifier une task) n'est pas expliqué.\n\n**C. Header redondant lors de la sélection d'une issue**\nDans `ArtifactViewer.svelte:96-103` :\n```svelte\n{#if $agentState.plan && $agentState.issue}\n    Plan — #{$agentState.issue.number}\n{:else if $agentState.issue}\n    #{$agentState.issue.number}    ← écrase \"Artefact\"\n{:else}\n    Artefact\n{/if}\n```\nQuand une issue est sélectionnée, le header passe de `\"Artefact\"` à `\"#x\"`. Or le titre complet `#{n} — titre` est déjà affiché dans le contenu (`issue-title`, ligne 109). Double information, et le titre sectionnel devient cryptique.\n\n---\n\n### 2. Localisation des usages\n\n| Problème | Fichier | Lignes |\n|---|---|---|\n| A — refresh liste | `src/lib/components/IssueList.svelte` | 140–158 (`submitCreate`), 25–37 (`loadIssues`) |\n| B — bouton Générer | `src/lib/components/ArtifactViewer.svelte` | 21–36 (`generatePlan`), 142–144 (bouton) |\n| C — header écrasé | `src/lib/components/ArtifactViewer.svelte` | 89–104 (`panel-header`) |\n\n---\n\n### 3. Stratégie\n\n- **A** : Injection optimiste — après un POST réussi, construire un objet `Issue` depuis la réponse et l'insérer en tête de `issues[]`. Pas de suppression du `loadIssues()` existant (garde-fou).\n- **B** : Renommer le bouton avec un label explicite (\"Plan global\") et ajouter un `title` descriptif. Option : le déplacer ou le masquer si jugé inutile — à confirmer par l'utilisateur.\n- **C** : Conserver `\"Artefact\"` comme titre de section, permanent. Supprimer la logique conditionnelle qui remplace le titre par `#x`.\n\n---\n\n### 4. Étapes de modification du code\n\n#### Étape 1 — `IssueList.svelte` : injection optimiste\n\n**Fichier** : `src/lib/components/IssueList.svelte`\n\nModifier `submitCreate()` (ligne 140-158) :\n\n```diff\n- const data = await res.json();\n- if (data.error) { createError = data.error; return; }\n- creating = false;\n- await loadIssues();\n+ const data = await res.json();\n+ if (data.error) { createError = data.error; return; }\n+ // Injection optimiste : ajouter l'issue sans attendre le re-fetch GitHub\n+ const newIssue = {\n+     number: data.number,\n+     title: data.title,\n+     body: \"\",\n+     state: data.state ?? \"open\",\n+     created: new Date().toISOString(),\n+     labels: [],\n+     subIssues: []\n+ };\n+ issues = [newIssue, ...issues];\n+ creating = false;\n+ // Re-fetch asynchrone en arrière-plan pour récupérer les données complètes\n+ loadIssues();\n```\n\nLa liste s'affiche immédiatement avec la nouvelle issue. Le `loadIssues()` en arrière-plan réconciliera avec GitHub.\n\n#### Étape 2 — `ArtifactViewer.svelte` : clarifier le bouton \"Générer\"\n\n**Fichier** : `src/lib/components/ArtifactViewer.svelte`\n\nModifier le bouton (ligne 142-144) — ajouter un `title` et un label plus explicite :\n\n```diff\n- <button class=\"plan-btn\" onclick={generatePlan} disabled={$agentState.status === \"planning\"}>\n-     {$agentState.status === \"planning\" ? \"…\" : $agentState.plan ? \"Regénérer\" : \"Générer\"}\n- </button>\n+ <button\n+     class=\"plan-btn\"\n+     onclick={generatePlan}\n+     disabled={$agentState.status === \"planning\"}\n+     title=\"Générer un plan global pour cette issue via Claude\"\n+ >\n+     {$agentState.status === \"planning\" ? \"…\" : $agentState.plan ? \"↺ Plan\" : \"⊕ Plan\"}\n+ </button>\n```\n\nLe tooltip `title` rend le rôle évident au survol.\n\n#### Étape 3 — `ArtifactViewer.svelte` : conserver le header \"Artefact\"\n\n**Fichier** : `src/lib/components/ArtifactViewer.svelte`\n\nModifier le `panel-header` (lignes 95-103) :\n\n```diff\n- <span>\n-     {#if $agentState.plan && $agentState.issue}\n-         Plan — #{$agentState.issue.number}\n-     {:else if $agentState.issue}\n-         #{$agentState.issue.number}\n-     {:else}\n-         Artefact\n-     {/if}\n- </span>\n+ <span>Artefact</span>\n```\n\nLe titre de section reste stable. L'information `#x — titre` est déjà portée par `issue-title` dans le contenu (ligne 109), ce qui est suffisant.\n\n---\n\n### 5. Vérifications et nettoyage final\n\n| Vérification | Ce qu'il faut tester |\n|---|---|\n| Création d'issue | L'issue apparaît immédiatement dans la liste après soumission du formulaire |\n| Re-fetch arrière-plan | Après quelques secondes, les données complètes (labels, etc.) remplacent les données optimistes |\n| Sélection d'issue | Le header reste \"Artefact\" — le titre `#x — ...` est dans le contenu |\n| Navigation sub-issues | Le bouton retour affiche encore `← #x` (inchangé) |\n| Bouton Générer | Au survol, le tooltip explique son rôle |\n| Régression TaskList | La sélection de task (qui met aussi à jour `agentState.issue`) fonctionne identiquement |\n| `filteredIssues` | L'issue injectée optimistement (`state: \"open\"`, pas dans `knownSubIssueNumbers`) est bien visible |\n\n**Aucune migration de données requise** — tous les changements sont limités à la couche UI/stores front-end."
+  ],
   "createdAt": "2026-03-09T18:16:55.168Z",
-  "updatedAt": "2026-03-09T18:16:55.168Z"
+  "updatedAt": "2026-03-09T21:27:19.793Z",
+  "usage": {
+    "inputTokens": 8,
+    "outputTokens": 6433
+  },
+  "totalUsage": {
+    "inputTokens": 8,
+    "outputTokens": 6433
+  }
 }

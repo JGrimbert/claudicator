@@ -7,7 +7,8 @@
     import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
-    import { agentRunState, issueAnalysis, projectUsage } from "$lib/stores/agent";
+    import AgentInput from "$lib/components/AgentInput.svelte";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask } from "$lib/stores/agent";
 
     /**
      * DONE: Prompt contextuel de l'agent
@@ -291,8 +292,10 @@
     // ─── Colonnes redimensionnables ───────────────────────────────────────────
     const STORAGE_KEY = "claudicator:panel-widths";
     const ASIDE_SPLIT_KEY = "claudicator:aside-split";
+    const MAIN_SPLIT_KEY  = "claudicator:main-split";
     const LIMITS = { aside: [180, 600], section: [200, 600] } as const;
     const ASIDE_LIMITS = [20, 80] as const;
+    const MAIN_LIMITS  = [10, 85] as const;
 
     function loadWidths() {
         try {
@@ -310,6 +313,7 @@
 
     let widths = { aside: 300, section: 340 };
     let asideTopPct = 60;
+    let mainTopPct  = 80;
 
     async function loadProjectUsage() {
         try {
@@ -326,6 +330,13 @@
             if (raw) {
                 const v = Number(raw);
                 if (!isNaN(v)) asideTopPct = Math.max(ASIDE_LIMITS[0], Math.min(ASIDE_LIMITS[1], v));
+            }
+        } catch { /* ignore */ }
+        try {
+            const raw = localStorage.getItem(MAIN_SPLIT_KEY);
+            if (raw) {
+                const v = Number(raw);
+                if (!isNaN(v)) mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], v));
             }
         } catch { /* ignore */ }
     });
@@ -345,7 +356,7 @@
         e.preventDefault();
     }
 
-    // Handle vertical (aside split)
+    // Handle vertical aside split
     let draggingV = false;
     let dragVStartY = 0;
     let dragVStartPct = 60;
@@ -358,12 +369,30 @@
         e.preventDefault();
     }
 
+    // Handle vertical main split (plan / carto)
+    let draggingMain = false;
+    let dragMainStartY = 0;
+    let dragMainStartPct = 50;
+    let mainEl: HTMLElement | null = null;
+
+    function startDragMain(e: MouseEvent) {
+        draggingMain = true;
+        dragMainStartY = e.clientY;
+        dragMainStartPct = mainTopPct;
+        e.preventDefault();
+    }
+
     function onMove(e: MouseEvent) {
         if (draggingV && asideEl) {
-            const asideH = asideEl.offsetHeight;
-            const delta = e.clientY - dragVStartY;
-            const deltaPct = (delta / asideH) * 100;
+            const h = asideEl.offsetHeight;
+            const deltaPct = ((e.clientY - dragVStartY) / h) * 100;
             asideTopPct = Math.max(ASIDE_LIMITS[0], Math.min(ASIDE_LIMITS[1], dragVStartPct + deltaPct));
+            return;
+        }
+        if (draggingMain && mainEl) {
+            const h = mainEl.offsetHeight;
+            const deltaPct = ((e.clientY - dragMainStartY) / h) * 100;
+            mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], dragMainStartPct + deltaPct));
             return;
         }
         if (!dragging) return;
@@ -380,13 +409,17 @@
             draggingV = false;
             try { localStorage.setItem(ASIDE_SPLIT_KEY, String(asideTopPct)); } catch { /* ignore */ }
         }
+        if (draggingMain) {
+            draggingMain = false;
+            try { localStorage.setItem(MAIN_SPLIT_KEY, String(mainTopPct)); } catch { /* ignore */ }
+        }
         if (dragging) { saveWidths(); dragging = null; }
     }
 </script>
 
 <svelte:window onmousemove={onMove} onmouseup={onUp} />
 
-<div class="app" class:dragging class:dragging-v={draggingV}>
+<div class="app" class:dragging class:dragging-v={draggingV} class:dragging-main={draggingMain}>
     <TopBar />
     <div class="panels">
         <aside style="width: {widths.aside}px" bind:this={asideEl}>
@@ -409,14 +442,33 @@
             onmousedown={e => startDrag(e, "aside")}
             class:active={dragging === "aside"}
         ></div>
-        <main>
-            {#if $issueAnalysis.running || $issueAnalysis.result}
-                <IssueAnalysis />
-            {:else if $agentRunState.running || $agentRunState.logs.length > 0}
-                <RunConsole />
-            {:else}
+        <main bind:this={mainEl}>
+            <!-- ── PLAN (haut) ── -->
+            <div class="main-top" style="height: {mainTopPct}%">
+                {#if $issueAnalysis.running || $issueAnalysis.result}
+                    <IssueAnalysis />
+                {:else if $agentRunState.running || $agentRunState.logs.length > 0}
+                    <RunConsole />
+                {:else if $planModeTask}
+                    <AgentInput task={$planModeTask} />
+                {:else}
+                    <div class="plan-placeholder">
+                        <span>Sélectionner une task → Plan</span>
+                    </div>
+                {/if}
+            </div>
+            <!-- ── Séparateur ── -->
+            <div
+                class="vhandle"
+                role="separator"
+                aria-label="Redimensionner plan / carto"
+                onmousedown={startDragMain}
+                class:active={draggingMain}
+            ></div>
+            <!-- ── CARTO (bas) ── -->
+            <div class="main-carto">
                 <AgentConsole />
-            {/if}
+            </div>
         </main>
         <div
             class="handle"
@@ -490,5 +542,30 @@ section {
     display: flex;
     flex-direction: column;
 }
-.app.dragging-v { user-select: none; cursor: row-resize; }
+.app.dragging-v    { user-select: none; cursor: row-resize; }
+.app.dragging-main { user-select: none; cursor: row-resize; }
+.main-top {
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.main-carto {
+    flex: 1;
+    min-height: 60px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.plan-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #222;
+    font-size: 0.65rem;
+    font-style: italic;
+    font-family: 'JetBrains Mono', monospace;
+}
 </style>

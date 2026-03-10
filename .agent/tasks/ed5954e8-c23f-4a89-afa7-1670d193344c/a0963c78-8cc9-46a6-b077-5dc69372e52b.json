@@ -1,9 +1,40 @@
 {
   "id": "a0963c78-8cc9-46a6-b077-5dc69372e52b",
   "title": "Interface trop dark",
-  "status": "pending",
+  "status": "done",
   "issueNumber": 16,
-  "logs": [],
+  "logs": [
+    "[pid:32984]",
+    "⚙ Agent Explorer composants UI et styles",
+    "⚙ Glob src/lib/components/**/*.svelte",
+    "⚙ Glob src/**/*.css",
+    "⚙ Glob tailwind.config.*",
+    "⚙ Glob src/routes/+layout.svelte",
+    "⚙ Glob src/app.html",
+    "⚙ Read C:/claudicator/src/lib/components/DiagramViewer.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/AgentInput.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/ArtifactViewer.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/ProjectSettings.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TopBar.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/RunConsole.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/IssueList.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/AgentConsole.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/ItemRow.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/IssueAnalysis.svelte",
+    "⚙ Read C:/claudicator/src/lib/components/TaskList.svelte",
+    "⚙ Read C:/claudicator/src/routes/+layout.svelte",
+    "⚙ Read C:/claudicator/src/app.html",
+    "⚙ Bash find /c/claudicator -type f \\( -name \"*.css\" -o -name \"tailwind.config.*\" -o -na",
+    "## Plan : Alléger le thème de l'interface\n\n---\n\n### 1. Analyse du problème\n\nL'interface est entièrement en mode sombre (dark-only), sans possibilité de basculer. Toutes les couleurs sont des valeurs hexadécimales hardcodées directement dans les blocs `<style>` de chaque composant Svelte — aucune variable CSS ni système de thème n'existe.\n\n**Palette actuelle** : fonds quasi-noirs (`#05050f`, `#07070f`, `#111`), texte gris clair (`#bbb`, `#ccc`), accents violets (`#7c6af7`, `#9181f9`).\n\n**Ampleur du changement** : 11 composants + `+layout.svelte`, aucune abstraction de thème en place.\n\n---\n\n### 2. Localisation des usages\n\n| Fichier | Nombre de couleurs hardcodées | Criticité |\n|---|---|---|\n| `+layout.svelte` | 3 (body bg, text, scrollbar) | **Point d'entrée global** |\n| `AgentInput.svelte` | ~8 | Élevée |\n| `RunConsole.svelte` | ~10 | Élevée |\n| `IssueAnalysis.svelte` | ~15 + thème Mermaid | Élevée |\n| `TaskList.svelte` | ~12 | Élevée |\n| `TopBar.svelte` | ~8 | Moyenne |\n| `IssueList.svelte` | ~10 | Moyenne |\n| `ItemRow.svelte` | ~8 | Moyenne |\n| `DiagramViewer.svelte` | ~12 + couleurs de rôles | Moyenne |\n| `ProjectSettings.svelte` | ~10 | Faible |\n| `AgentConsole.svelte` | ~6 | Faible |\n| `ArtifactViewer.svelte` | ~6 | Faible |\n\n---\n\n### 3. Stratégie de remplacement\n\n**Approche choisie : variables CSS globales dans `:root`**, définies dans `+layout.svelte`.\n\nAvantages :\n- Migration composant par composant, sans tout casser d'un coup\n- Permet d'ajouter un toggle light/dark dans le futur en une seule règle CSS (`.light-mode { --bg: #f5f5f5; }`)\n- Pas de dépendance externe (pas de Tailwind à ajouter)\n\n**Palette cible (thème clair)** : fond blanc cassé / gris très clair, texte sombre, accents violets conservés mais assombris légèrement pour le contraste sur fond clair.\n\n| Variable CSS | Thème actuel (dark) | Thème cible (light) | Usage |\n|---|---|---|---|\n| `--bg-deep` | `#05050f` | `#f0f0f5` | Consoles, zones profondes |\n| `--bg-base` | `#111` | `#f7f7fb` | Corps principal |\n| `--bg-panel` | `#0a0a12` | `#ffffff` | Panneaux, cartes |\n| `--bg-subtle` | `#1a1a2a` | `#eaeaf2` | Éléments subtils |\n| `--border` | `#1e1e2e` | `#d0d0e0` | Bordures |\n| `--border-strong` | `#333` | `#b0b0c0` | Bordures marquées |\n| `--text-primary` | `#ccc` | `#1a1a2a` | Texte principal |\n| `--text-secondary` | `#888` | `#5a5a7a` | Texte secondaire |\n| `--text-muted` | `#555` | `#9090a8` | Texte atténué |\n| `--accent` | `#7c6af7` | `#5a4ed4` | Boutons primaires |\n| `--accent-hover` | `#9181f9` | `#7c6af7` | Survol boutons |\n| `--scrollbar` | `#333` | `#c0c0d0` | Barre de défilement |\n\nLes couleurs de statut (`--status-done`, `--status-running`, `--status-error`) et les couleurs de rôles DiagramViewer restent inchangées (elles fonctionnent sur les deux thèmes).\n\n---\n\n### 4. Étapes de modification du code\n\n#### Étape 1 — Définir les variables dans `+layout.svelte`\n- Ajouter un bloc `:root { --bg-base: ...; --text-primary: ...; ... }` dans la balise `<style>`\n- Remplacer `background: #111` et `color: #ccc` du `body` par les variables\n\n#### Étape 2 — Migrer `TopBar.svelte`\n- Remplacer `#12121a` (barre de nav), `#1a1a28` (select), `#ccc/#aaa` (textes) par les variables\n\n#### Étape 3 — Migrer `ItemRow.svelte`\n- Remplacer `#111` (fond ligne), `#161616` (hover), `#bbb/#555` (textes)\n- Les couleurs de pipeline (done/current) → variables `--pipeline-done-bg`, `--pipeline-current-bg`\n\n#### Étape 4 — Migrer `AgentInput.svelte`\n- Remplacer `#07070f` (textarea bg), `#141414` (bordures), `#777/#bbb` (textes)\n\n#### Étape 5 — Migrer `RunConsole.svelte`\n- Remplacer `#05050f` (console bg), `#07070f` (header), `#aaa` (log text), `#2a2a3a` (hints)\n\n#### Étape 6 — Migrer `IssueList.svelte`\n- Remplacer fonds, bordures, couleurs de boutons, `#0a0a12` (formulaire création)\n\n#### Étape 7 — Migrer `IssueAnalysis.svelte`\n- Remplacer fonds et bordures des cartes de groupes\n- **Cas spécial** : mettre à jour le `themeVariables` de Mermaid pour le thème clair (`background: var(--bg-deep)` ne fonctionne pas dans Mermaid — utiliser des valeurs hex correspondantes au thème light)\n\n#### Étape 8 — Migrer `TaskList.svelte`\n- Remplacer fonds des panneaux, textes, bordures\n\n#### Étape 9 — Migrer `ProjectSettings.svelte`, `AgentConsole.svelte`, `ArtifactViewer.svelte`\n- Même approche, composants moins critiques\n\n#### Étape 10 — Migrer `DiagramViewer.svelte`\n- Remplacer fonds (`#06060e`, `#0f0f22`), bordures, textes\n- Les couleurs de rôles restent inchangées\n\n---\n\n### 5. Vérifications et nettoyage final\n\n#### Vérifications fonctionnelles\n- [ ] Contraste texte/fond respecte WCAG AA (ratio ≥ 4.5:1) sur les textes principaux\n- [ ] Les couleurs de statut (vert/rouge/or) restent lisibles sur fond clair\n- [ ] Les accents violets restent visibles et cliquables\n- [ ] Le diagramme Mermaid s'affiche correctement avec le thème light\n- [ ] Les labels GitHub (couleurs dynamiques) restent lisibles — vérifier l'opacité des bordures\n\n#### Vérifications régressions\n- [ ] Pas de couleur hardcodée oubliée (recherche regex `#[0-9a-f]{3,6}` dans les fichiers Svelte après migration)\n- [ ] Les animations (pulse du statut \"running\") restent visibles\n- [ ] Le scrollbar custom reste discret\n- [ ] Les zones `<code>` / `<pre>` (monospace) ont un fond distinguable du fond général\n\n#### Nettoyage\n- Supprimer les éventuelles couleurs dupliquées entre les composants\n- Centraliser dans `+layout.svelte` toute variable qui apparaît dans plus de 2 composants\n\n---\n\n**Point de départ recommandé** : commencer par l'Étape 1 (variables CSS dans `:root`) puis valider visuellement sur `TopBar` et `ItemRow` avant de migrer les composants plus complexes comme `IssueAnalysis` (Mermaid) et `DiagramViewer`."
+  ],
   "createdAt": "2026-03-09T18:16:55.064Z",
-  "updatedAt": "2026-03-09T18:16:55.064Z"
+  "updatedAt": "2026-03-09T21:56:03.692Z",
+  "usage": {
+    "inputTokens": 3,
+    "outputTokens": 2783
+  },
+  "totalUsage": {
+    "inputTokens": 3,
+    "outputTokens": 2783
+  }
 }

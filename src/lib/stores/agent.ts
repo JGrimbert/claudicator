@@ -50,6 +50,13 @@ export const issueAnalysis = writable<{
 
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
+export const planModeTask = writable<{ id: string; title: string } | null>(null);
+
+export const planAllState = writable<{
+    running: boolean;
+    currentTaskId: string | null;
+}>({ running: false, currentTaskId: null });
+
 export type PlanGroup = { index: number; name: string; issues: number[] };
 
 function parseGroups(text: string): PlanGroup[] {

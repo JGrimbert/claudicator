@@ -69,6 +69,7 @@
     onMount(async () => {
         await loadIssues();
         await loadSnapshot();
+        if (hasResult) await openAnalysis();
     });
 
     async function openAnalysis() {
@@ -198,8 +199,8 @@
                 {$issueAnalysis.running ? "⟳ Analyse…" : hasResult ? "⟳ Màj" : "⊞ Analyser"}
             </button>
             {#if hasResult && !$issueAnalysis.running}
-                <button class="plan-btn" on:click={openAnalysis} title="Voir le plan d'analyse">
-                    ⊟ Plan
+                <button class="plan-btn" on:click={openAnalysis} title="Voir la roadmap">
+                    ⊟ Roadmap
                 </button>
             {/if}
             <button class="new-btn" on:click={creating ? closeCreate : openCreate} title="Nouvelle issue">

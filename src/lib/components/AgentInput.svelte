@@ -18,10 +18,22 @@
         loadContext(id);
     });
 
+    let hasPlan = $state(false);
+
     async function loadContext(taskId: string) {
         loadingContext = true;
         contextError = "";
+        hasPlan = false;
         try {
+            // Charger le plan existant en priorité
+            const planRes = await fetch(`/api/tasks/${taskId}/plan`);
+            const planData = await planRes.json();
+            if (planData.content) {
+                prompt = planData.content;
+                hasPlan = true;
+                return;
+            }
+            // Pas de plan → générer le contexte
             const res = await fetch("/api/context", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -86,9 +98,11 @@
     <div class="ai-header">
         <span class="ai-label">Prompt agent</span>
         {#if loadingContext}
-            <span class="ai-hint">Génération du contexte…</span>
+            <span class="ai-hint">Chargement…</span>
         {:else if contextError}
             <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
+        {:else if hasPlan}
+            <span class="ai-hint plan">Plan existant</span>
         {:else}
             <span class="ai-hint">Éditable avant envoi</span>
         {/if}
@@ -144,7 +158,8 @@
     color: #2a2a2a;
     font-style: italic;
 }
-.ai-hint.err { color: #7a2a2a; }
+.ai-hint.err  { color: #7a2a2a; }
+.ai-hint.plan { color: #4a7a4a; }
 .ai-reload {
     margin-left: auto;
     background: none;

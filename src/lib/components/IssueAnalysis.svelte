@@ -1,12 +1,13 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
-    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber } from "$lib/stores/agent";
+    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick } from "$lib/stores/agent";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
     let spinnerInterval: ReturnType<typeof setInterval> | null = null;
 
     let logArea: HTMLDivElement;
+    let planLogArea: HTMLDivElement | null = null;
     let autoScroll = true;
     let mermaidDiv: HTMLDivElement | null = null;
     let mermaidRendered = false;
@@ -22,6 +23,7 @@
 
     afterUpdate(() => {
         if (autoScroll && logArea) logArea.scrollTop = logArea.scrollHeight;
+        if (planLogArea) planLogArea.scrollTop = planLogArea.scrollHeight;
         if ($issueAnalysis.result && mermaidDiv && !mermaidRendered) {
             renderMermaid();
         }
@@ -349,6 +351,95 @@
         }
     }
 
+    // ── Planifier toutes les tasks séquentiellement ───────────────────────
+    let planLoading = false;
+    let planFeedback = "";
+    let planDone = 0;
+    let planTotal = 0;
+
+    async function planTasks() {
+        if (planLoading || createLoading) return;
+        planLoading = true;
+        planFeedback = "";
+        planDone = 0;
+        try {
+            const res = await fetch("/api/tasks");
+            if (!res.ok) { planFeedback = "Erreur chargement tasks"; return; }
+            const allTasks = await res.json();
+            const toplan = allTasks.filter((t: any) => !t.hasPlan && t.status !== "running");
+            planTotal = toplan.length;
+            if (!toplan.length) { planFeedback = "Toutes les tasks sont déjà planifiées"; return; }
+
+            // Trier selon l'ordre des groupes (P1 avant P2, etc.)
+            const orderedTasks = [...toplan].sort((a: any, b: any) => {
+                const pos = (n: number | undefined) => {
+                    if (!n) return Infinity;
+                    for (let gi = 0; gi < groups.length; gi++) {
+                        const idx = groups[gi].issues.indexOf(n);
+                        if (idx >= 0) return gi * 1000 + idx;
+                    }
+                    return Infinity;
+                };
+                return pos(a.issueNumber) - pos(b.issueNumber);
+            });
+
+            planAllState.set({ running: true, currentTaskId: null });
+
+            for (const task of orderedTasks) {
+                planAllState.update(s => ({ ...s, currentTaskId: task.id }));
+                planFeedback = `${planDone + 1}/${planTotal} · ${task.title.slice(0, 28)}`;
+
+                let prompt = task.title;
+                try {
+                    const ctxRes = await fetch("/api/context", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ taskId: task.id })
+                    });
+                    if (ctxRes.ok) {
+                        const ctxData = await ctxRes.json();
+                        if (ctxData.prompt) prompt = ctxData.prompt;
+                    }
+                } catch { /* fallback titre */ }
+
+                agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
+                try {
+                    const runRes = await fetch("/api/agent/run", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ prompt, taskId: task.id })
+                    });
+                    if (runRes.ok && runRes.body) {
+                        const reader = runRes.body.getReader();
+                        const dec = new TextDecoder();
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            for (const raw of dec.decode(value).split("\n")) {
+                                if (raw.startsWith("data: ")) {
+                                    try { agentRunState.update(s => ({ ...s, logs: [...s.logs, JSON.parse(raw.slice(6))] })); }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    agentRunState.update(s => ({ ...s, running: false }));
+                    taskRefreshTick.update(n => n + 1);
+                }
+
+                planDone++;
+                planFeedback = `${planDone}/${planTotal} planifiée${planDone > 1 ? "s" : ""}`;
+            }
+            planFeedback = `${planDone} task${planDone > 1 ? "s" : ""} planifiée${planDone > 1 ? "s" : ""}`;
+        } catch (e: any) {
+            planFeedback = e.message ?? "Erreur";
+        } finally {
+            planLoading = false;
+            planAllState.set({ running: false, currentTaskId: null });
+        }
+    }
+
     $: highlightHoveredChips($hoveredIssueNumber);
 
     function highlightHoveredChips(n: number | null) {
@@ -371,6 +462,7 @@
     $: systemLogs  = $issueAnalysis.logs.filter(l => l.type === "system" && !/^\[pid:\d+\]$/.test(l.line));
     $: lastStatus  = systemLogs.length > 0 ? systemLogs[systemLogs.length - 1].line : "";
     $: groups = $issueAnalysis.result ? parseGroups($issueAnalysis.result) : [];
+    $: planLogs = $agentRunState.logs.filter(l => l.type !== "usage" && !/^\[pid:\d+\]$/.test(l.line));
 </script>
 
 <div class="analysis">
@@ -446,13 +538,34 @@
         </div>
 
         <div class="action-bar">
-            {#if createFeedback}
+            {#if planFeedback}
+                <span class="feedback">{planFeedback}</span>
+            {:else if createFeedback}
                 <span class="feedback">{createFeedback}</span>
             {/if}
-            <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading}>
-                {createLoading ? "Création…" : "Créer toutes les tasks"}
+            <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
+                {createLoading ? "Création…" : "Créer tasks"}
+            </button>
+            <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
+                {#if planLoading}
+                    {planDone}/{planTotal} ⠿
+                {:else}
+                    Planifier tasks
+                {/if}
             </button>
         </div>
+
+        {#if planLoading || ($agentRunState.taskId && planLogs.length > 0 && !$agentRunState.running && planFeedback)}
+            <div class="plan-log-area" bind:this={planLogArea}>
+                <div class="plan-log-header">
+                    <span class="plan-log-task">{$agentRunState.taskTitle}</span>
+                    {#if $agentRunState.running}<span class="plan-log-spin">{FRAMES[frame]}</span>{/if}
+                </div>
+                {#each planLogs as entry}
+                    <div class="plan-log-line" class:sys={entry.type === "system"}>{entry.line}</div>
+                {/each}
+            </div>
+        {/if}
 
     {:else}
         <div class="empty">
@@ -774,6 +887,58 @@
 }
 .btn-tasks:hover:not(:disabled) { background: #251850; }
 .btn-tasks:disabled { opacity: 0.4; cursor: default; }
+.btn-plan {
+    background: #0a1a10;
+    border: 1px solid #2a4a3a;
+    color: #4caf50;
+    font-size: 0.65rem;
+    padding: 0.22rem 0.75rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: background 0.15s;
+}
+.btn-plan:hover:not(:disabled) { background: #0f2a18; }
+.btn-plan:disabled { opacity: 0.4; cursor: default; }
+.plan-log-area {
+    max-height: 180px;
+    overflow-y: auto;
+    border-top: 1px solid #1a1a2a;
+    background: #04040c;
+    flex-shrink: 0;
+}
+.plan-log-area::-webkit-scrollbar { width: 3px; }
+.plan-log-area::-webkit-scrollbar-thumb { background: #1a1a2a; }
+.plan-log-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 1.2rem;
+    border-bottom: 1px solid #111;
+    position: sticky;
+    top: 0;
+    background: #04040c;
+    z-index: 1;
+}
+.plan-log-task {
+    font-size: 0.58rem;
+    color: #3a3a5a;
+    font-style: italic;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.plan-log-spin { font-size: 0.7rem; color: #4caf50; flex-shrink: 0; }
+.plan-log-line {
+    font-size: 0.65rem;
+    color: #777;
+    line-height: 1.55;
+    padding: 0 1.2rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.plan-log-line.sys { color: #2a2a3a; font-style: italic; }
 .feedback {
     font-size: 0.62rem;
     color: #7c9e7c;
