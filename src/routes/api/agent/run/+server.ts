@@ -6,8 +6,9 @@ import type { TokenUsage } from "$lib/server/services/tasks";
 import { register, unregister, killProcess } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
-import { loadSymbolMap, loadMethodSnippets } from "$lib/server/agent/context";
+import { loadMethodSnippets } from "$lib/server/agent/context";
 import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
+import { generateAtlasStrings } from "$lib/server/services/cartography";
 
 function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
@@ -33,10 +34,12 @@ export async function POST({ request }) {
     if (plan?.trim() && taskId) {
         const task = getTask(taskId);
         if (task) {
-            const symbolMap = loadSymbolMap(root, task.title);
-            const methods = loadMethodSnippets(root, task.title);
-            const docs = loadProjectDocs(root);
-            prompt = formatImplementationPrompt(task, plan, methods, docs);
+            const planHint = plan.replace(/\n+/g, " ").trim().slice(0, 250);
+            const query    = `${task.title} ${planHint}`;
+            const methods  = loadMethodSnippets(root, query);
+            const docs     = loadProjectDocs(root);
+            const atlas    = generateAtlasStrings(root, query)?.compressed;
+            prompt = formatImplementationPrompt(task, plan, methods, docs, atlas);
         } else {
             prompt = plan;
         }

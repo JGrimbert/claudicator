@@ -9,8 +9,8 @@ export type PromptOptions = {
     conceptMap?: Record<string, string>;
     /** Ressources de documentation disponibles dans le projet */
     projectDocs?: ProjectDocs;
-    /** Snippets de code des entrées principales (symbol map) */
-    methods?: MethodSnippet[];
+    /** Vue compressée de l'architecture du projet cible (générée par lolve-carto) */
+    atlas?: string;
 };
 
 export type ProjectDocs = {
@@ -80,7 +80,7 @@ export function loadProjectDocs(projectRoot: string): ProjectDocs {
  *   TASK / DESCRIPTION / OBJECTIF / CONTRAINTES / FORMAT DU PLAN / DOCUMENTATION / CONCEPTS / SYMBOL MAP
  */
 export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): string {
-    const { description, conceptMap, projectDocs, methods } = opts;
+    const { description, conceptMap, projectDocs, atlas } = opts;
     const lines: string[] = [];
 
     // ── En-tête ──────────────────────────────────────────────────────────────
@@ -137,23 +137,10 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
         }
     }
 
-    // ── Code pertinent (snippets des entrées principales) ─────────────────────
-    if (methods && methods.length > 0) {
-        lines.push("CODE PERTINENT");
-        const byFile = new Map<string, MethodSnippet[]>();
-        for (const m of methods) {
-            if (!byFile.has(m.file)) byFile.set(m.file, []);
-            byFile.get(m.file)!.push(m);
-        }
-        for (const [file, items] of byFile) {
-            lines.push(`\n## ${file}`);
-            for (const m of items) {
-                lines.push(`### ${m.key}${m.description ? `  — ${m.description}` : ""}`);
-                lines.push("```");
-                lines.push(m.snippet);
-                lines.push("```");
-            }
-        }
+    // ── Atlas architectural du projet cible ───────────────────────────────────
+    if (atlas) {
+        lines.push("ATLAS");
+        lines.push(atlas.trim());
         lines.push("");
     }
 
@@ -177,7 +164,8 @@ export function formatImplementationPrompt(
     task: { title: string },
     plan: string,
     methods: MethodSnippet[],
-    docs?: ProjectDocs
+    docs?: ProjectDocs,
+    atlas?: string
 ): string {
     const lines: string[] = [];
 
@@ -189,6 +177,13 @@ export function formatImplementationPrompt(
     lines.push("Implémenter le plan ci-dessous étape par étape. Modifier le code dans le projet.");
     lines.push("Ne pas produire de plan. Réaliser directement les modifications.");
     lines.push("");
+
+    // ── Atlas architectural du projet cible ───────────────────────────────────
+    if (atlas) {
+        lines.push("ATLAS");
+        lines.push(atlas.trim());
+        lines.push("");
+    }
 
     if (methods.length > 0) {
         lines.push("CODE PERTINENT");

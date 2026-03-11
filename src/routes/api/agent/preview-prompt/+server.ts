@@ -1,7 +1,8 @@
 import { getTask } from "$lib/server/services/tasks";
 import { getProjectRoot } from "$lib/server/services/projects";
-import { loadSymbolMap, loadMethodSnippets } from "$lib/server/agent/context";
+import { loadMethodSnippets } from "$lib/server/agent/context";
 import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
+import { generateAtlasStrings } from "$lib/server/services/cartography";
 
 export async function POST({ request }) {
     const body = await request.json();
@@ -23,10 +24,12 @@ export async function POST({ request }) {
         });
     }
 
-    const symbolMap = loadSymbolMap(root, task.title);
-    const methods = loadMethodSnippets(root, symbolMap);
-    const docs = loadProjectDocs(root);
-    const prompt = formatImplementationPrompt(task, plan, methods, docs);
+    const planHint = plan.replace(/\n+/g, " ").trim().slice(0, 250);
+    const query    = `${task.title} ${planHint}`;
+    const methods  = loadMethodSnippets(root, query);
+    const docs     = loadProjectDocs(root);
+    const atlas    = generateAtlasStrings(root, query)?.compressed;
+    const prompt = formatImplementationPrompt(task, plan, methods, docs, atlas);
 
     return new Response(JSON.stringify({ prompt }), {
         headers: { "Content-Type": "application/json" }
