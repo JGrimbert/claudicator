@@ -16,7 +16,7 @@ Thumbs.db
 .env
 .env.*
 
-.agent/*
+.agent/
 
 # GitHub App private key
 .keys/
@@ -26,6 +26,3 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-.agent/analysis.md
-.agent/analysis-snapshot.json
