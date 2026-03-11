@@ -1,9 +1,9 @@
 import { listTasks, updateTask } from "$lib/server/services/tasks";
 
-/** Au démarrage du serveur, toute task "running" est orpheline → failed. */
+/** Au démarrage du serveur, toute task "planification" est orpheline → failed. */
 function resetStaleTasks() {
     for (const task of listTasks()) {
-        if (task.status === "running") {
+        if (task.status === "planification") {
             updateTask(task.id, { status: "failed" });
         }
     }
