@@ -2,6 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import PromptUsage from "$lib/components/PromptUsage.svelte";
 
 
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
@@ -16,6 +17,8 @@
         logs: string[];
         usage?: TokenUsage;
         totalUsage?: TokenUsage;
+        planUsage?: TokenUsage;
+        implUsage?: TokenUsage;
         hasPlan?: boolean;
         createdAt: string;
         updatedAt: string;
@@ -556,15 +559,6 @@
                             {/if}
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
-                            {#if task.totalUsage}
-                                <span class="meta-tag meta-tokens" title="Tokens cumulés : {task.totalUsage.inputTokens.toLocaleString('fr-FR')} in · {task.totalUsage.outputTokens.toLocaleString('fr-FR')} out">
-                                    {Math.round(task.totalUsage.inputTokens / 100) / 10}k / {Math.round(task.totalUsage.outputTokens / 100) / 10}k tok
-                                </span>
-                            {:else if task.usage}
-                                <span class="meta-tag meta-tokens" title="{task.usage.inputTokens.toLocaleString('fr-FR')} in · {task.usage.outputTokens.toLocaleString('fr-FR')} out">
-                                    {Math.round(task.usage.inputTokens / 100) / 10}k / {Math.round(task.usage.outputTokens / 100) / 10}k tok
-                                </span>
-                            {/if}
                         </div>
 
                         {#if task.status !== "merged"}
@@ -639,6 +633,9 @@
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
                             <div class="plan-scene-hint">↗ Scène principale</div>
+                            {#if task.planUsage}
+                                <PromptUsage usage={task.planUsage} totalUsage={task.totalUsage} label="Plan" />
+                            {/if}
 
                         {:else if selectedPanel === "implement"}
                             <div class="impl-panel">
@@ -675,6 +672,9 @@
                                         {/if}
                                     </button>
                                 </div>
+                                {#if task.implUsage}
+                                    <PromptUsage usage={task.implUsage} totalUsage={task.totalUsage} label="Implémentation" />
+                                {/if}
                             </div>
 
                         {:else if selectedPanel === "commit"}

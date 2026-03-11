@@ -1,6 +1,7 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
     import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
+    import PromptUsage from "$lib/components/PromptUsage.svelte";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
@@ -63,8 +64,8 @@
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendInput(); }
     }
 
-    // Filtre les lignes purement techniques ([pid:...]) et les events usage
-    $: visibleLogs = $agentRunState.logs.filter(l => l.type !== 'usage' && !/^\[pid:\d+\]$/.test(l.line));
+    // Filtre les lignes purement techniques ([pid:...]) et les events usage/context
+    $: visibleLogs = $agentRunState.logs.filter(l => l.type !== 'usage' && l.type !== 'context' && !/^\[pid:\d+\]$/.test(l.line));
     $: systemLogs  = $agentRunState.logs.filter(l => l.type === 'system' && !/^\[pid:\d+\]$/.test(l.line));
     $: agentLogs   = $agentRunState.logs.filter(l => l.type === 'agent');
 
@@ -75,6 +76,15 @@
         if (usageLogs.length === 0) return null;
         try { return JSON.parse(usageLogs[usageLogs.length - 1].line) as TokenUsage; }
         catch { return null; }
+    })();
+
+    // Extraction du contexte d'enrichissement depuis les events SSE de type "context"
+    type ContextStats = { methods: number; hasAtlas: boolean };
+    $: lastContext = (() => {
+        const ctxLogs = $agentRunState.logs.filter(l => l.type === 'context');
+        if (ctxLogs.length === 0) return undefined;
+        try { return JSON.parse(ctxLogs[ctxLogs.length - 1].line) as ContextStats; }
+        catch { return undefined; }
     })();
 
     // Debounce du dernier message système pour éviter le clignotement
@@ -138,12 +148,7 @@
 
     <!-- ── Tokens (affiché en fin de run si présent) ── -->
     {#if !$agentRunState.running && lastUsage}
-        <div class="usage-bar">
-            <span class="usage-label">Tokens</span>
-            <span class="usage-val">{lastUsage.inputTokens.toLocaleString("fr-FR")} envoyés</span>
-            <span class="usage-sep">·</span>
-            <span class="usage-val">{lastUsage.outputTokens.toLocaleString("fr-FR")} reçus</span>
-        </div>
+        <PromptUsage usage={lastUsage} context={lastContext} />
     {/if}
 
     <!-- ── Input stdin (pour répondre à Claude) ── -->
@@ -284,32 +289,6 @@
     opacity: 0.75;
 }
 
-/* ── Usage tokens ── */
-.usage-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 1.2rem;
-    border-top: 1px solid #1a1a2a;
-    flex-shrink: 0;
-    background: #07070f;
-}
-.usage-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #2a2a3a;
-    flex-shrink: 0;
-}
-.usage-val {
-    font-size: 0.63rem;
-    color: #4a4a6a;
-    font-family: 'JetBrains Mono', monospace;
-}
-.usage-sep {
-    font-size: 0.6rem;
-    color: #222;
-}
 
 /* ── Input stdin ── */
 .input-bar {
