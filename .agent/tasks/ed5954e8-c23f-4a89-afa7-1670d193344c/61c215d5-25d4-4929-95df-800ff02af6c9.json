@@ -96,7 +96,7 @@
     "Toutes les modifications sont appliquées. Voici le récapitulatif de ce qui a été fait :\n\n---\n\n**Fichiers modifiés :**\n\n| Fichier | Changement |\n|---|---|\n| `tasks.ts` | Nouveau type `TaskStatus` (7 valeurs), `migrateTaskStatus()` pour JSON anciens, `createTask` → `\"specification\"` |\n| `hooks.server.ts` | Reset `\"planification\"` → `\"failed\"` au démarrage |\n| `run/+server.ts` | Détection de phase via `plan` dans le body ; plan gen : `spec→planif` puis `→implementation` ; impl : logs vidés, puis `→documentation` ; `savePlan` uniquement pour plan gen |\n| `commit/+server.ts` | Après commit → `\"validation\"` |\n| `merge/+server.ts` | Après merge → `\"merged\"` (était `\"done\"`) |\n| `sync/+server.ts` | Détection merge → `\"merged\"` (était `\"done\"`) |\n| `TaskList.svelte` | Type + labels (`Spécification/Planification/…`) + couleurs + filtres mis à jour ; `taskPipelineStep` basé sur statut ; `pipelineLabel` simplifié ; `rowLabels` adapté ; stuck bar sur `planification`/`failed` ; tâches `merged` : affichage réduit (meta seul, pas de barre workflow) ; reset → `\"specification\"` |\n\n**Migration à la volée :** les anciens JSON avec `pending/running/done/failed` sont migrés automatiquement sans modifier les fichiers."
   ],
   "createdAt": "2026-03-09T18:16:55.120Z",
-  "updatedAt": "2026-03-11T12:10:48.037Z",
+  "updatedAt": "2026-03-11T12:14:48.178Z",
   "usage": {
     "inputTokens": 61,
     "outputTokens": 24759
@@ -105,5 +105,6 @@
     "inputTokens": 65,
     "outputTokens": 33834
   },
-  "branch": "issue-9-tags-des-tasks"
+  "branch": "issue-9-tags-des-tasks",
+  "pushed": true
 }
