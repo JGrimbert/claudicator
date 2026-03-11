@@ -43,12 +43,21 @@
         merged:         "4caf50",
         failed:         "f44336",
     };
-    const FILTERS = ["specification", "planification", "implementation", "validation", "merged"] as const;
+    const FILTERS = ["specification", "implementation", "validation", "merged"] as const;
     type Filter = typeof FILTERS[number];
+
+    function statusToFilter(status: TaskStatus): Filter | null {
+        if (status === "specification" || status === "planification") return "specification";
+        if (status === "implementation") return "implementation";
+        if (status === "documentation" || status === "validation") return "validation";
+        if (status === "merged") return "merged";
+        return null;
+    }
 
     let tasks: Task[] = [];
     let loading = true;
     let filter: Filter | null = null;
+    $: selectedTaskFilter = selected ? statusToFilter(selected.status) : null;
     let selected: Task | null = null;
     let newTitle = "";
     let creating = false;
@@ -257,7 +266,14 @@
         try {
             const res = await fetch("/api/tasks");
             tasks = await res.json();
-            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+            if (selected) {
+                const prev = selected.status;
+                selected = tasks.find(t => t.id === selected!.id) ?? null;
+                if (selected && selected.status !== prev) {
+                    const f = statusToFilter(selected.status);
+                    if (f) filter = f;
+                }
+            }
         } finally {
             loading = false;
         }
@@ -270,7 +286,14 @@
             const fresh = await res.json();
             if (!Array.isArray(fresh)) return;
             tasks = fresh;
-            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+            if (selected) {
+                const prev = selected.status;
+                selected = tasks.find(t => t.id === selected!.id) ?? null;
+                if (selected && selected.status !== prev) {
+                    const f = statusToFilter(selected.status);
+                    if (f) filter = f;
+                }
+            }
         } catch { /* silencieux */ }
     }
 
@@ -341,6 +364,8 @@
         }
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
+        const autoFilter = statusToFilter(initialTask.status);
+        if (autoFilter) filter = autoFilter;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
@@ -501,7 +526,7 @@
 
     <div class="filter-bar">
         {#each FILTERS as f}
-            <button class="filter-btn" class:active={filter === f} onclick={() => filter = filter === f ? null : f}>
+            <button class="filter-btn" class:active={filter === f} class:task-current={f === selectedTaskFilter} onclick={() => filter = filter === f ? null : f}>
                 {STATUS_LABEL[f]}
                 {#if countOf(f) > 0}<span class="count">{countOf(f)}</span>{/if}
             </button>
@@ -815,6 +840,7 @@
 }
 .filter-btn:hover { color: #555; }
 .filter-btn.active { color: #777; }
+.filter-btn.task-current { color: cornsilk; }
 .count { font-size: 0.5rem; opacity: 0.6; margin-left: 0.4rem; }
 .refresh-btn {
     background: none;
