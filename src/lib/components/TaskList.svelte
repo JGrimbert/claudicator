@@ -209,6 +209,8 @@
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
     $: currentStep = (() => {
+        // Le statut serveur prime : documentation/validation = au moins un commit fait
+        if (selected?.status === "documentation" || selected?.status === "validation") return 3;
         if (!planContent) return 0;
         if (!selected?.branch) return 1;
         if (diffLoading || diffContent === null) return 1;
@@ -393,7 +395,9 @@
         await Promise.all(toLoad);
 
         // Auto-avance l'étape affichée
-        if (task.branch && diffContent !== null) {
+        if (task.status === "documentation" || task.status === "validation") {
+            selectedPanel = diffContent?.trim() ? "commit" : "push";
+        } else if (task.branch && diffContent !== null) {
             selectedPanel = diffContent.trim() ? "commit" : "push";
         } else if (planContent) {
             selectedPanel = "implement";
