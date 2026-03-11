@@ -1,6 +1,6 @@
 import type { Task } from "../services/tasks";
 import { formatPrompt, loadConceptMap, loadProjectDocs } from "./prompt";
-import { searchMethods, getSessionWithCode } from "../services/cartography";
+import { searchMethods, getSessionWithCode, generateAtlasStrings } from "../services/cartography";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,15 @@ export type AgentContext = {
 
 // ─── API publique ─────────────────────────────────────────────────────────────
 
+const SNIPPET_MAX_LINES = 20;
+
+/** Tronque un snippet au-delà de SNIPPET_MAX_LINES pour limiter le bruit dans le prompt. */
+function truncateSnippet(code: string): string {
+    const lines = code.split("\n");
+    if (lines.length <= SNIPPET_MAX_LINES) return code;
+    return lines.slice(0, SNIPPET_MAX_LINES).join("\n") + `\n// ... +${lines.length - SNIPPET_MAX_LINES} lignes`;
+}
+
 /**
  * Charge les snippets de code pour la query donnée.
  * Utilise lolve-cartography (MethodSearch + extractMethodCode via AST)
@@ -38,7 +47,7 @@ export function loadMethodSnippets(projectRoot: string, query: string): MethodSn
             file:        r.file,
             startLine:   r.startLine,
             endLine:     r.endLine,
-            snippet:     r.code!,
+            snippet:     truncateSnippet(r.code!),
             signature:   r.signature,
             role:        r.role,
             description: r.description,
@@ -71,13 +80,24 @@ export function loadSymbolMap(projectRoot: string, query: string): Record<string
  * @param projectRoot - Racine du projet cible analysé par lolve-cartography
  * @param description - Corps de l'issue GitHub associée (optionnel)
  */
+/**
+ * Construit une query enrichie pour searchMethods.
+ * Combine le titre de la task avec les 250 premiers caractères de la description
+ * pour améliorer le matching sémantique (les titres en français matchent mal seuls).
+ */
+function buildQuery(title: string, description?: string): string {
+    if (!description) return title;
+    const extra = description.replace(/\n+/g, " ").trim().slice(0, 250);
+    return `${title} ${extra}`;
+}
+
 export function buildContext(
     task: Pick<Task, "id" | "title">,
     projectRoot: string,
     description?: string
 ): AgentContext {
-    const symbolMap = loadSymbolMap(projectRoot, task.title);
-    const methods   = loadMethodSnippets(projectRoot, task.title);
+    const query     = buildQuery(task.title, description);
+    const symbolMap = loadSymbolMap(projectRoot, query);
     const ctx: AgentContext = {
         task: { id: task.id, title: task.title },
         symbolMap,
@@ -86,7 +106,8 @@ export function buildContext(
 
     const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
     const projectDocs = loadProjectDocs(projectRoot);
-    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, methods });
+    const atlas       = generateAtlasStrings(projectRoot, query)?.compressed;
+    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, atlas });
 
     return ctx;
 }
