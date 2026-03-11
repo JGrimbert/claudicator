@@ -1,7 +1,7 @@
 {
   "id": "3060edb5-f094-4e90-b187-a52b0d1f2a02",
   "title": "Analyse préalable des issues",
-  "status": "done",
+  "status": "merged",
   "issueNumber": 15,
   "logs": [
     "[pid:28624]",
@@ -69,7 +69,7 @@
     "Toutes les étapes sont terminées. Voici le récapitulatif de ce qui a été implémenté :\n\n---\n\n**Fichiers créés :**\n- `src/lib/server/agent/issue-analysis.ts` — `summarizeIssueBody`, `prepareIssues`, `buildAnalysisPrompt`\n- `src/routes/api/issues/analyze/+server.ts` — SSE stream identique à `run/+server.ts`, sans task\n- `src/routes/api/issues/snapshot/+server.ts` — lit `.agent/analysis-snapshot.json`\n- `src/routes/api/issues/analysis/+server.ts` — sert `.agent/analysis.md`\n- `src/lib/components/IssueAnalysis.svelte` — console de logs + résultat + diagramme Mermaid (CDN) + \"Créer les tasks\"\n\n**Fichiers modifiés :**\n- `src/lib/server/services/github.ts` — `getIssuesWithBodies` ajouté (sans toucher à `getIssues`)\n- `src/lib/stores/agent.ts` — store `issueAnalysis` ajouté\n- `src/lib/components/IssueList.svelte` — bouton \"Analyser / Màj\" + badge de changements\n- `src/routes/+page.svelte` — `IssueAnalysis` affiché en priorité dans `<main>` si actif\n- `.gitignore` — `analysis.md` et `analysis-snapshot.json` exclus"
   ],
   "createdAt": "2026-03-09T11:16:46.059Z",
-  "updatedAt": "2026-03-10T17:28:12.056Z",
+  "updatedAt": "2026-03-11T08:01:24.725Z",
   "usage": {
     "inputTokens": 41,
     "outputTokens": 22029

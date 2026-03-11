@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { getTask } from "$lib/server/services/tasks";
+import { getTask, updateTask } from "$lib/server/services/tasks";
 import { commitAll } from "$lib/server/services/git";
 import { getProjectRoot } from "$lib/server/services/projects";
 
@@ -15,6 +15,7 @@ export async function POST({ params, request }) {
     const root = getProjectRoot();
     try {
         await commitAll(root, commitMessage);
+        updateTask(params.id, { status: "validation" });
         return json({ ok: true });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

@@ -15,7 +15,7 @@ export async function POST({ params }) {
 
         const patch: Parameters<typeof updateTask>[1] = {};
         if (pushed && !task.pushed) patch.pushed = true;
-        if (merged && task.status !== "done") patch.status = "done";
+        if (merged && task.status !== "merged") patch.status = "merged";
 
         if (Object.keys(patch).length > 0) {
             return json(updateTask(params.id, patch));

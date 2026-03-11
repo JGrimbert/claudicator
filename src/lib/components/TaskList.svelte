@@ -4,7 +4,7 @@
     import ItemRow from "$lib/components/ItemRow.svelte";
 
 
-    type TaskStatus = "pending" | "running" | "done" | "failed";
+    type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
     type TokenUsage = { inputTokens: number; outputTokens: number };
     type Task = {
         id: string;
@@ -23,23 +23,29 @@
     type WfPanel = "plan" | "implement" | "commit" | "push";
 
     const STATUS_LABEL: Record<TaskStatus, string> = {
-        pending: "en attente",
-        running: "en cours",
-        done:    "terminé",
-        failed:  "échoué",
+        specification:  "Spécification",
+        planification:  "Planification",
+        implementation: "Implémentation",
+        documentation:  "Validation",
+        validation:     "Validation",
+        merged:         "Mergée",
+        failed:         "Échouée",
     };
     const STATUS_COLOR: Record<TaskStatus, string> = {
-        pending: "555555",
-        running: "f7c948",
-        done:    "4caf50",
-        failed:  "f44336",
+        specification:  "555555",
+        planification:  "f7c948",
+        implementation: "2196f3",
+        documentation:  "9c27b0",
+        validation:     "9c27b0",
+        merged:         "4caf50",
+        failed:         "f44336",
     };
-    const FILTERS = ["all", "running", "pending", "done", "failed"] as const;
+    const FILTERS = ["specification", "planification", "implementation", "validation", "merged"] as const;
     type Filter = typeof FILTERS[number];
 
     let tasks: Task[] = [];
     let loading = true;
-    let filter: Filter = "all";
+    let filter: Filter | null = null;
     let selected: Task | null = null;
     let newTitle = "";
     let creating = false;
@@ -101,7 +107,7 @@
             const res = await fetch(`/api/tasks/${task.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "pending" })
+                body: JSON.stringify({ status: "specification" })
             });
             const data = await res.json();
             if (!data.error) await loadTasks();
@@ -143,19 +149,15 @@
     }
 
     function pipelineLabel(task: Task): { name: string; color: string } {
-        if (task.status === "running") return { name: "en cours",       color: "f7c948" };
-        if (task.status === "failed")  return { name: "échoué",         color: "f44336" };
-        if (task.status === "done" && task.pushed)  return { name: "push",  color: "7c6af7" };
-        if (task.status === "done" && task.branch)  return { name: "commit", color: "4caf50" };
-        if (task.status === "done")                 return { name: "impl.",  color: "9181f9" };
-        return { name: "plan", color: "444455" };
+        return { name: STATUS_LABEL[task.status], color: STATUS_COLOR[task.status] };
     }
 
     function rowLabels(task: Task, isActive: boolean): { name: string; color: string }[] {
         if (isActive) return [pipelineLabel(task)];
-        if (task.status === "failed")  return [{ name: "échoué",   color: "f44336" }];
-        if (task.status === "running") return [{ name: "en cours", color: "f7c948" }];
-        if (task.status === "done" && task.hasPlan) {
+        if (task.status === "failed")        return [{ name: "Échouée",   color: "f44336" }];
+        if (task.status === "planification") return [{ name: "en cours",  color: "f7c948" }];
+        if (task.status === "merged")        return [{ name: "Mergée",    color: "4caf50" }];
+        if (task.status === "documentation" || task.status === "validation" || task.status === "implementation") {
             const tokens = task.totalUsage ?? task.usage;
             const tokStr = tokens ? ` · ${Math.round(tokens.inputTokens / 100) / 10}k` : "";
             return [{ name: `impl.${tokStr}`, color: "9181f9" }];
@@ -165,9 +167,8 @@
 
     // 0=plan 1=impl 2=commit 3=push
     function taskPipelineStep(task: Task): number {
-        if (task.pushed)               return 3;
-        if (task.branch)               return 2;
-        if (task.status === "done")    return 1;
+        if (task.status === "merged" || task.status === "validation" || task.status === "documentation") return 3;
+        if (task.status === "implementation")                                                            return 1;
         return 0;
     }
 
@@ -181,11 +182,18 @@
             }
             return Infinity;
         }
-        return (filter === "all" ? tasks : tasks.filter(t => t.status === filter))
-            .slice()
-            .sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
+        const base = filter === null
+            ? tasks
+            : tasks.filter(t => filter === "validation"
+                ? (t.status === "validation" || t.status === "documentation")
+                : t.status === filter);
+        return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
     })();
-    $: countOf = (f: Filter) => f === "all" ? tasks.length : tasks.filter(t => t.status === f).length;
+    $: countOf = (f: Filter) => tasks.filter(t =>
+        f === "validation"
+            ? (t.status === "validation" || t.status === "documentation")
+            : t.status === f
+    ).length;
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
     $: currentStep = (() => {
@@ -208,8 +216,8 @@
     onMount(async () => {
         await loadTasks();
         const savedId = localStorage.getItem(SELECTED_KEY);
-        // Priorité : task "running" > task sauvegardée > première task avec plan
-        const toSelect = tasks.find(t => t.status === "running")
+        // Priorité : task "planification" > task sauvegardée > première task avec plan
+        const toSelect = tasks.find(t => t.status === "planification")
             ?? (savedId ? tasks.find(t => t.id === savedId) : null)
             ?? tasks.find(t => t.hasPlan);
         if (toSelect) await selectTask(toSelect);
@@ -234,7 +242,7 @@
     function onRefreshTick() {
         (async () => {
             await loadTasksSilent();
-            if (selected && selected.status === "done" && !planContent && !planLoading) {
+            if (selected && selected.status === "implementation" && !planContent && !planLoading) {
                 await loadPlan(selected.id);
                 if (planContent && selectedPanel === "plan") selectedPanel = "implement";
             }
@@ -490,8 +498,8 @@
 
     <div class="filter-bar">
         {#each FILTERS as f}
-            <button class="filter-btn" class:active={filter === f} onclick={() => filter = f}>
-                {f === "all" ? "toutes" : STATUS_LABEL[f as TaskStatus]}
+            <button class="filter-btn" class:active={filter === f} onclick={() => filter = filter === f ? null : f}>
+                {STATUS_LABEL[f]}
                 {#if countOf(f) > 0}<span class="count">{countOf(f)}</span>{/if}
             </button>
         {/each}
@@ -524,8 +532,8 @@
                         prefix={taskPrefix(task)}
                         title={task.title}
                         labels={rowLabels(task, selected?.id === task.id)}
-                        pipelineStep={task.status !== "failed" ? taskPipelineStep(task) : null}
-                        state={task.status === "failed" ? "closed" : "open"}
+                        pipelineStep={(task.status !== "failed" && task.status !== "merged") ? taskPipelineStep(task) : null}
+                        state={(task.status === "failed" || task.status === "merged") ? "closed" : "open"}
                         active={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id)}
                         onclick={() => selectTask(task)}
                     />
@@ -544,16 +552,10 @@
                             {#if task.issueNumber}
                                 <span class="meta-tag meta-issue" title="Issue GitHub #{task.issueNumber}">
                                     #{task.issueNumber}
-                                    {#if linkedIssueState === "closed"}
-                                        <span class="issue-state closed">✓ fermée</span>
-                                    {:else if linkedIssueState === "open"}
-                                        <span class="issue-state open">ouverte</span>
-                                    {/if}
                                 </span>
                             {/if}
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
-                            <span class="meta-tag" style="color:#{STATUS_COLOR[task.status]};border-color:#1a1a1a">{STATUS_LABEL[task.status]}</span>
                             {#if task.totalUsage}
                                 <span class="meta-tag meta-tokens" title="Tokens cumulés : {task.totalUsage.inputTokens.toLocaleString('fr-FR')} in · {task.totalUsage.outputTokens.toLocaleString('fr-FR')} out">
                                     {Math.round(task.totalUsage.inputTokens / 100) / 10}k / {Math.round(task.totalUsage.outputTokens / 100) / 10}k tok
@@ -565,17 +567,19 @@
                             {/if}
                         </div>
 
+                        {#if task.status !== "merged"}
+
                         <!-- ── Task bloquée / échouée ── -->
-                        {#if task.status === "running" || task.status === "failed"}
+                        {#if task.status === "planification" || task.status === "failed"}
                             <div class="stuck-bar">
                                 <span class="stuck-label">
-                                    {task.status === "running" ? "⚠ agent inactif — task bloquée" : "✕ planification échouée"}
+                                    {task.status === "planification" ? "⚠ agent inactif — task bloquée" : "✕ échec"}
                                 </span>
                                 <button
                                     class="stuck-reset"
                                     onclick={() => resetTask(task)}
                                     disabled={resetting}
-                                >{resetting ? "…" : "↺ Réinitialiser → pending"}</button>
+                                >{resetting ? "…" : "↺ Réinitialiser → spécification"}</button>
                             </div>
                         {/if}
 
@@ -747,6 +751,8 @@
                             </div>
                         {/if}
 
+                        {/if}<!-- /merged guard -->
+
                     </div>
                 {/if}
             {/each}
@@ -874,6 +880,7 @@
     gap: 0.3rem;
     padding: 0.35rem 1rem;
     border-bottom: 1px solid #141414;
+    background: #0d0d16;
 }
 .meta-tag {
     font-size: 0.6rem;
@@ -883,8 +890,8 @@
     color: #555;
     border: 1px solid #2a2a2a;
 }
-.meta-tag.mono { font-family: 'JetBrains Mono', monospace; }
-.meta-tag.dim { color: #333; }
+.meta-tag.mono { font-family: 'JetBrains Mono', monospace; background: none; border-color: transparent; padding-left: 0; padding-right: 0; }
+.meta-tag.dim { color: #333; background: none; border-color: transparent; padding-left: 0; padding-right: 0; }
 .meta-tag.meta-tokens { color: #3a3a5a; font-family: 'JetBrains Mono', monospace; cursor: help; }
 .meta-tag.meta-issue { display: inline-flex; align-items: center; gap: 0.3rem; }
 .issue-state { font-size: 0.55rem; padding: 0.05rem 0.3rem; border-radius: 2px; }
@@ -965,7 +972,7 @@
 /* secondary = étape déjà franchie, recliquable */
 .wf-btn.wf-secondary {
     color: #444;
-    border-color: #1e1e2e;
+    border-color: transparent;
     cursor: pointer;
 }
 .wf-btn.wf-secondary:hover { color: #777; border-color: #333; }

@@ -49,6 +49,9 @@ export async function POST({ request }) {
         });
     }
 
+    // Phase : plan si aucun plan fourni, implémentation sinon
+    const isImplementationPhase = !!(plan?.trim() && taskId);
+
     if (taskId) {
         const task = getTask(taskId);
         if (!task) {
@@ -57,7 +60,13 @@ export async function POST({ request }) {
                 headers: { "Content-Type": "application/json" }
             });
         }
-        updateTask(taskId, { status: "running", logs: [] });
+        if (isImplementationPhase) {
+            // Ne pas changer le statut pour l'implémentation, juste vider les logs
+            updateTask(taskId, { logs: [] });
+        } else {
+            // Génération du plan : specification → planification
+            updateTask(taskId, { status: "planification", logs: [] });
+        }
     }
 
     const encoder = new TextEncoder();
@@ -186,7 +195,8 @@ export async function POST({ request }) {
 
                 // Succès si exit 0 OU si Claude a signalé subtype:"success" dans le JSON
                 const success = code === 0 || resultSubtype === "success";
-                const status = success ? "done" : "failed";
+                const successStatus = isImplementationPhase ? "documentation" : "implementation";
+                const status = success ? successStatus : "failed";
                 if (taskId) {
                     unregister(taskId);
                     if (success && capturedUsage) {
@@ -202,7 +212,7 @@ export async function POST({ request }) {
                     } else {
                         updateTask(taskId, { status, logs: allLogs });
                     }
-                    if (success) savePlan(taskId, planLines);
+                    if (success && !isImplementationPhase) savePlan(taskId, planLines);
                 }
                 const msg = success ? "✓ terminé" : `erreur (code ${code})`;
                 emit(`[${msg}]`, "system");

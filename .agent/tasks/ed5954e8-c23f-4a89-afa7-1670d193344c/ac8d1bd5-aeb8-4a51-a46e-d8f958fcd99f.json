@@ -1,7 +1,7 @@
 {
   "id": "ac8d1bd5-aeb8-4a51-a46e-d8f958fcd99f",
   "title": "Afficher les méthodes concernées",
-  "status": "done",
+  "status": "merged",
   "issueNumber": 13,
   "logs": [
     "[pid:2440]",
@@ -34,7 +34,7 @@
     "Voilà. Résumé des changements :\n\n1. **Task #13 corrigée** : `status: \"running\"` → `\"done\"` directement dans le JSON (`.agent/tasks/.../ac8d1bd5....json`) puisque le merge avait été fait hors de l'app.\n\n2. **`checkoutMain(root)`** ajouté à `git.ts` : fait un `git checkout main` + `git pull origin main` sur le projet cible.\n\n3. **Route `/api/tasks/[id]/merge`** : appelle `checkoutMain(root)` après le merge GitHub PR, avant de retourner le task mis à jour en `\"done\"`.\n\nDésormais, chaque fois qu'un merge est déclenché via Claudicator, le repo cible se repositionne automatiquement sur `main` à jour."
   ],
   "createdAt": "2026-03-09T18:16:55.077Z",
-  "updatedAt": "2026-03-10T15:43:03.516Z",
+  "updatedAt": "2026-03-11T08:01:23.721Z",
   "usage": {
     "inputTokens": 64,
     "outputTokens": 4379

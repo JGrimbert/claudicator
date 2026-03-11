@@ -33,7 +33,7 @@ export async function POST({ params }) {
 
         await mergePullRequest(owner, repo, pr.number);
         await checkoutMain(root);
-        return json(updateTask(params.id, { status: "done" }));
+        return json(updateTask(params.id, { status: "merged" }));
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return json({ error: message }, { status: 500 });

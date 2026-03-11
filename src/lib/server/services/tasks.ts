@@ -3,7 +3,14 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { getCurrentProject } from "./projects";
 
-export type TaskStatus = "pending" | "running" | "done" | "failed";
+export type TaskStatus =
+  | "specification"    // tâche créée, plan non encore généré
+  | "planification"    // Claude génère le plan (processus actif)
+  | "implementation"   // plan prêt, implémentation à lancer ou en cours
+  | "documentation"    // implémentation terminée, à commiter
+  | "validation"       // commitée sur la branche, à pusher
+  | "merged"           // mergée, état final
+  | "failed";          // erreur à n'importe quelle étape
 
 export type TokenUsage = {
     inputTokens: number;
@@ -40,13 +47,33 @@ function taskPath(id: string) {
     return path.join(getTasksDir(), `${id}.json`);
 }
 
+/** Migration à la volée des anciens statuts vers les nouveaux. */
+function migrateTaskStatus(raw: any): Task {
+    const task = raw as Task;
+    const status = raw.status as string;
+    if (status === "pending") {
+        task.status = "specification";
+    } else if (status === "running") {
+        task.status = "failed";
+    } else if (status === "done") {
+        if (task.pushed) {
+            task.status = "validation";
+        } else if (task.branch) {
+            task.status = "documentation";
+        } else {
+            task.status = "implementation";
+        }
+    }
+    return task;
+}
+
 export function listTasks(): Task[] {
     ensureDir();
     const dir = getTasksDir();
     return fs.readdirSync(dir)
         .filter(f => f.endsWith(".json"))
         .map(f => {
-            const task = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")) as Task;
+            const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
             task.hasPlan = fs.existsSync(path.join(dir, `${task.id}.plan.md`));
             return task;
         })
@@ -56,7 +83,7 @@ export function listTasks(): Task[] {
 export function getTask(id: string): Task | null {
     const p = taskPath(id);
     if (!fs.existsSync(p)) return null;
-    return JSON.parse(fs.readFileSync(p, "utf-8"));
+    return migrateTaskStatus(JSON.parse(fs.readFileSync(p, "utf-8")));
 }
 
 export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issueNumber" | "branch">>): Task {
@@ -68,7 +95,7 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
     const task: Task = {
         id: randomUUID(),
         title: data.title,
-        status: "pending",
+        status: "specification",
         issueNumber: data.issueNumber,
         branch: data.branch,
         logs: [],
