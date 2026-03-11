@@ -18,7 +18,7 @@ export const contextState = writable<Context>({
     error: "",
 });
 
-export type RunLog = { line: string; type: "agent" | "system" | "usage" };
+export type RunLog = { line: string; type: "agent" | "system" | "usage" | "context" };
 
 export const agentRunState = writable<{
     taskId: string | null;

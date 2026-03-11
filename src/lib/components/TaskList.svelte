@@ -2,6 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import PromptUsage from "$lib/components/PromptUsage.svelte";
 
 
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
@@ -16,6 +17,8 @@
         logs: string[];
         usage?: TokenUsage;
         totalUsage?: TokenUsage;
+        planUsage?: TokenUsage;
+        implUsage?: TokenUsage;
         hasPlan?: boolean;
         createdAt: string;
         updatedAt: string;
@@ -40,12 +43,21 @@
         merged:         "4caf50",
         failed:         "f44336",
     };
-    const FILTERS = ["specification", "planification", "implementation", "validation", "merged"] as const;
+    const FILTERS = ["specification", "implementation", "validation", "merged"] as const;
     type Filter = typeof FILTERS[number];
+
+    function statusToFilter(status: TaskStatus): Filter | null {
+        if (status === "specification" || status === "planification") return "specification";
+        if (status === "implementation") return "implementation";
+        if (status === "documentation" || status === "validation") return "validation";
+        if (status === "merged") return "merged";
+        return null;
+    }
 
     let tasks: Task[] = [];
     let loading = true;
     let filter: Filter | null = null;
+    $: selectedTaskFilter = selected ? statusToFilter(selected.status) : null;
     let selected: Task | null = null;
     let newTitle = "";
     let creating = false;
@@ -197,6 +209,8 @@
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
     $: currentStep = (() => {
+        // Le statut serveur prime : documentation/validation = au moins un commit fait
+        if (selected?.status === "documentation" || selected?.status === "validation") return 3;
         if (!planContent) return 0;
         if (!selected?.branch) return 1;
         if (diffLoading || diffContent === null) return 1;
@@ -254,7 +268,14 @@
         try {
             const res = await fetch("/api/tasks");
             tasks = await res.json();
-            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+            if (selected) {
+                const prev = selected.status;
+                selected = tasks.find(t => t.id === selected!.id) ?? null;
+                if (selected && selected.status !== prev) {
+                    const f = statusToFilter(selected.status);
+                    if (f) filter = f;
+                }
+            }
         } finally {
             loading = false;
         }
@@ -267,7 +288,14 @@
             const fresh = await res.json();
             if (!Array.isArray(fresh)) return;
             tasks = fresh;
-            if (selected) selected = tasks.find(t => t.id === selected!.id) ?? null;
+            if (selected) {
+                const prev = selected.status;
+                selected = tasks.find(t => t.id === selected!.id) ?? null;
+                if (selected && selected.status !== prev) {
+                    const f = statusToFilter(selected.status);
+                    if (f) filter = f;
+                }
+            }
         } catch { /* silencieux */ }
     }
 
@@ -338,6 +366,8 @@
         }
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
+        const autoFilter = statusToFilter(initialTask.status);
+        if (autoFilter) filter = autoFilter;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
@@ -365,7 +395,9 @@
         await Promise.all(toLoad);
 
         // Auto-avance l'étape affichée
-        if (task.branch && diffContent !== null) {
+        if (task.status === "documentation" || task.status === "validation") {
+            selectedPanel = diffContent?.trim() ? "commit" : "push";
+        } else if (task.branch && diffContent !== null) {
             selectedPanel = diffContent.trim() ? "commit" : "push";
         } else if (planContent) {
             selectedPanel = "implement";
@@ -498,7 +530,7 @@
 
     <div class="filter-bar">
         {#each FILTERS as f}
-            <button class="filter-btn" class:active={filter === f} onclick={() => filter = filter === f ? null : f}>
+            <button class="filter-btn" class:active={filter === f} class:task-current={f === selectedTaskFilter} onclick={() => filter = filter === f ? null : f}>
                 {STATUS_LABEL[f]}
                 {#if countOf(f) > 0}<span class="count">{countOf(f)}</span>{/if}
             </button>
@@ -556,15 +588,6 @@
                             {/if}
                             {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
                             <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
-                            {#if task.totalUsage}
-                                <span class="meta-tag meta-tokens" title="Tokens cumulés : {task.totalUsage.inputTokens.toLocaleString('fr-FR')} in · {task.totalUsage.outputTokens.toLocaleString('fr-FR')} out">
-                                    {Math.round(task.totalUsage.inputTokens / 100) / 10}k / {Math.round(task.totalUsage.outputTokens / 100) / 10}k tok
-                                </span>
-                            {:else if task.usage}
-                                <span class="meta-tag meta-tokens" title="{task.usage.inputTokens.toLocaleString('fr-FR')} in · {task.usage.outputTokens.toLocaleString('fr-FR')} out">
-                                    {Math.round(task.usage.inputTokens / 100) / 10}k / {Math.round(task.usage.outputTokens / 100) / 10}k tok
-                                </span>
-                            {/if}
                         </div>
 
                         {#if task.status !== "merged"}
@@ -639,6 +662,9 @@
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
                             <div class="plan-scene-hint">↗ Scène principale</div>
+                            {#if task.planUsage}
+                                <PromptUsage usage={task.planUsage} totalUsage={task.totalUsage} label="Plan" />
+                            {/if}
 
                         {:else if selectedPanel === "implement"}
                             <div class="impl-panel">
@@ -675,6 +701,9 @@
                                         {/if}
                                     </button>
                                 </div>
+                                {#if task.implUsage}
+                                    <PromptUsage usage={task.implUsage} totalUsage={task.totalUsage} label="Implémentation" />
+                                {/if}
                             </div>
 
                         {:else if selectedPanel === "commit"}
@@ -815,6 +844,7 @@
 }
 .filter-btn:hover { color: #555; }
 .filter-btn.active { color: #777; }
+.filter-btn.task-current { color: cornsilk; }
 .count { font-size: 0.5rem; opacity: 0.6; margin-left: 0.4rem; }
 .refresh-btn {
     background: none;

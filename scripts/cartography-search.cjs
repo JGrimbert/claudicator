@@ -1,5 +1,12 @@
 'use strict';
 
+const STOP_WORDS = new Set([
+    'dans', 'avec', 'pour', 'sans', 'sous', 'vers', 'chez', 'entre', 'depuis',
+    'avant', 'apres', 'selon', 'parmi', 'cette', 'cela', 'ceci', 'leur', 'leurs',
+    'dont', 'mais', 'donc', 'ainsi', 'comme', 'puis', 'aussi',
+    'avoir', 'etre', 'faire', 'mettre', 'prendre', 'tenir',
+]);
+
 /**
  * Wrapper de recherche lolve-cartography
  * Utilise la version dev de lolve-cartography (CARTOGRAPHY_PATH)
@@ -65,7 +72,11 @@ function grepProject(projectPath, query) {
         if (Array.isArray(kws)) kws.forEach(k => commentOnlyKeywords.add(String(k).toLowerCase()));
     } catch { /* env invalide */ }
 
-    const words  = [...new Set(query.toLowerCase().split(/\s+/).filter(w => w.length >= 4))];
+    const words  = [...new Set(
+        query.toLowerCase()
+            .split(/\s+/)
+            .filter(w => w.length >= 4 && !STOP_WORDS.has(w))
+    )];
     const requireComment = words.some(w => commentOnlyKeywords.has(w))
         || commentOnlyKeywords.has(query.toLowerCase().trim());
 
@@ -73,6 +84,13 @@ function grepProject(projectPath, query) {
         const t = line.trimStart();
         return t.startsWith('//') || t.startsWith('#') || t.startsWith('*') || t.startsWith('/*');
     }
+
+    if (words.length === 0) return [];
+
+    // Cache des regexes avec word boundary pour éviter "chat" dans "catch"
+    const wordRegexes = Object.fromEntries(
+        words.map(w => [w, new RegExp(`\\b${w}\\b`, 'i')])
+    );
 
     function walk(dir) {
         let entries;
@@ -86,8 +104,7 @@ function grepProject(projectPath, query) {
                 try {
                     const lines = fs.readFileSync(abs, 'utf-8').split('\n');
                     for (let i = 0; i < lines.length; i++) {
-                        const low = lines[i].toLowerCase();
-                        if (words.some(w => low.includes(w))) {
+                        if (words.some(w => wordRegexes[w].test(lines[i]))) {
                             if (requireComment && !isComment(lines[i])) continue;
                             hits.push({
                                 file:    path.relative(projectPath, abs).replace(/\\/g, '/'),

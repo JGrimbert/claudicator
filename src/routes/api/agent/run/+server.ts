@@ -31,6 +31,7 @@ export async function POST({ request }) {
 
     // Si un plan est fourni, construire le prompt enrichi côté serveur
     let prompt: string = rawPrompt ?? "";
+    let contextStats: { methods: number; hasAtlas: boolean } | null = null;
     if (plan?.trim() && taskId) {
         const task = getTask(taskId);
         if (task) {
@@ -39,6 +40,7 @@ export async function POST({ request }) {
             const methods  = loadMethodSnippets(root, query);
             const docs     = loadProjectDocs(root);
             const atlas    = generateAtlasStrings(root, query)?.compressed;
+            contextStats   = { methods: methods?.length ?? 0, hasAtlas: !!(atlas?.trim()) };
             prompt = formatImplementationPrompt(task, plan, methods, docs, atlas);
         } else {
             prompt = plan;
@@ -80,11 +82,11 @@ export async function POST({ request }) {
 
     const stream = new ReadableStream({
         start(controller) {
-            const emit = (line: string, type: "agent" | "system" | "usage" = "agent") => {
+            const emit = (line: string, type: "agent" | "system" | "usage" | "context" = "agent") => {
                 try {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`));
                 } catch { /* stream fermé */ }
-                if (type !== "usage") allLogs.push(line);
+                if (type !== "usage" && type !== "context") allLogs.push(line);
                 if (type === "agent") planLines.push(line);
             };
 
@@ -105,6 +107,7 @@ export async function POST({ request }) {
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
             if (taskId) register(taskId, proc);
             if (proc.pid) emit(`[pid:${proc.pid}]`, "system");
+            if (contextStats) emit(JSON.stringify(contextStats), "context");
 
             // Buffer ligne par ligne pour ne pas couper les lignes en milieu de chunk.
             let stdoutBuf = "";
@@ -210,7 +213,10 @@ export async function POST({ request }) {
                             inputTokens: (prev?.inputTokens ?? 0) + capturedUsage.inputTokens,
                             outputTokens: (prev?.outputTokens ?? 0) + capturedUsage.outputTokens,
                         };
-                        updateTask(taskId, { status, logs: allLogs, usage: capturedUsage, totalUsage });
+                        const phaseUsage = isImplementationPhase
+                            ? { implUsage: capturedUsage }
+                            : { planUsage: capturedUsage };
+                        updateTask(taskId, { status, logs: allLogs, usage: capturedUsage, totalUsage, ...phaseUsage });
                         addProjectUsage(capturedUsage.inputTokens, capturedUsage.outputTokens);
                     } else {
                         updateTask(taskId, { status, logs: allLogs });
