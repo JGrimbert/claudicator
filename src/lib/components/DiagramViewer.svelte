@@ -383,7 +383,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     height: 100%;
     overflow: hidden;
     font-family: 'JetBrains Mono', monospace;
-    background: #06060e;
+    background: var(--bg-deep);
     color: #777;
 }
 
@@ -391,7 +391,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
 .dv-header {
     flex-shrink: 0;
     padding: 0.5rem 0.9rem;
-    background: #08081a;
+    background: var(--bg-panel);
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -402,14 +402,14 @@ Règles : ne jamais modifier le corps des méthodes.`;
     gap: 0.35rem;
     flex-wrap: wrap;
 }
-.dv-num  { font-size: 0.78rem; font-weight: 600; color: #9181f9; }
+.dv-num  { font-size: 0.78rem; font-weight: 600; color: var(--accent-hover); }
 .dv-lbl  { font-size: 0.56rem; color: #2a2a3a; text-transform: uppercase; letter-spacing: 0.08em; }
 .dv-sep  { color: #1a1a2a; font-size: 0.6rem; }
 
 .dv-copy-btn {
     margin-left: auto;
     background: none;
-    border: 1px solid #252535;
+    border: 1px solid var(--border-strong);
     color: #444;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.58rem;
@@ -419,11 +419,11 @@ Règles : ne jamais modifier le corps des méthodes.`;
     letter-spacing: 0.03em;
     transition: color 0.1s, border-color 0.1s;
 }
-.dv-copy-btn:hover { color: #9181f9; border-color: #4a3a8a; }
+.dv-copy-btn:hover { color: var(--accent-hover); border-color: var(--accent); }
 
 .dv-prog {
     height: 2px;
-    background: #0f0f22;
+    background: var(--border);
     border-radius: 1px;
     overflow: hidden;
 }
@@ -441,8 +441,8 @@ Règles : ne jamais modifier le corps des méthodes.`;
     flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.4rem 0.9rem;
-    border-top: 1px solid #0e0e18;
-    background: #07070e;
+    border-top: 1px solid var(--border);
+    background: var(--bg-deep);
 }
 .dv-leg-item {
     display: flex;
@@ -467,7 +467,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
 }
 .dv-tree::-webkit-scrollbar { width: 3px; }
 .dv-tree::-webkit-scrollbar-track { background: transparent; }
-.dv-tree::-webkit-scrollbar-thumb { background: #1a1a2a; border-radius: 2px; }
+.dv-tree::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
 
 /* Class row */
 .dv-row {
@@ -478,7 +478,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     line-height: 1.6;
     transition: background 0.08s;
 }
-.dv-row:hover { background: #0b0b1c; }
+.dv-row:hover { background: var(--bg-panel); }
 
 .dv-prefix {
     white-space: pre;
@@ -500,7 +500,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     line-height: 1;
     transition: color 0.1s;
 }
-.dv-toggle:hover { color: #9181f9; }
+.dv-toggle:hover { color: var(--accent-hover); }
 .dv-toggle-ph { width: 14px; flex-shrink: 0; }
 
 .dv-cls-name {
@@ -559,8 +559,8 @@ Règles : ne jamais modifier le corps des méthodes.`;
 
 /* Methods block */
 .dv-methods-block {
-    background: #060610;
-    border-bottom: 1px solid #0e0e1a;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
 }
 .dv-mrow {
     display: flex;
@@ -569,7 +569,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     padding: 0.04rem 0.75rem 0.04rem 0;
     transition: background 0.06s;
 }
-.dv-mrow:hover { background: #0c0c1e; }
+.dv-mrow:hover { background: var(--bg-panel); }
 .dv-mrow.priv { opacity: 0.35; }
 .dv-mpfx {
     white-space: pre;
@@ -582,7 +582,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    border: 1px solid #2a2a3a;
+    border: 1px solid var(--border-strong);
     flex-shrink: 0;
 }
 .dv-msig {
@@ -611,29 +611,29 @@ Règles : ne jamais modifier le corps des méthodes.`;
     cursor: pointer;
 }
 .dv-mrow.active {
-    background: #0e0e22;
+    background: var(--bg-subtle);
 }
 .dv-mrow.active .dv-msig {
-    color: #9181f9;
+    color: var(--accent-hover);
 }
 
 /* ── Panneau snippet Monaco ──────────────────────────────── */
 .dv-snippet {
     flex-shrink: 0;
     height: 260px;
-    border-top: 1px solid #1a1a30;
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    background: #05050f;
+    background: var(--bg-deep);
 }
 .dv-snippet-header {
     display: flex;
     align-items: center;
     gap: 0.6rem;
     padding: 0.2rem 0.6rem;
-    border-bottom: 1px solid #0f0f20;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-    background: #07071a;
+    background: var(--bg-panel);
 }
 .dv-snippet-file {
     font-size: 0.55rem;
@@ -662,7 +662,7 @@ Règles : ne jamais modifier le corps des méthodes.`;
     line-height: 1;
     transition: color 0.1s;
 }
-.dv-snippet-close:hover { color: #9181f9; }
+.dv-snippet-close:hover { color: var(--accent-hover); }
 .dv-monaco {
     flex: 1;
     min-height: 0;
@@ -677,9 +677,9 @@ Règles : ne jamais modifier le corps des méthodes.`;
     color: #777;
     line-height: 1.55;
     white-space: pre;
-    background: #07070f;
+    background: var(--bg-deep);
     font-family: 'JetBrains Mono', monospace;
 }
 .dv-pre::-webkit-scrollbar { width: 3px; height: 3px; }
-.dv-pre::-webkit-scrollbar-thumb { background: #1a1a2a; }
+.dv-pre::-webkit-scrollbar-thumb { background: var(--scrollbar); }
 </style>

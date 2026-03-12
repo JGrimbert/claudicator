@@ -10,14 +10,29 @@
 {@render children()}
 
 <style>
+    :root {
+        --bg-deep:        #0c0c16;
+        --bg-base:        #16161e;
+        --bg-panel:       #12121a;
+        --bg-subtle:      #1a1a28;
+        --border:         #1e1e2e;
+        --border-strong:  #2a2a3a;
+        --text-primary:   #ccc;
+        --text-secondary: #888;
+        --text-muted:     #555;
+        --text-dim:       #333;
+        --accent:         #7c6af7;
+        --accent-hover:   #9181f9;
+        --scrollbar:      #2a2a3a;
+    }
     :global(*, *::before, *::after) {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
     }
     :global(body) {
-        background: #111;
-        color: #ccc;
+        background: var(--bg-base);
+        color: var(--text-primary);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         height: 100vh;
         overflow: hidden;
@@ -32,7 +47,7 @@
         background: transparent;
     }
     :global(::-webkit-scrollbar-thumb) {
-        background: #333;
+        background: var(--scrollbar);
         border-radius: 2px;
     }
 </style>

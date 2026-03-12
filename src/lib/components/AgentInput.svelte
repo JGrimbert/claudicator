@@ -259,7 +259,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    border-top: 1px solid #141414;
+    border-top: 1px solid var(--border);
 }
 .agent-input.dragging { user-select: none; cursor: row-resize; }
 
@@ -276,7 +276,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.3rem 1rem;
-    border-bottom: 1px solid #111;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .ai-label {
@@ -307,9 +307,9 @@
 .ai-textarea {
     flex: 1;
     min-height: 0;
-    background: #07070f;
+    background: var(--bg-deep);
     border: none;
-    border-bottom: 1px solid #111;
+    border-bottom: 1px solid var(--border);
     color: #777;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.67rem;
@@ -319,7 +319,7 @@
     outline: none;
 }
 .ai-textarea:focus { color: #bbb; }
-.ai-textarea::placeholder { color: #222; }
+.ai-textarea::placeholder { color: var(--border-strong); }
 .ai-textarea:disabled { opacity: 0.5; cursor: wait; }
 .ai-footer {
     display: flex;
@@ -342,13 +342,14 @@
 .ai-launch-label { color: cornsilk; }
 .ai-launch-arrow { color: #fff; }
 .ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
+
 .ai-launch:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Bouton preview ── */
 .ai-preview-btn {
     margin-right: auto;
     background: none;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--border-strong);
     color: #3a3a5a;
     font-size: 0.62rem;
     padding: 0.25rem 0.55rem;
@@ -357,7 +358,7 @@
     font-family: 'JetBrains Mono', monospace;
     transition: color 0.1s, border-color 0.1s;
 }
-.ai-preview-btn:hover:not(:disabled) { color: #9181f9; border-color: #4a3a8a; }
+.ai-preview-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: #4a3a8a; }
 .ai-preview-btn:disabled { opacity: 0.3; cursor: default; }
 
 /* ── Modal prompt complet ── */
@@ -371,8 +372,8 @@
     z-index: 1000;
 }
 .prompt-modal {
-    background: #0c0c14;
-    border: 1px solid #2a2a3a;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
     border-radius: 6px;
     width: min(900px, 92vw);
     max-height: 80vh;
@@ -384,7 +385,7 @@
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    border-bottom: 1px solid #1e1e2e;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .prompt-modal-title {
@@ -420,21 +421,21 @@
 /* ── Diagramme symboles ── */
 .sym-diag {
     flex-shrink: 0;
-    border-top: 1px solid #111;
-    border-bottom: 1px solid #111;
-    background: #06060e;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-deep);
     max-height: 140px;
     overflow-y: auto;
 }
 .sym-diag::-webkit-scrollbar { width: 3px; }
-.sym-diag::-webkit-scrollbar-thumb { background: #1a1a2a; border-radius: 2px; }
+.sym-diag::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .sym-diag-header {
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
     padding: 0.2rem 1rem;
-    background: #07070f;
-    border-bottom: 1px solid #111;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -506,12 +507,12 @@
     flex-shrink: 0;
     height: 6px;
     cursor: row-resize;
-    border-top: 1px solid #1e1e1e;
-    border-bottom: 1px solid #1e1e1e;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     background: transparent;
     transition: border-color 0.15s;
 }
-.vhandle:hover, .vhandle.active { border-color: #3a3a3a; }
+.vhandle:hover, .vhandle.active { border-color: var(--border-strong); }
 
 /* ── Contexte pane ── */
 .ctx-pane {
