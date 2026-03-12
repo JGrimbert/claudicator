@@ -80,6 +80,24 @@
     let committing = false;
     let reverting = false;
     let revertConfirm = false;
+    let branchCreating = false;
+
+    async function createBranchAndShowDiff(task: Task) {
+        if (branchCreating) return;
+        branchCreating = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/initial-commit`, { method: "POST" });
+            const data = await res.json();
+            if (data.error && res.status !== 409) { wfError = data.error; return; }
+            await loadTasks();
+            if (selected?.id === task.id) {
+                await loadDiff(task.id);
+                selectedPanel = "commit";
+            }
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { branchCreating = false; }
+    }
 
     // Push / merge
     let pushing = false;
@@ -184,11 +202,14 @@
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
     $: currentStep = (() => {
-        // Le statut serveur prime : documentation/validation = au moins un commit fait
-        if (selected?.status === "documentation" || selected?.status === "validation") return 3;
         if (!planContent) return 0;
         if (!selected?.branch) return 1;
-        if (diffLoading || diffContent === null) return 1;
+        if (diffLoading || diffContent === null) {
+            // Fallback sur le statut serveur si le diff n'est pas encore chargé
+            if (selected?.status === "documentation" || selected?.status === "validation") return 3;
+            return 1;
+        }
+        // Le diff prime : des modifications non commitées → commit, sinon → push
         if (diffContent.trim()) return 2;
         return 3;
     })();
@@ -431,7 +452,7 @@
             taskRefreshTick.update(n => n + 1);
             if (selected?.id === task.id) {
                 await loadDiff(task.id);
-                selectedPanel = diffContent?.trim() ? "commit" : "push";
+                selectedPanel = "commit";
             }
         }
     }
@@ -490,8 +511,13 @@
             const res = await fetch(`/api/tasks/${task.id}/merge`, { method: "POST" });
             const data = await res.json();
             if (data.error) { wfError = data.error; return; }
-            await loadTasks();
             selected = null;
+            planContent = null;
+            diffContent = null;
+            implEdit = "";
+            commitMsg = "";
+            localStorage.removeItem(SELECTED_KEY);
+            await loadTasks();
         } catch (e: any) {
             wfError = e.message;
         } finally { merging = false; }
@@ -552,17 +578,6 @@
                 {#if selected?.id === task.id}
                     <div class="inline-detail">
 
-                        <!-- ── Meta ── -->
-                        <div class="inline-meta">
-                            {#if task.issueNumber}
-                                <span class="meta-tag meta-issue" title="Issue GitHub #{task.issueNumber}">
-                                    #{task.issueNumber}
-                                </span>
-                            {/if}
-                            {#if task.branch}<span class="meta-tag mono">{task.branch}</span>{/if}
-                            <span class="meta-tag dim">{new Date(task.createdAt).toLocaleDateString("fr-FR")}</span>
-                        </div>
-
                         {#if task.status !== "merged"}
 
                         <!-- ── Task bloquée / échouée ── -->
@@ -606,10 +621,10 @@
                                 class="wf-btn"
                                 class:wf-active={btnVariant(2) === "active"}
                                 class:wf-secondary={btnVariant(2) === "secondary"}
-                                class:wf-disabled={btnVariant(2) === "disabled"}
-                                disabled={btnVariant(2) === "disabled"}
-                                onclick={() => selectedPanel = "commit"}
-                            >Commiter</button>
+                                class:wf-disabled={btnVariant(2) === "disabled" && !planContent}
+                                disabled={branchCreating || (!task.branch && !planContent)}
+                                onclick={() => task.branch ? (selectedPanel = "commit") : createBranchAndShowDiff(task)}
+                            >{branchCreating ? "Création…" : "Commiter"}</button>
 
                             <span class="wf-arrow">›</span>
 
@@ -641,11 +656,6 @@
 
                         {:else if selectedPanel === "implement"}
                             <div class="impl-panel">
-                                <div class="impl-header">
-                                    <span class="impl-label">Plan approuvé</span>
-                                    <span class="impl-hint">Éditable avant lancement</span>
-                                    {#if planLoading}<span class="impl-hint">Chargement…</span>{/if}
-                                </div>
                                 <textarea
                                     class="impl-textarea"
                                     bind:value={implEdit}
@@ -654,6 +664,18 @@
                                     disabled={planLoading}
                                 ></textarea>
                                 <div class="impl-footer">
+                                    {#if task.branch}
+                                        <button
+                                            class="impl-skip"
+                                            onclick={() => selectedPanel = "commit"}
+                                        >→ Commiter</button>
+                                    {:else if planContent}
+                                        <button
+                                            class="impl-skip"
+                                            onclick={() => createBranchAndShowDiff(task)}
+                                            disabled={branchCreating}
+                                        >{branchCreating ? "Création branche…" : "→ Créer branche + diff"}</button>
+                                    {/if}
                                     <button
                                         class="impl-launch"
                                         onclick={() => clickImplement(task)}
@@ -856,7 +878,6 @@
 .inline-detail {
     background: #0d0d16;
     border-bottom: 1px solid #1a1a1a;
-    border-left: 2px solid #7c6af7;
 }
 .inline-meta {
     display: flex;
@@ -949,10 +970,10 @@
 /* active = étape courante */
 .wf-btn.wf-active {
     color: #9181f9;
-    border-color: #3a2a5a;
-    background: #0e0b1a;
+    border-color: transparent;
+    background: none;
 }
-.wf-btn.wf-active:hover { border-color: #7c6af7; }
+.wf-btn.wf-active:hover { color: #b0a0ff; }
 /* secondary = étape déjà franchie, recliquable */
 .wf-btn.wf-secondary {
     color: #444;
@@ -987,20 +1008,6 @@
 
 /* ── Panneau Implémenter ── */
 .impl-panel { display: flex; flex-direction: column; border-top: 1px solid #141414; }
-.impl-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.3rem 1rem;
-    border-bottom: 1px solid #111;
-}
-.impl-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #333;
-}
-.impl-hint { font-size: 0.6rem; color: #2a2a2a; font-style: italic; }
 .impl-textarea {
     background: #07070f;
     border: none;
@@ -1017,7 +1024,20 @@
 .impl-textarea:focus { color: #bbb; }
 .impl-textarea::placeholder { color: #222; }
 .impl-textarea:disabled { opacity: 0.5; cursor: wait; }
-.impl-footer { display: flex; justify-content: flex-end; padding: 0.4rem 1rem; flex-shrink: 0; }
+.impl-footer { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; flex-shrink: 0; }
+.impl-skip {
+    margin-right: auto;
+    background: none;
+    border: 1px solid #2a3a2a;
+    color: #4a7a4a;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.1s, border-color 0.1s;
+}
+.impl-skip:hover { color: #7cbf7c; border-color: #4a7a4a; }
 .impl-launch {
     background: #1e1540;
     border: 1px solid #3a2e70;

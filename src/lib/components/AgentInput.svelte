@@ -159,8 +159,6 @@
                 <span class="ai-hint">Chargement…</span>
             {:else if contextError}
                 <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
-            {:else if hasPlan}
-                <span class="ai-hint plan">Plan existant</span>
             {:else}
                 <span class="ai-hint">Éditable avant envoi</span>
             {/if}
@@ -218,7 +216,11 @@
                 onclick={launch}
                 disabled={!prompt.trim() || $agentRunState.running || loadingContext}
             >
-                {$agentRunState.running ? "En cours…" : "Lancer l'agent →"}
+                {#if $agentRunState.running}
+                    En cours…
+                {:else}
+                    <span class="ai-launch-label">Lancer l'agent</span><span class="ai-launch-arrow"> →</span>
+                {/if}
             </button>
         </div>
     </div>
@@ -326,17 +328,20 @@
     flex-shrink: 0;
 }
 .ai-launch {
-    background: #7c6af7;
-    border: none;
+    background: #1e1540;
+    border: 1px solid #3a2e70;
     border-radius: 3px;
-    color: #fff;
     font-size: 0.65rem;
     padding: 0.3rem 0.9rem;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
 }
-.ai-launch:hover:not(:disabled) { background: #9181f9; }
+.ai-launch-label { color: cornsilk; }
+.ai-launch-arrow { color: #fff; }
+.ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 .ai-launch:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Bouton preview ── */
