@@ -791,14 +791,14 @@
     font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #555;
-    border-bottom: 1px solid #1e1e1e;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .filter-bar {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     overflow-x: auto;
     scrollbar-width: none;
@@ -807,7 +807,7 @@
 .filter-btn {
     background: none;
     border: none;
-    border-right: 1px solid #1a1a1a;
+    border-right: 1px solid var(--border);
     color: #2e2e2e;
     font-size: 0.58rem;
     text-transform: uppercase;
@@ -833,14 +833,14 @@
     line-height: 1;
 }
 .refresh-btn:hover { color: #555; }
-.new-task { border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
+.new-task { border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .new-input {
     display: block;
     width: 100%;
     background: transparent;
     border: none;
     outline: none;
-    color: #555;
+    color: var(--text-muted);
     font-family: 'Inter', sans-serif;
     font-size: 0.68rem;
     letter-spacing: 0.05em;
@@ -848,11 +848,11 @@
     box-sizing: border-box;
 }
 .new-input:focus { color: #aaa; }
-.new-input::placeholder { color: #222; }
+.new-input::placeholder { color: var(--border-strong); }
 .list { flex: 1; min-height: 0; overflow-y: auto; }
 .list::-webkit-scrollbar { width: 4px; }
 .list::-webkit-scrollbar-track { background: transparent; }
-.list::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
+.list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .task-row-wrap { position: relative; }
 .task-delete-btn {
     position: absolute;
@@ -876,24 +876,24 @@
 
 /* ── Détail inline ── */
 .inline-detail {
-    background: #0d0d16;
-    border-bottom: 1px solid #1a1a1a;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
 }
 .inline-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.3rem;
     padding: 0.35rem 1rem;
-    border-bottom: 1px solid #141414;
-    background: #0d0d16;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
 }
 .meta-tag {
     font-size: 0.6rem;
     padding: 0.05rem 0.4rem;
     border-radius: 10px;
-    background: #1a1a2e;
-    color: #555;
-    border: 1px solid #2a2a2a;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
 }
 .meta-tag.mono { font-family: 'JetBrains Mono', monospace; background: none; border-color: transparent; padding-left: 0; padding-right: 0; }
 .meta-tag.dim { color: #333; background: none; border-color: transparent; padding-left: 0; padding-right: 0; }
@@ -941,14 +941,14 @@
     align-items: center;
     gap: 0;
     padding: 0.5rem 1rem;
-    border-bottom: 1px solid #141414;
+    border-bottom: 1px solid var(--border);
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
 }
 .wf-bar::-webkit-scrollbar { display: none; }
 .wf-arrow {
-    color: #1e1e2e;
+    color: var(--border);
     font-size: 0.85rem;
     flex-shrink: 0;
     padding: 0 0.2rem;
@@ -969,7 +969,7 @@
 }
 /* active = étape courante */
 .wf-btn.wf-active {
-    color: #9181f9;
+    color: var(--accent-hover);
     border-color: transparent;
     background: none;
 }
@@ -982,7 +982,7 @@
 }
 .wf-btn.wf-secondary:hover { color: #777; border-color: #333; }
 .wf-sep {
-    color: #1e1e2e;
+    color: var(--border);
     font-size: 0.7rem;
     flex-shrink: 0;
     padding: 0 0.4rem;
@@ -1007,11 +1007,11 @@
 }
 
 /* ── Panneau Implémenter ── */
-.impl-panel { display: flex; flex-direction: column; border-top: 1px solid #141414; }
+.impl-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
 .impl-textarea {
-    background: #07070f;
+    background: var(--bg-deep);
     border: none;
-    border-bottom: 1px solid #111;
+    border-bottom: 1px solid var(--border);
     color: #777;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.67rem;
@@ -1022,7 +1022,7 @@
     min-height: 80px;
 }
 .impl-textarea:focus { color: #bbb; }
-.impl-textarea::placeholder { color: #222; }
+.impl-textarea::placeholder { color: var(--border-strong); }
 .impl-textarea:disabled { opacity: 0.5; cursor: wait; }
 .impl-footer { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; flex-shrink: 0; }
 .impl-skip {
@@ -1056,20 +1056,20 @@
 .impl-launch:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Panneau Commit ── */
-.commit-panel { display: flex; flex-direction: column; border-top: 1px solid #141414; }
+.commit-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
 .commit-bar {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 1rem;
-    border-bottom: 1px solid #141414;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .commit-msg-input {
     flex: 1;
     min-width: 0;
-    background: #070710;
-    border: 1px solid #2a2a3a;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
     border-radius: 3px;
     color: #888;
     font-family: 'JetBrains Mono', monospace;
@@ -1078,7 +1078,7 @@
     outline: none;
 }
 .commit-msg-input:focus { border-color: #4caf50; color: #bbb; }
-.commit-msg-input::placeholder { color: #2a2a3a; }
+.commit-msg-input::placeholder { color: var(--border-strong); }
 .commit-msg-input:disabled { opacity: 0.4; }
 .commit-btn {
     background: none;
@@ -1096,7 +1096,7 @@
 .commit-btn:disabled { opacity: 0.35; cursor: default; }
 .revert-btn {
     background: none;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--border-strong);
     color: #555;
     font-size: 0.6rem;
     padding: 0.2rem 0.5rem;
@@ -1123,10 +1123,10 @@
     max-height: 320px;
     overflow-y: auto;
     padding: 0.4rem 0;
-    background: #050510;
+    background: var(--bg-deep);
 }
 .diff-view::-webkit-scrollbar { width: 3px; }
-.diff-view::-webkit-scrollbar-thumb { background: #1a1a2a; }
+.diff-view::-webkit-scrollbar-thumb { background: var(--border); }
 .diff-line {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.63rem;
@@ -1153,10 +1153,10 @@
 .plan-scene-hint {
     padding: 0.6rem 1rem;
     font-size: 0.6rem;
-    color: #2a2a3a;
+    color: var(--border-strong);
     font-style: italic;
     font-family: 'JetBrains Mono', monospace;
-    border-top: 1px solid #141414;
+    border-top: 1px solid var(--border);
 }
 
 /* ── Panneau Push ── */
@@ -1174,8 +1174,8 @@
 }
 .push-hint code {
     font-family: 'JetBrains Mono', monospace;
-    color: #555;
-    background: #1a1a2e;
+    color: var(--text-muted);
+    background: var(--bg-subtle);
     padding: 0.05rem 0.3rem;
     border-radius: 3px;
 }

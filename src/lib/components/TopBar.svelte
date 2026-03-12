@@ -230,8 +230,8 @@
     justify-content: space-between;
     padding: 0 1rem;
     height: 40px;
-    background: #12121a;
-    border-bottom: 1px solid #222;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     gap: 0.75rem;
 }
@@ -252,10 +252,10 @@
 }
 .project-select {
     appearance: none;
-    background: #1a1a28;
-    border: 1px solid #333;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-strong);
     border-radius: 4px;
-    color: #ccc;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
     padding: 0.2rem 1.6rem 0.2rem 0.6rem;
@@ -265,8 +265,8 @@
     max-width: 240px;
 }
 .project-select:hover { border-color: #555; }
-.project-select:focus { border-color: #7c6af7; }
-.project-select option { background: #1a1a28; color: #ccc; }
+.project-select:focus { border-color: var(--accent); }
+.project-select option { background: var(--bg-subtle); color: var(--text-primary); }
 .select-caret {
     position: absolute;
     right: 0.45rem;
@@ -295,8 +295,8 @@
     flex-shrink: 0;
     transition: color 0.15s, border-color 0.15s;
 }
-.add-btn:hover { color: #9181f9; border-color: #9181f9; }
-.add-btn.active { color: #9181f9; border-color: #7c6af7; }
+.add-btn:hover { color: var(--accent-hover); border-color: var(--accent-hover); }
+.add-btn.active { color: var(--accent-hover); border-color: var(--accent); }
 .settings-dropdown { left: auto; right: 0; min-width: 340px; max-width: 420px; }
 
 /* ── Panneau ajout ── */
@@ -305,8 +305,8 @@
     top: 100%;
     left: 0;
     z-index: 100;
-    background: #0e0e1a;
-    border: 1px solid #2a2a3a;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
     border-radius: 4px;
     min-width: 320px;
     max-width: 420px;
@@ -319,10 +319,10 @@
     max-height: 220px;
     overflow-y: auto;
     padding: 0.3rem 0;
-    border-bottom: 1px solid #1e1e2e;
+    border-bottom: 1px solid var(--border);
 }
 .gh-repos::-webkit-scrollbar { width: 3px; }
-.gh-repos::-webkit-scrollbar-thumb { background: #2a2a3a; }
+.gh-repos::-webkit-scrollbar-thumb { background: var(--border-strong); }
 .gh-hint {
     display: block;
     padding: 0.4rem 0.8rem;
@@ -344,8 +344,8 @@
     gap: 0.5rem;
     transition: background 0.1s;
 }
-.gh-repo-btn:hover:not(:disabled) { background: #1a1a2e; }
-.gh-repo-btn.selected { background: #1a1a2e; }
+.gh-repo-btn:hover:not(:disabled) { background: var(--bg-subtle); }
+.gh-repo-btn.selected { background: var(--bg-subtle); }
 .gh-repo-btn.configured { cursor: default; opacity: 0.5; }
 .gh-repo-name {
     font-family: 'JetBrains Mono', monospace;
@@ -364,22 +364,22 @@
 .add-input {
     flex: 1;
     min-width: 0;
-    background: #070710;
-    border: 1px solid #2a2a3a;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
     border-radius: 3px;
-    color: #ccc;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.67rem;
     padding: 0.22rem 0.5rem;
     outline: none;
     transition: border-color 0.15s;
 }
-.add-input:focus { border-color: #7c6af7; }
-.add-input::placeholder { color: #333; }
+.add-input:focus { border-color: var(--accent); }
+.add-input::placeholder { color: var(--text-dim); }
 .add-input:disabled { opacity: 0.5; }
 .btn-confirm, .btn-cancel {
     background: none;
-    border: 1px solid #2a2a3a;
+    border: 1px solid var(--border-strong);
     color: #777;
     font-size: 0.65rem;
     padding: 0.2rem 0.55rem;
@@ -389,7 +389,7 @@
     font-family: 'Inter', sans-serif;
     flex-shrink: 0;
 }
-.btn-confirm:hover:not(:disabled) { border-color: #7c6af7; color: #9181f9; }
+.btn-confirm:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-hover); }
 .btn-cancel:hover { border-color: #555; color: #aaa; }
 .btn-confirm:disabled { opacity: 0.35; cursor: default; }
 .add-error {

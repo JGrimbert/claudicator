@@ -51,9 +51,9 @@
     flex-direction: column;
     width: 100%;
     padding: 0.5rem 1rem;
-    background: #111;
+    background: var(--bg-base);
     border: none;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid var(--border);
     cursor: pointer;
     text-align: left;
     transition: background 0.1s;
@@ -61,7 +61,7 @@
     overflow: visible;
 }
 .item-row.active { padding-bottom: 2.4rem; }
-.item-row:hover { background: #161616; }
+.item-row:hover { background: var(--bg-panel); }
 .item-row.closed { opacity: 0.55; }
 .item-top {
     display: flex;
@@ -111,7 +111,7 @@
     left: 4px;
     right: 4px;
     height: 1px;
-    background: #222;
+    background: var(--border);
     z-index: 0;
 }
 .pipeline-step {
@@ -125,8 +125,8 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #1a1a1a;
-    border: 1px solid #282828;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
     flex-shrink: 0;
     transition: background 0.15s, border-color 0.15s;
 }
@@ -136,7 +136,7 @@
 }
 .pipeline-dot.current {
     background: #3a2e60;
-    border-color: #7c6af7;
+    border-color: var(--accent);
     box-shadow: 0 0 5px #7c6af740;
 }
 .pipeline-name {
@@ -154,5 +154,5 @@
     pointer-events: none;
 }
 .pipeline-name.name-done    { color: #3a5a3a; }
-.pipeline-name.name-current { color: #7c6af7; }
+.pipeline-name.name-current { color: var(--accent); }
 </style>

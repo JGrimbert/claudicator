@@ -160,7 +160,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    border-bottom: 1px solid #1e1e1e;
+    border-bottom: 1px solid var(--border);
 }
 .panel-header {
     display: flex;
@@ -170,14 +170,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #555;
-    border-bottom: 1px solid #1e1e1e;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .back-btn {
     background: none;
-    border: 1px solid #2a2a2a;
-    color: #7c6af7;
+    border: 1px solid var(--border-strong);
+    color: var(--accent);
     font-size: 0.7rem;
     padding: 0.15rem 0.5rem;
     border-radius: 3px;
@@ -186,7 +186,7 @@
     letter-spacing: normal;
     flex-shrink: 0;
 }
-.back-btn:hover { background: #1e1e2e; }
+.back-btn:hover { background: var(--border); }
 .content {
     flex: 1;
     min-height: 0;
@@ -195,11 +195,11 @@
 }
 .content::-webkit-scrollbar { width: 4px; }
 .content::-webkit-scrollbar-track { background: transparent; }
-.content::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
-.content::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.content::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 .plan-section {
     flex-shrink: 0;
-    border-top: 1px solid #1e1e1e;
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     max-height: 40%;
@@ -209,7 +209,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.4rem 1rem;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 .plan-label {
@@ -220,15 +220,15 @@
 }
 .plan-btn {
     background: none;
-    border: 1px solid #222;
-    color: #555;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
     font-size: 0.62rem;
     padding: 0.15rem 0.5rem;
     border-radius: 3px;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
 }
-.plan-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.plan-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
 .plan-btn:disabled { opacity: 0.4; cursor: default; }
 .plan-content {
     flex: 1;
@@ -237,9 +237,9 @@
 }
 .plan-content::-webkit-scrollbar { width: 4px; }
 .plan-content::-webkit-scrollbar-track { background: transparent; }
-.plan-content::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
+.plan-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .plan {
-    color: #bbb;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
     white-space: pre-wrap;
@@ -255,11 +255,11 @@
 .issue-title {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #bbb;
+    color: var(--text-primary);
     line-height: 1.4;
 }
 .body-text {
-    color: #888;
+    color: var(--text-secondary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
     white-space: pre-wrap;
@@ -268,7 +268,7 @@
     margin: 0;
 }
 .sub-issues {
-    border-top: 1px solid #1e1e1e;
+    border-top: 1px solid var(--border);
     padding-top: 0.75rem;
 }
 .sub-label {
@@ -298,7 +298,7 @@ ul { list-style: none; padding: 0; margin: 0; }
     border-radius: 3px;
     text-align: left;
 }
-.sub-btn:hover { background: #1e1e2e; }
+.sub-btn:hover { background: var(--border); }
 .sub-num { color: #555; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; flex-shrink: 0; }
 .sub-title { color: #999; font-size: 0.78rem; }
 .sub-item.closed .sub-title { color: #444; text-decoration: line-through; }

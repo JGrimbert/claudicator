@@ -177,7 +177,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #05050f;
+    background: var(--bg-deep);
     font-family: 'JetBrains Mono', monospace;
 }
 
@@ -187,9 +187,9 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.4rem 1rem;
-    border-bottom: 1px solid #1a1a2a;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-    background: #07070f;
+    background: var(--bg-panel);
 }
 .dot {
     width: 7px;
@@ -261,7 +261,7 @@
 }
 .log-area::-webkit-scrollbar { width: 4px; }
 .log-area::-webkit-scrollbar-track { background: transparent; }
-.log-area::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
+.log-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .log-line {
     font-size: 0.7rem;
     color: #aaa;
@@ -296,9 +296,9 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 1rem;
-    border-top: 1px solid #1a1a2a;
+    border-top: 1px solid var(--border);
     flex-shrink: 0;
-    background: #07070f;
+    background: var(--bg-panel);
 }
 .prompt-sym {
     color: #3a3a5a;
@@ -319,7 +319,7 @@
 .stdin-input:disabled { opacity: 0.4; }
 .btn-send {
     background: none;
-    border: 1px solid #2a2a3a;
+    border: 1px solid var(--border-strong);
     color: #444;
     font-size: 0.75rem;
     padding: 0.1rem 0.4rem;
@@ -327,6 +327,6 @@
     cursor: pointer;
     flex-shrink: 0;
 }
-.btn-send:hover:not(:disabled) { border-color: #7c6af7; color: #7c6af7; }
+.btn-send:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .btn-send:disabled { opacity: 0.25; cursor: default; }
 </style>
