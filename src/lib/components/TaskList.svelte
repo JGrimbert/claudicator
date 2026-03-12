@@ -469,7 +469,7 @@
             const data = await res.json();
             if (data.error) { wfError = data.error; return; }
             commitMsg = "";
-            await loadDiff(task.id);
+            await Promise.all([loadDiff(task.id), loadTasksSilent()]);
             selectedPanel = diffContent?.trim() ? "commit" : "push";
         } catch (e: any) {
             wfError = e.message;
@@ -497,8 +497,15 @@
             const res = await fetch(`/api/tasks/${task.id}/push`, { method: "POST" });
             const data = await res.json();
             if (data.error) { wfError = data.error; return; }
+            const prev = selected?.id === task.id ? selected?.status : undefined;
             tasks = tasks.map(t => t.id === data.id ? data : t);
-            if (selected?.id === task.id) selected = data;
+            if (selected?.id === task.id) {
+                selected = data;
+                if (prev && data.status !== prev) {
+                    const f = statusToFilter(data.status);
+                    if (f) filter = f;
+                }
+            }
         } catch (e: any) {
             wfError = e.message;
         } finally { pushing = false; }
