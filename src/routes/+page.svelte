@@ -296,6 +296,7 @@
     const LIMITS = { aside: [180, 600], section: [200, 600] } as const;
     const ASIDE_LIMITS = [20, 80] as const;
     const MAIN_LIMITS  = [10, 85] as const;
+    const COLLAPSED_KEY = 'claudicator:panel-collapsed';
 
     function loadWidths() {
         try {
@@ -312,6 +313,7 @@
     }
 
     let widths = { aside: 300, section: 340 };
+    let collapsed = { aside: false, section: false };
     let asideTopPct = 60;
     let mainTopPct  = 80;
 
@@ -339,10 +341,19 @@
                 if (!isNaN(v)) mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], v));
             }
         } catch { /* ignore */ }
+        try {
+            const raw = localStorage.getItem(COLLAPSED_KEY);
+            if (raw) collapsed = JSON.parse(raw);
+        } catch { /* ignore */ }
     });
 
     function saveWidths() {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(widths)); } catch { /* ignore */ }
+    }
+
+    function toggleCollapse(panel: 'aside' | 'section') {
+        collapsed = { ...collapsed, [panel]: !collapsed[panel] };
+        try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); } catch { /* ignore */ }
     }
 
     let dragging: "aside" | "section" | null = null;
@@ -350,6 +361,7 @@
     let dragStartW = 0;
 
     function startDrag(e: MouseEvent, panel: "aside" | "section") {
+        if (collapsed[panel]) return;
         dragging = panel;
         dragStartX = e.clientX;
         dragStartW = widths[panel];
@@ -422,6 +434,18 @@
 <div class="app" class:dragging class:dragging-v={draggingV} class:dragging-main={draggingMain}>
     <TopBar />
     <div class="panels">
+        <!-- Bande gauche -->
+        <div class="panel-strip panel-strip--left">
+            <button
+                class:active={!collapsed.aside}
+                onclick={() => toggleCollapse('aside')}
+                title="ArtifactViewer / Issues"
+            >
+                <span class="strip-label">ISSUES</span>
+            </button>
+        </div>
+
+        {#if !collapsed.aside}
         <aside style="width: {widths.aside}px" bind:this={asideEl}>
             <div class="aside-top" style="height: {asideTopPct}%">
                 <ArtifactViewer />
@@ -442,6 +466,8 @@
             onmousedown={e => startDrag(e, "aside")}
             class:active={dragging === "aside"}
         ></div>
+        {/if}
+
         <main bind:this={mainEl}>
             <!-- ── PLAN (haut) ── -->
             <div class="main-top" style="height: {mainTopPct}%">
@@ -470,6 +496,8 @@
                 <AgentConsole />
             </div>
         </main>
+
+        {#if !collapsed.section}
         <div
             class="handle"
             role="separator"
@@ -480,6 +508,18 @@
         <section style="width: {widths.section}px">
             <TaskList />
         </section>
+        {/if}
+
+        <!-- Bande droite -->
+        <div class="panel-strip panel-strip--right">
+            <button
+                class:active={!collapsed.section}
+                onclick={() => toggleCollapse('section')}
+                title="Tasks"
+            >
+                <span class="strip-label">TASKS</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -567,5 +607,48 @@ section {
     font-size: 0.65rem;
     font-style: italic;
     font-family: 'JetBrains Mono', monospace;
+}
+.panel-strip {
+    width: 18px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 4px;
+    background: #111;
+    z-index: 10;
+}
+.panel-strip button {
+    all: unset;
+    cursor: pointer;
+    padding: 4px 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.panel-strip button:hover {
+    background: #1e1e1e;
+}
+.strip-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    color: #555;
+    font-family: 'JetBrains Mono', monospace;
+}
+.panel-strip button.active .strip-label {
+    color: #e1cfbd;
+    font-weight: 400;
+}
+.panel-strip--left {
+    border-right: 1px solid #1e1e1e;
+}
+.panel-strip--right {
+    border-left: 1px solid #1e1e1e;
 }
 </style>
