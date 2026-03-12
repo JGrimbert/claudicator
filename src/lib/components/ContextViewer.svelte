@@ -15,8 +15,6 @@
     let methods: MethodSnippet[] = [];
     let loading = true;
     let error: string | null = null;
-    let monacoLoaded = false;
-    let monacoError = false;
     let loadedForTaskId = "";
 
     $: if (taskId && taskId !== loadedForTaskId) {
@@ -37,62 +35,6 @@
     $: totalChars = methods.reduce((s, m) => s + (m.snippet?.length ?? 0), 0);
     $: totalTokens = Math.round(totalChars / 4);
 
-    function getLanguage(file: string): string {
-        if (file.endsWith(".ts") || file.endsWith(".tsx")) return "typescript";
-        if (file.endsWith(".js") || file.endsWith(".jsx")) return "javascript";
-        if (file.endsWith(".py")) return "python";
-        if (file.endsWith(".java")) return "java";
-        if (file.endsWith(".go")) return "go";
-        if (file.endsWith(".cs")) return "csharp";
-        return "javascript";
-    }
-
-    function editorHeight(snippet: string): number {
-        const lines = snippet.split("\n").length;
-        return Math.min(Math.max(lines, 3), 80) * 18;
-    }
-
-    function monacoAction(node: HTMLElement, m: MethodSnippet) {
-        const monaco = (window as any).monaco;
-        const ed = monaco.editor.create(node, {
-            value: m.snippet,
-            language: getLanguage(m.file),
-            readOnly: true,
-            theme: "vs-dark",
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            fontSize: 11,
-            fontFamily: "'JetBrains Mono', monospace",
-            lineNumbers: "on",
-            renderLineHighlight: "none",
-            overviewRulerLanes: 0,
-            folding: false,
-            glyphMargin: false,
-            lineDecorationsWidth: 4,
-            lineNumbersMinChars: 3,
-            scrollbar: { vertical: "hidden", horizontal: "hidden", alwaysConsumeMouseWheel: false },
-        });
-        return {
-            destroy() { ed.dispose(); }
-        };
-    }
-
-    async function loadMonaco(): Promise<void> {
-        if ((window as any).monaco) return;
-        await new Promise<void>((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src = "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js";
-            s.onload = () => {
-                (window as any).require.config({
-                    paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs" }
-                });
-                (window as any).require(["vs/editor/editor.main"], () => resolve());
-            };
-            s.onerror = () => reject(new Error("Monaco CDN inaccessible"));
-            document.head.appendChild(s);
-        });
-    }
-
     async function doLoad(id: string) {
         methods = [];
         loading = true;
@@ -108,13 +50,6 @@
             return;
         } finally {
             loading = false;
-        }
-        if (!methods.length) return;
-        try {
-            await loadMonaco();
-            monacoLoaded = true;
-        } catch {
-            monacoError = true;
         }
     }
 </script>
@@ -143,15 +78,6 @@
                         {#if m.role}<span class="cv-sym-role">{m.role}</span>{/if}
                         {#if m.description}<span class="cv-sym-desc">{m.description}</span>{/if}
                     </div>
-                    {#if monacoLoaded && !monacoError}
-                        <div
-                            class="cv-editor"
-                            style="height: {editorHeight(m.snippet)}px"
-                            use:monacoAction={m}
-                        ></div>
-                    {:else}
-                        <pre class="cv-fallback" style="height: {editorHeight(m.snippet)}px">{m.snippet}</pre>
-                    {/if}
                 {/each}
             {/each}
         </div>
@@ -236,22 +162,5 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-.cv-editor {
-    width: 100%;
-    border-bottom: 1px solid #141414;
-}
-.cv-fallback {
-    overflow-x: auto;
-    padding: 0.5rem 0.75rem;
-    background: #090910;
-    border-bottom: 1px solid #141414;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: #bbb;
-    white-space: pre;
-    margin: 0;
-    line-height: 1.5;
-    box-sizing: border-box;
 }
 </style>

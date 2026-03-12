@@ -236,14 +236,6 @@
     <div class="panel-header">
         <span>Issues</span>
         <div class="header-actions">
-            <button
-                class="analyze-btn"
-                on:click={startAnalysis}
-                disabled={$issueAnalysis.running || $agentRunState.running}
-                title={hasResult ? "Mettre à jour l'analyse" : "Analyser les issues"}
-            >
-                {$issueAnalysis.running ? "⟳ Analyse…" : hasResult ? "⟳ Màj" : "⊞ Analyser"}
-            </button>
             {#if hasResult && !$issueAnalysis.running}
                 <button class="plan-btn" on:click={() => { issueAnalysis.update(s => ({ ...s, dismissed: false })); openAnalysis(); }} title="Voir la roadmap">
                     ⊟ Roadmap

@@ -85,31 +85,6 @@
     let pushing = false;
     let merging = false;
 
-    // Preview prompt
-    let promptPreview = "";
-    let showPromptPreview = false;
-    let previewLoading = false;
-
-    async function openPromptPreview(task: Task) {
-        if (previewLoading) return;
-        previewLoading = true;
-        promptPreview = "";
-        try {
-            const res = await fetch("/api/agent/preview-prompt", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ plan: implEdit, taskId: task.id })
-            });
-            const data = await res.json();
-            promptPreview = data.prompt ?? data.error ?? "Erreur";
-        } catch (e: any) {
-            promptPreview = e.message;
-        } finally {
-            previewLoading = false;
-            showPromptPreview = true;
-        }
-    }
-
     // Reset task bloquée
     let resetting = false;
     async function resetTask(task: Task) {
@@ -366,8 +341,6 @@
         }
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
-        const autoFilter = statusToFilter(initialTask.status);
-        if (autoFilter) filter = autoFilter;
         planContent = null; diffContent = null;
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
@@ -682,12 +655,6 @@
                                 ></textarea>
                                 <div class="impl-footer">
                                     <button
-                                        class="impl-preview-btn"
-                                        onclick={() => openPromptPreview(task)}
-                                        disabled={!implEdit.trim() || previewLoading}
-                                        title="Voir le prompt complet envoyé à Claude"
-                                    >{previewLoading ? "…" : "{ prompt }"}</button>
-                                    <button
                                         class="impl-launch"
                                         onclick={() => clickImplement(task)}
                                         disabled={!implEdit.trim() || $agentRunState.running || initialCommitting}
@@ -788,19 +755,6 @@
         {/if}
     </div>
 </div>
-
-<!-- ── Overlay preview prompt ── -->
-{#if showPromptPreview}
-    <div class="prompt-overlay" role="dialog" aria-modal="true">
-        <div class="prompt-overlay-box">
-            <div class="prompt-overlay-header">
-                <span class="prompt-overlay-title">Prompt envoyé à Claude</span>
-                <button class="prompt-overlay-close" onclick={() => showPromptPreview = false}>✕</button>
-            </div>
-            <pre class="prompt-overlay-content">{promptPreview}</pre>
-        </div>
-    </div>
-{/if}
 
 <style>
 .panel {
@@ -1207,76 +1161,4 @@
 }
 .push-actions { display: flex; gap: 0.5rem; }
 
-/* ── Bouton preview prompt ── */
-.impl-preview-btn {
-    margin-right: auto;
-    background: none;
-    border: 1px solid #2a2a2a;
-    color: #3a3a5a;
-    font-size: 0.62rem;
-    padding: 0.25rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.1s, border-color 0.1s;
-}
-.impl-preview-btn:hover:not(:disabled) { color: #9181f9; border-color: #4a3a8a; }
-.impl-preview-btn:disabled { opacity: 0.3; cursor: default; }
-
-/* ── Overlay prompt preview ── */
-.prompt-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-.prompt-overlay-box {
-    background: #0c0c14;
-    border: 1px solid #2a2a3a;
-    border-radius: 6px;
-    width: min(900px, 92vw);
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.prompt-overlay-header {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid #1e1e2e;
-    flex-shrink: 0;
-}
-.prompt-overlay-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #555;
-}
-.prompt-overlay-close {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: #333;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 0 0.2rem;
-    line-height: 1;
-}
-.prompt-overlay-close:hover { color: #9181f9; }
-.prompt-overlay-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    color: #777;
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.55;
-    margin: 0;
-}
 </style>

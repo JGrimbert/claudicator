@@ -258,15 +258,6 @@ Règles : ne jamais modifier le corps des méthodes.`;
             <div class="dv-prog">
                 <div class="dv-prog-fill" style="width:{pct(summary.described, summary.total)}%"></div>
             </div>
-
-            <!-- Role legend -->
-            <div class="dv-legend">
-                {#each Object.entries(RC).filter(([r]) => r !== 'internal') as [role, color]}
-                    <span class="dv-leg-item" style="--c:{color}">
-                        <span class="dv-leg-dot"></span>{role}
-                    </span>
-                {/each}
-            </div>
         </div>
 
         <!-- ── Tree ────────────────────────────────────────────────────── -->
@@ -352,6 +343,15 @@ Règles : ne jamais modifier le corps des méthodes.`;
             {/each}
         </div>
 
+        <!-- ── Role legend ───────────────────────────────────────── -->
+        <div class="dv-legend">
+            {#each Object.entries(RC).filter(([r]) => r !== 'internal') as [role, color]}
+                <span class="dv-leg-item" style="--c:{color}">
+                    <span class="dv-leg-dot"></span>{role}
+                </span>
+            {/each}
+        </div>
+
         <!-- ── Monaco snippet panel ──────────────────────────────── -->
         {#if selectedMethod}
             <div class="dv-snippet">
@@ -392,7 +392,6 @@ Règles : ne jamais modifier le corps des méthodes.`;
     flex-shrink: 0;
     padding: 0.5rem 0.9rem;
     background: #08081a;
-    border-bottom: 1px solid #141422;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -435,12 +434,15 @@ Règles : ne jamais modifier le corps des méthodes.`;
     transition: width 0.4s ease;
 }
 
-/* Role legend */
+/* Role legend (footer) */
 .dv-legend {
+    flex-shrink: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    padding-top: 0.1rem;
+    padding: 0.4rem 0.9rem;
+    border-top: 1px solid #0e0e18;
+    background: #07070e;
 }
 .dv-leg-item {
     display: flex;
