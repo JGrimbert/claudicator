@@ -15,9 +15,25 @@
     let createLoading = false;
     let createFeedback = "";
 
+    // ── Tasks pour coloriser les chips ────────────────────────────────────
+    let issueTaskStatus = new Map<number, string>();
+
+    async function loadTaskStatuses() {
+        try {
+            const r = await fetch("/api/tasks");
+            if (r.ok) {
+                const ts: Array<{ issueNumber?: number; status: string }> = await r.json();
+                const m = new Map<number, string>();
+                for (const t of ts) { if (t.issueNumber) m.set(t.issueNumber, t.status); }
+                issueTaskStatus = m;
+            }
+        } catch { /* silencieux */ }
+    }
+
     onMount(() => {
         spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80);
         loadResult();
+        loadTaskStatuses();
     });
     onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
@@ -492,11 +508,11 @@
 
     {:else if $issueAnalysis.result}
         <div class="result-area">
+            <div class="roadmap-inline">
 
             <!-- Diagramme Mermaid -->
             {#if extractMermaid($issueAnalysis.result)}
                 <div class="mermaid-section">
-                    <div class="mermaid-label">Roadmap</div>
                     <div class="mermaid-container" bind:this={mermaidDiv}>
                         <span class="hint">{FRAMES[frame]} Rendu du diagramme…</span>
                     </div>
@@ -526,7 +542,17 @@
                             {/if}
                             <div class="group-issues">
                                 {#each group.issues as n}
-                                    <button class="issue-chip" onclick={() => openIssue(n)} title="Ouvrir l'issue #{n}">#{n}</button>
+                                    {@const taskStatus = issueTaskStatus.get(n)}
+                                    <button
+                                        class="issue-chip"
+                                        class:chip-impl={taskStatus === "implementation" || taskStatus === "documentation"}
+                                        class:chip-plan={taskStatus === "planification"}
+                                        class:chip-merged={taskStatus === "merged"}
+                                        class:chip-failed={taskStatus === "failed"}
+                                        class:chip-spec={taskStatus === "specification"}
+                                        onclick={() => openIssue(n)}
+                                        title="Ouvrir l'issue #{n}{taskStatus ? ` · ${taskStatus}` : ''}"
+                                    >#{n}</button>
                                 {/each}
                             </div>
                         </div>
@@ -536,6 +562,8 @@
                 <!-- Fallback texte brut si le parsing échoue -->
                 <pre class="result-text">{textWithoutMermaid($issueAnalysis.result)}</pre>
             {/if}
+
+            </div>
         </div>
 
         <div class="action-bar">
@@ -667,7 +695,14 @@
     padding: 0.8rem 1.2rem;
     display: flex;
     flex-direction: column;
+}
+.roadmap-inline {
+    display: flex;
+    flex-direction: row;
     gap: 1rem;
+    align-items: flex-start;
+    flex: 1;
+    min-height: 0;
 }
 .result-area::-webkit-scrollbar { width: 4px; }
 .result-area::-webkit-scrollbar-track { background: transparent; }
@@ -681,9 +716,8 @@
     margin: 0;
 }
 .mermaid-section {
-    border: 1px solid #1a1a2a;
-    border-radius: 4px;
-    background: #07070f;
+    width: 50%;
+    flex-shrink: 0;
 }
 .mermaid-label {
     font-size: 0.58rem;
@@ -776,9 +810,13 @@
 }
 /* ── Groupes actionnables ── */
 .groups-section {
+    width: 50%;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-y: auto;
 }
 .group-card {
     border: 1px solid #1a1a2a;
@@ -862,9 +900,17 @@
     padding: 0.05rem 0.35rem;
     font-family: 'JetBrains Mono', monospace;
     cursor: pointer;
-    transition: color 0.12s, border-color 0.12s;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
 }
 .issue-chip:hover { color: #7cb8ff; border-color: #2a4a6a; }
+.issue-chip.chip-impl  { color: cornsilk; background: #1a1200; border-color: #4a3a00; }
+.issue-chip.chip-impl:hover { color: #fff8dc; border-color: #7a6000; }
+.issue-chip.chip-plan  { color: #f7c948; background: #1a1400; border-color: #3a2e00; }
+.issue-chip.chip-plan:hover { border-color: #7a6a00; }
+.issue-chip.chip-merged { color: #4caf50; background: #0a1a0a; border-color: #1a3a1a; }
+.issue-chip.chip-merged:hover { border-color: #2a5a2a; }
+.issue-chip.chip-failed { color: #f44336; background: #1a0a0a; border-color: #3a1a1a; }
+.issue-chip.chip-spec  { color: #777; border-color: #2a2a2a; }
 
 .action-bar {
     display: flex;

@@ -87,7 +87,6 @@
         { id: "full:force", label: "Init" },
     ];
 
-    let showDiagram = false;
     let showContext = false;
     $: if (!$planModeTask) showContext = false;
 
@@ -133,7 +132,7 @@
     }
 
     // ─── Onglet actif ─────────────────────────────────────────────────────────
-    let activeTab = "todo";
+    let activeTab = "codebase";
 
     // Dérive les méthodes filtrées selon l'onglet actif
     $: filteredMethods = (() => {
@@ -149,7 +148,7 @@
 
     // Construction réactive des onglets
     type TabDef = { id: string; label: string; count: number | string };
-    const HIDDEN_TABS = new Set(["consumers", "role:service", "role:helper", "role:entry", "role:flow", "role:core"]);
+    const HIDDEN_TABS = new Set(["methods", "files", "described", "consumers", "role:service", "role:helper", "role:entry", "role:flow", "role:core", "role:internal"]);
 
     $: tabs = ((): TabDef[] => {
         const t: TabDef[] = [];
@@ -164,6 +163,8 @@
             }
         }
         t.push({ id: "todo",  label: "todo",  count: todoGrep.length || (todoLoading ? "…" : 0) });
+        t.push({ id: "codebase", label: "codebase", count: "" });
+        t.push({ id: "documentation", label: "docs", count: files.length });
         if (queryLabel) t.push({ id: "query", label: queryLabel, count: queryGrep.length });
         return t.filter(t => !HIDDEN_TABS.has(t.id));
     })();
@@ -275,22 +276,21 @@
     {#if showContext && $planModeTask}
         <div class="cv-wrap">
             <div class="section-header">
-                Carto
-                <button class="ctx-toggle ctx-active" onclick={() => showContext = false}>{"{ contexte }"}</button>
+                ATLAS
+                <div class="header-actions">
+                    <button class="cmd-btn ctx-active" onclick={() => showContext = false}>{"{ contexte }"}</button>
+                </div>
             </div>
             <ContextViewer taskId={$planModeTask.id} />
         </div>
     {:else}
     <div class="projet-section">
         <div class="section-header">
-            Carto
-            {#if $planModeTask}
-                <button class="ctx-toggle" onclick={() => showContext = true}>{"{ contexte }"}</button>
-            {/if}
-        </div>
-
-        <!-- Boutons commandes -->
-            <div class="cmd-bar">
+            ATLAS
+            <div class="header-actions">
+                {#if $planModeTask}
+                    <button class="cmd-btn" onclick={() => showContext = true}>{"{ contexte }"}</button>
+                {/if}
                 {#each CMD_BUTTONS as btn}
                     <button
                         class="cmd-btn"
@@ -302,60 +302,21 @@
                         {runningCmd === btn.id ? "…" : btn.label}
                     </button>
                 {/each}
-                <button
-                    class="cmd-btn map-btn"
-                    class:active={showDiagram}
-                    onclick={() => { showDiagram = !showDiagram; }}
-                    title="Visualiser la carte du projet"
-                >Codebase</button>
             </div>
+        </div>
 
-            <!-- Logs commande -->
-            {#if cmdLogs.length > 0}
-                <div class="cmd-logs">
-                    {#each cmdLogs.slice(-5) as log}
-                        <div class="cmd-line">{log}</div>
-                    {/each}
-                </div>
-            {/if}
-
-            <!-- Documentation fichiers -->
-            <div class="doc-section">
-                <span class="doc-label">Documentation</span>
-                <div class="doc-files">
-                    {#each files as file}
-                        <button
-                            class="doc-file-btn"
-                            onclick={() => expandedFile = file}
-                            disabled={file.loading || !!file.error}
-                        >
-                            {file.name}
-                        </button>
-                    {/each}
-                </div>
+        <!-- Logs commande -->
+        {#if cmdLogs.length > 0}
+            <div class="cmd-logs">
+                {#each cmdLogs.slice(-5) as log}
+                    <div class="cmd-line">{log}</div>
+                {/each}
             </div>
+        {/if}
     </div>
 
-    <!-- ══════════════ DIAGRAM VIEW ══════════════════════════════════════ -->
-    {#if showDiagram}
-        <div class="dv-panel">
-            <DiagramViewer />
-        </div>
-    {/if}
-
     <!-- ══════════════ AGENT WRAPPER (input + tabs + liste) ══════════════ -->
-    {#if !showDiagram}
     <div class="agent-wrapper">
-
-        <div class="agent-search-header">
-            <input
-                class="agent-input"
-                type="text"
-                placeholder="Rechercher dans le code…"
-                bind:value={searchQuery}
-                onkeydown={onSearchKey}
-            />
-        </div>
 
         <div class="todos-section">
             <div class="section-header todos-header">
@@ -442,6 +403,22 @@
                     </div>
                 {/if}
             </div>
+        {:else if activeTab === "codebase"}
+            <div class="dv-panel">
+                <DiagramViewer />
+            </div>
+        {:else if activeTab === "documentation"}
+            <div class="doc-files-tab">
+                {#each files as file}
+                    <button
+                        class="doc-file-btn"
+                        onclick={() => expandedFile = file}
+                        disabled={file.loading || !!file.error}
+                    >
+                        {file.name}
+                    </button>
+                {/each}
+            </div>
         {:else if activeTab === "files"}
             <div class="result-list">
                 {#each filteredFiles as f}
@@ -469,7 +446,6 @@
         {/if}
         </div>
     </div>
-    {/if}
     {/if}
 {/if}
 
@@ -509,14 +485,6 @@
 }
 .agent-input:focus { color: #aaa; }
 .agent-input::placeholder { color: #222; }
-.cmd-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 1rem;
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-}
 .todos-section {
     display: flex;
     flex-direction: column;
@@ -619,8 +587,13 @@
     display: flex;
     flex-direction: column;
 }
-.map-btn { margin-left: auto; }
-.map-btn.active { background: #1a1a2e; color: #9181f9; border-color: #4a3a8a; }
+/* ── Actions header (droite) ──────────────────────────────────────── */
+.header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
 
 /* ── Boutons commandes ────────────────────────────────────────────── */
 .cmd-btn {
@@ -652,26 +625,12 @@
     line-height: 1.4;
 }
 
-/* ── Documentation fichiers ───────────────────────────────────────── */
-.doc-section {
+/* ── Documentation onglet ─────────────────────────────────────────── */
+.doc-files-tab {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.3rem 1rem;
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-}
-.doc-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #333;
-    flex-shrink: 0;
-}
-.doc-files {
-    display: flex;
+    flex-direction: column;
     gap: 0.3rem;
-    flex-wrap: wrap;
+    padding: 0.5rem 0.75rem;
 }
 .doc-file-btn {
     background: none;
@@ -861,18 +820,5 @@
     min-height: 0;
     overflow: hidden;
 }
-.ctx-toggle {
-    margin-left: auto;
-    background: none;
-    border: 1px solid #2a2a2a;
-    color: #444;
-    font-size: 0.62rem;
-    padding: 0.1rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.1s, border-color 0.1s;
-}
-.ctx-toggle:hover { color: #9181f9; border-color: #9181f9; }
-.ctx-toggle.ctx-active { color: #9181f9; border-color: #4a3a8a; background: #1a1a2e; }
+.cmd-btn.ctx-active { color: #9181f9; border-color: #4a3a8a; background: #1a1a2e; }
 </style>
