@@ -197,7 +197,8 @@
             const data = await res.json();
             if (data.error) { createError = data.error; return; }
             creating = false;
-            await loadIssues();
+            issues = [...issues, { number: data.number, title: data.title, state: data.state, created: new Date().toISOString(), labels: [], body: "", subIssues: [] }];
+            setTimeout(loadIssues, 2000);
         } catch (e: any) {
             createError = e.message;
         } finally {
