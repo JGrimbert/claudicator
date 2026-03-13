@@ -170,12 +170,6 @@
         return [];
     }
 
-    // 0=plan 1=impl 2=commit 3=push
-    function taskPipelineStep(task: Task): number {
-        if (task.status === "merged" || task.status === "validation" || task.status === "documentation") return 3;
-        if (task.status === "implementation")                                                            return 1;
-        return 0;
-    }
 
     $: filtered = (() => {
         const groups = $planGroups;
@@ -300,13 +294,16 @@
         creating = true;
         try {
             const issueNumber = $agentState.issue?.number;
-            await fetch("/api/tasks", {
+            const res = await fetch("/api/tasks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title: newTitle.trim(), issueNumber }),
             });
+            const created = await res.json();
             newTitle = "";
             await loadTasks();
+            const newTask = tasks.find(t => t.id === created.id);
+            if (newTask) await selectTask(newTask);
         } finally {
             creating = false;
         }
@@ -570,7 +567,6 @@
                         prefix={taskPrefix(task)}
                         title={task.title}
                         labels={rowLabels(task, selected?.id === task.id)}
-                        pipelineStep={(task.status !== "failed" && task.status !== "merged") ? taskPipelineStep(task) : null}
                         state={(task.status === "failed" || task.status === "merged") ? "closed" : "open"}
                         active={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id)}
                         onclick={() => selectTask(task)}
@@ -606,19 +602,18 @@
                             <button
                                 class="wf-btn"
                                 class:wf-active={btnVariant(0) === "active"}
-                                class:wf-secondary={btnVariant(0) === "secondary"}
-                                class:wf-disabled={btnVariant(0) === "disabled"}
+                                class:wf-disabled={btnVariant(0) !== "active"}
+                                disabled={btnVariant(0) !== "active"}
                                 onclick={() => selectedPanel = "plan"}
-                            >{currentStep > 0 ? "Re-planifier" : "Planifier"}</button>
+                            >Planifier</button>
 
                             <span class="wf-arrow">›</span>
 
                             <button
                                 class="wf-btn"
                                 class:wf-active={btnVariant(1) === "active"}
-                                class:wf-secondary={btnVariant(1) === "secondary"}
-                                class:wf-disabled={btnVariant(1) === "disabled"}
-                                disabled={btnVariant(1) === "disabled"}
+                                class:wf-disabled={btnVariant(1) !== "active"}
+                                disabled={btnVariant(1) !== "active"}
                                 onclick={() => selectedPanel = "implement"}
                             >Implémenter</button>
 
@@ -627,9 +622,8 @@
                             <button
                                 class="wf-btn"
                                 class:wf-active={btnVariant(2) === "active"}
-                                class:wf-secondary={btnVariant(2) === "secondary"}
-                                class:wf-disabled={btnVariant(2) === "disabled" && !planContent}
-                                disabled={branchCreating || (!task.branch && !planContent)}
+                                class:wf-disabled={btnVariant(2) !== "active"}
+                                disabled={btnVariant(2) !== "active" || branchCreating}
                                 onclick={() => task.branch ? (selectedPanel = "commit") : createBranchAndShowDiff(task)}
                             >{branchCreating ? "Création…" : "Commiter"}</button>
 
@@ -638,9 +632,8 @@
                             <button
                                 class="wf-btn"
                                 class:wf-active={btnVariant(3) === "active"}
-                                class:wf-secondary={btnVariant(3) === "secondary"}
-                                class:wf-disabled={btnVariant(3) === "disabled"}
-                                disabled={btnVariant(3) === "disabled"}
+                                class:wf-disabled={btnVariant(3) !== "active"}
+                                disabled={btnVariant(3) !== "active"}
                                 onclick={() => selectedPanel = "push"}
                             >Push</button>
 
@@ -998,7 +991,7 @@
 }
 /* disabled = pas encore accessible */
 .wf-btn.wf-disabled {
-    color: #222;
+    color: #333;
     border-color: transparent;
     cursor: default;
     pointer-events: none;

@@ -11,7 +11,6 @@
     let loadingContext = $state(false);
     let contextError = $state("");
     let loadedId = $state("");
-    let showPromptModal = $state(false);
     let symbolMap = $state<Record<string, SymbolGroup>>({});
 
     let byFile = $derived.by(() => {
@@ -52,7 +51,8 @@
             const res = await fetch("/api/context", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId, projectRoot: projectRoot || undefined })
+                body: JSON.stringify({ taskId, projectRoot: projectRoot || undefined }),
+                signal: AbortSignal.timeout(15000),
             });
             const data = await res.json();
             if (data.error) {
@@ -206,12 +206,6 @@
 
         <div class="ai-footer">
             <button
-                class="ai-preview-btn"
-                onclick={() => showPromptModal = true}
-                disabled={!prompt.trim() || loadingContext}
-                title="Voir le prompt complet envoyé à Claude"
-            >{"{ prompt }"}</button>
-            <button
                 class="ai-launch"
                 onclick={launch}
                 disabled={!prompt.trim() || $agentRunState.running || loadingContext}
@@ -240,19 +234,6 @@
     </div>
 
 </div>
-
-<!-- ── Modal prompt complet ── -->
-{#if showPromptModal}
-    <div class="prompt-modal-overlay" role="dialog" aria-modal="true" onclick={() => showPromptModal = false}>
-        <div class="prompt-modal" onclick={e => e.stopPropagation()}>
-            <div class="prompt-modal-header">
-                <span class="prompt-modal-title">Prompt envoyé à Claude</span>
-                <button class="prompt-modal-close" onclick={() => showPromptModal = false}>✕</button>
-            </div>
-            <pre class="prompt-modal-body">{prompt}</pre>
-        </div>
-    </div>
-{/if}
 
 <style>
 .agent-input {
@@ -345,78 +326,6 @@
 
 .ai-launch:disabled { opacity: 0.35; cursor: default; }
 
-/* ── Bouton preview ── */
-.ai-preview-btn {
-    margin-right: auto;
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: #3a3a5a;
-    font-size: 0.62rem;
-    padding: 0.25rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.1s, border-color 0.1s;
-}
-.ai-preview-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: #4a3a8a; }
-.ai-preview-btn:disabled { opacity: 0.3; cursor: default; }
-
-/* ── Modal prompt complet ── */
-.prompt-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-.prompt-modal {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    width: min(900px, 92vw);
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.prompt-modal-header {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-}
-.prompt-modal-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #555;
-}
-.prompt-modal-close {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: #333;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 0 0.2rem;
-    line-height: 1;
-}
-.prompt-modal-close:hover { color: #9181f9; }
-.prompt-modal-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    color: #777;
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.55;
-    margin: 0;
-}
 
 /* ── Diagramme symboles ── */
 .sym-diag {

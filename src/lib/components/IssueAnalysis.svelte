@@ -144,11 +144,22 @@
             (rect as SVGRectElement).setAttribute("ry", "4");
         }
 
-        // Remonter les edges en fin de SVG pour qu'ils passent au-dessus des noeuds
-        const svgRoot = mermaidDiv.querySelector("svg g");
-        if (svgRoot) {
-            for (const edge of Array.from(mermaidDiv.querySelectorAll(".edgePath, .edgeLabel"))) {
-                svgRoot.appendChild(edge);
+
+        // Styler et redimensionner les markers d'arrowheads
+        const svgElem = mermaidDiv.querySelector("svg");
+        if (svgElem) {
+            const arrowColor = getComputedStyle(document.documentElement)
+                .getPropertyValue("--border-strong").trim() || "#3a3a5a";
+            for (const marker of Array.from(svgElem.querySelectorAll("marker"))) {
+                const mw = parseFloat(marker.getAttribute("markerWidth") ?? "10");
+                const mh = parseFloat(marker.getAttribute("markerHeight") ?? "10");
+                marker.setAttribute("markerWidth",  String(Math.round(mw * 0.6)));
+                marker.setAttribute("markerHeight", String(Math.round(mh * 0.6)));
+                for (const shape of Array.from(marker.querySelectorAll("path, polygon")) as SVGElement[]) {
+                    shape.setAttribute("fill",         arrowColor);
+                    shape.setAttribute("stroke",       arrowColor);
+                    shape.setAttribute("stroke-width", "1.5");
+                }
             }
         }
 
@@ -193,7 +204,7 @@
                     if (!fo || !rect || !nodeLabel) continue;
                     const bb = nodeLabel.getBoundingClientRect();
                     if (!bb.height) continue;
-                    const padH = 16, padW = 24;
+                    const padH = 28, padW = 24;
                     const newH = bb.height / scaleY + padH;
                     const newW = bb.width  / scaleX + padW;
                     const oldH = parseFloat(rect.getAttribute("height") ?? "0");
@@ -215,6 +226,30 @@
                         labelG.setAttribute("transform", `translate(${-finalW / 2}, ${-newH / 2})`);
                     }
                 }
+
+                // Pass 3 : rétracter les paths après resize pour que la pointe reste au bord du noeud
+                requestAnimationFrame(() => {
+                    if (!mermaidDiv) return;
+                    const retract = 6; // px : compense l'expansion des noeuds (padH 28 vs Mermaid ~14)
+                    for (const path of Array.from(
+                        mermaidDiv.querySelectorAll(".flowchart-link, .edgePath path")
+                    ) as SVGPathElement[]) {
+                        if ((path as any)._retracted) continue;
+                        (path as any)._retracted = true;
+                        const totalLen = path.getTotalLength();
+                        if (totalLen <= retract + 6) continue;
+                        // newEnd : point cible (retract px avant l'endpoint original)
+                        const newEnd = path.getPointAtLength(totalLen - retract);
+                        // prev : 4px avant newEnd → établit la direction vers le noeud
+                        const prev   = path.getPointAtLength(totalLen - retract - 4);
+                        const d = path.getAttribute("d") ?? "";
+                        // Appende : repasse par l'endpoint (caché sous le noeud opaque),
+                        // recule vers prev, puis avance vers newEnd → direction correcte
+                        path.setAttribute("d",
+                            `${d} L${prev.x.toFixed(2)},${prev.y.toFixed(2)} L${newEnd.x.toFixed(2)},${newEnd.y.toFixed(2)}`
+                        );
+                    }
+                });
             });
         });
 
@@ -486,9 +521,6 @@
     <div class="analysis-header">
         <span class="dot" class:running={isActive}></span>
         <span class="label">{$issueAnalysis.updating ? "Intégration des issues" : "Analyse des issues"}</span>
-        {#if !isActive}
-            <button class="btn-dismiss" onclick={dismiss}>✕ Fermer</button>
-        {/if}
     </div>
 
     {#if isActive}
@@ -522,41 +554,61 @@
             <!-- Groupes actionnables -->
             {#if groups.length > 0}
                 <div class="groups-section">
-                    {#each groups as group, i}
-                        <div class="group-card" id="group-card-{i}" class:highlighted={highlightedGroup === group.name}>
-                            <div class="group-header">
-                                <span class="group-index">{i + 1}</span>
-                                <span class="group-name">{group.name}</span>
-                                {#if group.dependsOn.length > 0}
-                                    <span class="group-dep">après {group.dependsOn.join(", ")}</span>
-                                {/if}
-                                <button
-                                    class="btn-group-tasks"
-                                    onclick={() => createGroupTasks(group)}
-                                    disabled={createLoading}
-                                    title="Créer les tasks pour ce groupe"
-                                >{groupFeedback[group.name] ?? "＋ Tasks"}</button>
-                            </div>
-                            {#if group.summary}
-                                <div class="group-summary">{group.summary}</div>
-                            {/if}
-                            <div class="group-issues">
-                                {#each group.issues as n}
-                                    {@const taskStatus = issueTaskStatus.get(n)}
+                    <div class="groups-cards">
+                        {#each groups as group, i}
+                            <div class="group-card" id="group-card-{i}" class:highlighted={highlightedGroup === group.name}>
+                                <div class="group-header">
+                                    <span class="group-index">{i + 1}</span>
+                                    <span class="group-name">{group.name}</span>
+                                    {#if group.dependsOn.length > 0}
+                                        <span class="group-dep">après {group.dependsOn.join(", ")}</span>
+                                    {/if}
                                     <button
-                                        class="issue-chip"
-                                        class:chip-impl={taskStatus === "implementation" || taskStatus === "documentation"}
-                                        class:chip-plan={taskStatus === "planification"}
-                                        class:chip-merged={taskStatus === "merged"}
-                                        class:chip-failed={taskStatus === "failed"}
-                                        class:chip-spec={taskStatus === "specification"}
-                                        onclick={() => openIssue(n)}
-                                        title="Ouvrir l'issue #{n}{taskStatus ? ` · ${taskStatus}` : ''}"
-                                    >#{n}</button>
-                                {/each}
+                                        class="btn-group-tasks"
+                                        onclick={() => createGroupTasks(group)}
+                                        disabled={createLoading}
+                                        title="Créer les tasks pour ce groupe"
+                                    >{groupFeedback[group.name] ?? "＋ Tasks"}</button>
+                                </div>
+                                {#if group.summary}
+                                    <div class="group-summary">{group.summary}</div>
+                                {/if}
+                                <div class="group-issues">
+                                    {#each group.issues as n}
+                                        {@const taskStatus = issueTaskStatus.get(n)}
+                                        <button
+                                            class="issue-chip"
+                                            class:chip-impl={taskStatus === "implementation" || taskStatus === "documentation"}
+                                            class:chip-plan={taskStatus === "planification"}
+                                            class:chip-merged={taskStatus === "merged"}
+                                            class:chip-failed={taskStatus === "failed"}
+                                            class:chip-spec={taskStatus === "specification"}
+                                            onclick={() => openIssue(n)}
+                                            title="Ouvrir l'issue #{n}{taskStatus ? ` · ${taskStatus}` : ''}"
+                                        >#{n}</button>
+                                    {/each}
+                                </div>
                             </div>
-                        </div>
-                    {/each}
+                        {/each}
+                    </div>
+
+                    <div class="action-bar">
+                        {#if planFeedback}
+                            <span class="feedback">{planFeedback}</span>
+                        {:else if createFeedback}
+                            <span class="feedback">{createFeedback}</span>
+                        {/if}
+                        <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
+                            {createLoading ? "Création…" : "Créer tasks"}
+                        </button>
+                        <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
+                            {#if planLoading}
+                                {planDone}/{planTotal} ⠿
+                            {:else}
+                                Planifier tasks
+                            {/if}
+                        </button>
+                    </div>
                 </div>
             {:else}
                 <!-- Fallback texte brut si le parsing échoue -->
@@ -564,24 +616,6 @@
             {/if}
 
             </div>
-        </div>
-
-        <div class="action-bar">
-            {#if planFeedback}
-                <span class="feedback">{planFeedback}</span>
-            {:else if createFeedback}
-                <span class="feedback">{createFeedback}</span>
-            {/if}
-            <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
-                {createLoading ? "Création…" : "Créer tasks"}
-            </button>
-            <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
-                {#if planLoading}
-                    {planDone}/{planTotal} ⠿
-                {:else}
-                    Planifier tasks
-                {/if}
-            </button>
         </div>
 
         {#if planLoading || ($agentRunState.taskId && planLogs.length > 0 && !$agentRunState.running && planFeedback)}
@@ -640,18 +674,6 @@
     color: #555;
     flex: 1;
 }
-.btn-dismiss {
-    background: none;
-    border: 1px solid #1e1e1e;
-    color: #333;
-    font-size: 0.62rem;
-    padding: 0.15rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-family: 'JetBrains Mono', monospace;
-}
-.btn-dismiss:hover { border-color: #555; color: #777; }
 .log-area {
     flex: 1;
     min-height: 0;
@@ -691,8 +713,8 @@
 .result-area {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding: 0.8rem 1.2rem;
+    overflow: hidden;
+    padding: 0.8rem 0.4rem 0.8rem 1.2rem;
     display: flex;
     flex-direction: column;
 }
@@ -700,13 +722,9 @@
     display: flex;
     flex-direction: row;
     gap: 1rem;
-    align-items: flex-start;
     flex: 1;
     min-height: 0;
 }
-.result-area::-webkit-scrollbar { width: 4px; }
-.result-area::-webkit-scrollbar-track { background: transparent; }
-.result-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .result-text {
     font-size: 0.7rem;
     color: #bbb;
@@ -718,6 +736,7 @@
 .mermaid-section {
     width: 50%;
     flex-shrink: 0;
+    align-self: flex-start;
 }
 .mermaid-label {
     font-size: 0.58rem;
@@ -776,6 +795,7 @@
     cursor: pointer !important;
     display: inline-block !important;
     line-height: 1.4 !important;
+    margin-top: 0.5rem !important;
     transition: color 0.12s, border-color 0.12s !important;
 }
 .mermaid-container :global(.mermaid-issue-chip:hover) {
@@ -783,16 +803,21 @@
     border-color: #2a4a6a !important;
 }
 
-/* Flèches en pointillés, discrètes */
+/* Flèches en pointillés, discrètes (Mermaid v10 : .flowchart-link) */
+.mermaid-container :global(.flowchart-link),
+.mermaid-container :global(.edge-pattern-solid),
 .mermaid-container :global(.edgePath path) {
     stroke-dasharray: 4 3 !important;
     stroke: var(--border-strong) !important;
     stroke-width: 1px !important;
 }
-.mermaid-container :global(.arrowheadPath) {
+.mermaid-container :global(.arrowheadPath),
+.mermaid-container :global([id$="pointEnd"] path),
+.mermaid-container :global([id$="pointStart"] path) {
     fill: var(--border-strong) !important;
-    stroke: none !important;
-    opacity: 0.5 !important;
+    stroke: var(--border-strong) !important;
+    stroke-width: 1.5px !important;
+    opacity: 0.8 !important;
 }
 /* Noeuds — formes supplémentaires (cohérence avec rect ci-dessus) */
 .mermaid-container :global(.node circle),
@@ -813,12 +838,26 @@
     width: 50%;
     flex: 1;
     min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.groups-cards {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    overflow-y: auto;
+    padding-bottom: 3.5rem;
+    padding-right: 0.5rem;
 }
+.groups-cards::-webkit-scrollbar { width: 4px; }
+.groups-cards::-webkit-scrollbar-track { background: transparent; }
+.groups-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .group-card {
+    flex-shrink: 0;
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--bg-panel);
@@ -913,13 +952,15 @@
 .issue-chip.chip-spec  { color: #777; border-color: #2a2a2a; }
 
 .action-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     gap: 0.8rem;
     padding: 0.5rem 1.2rem;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    background: var(--bg-panel);
+    background: var(--bg-deep);
 }
 .btn-tasks {
     background: #1a1040;

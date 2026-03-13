@@ -10,6 +10,11 @@
     import AgentInput from "$lib/components/AgentInput.svelte";
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady } from "$lib/stores/agent";
 
+    let activeMiddleTab: "roadmap" | "plan" | "console" = "roadmap";
+    $: if ($planModeTask)            activeMiddleTab = "plan";
+    $: if ($agentRunState.running)   activeMiddleTab = "console";
+    $: if ($issueAnalysis.running)   activeMiddleTab = "roadmap";
+
     /**
      * DONE: Prompt contextuel de l'agent
      * Voir plan détaillé : plans/todo-prompt-context.md
@@ -471,17 +476,32 @@
         <main bind:this={mainEl}>
             <!-- ── PLAN (haut) ── -->
             <div class="main-top" style="height: {mainTopPct}%">
-                {#if ($issueAnalysis.running || $issueAnalysis.result) && $tasksReady && !$planModeTask}
-                    <IssueAnalysis />
-                {:else if $agentRunState.running || $agentRunState.logs.length > 0}
-                    <RunConsole />
-                {:else if $planModeTask}
-                    <AgentInput task={$planModeTask} />
-                {:else}
-                    <div class="plan-placeholder">
-                        <span>Sélectionner une task → Plan</span>
-                    </div>
-                {/if}
+                <div class="mid-tab-bar">
+                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "roadmap"} onclick={() => activeMiddleTab = "roadmap"}>roadmap</button>
+                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "plan"} onclick={() => activeMiddleTab = "plan"}>plan</button>
+                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "console"} onclick={() => activeMiddleTab = "console"}>console</button>
+                </div>
+                <div class="mid-tab-content">
+                    {#if activeMiddleTab === "roadmap"}
+                        {#if $issueAnalysis.running || $issueAnalysis.result}
+                            <IssueAnalysis />
+                        {:else}
+                            <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
+                        {/if}
+                    {:else if activeMiddleTab === "plan"}
+                        {#if $planModeTask}
+                            <AgentInput task={$planModeTask} />
+                        {:else}
+                            <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
+                        {/if}
+                    {:else}
+                        {#if $agentRunState.running || $agentRunState.logs.length > 0}
+                            <RunConsole />
+                        {:else}
+                            <div class="plan-placeholder"><span>Aucune exécution en cours</span></div>
+                        {/if}
+                    {/if}
+                </div>
             </div>
             <!-- ── Séparateur ── -->
             <div
@@ -586,6 +606,35 @@ section {
 .app.dragging-main { user-select: none; cursor: row-resize; }
 .main-top {
     flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.mid-tab-bar {
+    display: flex;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+}
+.mid-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #444;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-bottom: -1px;
+    transition: color 0.1s, border-color 0.1s;
+}
+.mid-tab:hover { color: #666; }
+.mid-tab-active { color: var(--accent-hover); border-bottom-color: var(--accent); }
+.mid-tab-content {
+    flex: 1;
     min-height: 0;
     overflow: hidden;
     display: flex;
