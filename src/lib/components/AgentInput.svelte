@@ -4,14 +4,60 @@
 
     type Task = { id: string; title: string };
     type SymbolGroup = { file?: string; sigs: string[] };
+    type Section = { key: string; content: string };
 
     let { task, projectRoot = "" }: { task: Task; projectRoot?: string } = $props();
 
-    let prompt = $state("");
+    // ── State ──────────────────────────────────────────────────────────────────
     let loadingContext = $state(false);
-    let contextError = $state("");
-    let loadedId = $state("");
-    let symbolMap = $state<Record<string, SymbolGroup>>({});
+    let contextError   = $state("");
+    let loadedId       = $state("");
+    let symbolMap      = $state<Record<string, SymbolGroup>>({});
+    let hasPlan        = $state(false);
+
+    // Champs éditables (Row 1)
+    let taskText = $state("");
+    let descText = $state("");
+
+    // Sections parsées (pour affichage read-only)
+    let sections = $state<Section[]>([]);
+
+    // ── Parsing ────────────────────────────────────────────────────────────────
+    const TOP_KEYS = [
+        'TASK', 'DESCRIPTION', 'OBJECTIF', 'CONTRAINTES',
+        'FORMAT DU PLAN', 'DOCUMENTATION', 'ATLAS', 'CONCEPTS',
+    ];
+    const ENRICH_KEYS  = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN', 'DOCUMENTATION', 'CONCEPTS']);
+    const ATLAS_SUB_KEYS = ['SYSTEM', 'MODULES', 'API ROUTES', 'DÉPENDANCES'];
+
+    function parseByKeys(text: string, keys: string[]): Section[] {
+        const result: Section[] = [];
+        let currentKey = '';
+        let currentContent: string[] = [];
+        for (const line of text.split('\n')) {
+            if (keys.includes(line.trim())) {
+                if (currentKey) result.push({ key: currentKey, content: currentContent.join('\n').trim() });
+                currentKey = line.trim();
+                currentContent = [];
+            } else {
+                currentContent.push(line);
+            }
+        }
+        if (currentKey) result.push({ key: currentKey, content: currentContent.join('\n').trim() });
+        return result;
+    }
+
+    // ── Dérivés ────────────────────────────────────────────────────────────────
+    let enrichSections = $derived(sections.filter(s => ENRICH_KEYS.has(s.key)));
+
+    let atlasSubs = $derived.by(() => {
+        const atlasSection = sections.find(s => s.key === 'ATLAS');
+        if (!atlasSection?.content) return [];
+        return parseByKeys(atlasSection.content, ATLAS_SUB_KEYS);
+    });
+
+    let hasAtlas   = $derived(sections.some(s => s.key === 'ATLAS'));
+    let atlasRaw   = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
 
     let byFile = $derived.by(() => {
         const m = new Map<string, { cls: string; sigs: string[] }[]>();
@@ -23,7 +69,20 @@
         return [...m.entries()];
     });
 
-    // Recharge le prompt uniquement si l'ID de la task change réellement
+    // ── Assemblage prompt complet ──────────────────────────────────────────────
+    function buildFullPrompt(): string {
+        const parts: string[] = [];
+        parts.push(`TASK\n${taskText.trim()}\n`);
+        if (descText.trim()) parts.push(`\nDESCRIPTION\n${descText.trim()}\n`);
+        for (const s of sections) {
+            if (s.key !== 'TASK' && s.key !== 'DESCRIPTION') {
+                parts.push(`\n${s.key}\n${s.content}\n`);
+            }
+        }
+        return parts.join('');
+    }
+
+    // ── Chargement du contexte ─────────────────────────────────────────────────
     $effect(() => {
         const id = task?.id ?? "";
         if (!id || id === loadedId) return;
@@ -31,24 +90,22 @@
         loadContext(id);
     });
 
-    let hasPlan = $state(false);
-
     async function loadContext(taskId: string) {
         loadingContext = true;
-        contextError = "";
-        hasPlan = false;
+        contextError   = "";
+        hasPlan        = false;
         try {
-            // Charger le plan existant en priorité
-            const planRes = await fetch(`/api/tasks/${taskId}/plan`);
+            const planRes  = await fetch(`/api/tasks/${taskId}/plan`);
             const planData = await planRes.json();
             if (planData.content) {
-                prompt = planData.content;
-                hasPlan = true;
+                taskText  = planData.content;
+                descText  = "";
+                sections  = [];
+                hasPlan   = true;
                 symbolMap = {};
                 return;
             }
-            // Pas de plan → générer le contexte
-            const res = await fetch("/api/context", {
+            const res  = await fetch("/api/context", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ taskId, projectRoot: projectRoot || undefined }),
@@ -57,42 +114,49 @@
             const data = await res.json();
             if (data.error) {
                 contextError = data.error;
-                prompt = task.title;
-                symbolMap = {};
+                sections     = [];
+                taskText     = task.title;
+                descText     = "";
+                symbolMap    = {};
             } else {
-                prompt = data.prompt ?? task.title;
-                symbolMap = data.symbolMap ?? {};
+                const parsed = parseByKeys(data.prompt ?? task.title, TOP_KEYS);
+                sections     = parsed;
+                taskText     = parsed.find(s => s.key === 'TASK')?.content ?? task.title;
+                descText     = parsed.find(s => s.key === 'DESCRIPTION')?.content ?? "";
+                symbolMap    = data.symbolMap ?? {};
             }
         } catch (e: any) {
             contextError = e.message;
-            prompt = task.title;
-            symbolMap = {};
+            sections     = [];
+            taskText     = task.title;
+            descText     = "";
+            symbolMap    = {};
         } finally {
             loadingContext = false;
         }
     }
 
+    // ── Lancement ──────────────────────────────────────────────────────────────
     async function launch() {
-        const text = prompt.trim();
+        const text = (hasPlan ? taskText : buildFullPrompt()).trim();
         if (!text || $agentRunState.running) return;
 
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
-
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: text, taskId: task.id, projectRoot: projectRoot || undefined })
+                body: JSON.stringify({ prompt: text, taskId: task.id, projectRoot: projectRoot || undefined }),
             });
             if (!res.ok || !res.body) {
                 agentRunState.update(s => ({
                     ...s, running: false,
-                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }]
+                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }],
                 }));
                 return;
             }
             const reader = res.body.getReader();
-            const dec = new TextDecoder();
+            const dec    = new TextDecoder();
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -111,13 +175,13 @@
         }
     }
 
-    // ── Split redimensionnable prompt / contexte ───────────────────────────────
-    const SPLIT_KEY = "claudicator:agent-input-split";
-    let splitPct = $state(55);
+    // ── Split redimensionnable ─────────────────────────────────────────────────
+    const SPLIT_KEY    = "claudicator:agent-input-split";
+    let splitPct       = $state(55);
     let splitEl: HTMLElement | null = null;
-    let dragging = $state(false);
-    let dragStartY = 0;
-    let dragStartPct = 55;
+    let dragging       = $state(false);
+    let dragStartY     = 0;
+    let dragStartPct   = 55;
 
     $effect(() => {
         try {
@@ -127,19 +191,17 @@
     });
 
     function startDrag(e: MouseEvent) {
-        dragging = true;
-        dragStartY = e.clientY;
+        dragging     = true;
+        dragStartY   = e.clientY;
         dragStartPct = splitPct;
         e.preventDefault();
     }
-
     function onMove(e: MouseEvent) {
         if (!dragging || !splitEl) return;
-        const h = splitEl.offsetHeight;
-        const deltaPct = ((e.clientY - dragStartY) / h) * 100;
-        splitPct = Math.max(20, Math.min(85, dragStartPct + deltaPct));
+        const h     = splitEl.offsetHeight;
+        const delta = ((e.clientY - dragStartY) / h) * 100;
+        splitPct    = Math.max(20, Math.min(85, dragStartPct + delta));
     }
-
     function onUp() {
         if (!dragging) return;
         dragging = false;
@@ -151,16 +213,19 @@
 
 <div class="agent-input" bind:this={splitEl} class:dragging>
 
-    <!-- ── Prompt (haut) ── -->
+    <!-- ── Prompt pane ── -->
     <div class="prompt-pane" style="height: {splitPct}%">
+
         <div class="ai-header">
             <span class="ai-label">Prompt agent</span>
             {#if loadingContext}
                 <span class="ai-hint">Chargement…</span>
             {:else if contextError}
                 <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
+            {:else if hasPlan}
+                <span class="ai-hint plan">Plan chargé</span>
             {:else}
-                <span class="ai-hint">Éditable avant envoi</span>
+                <span class="ai-hint">TASK · DESCRIPTION éditables</span>
             {/if}
             <button
                 class="ai-reload"
@@ -170,45 +235,116 @@
             >↺</button>
         </div>
 
-        <textarea
-            class="ai-textarea"
-            bind:value={prompt}
-            placeholder={loadingContext ? "Génération du contexte…" : "Prompt pour Claude…"}
-            disabled={loadingContext}
-        ></textarea>
+        <!-- Corps scrollable -->
+        <div class="prompt-body">
 
-        {#if !hasPlan && byFile.length > 0}
-            <div class="sym-diag">
-                <div class="sym-diag-header">
-                    <span class="sym-diag-label">Entrées principales</span>
-                    <span class="sym-diag-hint">analyser en priorité avant toute autre recherche</span>
+            {#if hasPlan}
+                <!-- Mode plan : textarea unique -->
+                <textarea
+                    class="ai-textarea plan-textarea"
+                    bind:value={taskText}
+                    placeholder="Contenu du plan…"
+                    disabled={loadingContext}
+                ></textarea>
+
+            {:else}
+                <!-- ── Row 1 : Input utilisateur (éditable) ── -->
+                <div class="prompt-row row-input">
+                    <span class="row-badge">INPUT</span>
+
+                    <div class="field-group">
+                        <span class="field-key">TASK</span>
+                        <textarea
+                            class="field-ta"
+                            bind:value={taskText}
+                            placeholder={loadingContext ? "Génération…" : "Titre de la tâche…"}
+                            disabled={loadingContext}
+                            rows="2"
+                        ></textarea>
+                    </div>
+
+                    <div class="field-group">
+                        <span class="field-key">DESCRIPTION</span>
+                        <textarea
+                            class="field-ta"
+                            bind:value={descText}
+                            placeholder="Description optionnelle…"
+                            disabled={loadingContext}
+                            rows="3"
+                        ></textarea>
+                    </div>
                 </div>
-                <div class="sym-diag-body">
-                    {#each byFile as [file, classes]}
-                        <div class="sym-file">
-                            <span class="sym-file-path">{file}</span>
-                            {#each classes as { cls, sigs }}
-                                <div class="sym-cls">
-                                    <span class="sym-cls-name">{cls}</span>
-                                    {#each sigs as sig, i}
-                                        <div class="sym-sig">
-                                            <span class="sym-tree">{i === sigs.length - 1 ? '└─' : '├─'}</span>
-                                            <span class="sym-sig-text">{sig}</span>
+
+                <!-- ── Row 2 : Enrichissement (read-only) ── -->
+                {#if enrichSections.length > 0}
+                    <div class="prompt-row row-enrich">
+                        <span class="row-badge">ENRICHISSEMENT</span>
+                        <div class="ro-grid">
+                            {#each enrichSections as s}
+                                <div class="ro-block">
+                                    <div class="ro-key">{s.key}</div>
+                                    <pre class="ro-pre">{s.content}</pre>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- ── Row 3 : Atlas (read-only) ── -->
+                {#if hasAtlas}
+                    <div class="prompt-row row-atlas">
+                        <span class="row-badge">ATLAS</span>
+                        {#if atlasSubs.length > 0}
+                            <div class="atlas-grid">
+                                {#each atlasSubs as sub}
+                                    <div class="atlas-block">
+                                        <div class="ro-key">{sub.key}</div>
+                                        <pre class="ro-pre atlas-pre">{sub.content}</pre>
+                                    </div>
+                                {/each}
+                            </div>
+                        {:else}
+                            <pre class="ro-pre">{atlasRaw}</pre>
+                        {/if}
+                    </div>
+                {/if}
+
+                <!-- Symboles principaux -->
+                {#if byFile.length > 0}
+                    <div class="sym-diag">
+                        <div class="sym-diag-header">
+                            <span class="sym-diag-label">Entrées principales</span>
+                            <span class="sym-diag-hint">analyser en priorité avant toute autre recherche</span>
+                        </div>
+                        <div class="sym-diag-body">
+                            {#each byFile as [file, classes]}
+                                <div class="sym-file">
+                                    <span class="sym-file-path">{file}</span>
+                                    {#each classes as { cls, sigs }}
+                                        <div class="sym-cls">
+                                            <span class="sym-cls-name">{cls}</span>
+                                            {#each sigs as sig, i}
+                                                <div class="sym-sig">
+                                                    <span class="sym-tree">{i === sigs.length - 1 ? '└─' : '├─'}</span>
+                                                    <span class="sym-sig-text">{sig}</span>
+                                                </div>
+                                            {/each}
                                         </div>
                                     {/each}
                                 </div>
                             {/each}
                         </div>
-                    {/each}
-                </div>
-            </div>
-        {/if}
+                    </div>
+                {/if}
+
+            {/if}
+        </div><!-- /prompt-body -->
 
         <div class="ai-footer">
             <button
                 class="ai-launch"
                 onclick={launch}
-                disabled={!prompt.trim() || $agentRunState.running || loadingContext}
+                disabled={!taskText.trim() || $agentRunState.running || loadingContext}
             >
                 {#if $agentRunState.running}
                     En cours…
@@ -217,9 +353,10 @@
                 {/if}
             </button>
         </div>
-    </div>
 
-    <!-- ── Séparateur redimensionnable ── -->
+    </div><!-- /prompt-pane -->
+
+    <!-- ── Séparateur ── -->
     <div
         class="vhandle"
         role="separator"
@@ -228,7 +365,7 @@
         class:active={dragging}
     ></div>
 
-    <!-- ── Contexte carto (bas) ── -->
+    <!-- ── Contexte carto ── -->
     <div class="ctx-pane">
         <ContextViewer taskId={task.id} />
     </div>
@@ -285,12 +422,24 @@
 }
 .ai-reload:hover:not(:disabled) { color: #7c6af7; }
 .ai-reload:disabled { opacity: 0.3; cursor: default; }
-.ai-textarea {
+
+/* ── Corps scrollable ── */
+.prompt-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.prompt-body::-webkit-scrollbar { width: 3px; }
+.prompt-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Plan mode ── */
+.plan-textarea {
     flex: 1;
     min-height: 0;
     background: var(--bg-deep);
     border: none;
-    border-bottom: 1px solid var(--border);
     color: #777;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.67rem;
@@ -299,42 +448,117 @@
     resize: none;
     outline: none;
 }
-.ai-textarea:focus { color: #bbb; }
-.ai-textarea::placeholder { color: var(--border-strong); }
-.ai-textarea:disabled { opacity: 0.5; cursor: wait; }
-.ai-footer {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0.4rem 1rem;
+.plan-textarea:focus { color: #bbb; }
+.plan-textarea:disabled { opacity: 0.5; cursor: wait; }
+
+/* ── Rows avec border pointillée ── */
+.prompt-row {
+    position: relative;
+    margin: 0.55rem 0.7rem 0;
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 0.6rem 0.65rem 0.5rem;
     flex-shrink: 0;
 }
-.ai-launch {
-    background: #1e1540;
-    border: 1px solid #3a2e70;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    padding: 0.3rem 0.9rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.03em;
-    display: inline-flex;
-    align-items: center;
+.prompt-row:last-of-type { margin-bottom: 0.55rem; }
+
+/* Badge flottant sur la bordure */
+.row-badge {
+    position: absolute;
+    top: -0.48em;
+    left: 0.55rem;
+    background: var(--bg-deep);
+    font-size: 0.46rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0 0.3rem;
+    line-height: 1;
 }
-.ai-launch-label { color: var(--color-impl); }
-.ai-launch-arrow { color: #fff; }
-.ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
+.row-input  .row-badge { color: #7c6af7; }
+.row-enrich .row-badge { color: #4a7a5a; }
+.row-atlas  .row-badge { color: #7a6a3a; }
 
-.ai-launch:disabled { opacity: 0.35; cursor: default; }
+/* ── Row 1 : champs éditables ── */
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 0.4rem;
+}
+.field-group:last-child { margin-bottom: 0; }
+.field-key {
+    font-size: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #4a4a6a;
+    font-family: 'JetBrains Mono', monospace;
+}
+.field-ta {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: #999;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.67rem;
+    line-height: 1.55;
+    padding: 0.3rem 0.5rem;
+    resize: vertical;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+.field-ta:focus { color: #ccc; border-color: var(--border-strong); }
+.field-ta:disabled { opacity: 0.45; cursor: wait; }
+.field-ta::placeholder { color: var(--border-strong); }
 
+/* ── Row 2 : enrichissement ── */
+.ro-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.ro-block { display: flex; flex-direction: column; gap: 0.1rem; }
+.ro-key {
+    font-size: 0.48rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #3a4a3a;
+    font-family: 'JetBrains Mono', monospace;
+}
+.ro-pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: #3a3a4a;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    max-height: 72px;
+    overflow-y: auto;
+}
+.ro-pre::-webkit-scrollbar { width: 2px; }
+.ro-pre::-webkit-scrollbar-thumb { background: var(--border); }
 
-/* ── Diagramme symboles ── */
+/* ── Row 3 : atlas ── */
+.atlas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.5rem 0.8rem;
+}
+.atlas-block { display: flex; flex-direction: column; gap: 0.1rem; }
+.atlas-pre {
+    max-height: 90px;
+    color: #3a4a3a;
+}
+
+/* ── Symboles principaux ── */
 .sym-diag {
     flex-shrink: 0;
     border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
     background: var(--bg-deep);
-    max-height: 140px;
+    max-height: 130px;
     overflow-y: auto;
+    margin-top: auto;
 }
 .sym-diag::-webkit-scrollbar { width: 3px; }
 .sym-diag::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -386,10 +610,7 @@
     flex-direction: column;
     gap: 0.05rem;
 }
-.sym-cls-name {
-    font-size: 0.6rem;
-    color: #7c6af7;
-}
+.sym-cls-name { font-size: 0.6rem; color: #7c6af7; }
 .sym-sig {
     display: flex;
     align-items: baseline;
@@ -410,6 +631,31 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* ── Footer ── */
+.ai-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.4rem 1rem;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+}
+.ai-launch {
+    background: #1e1540;
+    border: 1px solid #3a2e70;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.9rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+}
+.ai-launch-label { color: var(--color-impl); }
+.ai-launch-arrow { color: #fff; }
+.ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
+.ai-launch:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Séparateur ── */
 .vhandle {
