@@ -18,23 +18,6 @@
         }));
     }
 
-    async function generatePlan() {
-        const issue = $agentState.issue;
-        if (!issue) return;
-        agentState.update(s => ({ ...s, status: "planning" }));
-        try {
-            const res  = await fetch("/api/issue", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ issue: issue.number })
-            });
-            const data = await res.json();
-            agentState.update(s => ({ ...s, status: "done", plan: data.plan }));
-        } catch {
-            agentState.update(s => ({ ...s, status: "error" }));
-        }
-    }
-
     // ─── Navigation ───────────────────────────────────────────────────────────
     async function navigateToSubIssue(number: number) {
         const current = $agentState.issue;
@@ -92,15 +75,7 @@
                 ← #{$agentState.navigationStack.at(-1)?.number}
             </button>
         {/if}
-        <span>
-            {#if $agentState.plan && $agentState.issue}
-                Plan — #{$agentState.issue.number}
-            {:else if $agentState.issue}
-                #{$agentState.issue.number}
-            {:else}
-                Artefact
-            {/if}
-        </span>
+        <span>Artefact</span>
     </div>
 
     <div class="content">
@@ -139,13 +114,8 @@
                 <button class="plan-btn" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
                     {taskCreated ? "✓ créée" : "+ Task"}
                 </button>
-                <button class="plan-btn" onclick={generatePlan} disabled={$agentState.status === "planning"}>
-                    {$agentState.status === "planning" ? "…" : $agentState.plan ? "Regénérer" : "Générer"}
-                </button>
             </div>
-            {#if $agentState.status === "planning"}
-                <p class="hint blink" style="padding:0.5rem 1rem">Génération en cours…</p>
-            {:else if $agentState.plan}
+            {#if $agentState.plan}
                 <div class="plan-content">
                     <pre class="plan">{$agentState.plan}</pre>
                 </div>
