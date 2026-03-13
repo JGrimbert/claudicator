@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { agentState, taskRefreshTick, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import PromptUsage from "$lib/components/PromptUsage.svelte";
 
@@ -246,6 +246,12 @@
     function onRefreshTick() {
         (async () => {
             await loadTasksSilent();
+            const pendingId = $pendingSelectTaskId;
+            if (pendingId) {
+                pendingSelectTaskId.set(null);
+                const toSelect = tasks.find(t => t.id === pendingId);
+                if (toSelect) { await selectTask(toSelect); return; }
+            }
             if (selected && selected.status === "implementation" && !planContent && !planLoading) {
                 await loadPlan(selected.id);
                 if (planContent && selectedPanel === "plan") selectedPanel = "implement";
@@ -363,6 +369,8 @@
         implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
         linkedIssueState = null;
+        const taskFilter = statusToFilter(initialTask.status);
+        if (taskFilter) filter = taskFilter;
 
         let task = initialTask;
 

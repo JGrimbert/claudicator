@@ -57,12 +57,13 @@
     async function createTask() {
         const issue = $agentState.issue;
         if (!issue) return;
-        await fetch("/api/tasks", {
+        const res = await fetch("/api/tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
         });
-        notifyTaskCreated();
+        const created = await res.json();
+        notifyTaskCreated(created?.id);
         taskCreated = true;
         setTimeout(() => { taskCreated = false; }, 2000);
     }

@@ -33,7 +33,11 @@ export const agentRunState = writable<{
 });
 
 export const taskRefreshTick = writable(0);
-export function notifyTaskCreated() { taskRefreshTick.update(n => n + 1); }
+export const pendingSelectTaskId = writable<string | null>(null);
+export function notifyTaskCreated(taskId?: string) {
+    if (taskId) pendingSelectTaskId.set(taskId);
+    taskRefreshTick.update(n => n + 1);
+}
 
 export const hoveredIssueNumber = writable<number | null>(null);
 
