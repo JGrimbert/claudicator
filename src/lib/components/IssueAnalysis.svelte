@@ -942,7 +942,7 @@
     transition: color 0.12s, border-color 0.12s, background 0.12s;
 }
 .issue-chip:hover { color: #7cb8ff; border-color: #2a4a6a; }
-.issue-chip.chip-impl  { color: cornsilk; background: #1a1200; border-color: #4a3a00; }
+.issue-chip.chip-impl  { color: var(--color-impl); background: #1a1200; border-color: #4a3a00; }
 .issue-chip.chip-impl:hover { color: #fff8dc; border-color: #7a6000; }
 .issue-chip.chip-plan  { color: #f7c948; background: #1a1400; border-color: #3a2e00; }
 .issue-chip.chip-plan:hover { border-color: #7a6a00; }

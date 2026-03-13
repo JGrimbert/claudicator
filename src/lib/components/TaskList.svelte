@@ -820,7 +820,7 @@
 }
 .filter-btn:hover { color: #555; }
 .filter-btn.active { color: #777; }
-.filter-btn.task-current { color: cornsilk; }
+.filter-btn.task-current { color: var(--color-impl); }
 .count { font-size: 0.5rem; opacity: 0.6; margin-left: 0.4rem; }
 .refresh-btn {
     background: none;
@@ -1050,7 +1050,7 @@
     display: inline-flex;
     align-items: center;
 }
-.impl-launch-label { color: cornsilk; }
+.impl-launch-label { color: var(--color-impl); }
 .impl-launch-arrow { color: #fff; }
 .impl-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 .impl-launch:disabled { opacity: 0.35; cursor: default; }

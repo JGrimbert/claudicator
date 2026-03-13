@@ -21,6 +21,7 @@
         --text-secondary: #888;
         --text-muted:     #555;
         --text-dim:       #333;
+        --color-impl:     cornsilk;
         --accent:         #7c6af7;
         --accent-hover:   #9181f9;
         --scrollbar:      #2a2a3a;
