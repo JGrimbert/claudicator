@@ -5,6 +5,7 @@
 
     let issues: Issue[] = [];
     let loading = true;
+    let refreshing = false;
     let error = "";
     let hasResult = false;
 
@@ -23,7 +24,8 @@
     })();
 
     async function loadIssues() {
-        loading = true;
+        if (issues.length === 0) loading = true;
+        else refreshing = true;
         error = "";
         try {
             const res = await fetch("/api/issues");
@@ -33,6 +35,7 @@
             error = e.message ?? "Erreur chargement issues";
         } finally {
             loading = false;
+            refreshing = false;
         }
     }
 
@@ -198,7 +201,6 @@
             if (data.error) { createError = data.error; return; }
             creating = false;
             issues = [...issues, { number: data.number, title: data.title, state: data.state, created: new Date().toISOString(), labels: [], body: "", subIssues: [] }];
-            setTimeout(loadIssues, 2000);
         } catch (e: any) {
             createError = e.message;
         } finally {
@@ -235,7 +237,7 @@
 
 <div class="panel">
     <div class="panel-header">
-        <span>Issues</span>
+        <span>Issues {#if refreshing}<span class="refreshing">↻</span>{/if}</span>
         <div class="header-actions">
             {#if hasResult && !$issueAnalysis.running}
                 <button class="plan-btn" on:click={() => { issueAnalysis.update(s => ({ ...s, dismissed: false })); openAnalysis(); }} title="Voir la roadmap">
@@ -466,4 +468,6 @@
 .list::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 .hint { padding: 1rem; color: #333; font-size: 0.8rem; }
 .error { padding: 1rem; color: #f44336; font-size: 0.8rem; }
+.refreshing { font-size: 0.65rem; color: #444; margin-left: 0.3rem; animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
