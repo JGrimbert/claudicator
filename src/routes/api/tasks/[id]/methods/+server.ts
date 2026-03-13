@@ -80,7 +80,12 @@ export async function GET({ params }) {
         return json({ error: "Index illisible" }, { status: 500 });
     }
 
-    const symbolMap = loadSymbolMap(root, task.title);
+    let symbolMap: Record<string, { file?: string; sigs: string[] }>;
+    try {
+        symbolMap = loadSymbolMap(root, task.title);
+    } catch {
+        return json({ error: "Erreur lors de la recherche de symboles" }, { status: 500 });
+    }
 
     const methods: Array<{
         key: string;

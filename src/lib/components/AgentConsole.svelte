@@ -339,7 +339,6 @@
             {@const sem     = activeTab === "todo" ? []          : querySemantic}
             <div class="result-area">
                 {#if grep.length > 0}
-                    <div class="result-group-header">Occurrences</div>
                     <div class="result-list grouped">
                         {#each grep as g}
                             {@const key = `${g.file}:${g.line}`}
@@ -362,7 +361,6 @@
                     </div>
                 {/if}
                 {#if methods.length > 0}
-                    <div class="result-group-header">Méthodes</div>
                     <div class="result-list grouped">
                         {#each methods as r}
                             <div class="result-item">
@@ -380,7 +378,6 @@
                     </div>
                 {/if}
                 {#if sem.length > 0}
-                    <div class="result-group-header">Méthodes pertinentes</div>
                     <div class="result-list grouped">
                         {#each sem as r}
                             <div class="result-item">
@@ -697,16 +694,6 @@
     border: none;
     border-radius: 0;
     border-bottom: 1px solid var(--border);
-}
-.result-group-header {
-    padding: 0.3rem 0.75rem;
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
 }
 .grep-item {
     display: flex;

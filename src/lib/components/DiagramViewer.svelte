@@ -30,7 +30,6 @@
     let error    = "";
     let loading  = true;
     let expanded = new Set<string>();
-    let copied   = false;
 
     // Monaco state
     let selectedMethod: { nodeName: string; sig: string; key: string } | null = null;
@@ -194,50 +193,6 @@
         return true;
     }
 
-    async function copyJSDocPrompt() {
-        const byFile: Record<string, string[]> = {};
-        for (const node of tree) {
-            for (const m of node.methods) {
-                if (!m.described && node.file) {
-                    const f = node.file;
-                    if (!byFile[f]) byFile[f] = [];
-                    byFile[f].push(m.sig);
-                }
-            }
-        }
-        if (!summary) return;
-        const undocCount = summary.total - summary.described;
-        const sections = Object.entries(byFile).sort()
-            .map(([f, sigs]) => `${f}\n${sigs.map(s => `  - ${s}`).join("\n")}`)
-            .join("\n\n");
-
-        const prompt =
-`TASK
-Documenter les méthodes non annotées avec JSDoc in-situ dans src/prima.
-
-CONTEXTE
-${undocCount}/${summary.total} méthodes sans documentation JSDoc.
-Roles : entry, core, service, flow, bridge, helper, adapter, internal
-
-MÉTHODES À DOCUMENTER
-${sections}
-
-INSTRUCTIONS
-Ajouter un commentaire JSDoc directement au-dessus de chaque déclaration :
-
-/**
- * @role [entry|core|service|...]
- * @description Brève description du comportement métier (1-2 phrases).
- * @param {type} nom - Description
- * @returns {type} Valeur retournée
- */
-
-Règles : ne jamais modifier le corps des méthodes.`;
-
-        await navigator.clipboard.writeText(prompt);
-        copied = true;
-        setTimeout(() => { copied = false; }, 2000);
-    }
 </script>
 
 <div class="dv">
@@ -247,18 +202,6 @@ Règles : ne jamais modifier le corps des méthodes.`;
         <div class="dv-hint err">{error}</div>
     {:else if summary}
 
-
-        <!-- ── Header ──────────────────────────────────────────────────── -->
-        <div class="dv-header">
-            <div class="dv-stat-row">
-                <button class="dv-copy-btn" onclick={copyJSDocPrompt}>
-                    {copied ? "✓" : "JSDoc prompt →"}
-                </button>
-            </div>
-            <div class="dv-prog">
-                <div class="dv-prog-fill" style="width:{pct(summary.described, summary.total)}%"></div>
-            </div>
-        </div>
 
         <!-- ── Tree ────────────────────────────────────────────────────── -->
         <div class="dv-tree">
@@ -387,52 +330,6 @@ Règles : ne jamais modifier le corps des méthodes.`;
     color: #777;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
-.dv-header {
-    flex-shrink: 0;
-    padding: 0.5rem 0.9rem;
-    background: var(--bg-panel);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-.dv-stat-row {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-}
-.dv-num  { font-size: 0.78rem; font-weight: 600; color: var(--accent-hover); }
-.dv-lbl  { font-size: 0.56rem; color: #2a2a3a; text-transform: uppercase; letter-spacing: 0.08em; }
-.dv-sep  { color: #1a1a2a; font-size: 0.6rem; }
-
-.dv-copy-btn {
-    margin-left: auto;
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: #444;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.58rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    letter-spacing: 0.03em;
-    transition: color 0.1s, border-color 0.1s;
-}
-.dv-copy-btn:hover { color: var(--accent-hover); border-color: var(--accent); }
-
-.dv-prog {
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    overflow: hidden;
-}
-.dv-prog-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #2a1a5e, #9181f9);
-    border-radius: 1px;
-    transition: width 0.4s ease;
-}
 
 /* Role legend (footer) */
 .dv-legend {

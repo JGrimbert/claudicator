@@ -36,6 +36,14 @@ export async function POST({ params }) {
         return json(updateTask(params.id, { status: "merged" }));
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        // La branche est déjà mergée dans main → marquer comme merged
+        if (message.includes("No commits between")) {
+            try {
+                const root = getProjectRoot();
+                await checkoutMain(root);
+            } catch { /* ignore */ }
+            return json(updateTask(params.id, { status: "merged" }));
+        }
         return json({ error: message }, { status: 500 });
     }
 }

@@ -27,7 +27,10 @@ export async function POST({ request }) {
             const owner = project?.owner;
             const repo  = project?.repo;
             if (owner && repo) {
-                const issue = await getIssue(owner, repo, task.issueNumber);
+                const issue = await Promise.race([
+                    getIssue(owner, repo, task.issueNumber),
+                    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+                ]);
                 description = issue.body ?? undefined;
             }
         } catch { /* GitHub indisponible — on continue sans description */ }

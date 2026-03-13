@@ -39,9 +39,10 @@
         methods = [];
         loading = true;
         error = null;
-        monacoLoaded = false;
         try {
-            const res = await fetch(`/api/tasks/${id}/methods`);
+            const res = await fetch(`/api/tasks/${id}/methods`, {
+                signal: AbortSignal.timeout(15000),
+            });
             const data = await res.json();
             if (data.error) { error = data.error; return; }
             methods = data.methods ?? [];
