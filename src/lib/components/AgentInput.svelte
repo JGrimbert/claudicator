@@ -320,7 +320,7 @@
     display: inline-flex;
     align-items: center;
 }
-.ai-launch-label { color: cornsilk; }
+.ai-launch-label { color: var(--color-impl); }
 .ai-launch-arrow { color: #fff; }
 .ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 

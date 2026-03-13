@@ -520,8 +520,8 @@
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
 .tab-todo { color: #4a3a00; }
-.tab-todo:hover { color: cornsilk; }
-.tab-todo.tab-active { color: cornsilk; }
+.tab-todo:hover { color: var(--color-impl); }
+.tab-todo.tab-active { color: var(--color-impl); }
 .tab-count { font-size: 0.5rem; opacity: 0.6; margin-left:1em; }
 .search-submit {
     background: none;
