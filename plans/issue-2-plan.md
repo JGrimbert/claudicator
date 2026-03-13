@@ -1,0 +1,2 @@
+Les fixes 1 et 2 sont déjà dans les fichiers (header fixe "Artefact" + `setTimeout(loadIssues, 2000)`). Il reste à supprimer le bouton "Générer".
+Bouton "Générer" supprimé — fonction `generatePlan` retirée, le bloc `{#if status === "planning"}` simplifié en `{#if $agentState.plan}`. Seul le bouton `+ Task` reste dans le `plan-header`.
