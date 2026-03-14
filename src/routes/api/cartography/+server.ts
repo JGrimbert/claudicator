@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { getProjectConfig } from "$lib/server/services/project-config";
 
+/** Recherche dans la cartographie du projet via script */
 export async function POST({ request }) {
     const { query } = await request.json();
 

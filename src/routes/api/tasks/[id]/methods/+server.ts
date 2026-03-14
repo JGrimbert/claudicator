@@ -36,6 +36,7 @@ interface RawMethod {
     isPrivate?: boolean;
 }
 
+/** Extrait un bloc de code depuis un fichier */
 function extractSnippet(filePath: string, startLine: number, endLine?: number): string {
     if (!existsSync(filePath)) return "";
     const allLines = readFileSync(filePath, "utf-8").split("\n");
@@ -62,6 +63,7 @@ function extractSnippet(filePath: string, startLine: number, endLine?: number): 
     return allLines.slice(start, endIdx + 1).join("\n");
 }
 
+/** Récupère les méthodes de la cartographie pour une tâche */
 export async function GET({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

@@ -36,6 +36,7 @@ export const agentRunState = writable<{
 
 export const taskRefreshTick = writable(0);
 export const pendingSelectTaskId = writable<string | null>(null);
+/** Notifie la création d'une tâche et rafraîchit */
 export function notifyTaskCreated(taskId?: string) {
     if (taskId) pendingSelectTaskId.set(taskId);
     taskRefreshTick.update(n => n + 1);
@@ -73,6 +74,7 @@ export const planAllState = writable<{
 
 export type PlanGroup = { index: number; name: string; issues: number[] };
 
+/** Parse le texte en groupes de plan structurés */
 function parseGroups(text: string): PlanGroup[] {
     const groups: PlanGroup[] = [];
     const blocks = text.split(/(?=### Groupe \d)/);

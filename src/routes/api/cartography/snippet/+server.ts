@@ -49,6 +49,7 @@ function extractSnippet(filePath: string, startLine: number, endLine?: number): 
     return allLines.slice(start, endIdx + 1).join("\n");
 }
 
+/** Recherche une méthode dans l'index par clé */
 export function GET({ url }) {
     const key = url.searchParams.get("key");
     if (!key) return json({ error: "Paramètre key manquant" }, { status: 400 });

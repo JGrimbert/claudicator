@@ -5,6 +5,7 @@ import { spawnClaudeStream } from "$lib/server/agent/claude-stream";
 
 const ANALYSIS_FILE = ".agent/analysis.md";
 
+/** Envoie un message à un agent roadmap */
 export async function POST({ request }: { request: Request }) {
     const body = await request.json().catch(() => ({}));
     const message: string = body.message ?? "";

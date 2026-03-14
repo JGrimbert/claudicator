@@ -8,6 +8,7 @@ import { spawnClaudeStream } from "$lib/server/agent/claude-stream";
 const ANALYSIS_FILE = ".agent/analysis.md";
 const SNAPSHOT_FILE = ".agent/analysis-snapshot.json";
 
+/** Récupère les issues GitHub du projet courant */
 export async function POST({ request }: { request: Request }) {
     const body = await request.json().catch(() => ({}));
     const roadmapId: string | null = body.roadmapId ?? null;

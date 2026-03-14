@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { writeInput, isRunning } from "$lib/server/services/processes";
 
+/** Envoie une entrée stdin à un processus actif */
 export async function POST({ request }) {
     const { taskId, input } = await request.json();
     if (!taskId || input === undefined) return json({ error: "taskId ou input manquant" }, { status: 400 });

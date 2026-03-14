@@ -71,6 +71,7 @@ export async function getMainBranch(root: string): Promise<string> {
     return branches.all.includes("main") ? "main" : "master";
 }
 
+/** Merge une branche dans main/master */
 export async function mergeBranch(root: string, branch: string): Promise<void> {
     const g = simpleGit(root);
     const branches = await g.branchLocal();
@@ -79,6 +80,7 @@ export async function mergeBranch(root: string, branch: string): Promise<void> {
     await g.merge(["--no-ff", branch]);
 }
 
+/** Bascule sur la branche principale et la met à jour */
 export async function checkoutMain(root: string): Promise<void> {
     const g = simpleGit(root);
     const main = await getMainBranch(root);

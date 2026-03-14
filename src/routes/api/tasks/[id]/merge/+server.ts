@@ -4,6 +4,7 @@ import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/s
 import { getMainBranch, checkoutMain } from "$lib/server/services/git";
 import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
 
+/** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

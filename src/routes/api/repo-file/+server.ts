@@ -4,6 +4,7 @@ import { getRepoFile } from "$lib/server/services/github";
 
 
 
+/** Récupère un fichier du dépôt GitHub courant */
 export async function GET({ url }) {
     const path = url.searchParams.get("path");
     if (!path) return json({ error: "path manquant" }, { status: 400 });

@@ -2,6 +2,7 @@ import { json } from "@sveltejs/kit";
 import { closeIssue } from "$lib/server/services/github";
 import { getCurrentProject } from "$lib/server/services/projects";
 
+/** Ferme une issue GitHub par numéro */
 export async function POST({ params }) {
     const issueNumber = Number(params.number);
     if (!issueNumber) return json({ error: "Numéro d'issue invalide" }, { status: 400 });

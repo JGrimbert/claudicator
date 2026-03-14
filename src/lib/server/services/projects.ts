@@ -15,6 +15,7 @@ export type Project = {
 
 type State = { current: string | null; projects: Project[] };
 
+/** Charge l'état depuis le fichier ou l'environnement */
 function load(): State {
     if (fs.existsSync(STATE_FILE)) {
         try { return JSON.parse(fs.readFileSync(STATE_FILE, "utf-8")); }
@@ -34,25 +35,30 @@ function load(): State {
     return state;
 }
 
+/** Persiste l'état dans `.agent/state.json` */
 function save(state: State) {
     fs.mkdirSync(".agent", { recursive: true });
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
+/** Retourne la liste des projets et le projet courant */
 export function listProjects(): { projects: Project[]; current: string | null } {
     const s = load();
     return { projects: s.projects, current: s.current };
 }
 
+/** Retourne le projet actuellement sélectionné */
 export function getCurrentProject(): Project | null {
     const s = load();
     return s.projects.find(p => p.id === s.current) ?? s.projects[0] ?? null;
 }
 
+/** Retourne le chemin racine du projet courant */
 export function getProjectRoot(): string {
     return getCurrentProject()?.path ?? process.env.TARGET_PROJECT_PATH ?? process.cwd();
 }
 
+/** Définit le projet actif par son id */
 export function setCurrentProject(id: string): boolean {
     const s = load();
     if (!s.projects.find(p => p.id === id)) return false;
@@ -61,6 +67,7 @@ export function setCurrentProject(id: string): boolean {
     return true;
 }
 
+/** Ajoute un projet en détectant son repo Git */
 export async function addProject(projectPath: string): Promise<Project> {
     const s = load();
     let owner: string | undefined;
@@ -81,6 +88,7 @@ export async function addProject(projectPath: string): Promise<Project> {
     return project;
 }
 
+/** Supprime un projet et réinitialise le courant */
 export function removeProject(id: string): void {
     const s = load();
     s.projects = s.projects.filter(p => p.id !== id);

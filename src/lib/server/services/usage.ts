@@ -9,6 +9,7 @@ type ProjectUsage = {
 
 const USAGE_FILE = path.join(".agent", "usage.json");
 
+/** Charge l'usage depuis le fichier JSON */
 function loadUsage(): ProjectUsage {
     try {
         if (fs.existsSync(USAGE_FILE)) {
@@ -18,10 +19,12 @@ function loadUsage(): ProjectUsage {
     return { totalInputTokens: 0, totalOutputTokens: 0, lastUpdated: new Date().toISOString() };
 }
 
+/** Retourne l'usage actuel du projet */
 export function getProjectUsage(): ProjectUsage {
     return loadUsage();
 }
 
+/** Incrémente et sauvegarde les tokens utilisés */
 export function addProjectUsage(input: number, output: number): void {
     const current = loadUsage();
     const updated: ProjectUsage = {

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 
+/** Liste les roadmaps markdown du dossier agent */
 export async function GET() {
     try {
         const dir = ".agent/roadmaps";

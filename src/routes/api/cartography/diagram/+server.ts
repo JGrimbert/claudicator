@@ -23,6 +23,7 @@ export interface TreeNode {
     methods: MethodInfo[];
 }
 
+/** Scanne récursivement les fichiers JS/TS d'un dossier */
 function scanJs(dir: string, rel = ""): Array<{ rel: string; full: string }> {
     const result: Array<{ rel: string; full: string }> = [];
     try {
@@ -38,12 +39,15 @@ function scanJs(dir: string, rel = ""): Array<{ rel: string; full: string }> {
     return result;
 }
 
+/** Extrait la classe parente via regex */
 function extractExtends(content: string): string | null {
     return content.match(/class\s+\w+\s+extends\s+(?:\$\.)?(\w+)/)?.[1] ?? null;
 }
 
+/** Met en majuscule la première lettre */
 function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+/** Charge et retourne l'index de méthodes annoté */
 export async function GET() {
     const PROJECT_PATH = getProjectRoot();
     const indexPath = join(PROJECT_PATH, ".cache/method-index.json");

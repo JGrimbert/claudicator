@@ -2,6 +2,7 @@ import { spawn } from "child_process";
 import { join } from "path";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Lance la cartographie du projet en SSE */
 export async function POST() {
     const projectPath = getProjectRoot();
     const cartoPath   = process.env.CARTOGRAPHY_PATH     ?? "C:/lolve-cartography";

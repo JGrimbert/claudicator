@@ -18,12 +18,14 @@ const BATCH_SIZE = 10; // méthodes par appel Claude
 
 // ─── Lecture de l'index ────────────────────────────────────────────────────────
 
+/** Lit l'index des méthodes depuis le cache */
 function readIndex(projectRoot: string): Record<string, any> {
     const p = join(projectRoot, ".cache/method-index.json");
     if (!existsSync(p)) return {};
     try { return JSON.parse(readFileSync(p, "utf-8")).methods ?? {}; } catch { return {}; }
 }
 
+/** Regroupe les méthodes non documentées par fichier */
 function getUndescribedByFile(projectRoot: string): Map<string, IndexMethod[]> {
     const methods = readIndex(projectRoot);
     const byFile = new Map<string, IndexMethod[]>();
@@ -47,12 +49,14 @@ function getUndescribedByFile(projectRoot: string): Map<string, IndexMethod[]> {
 
 // ─── Génération des descriptions via claude -p ─────────────────────────────────
 
+/** Extrait le code source d'une plage de lignes */
 function extractCode(fileLines: string[], startLine: number, endLine: number): string {
     const start = Math.max(0, startLine - 1);
     const end   = Math.min(fileLines.length, Math.max(endLine, startLine + 1));
     return fileLines.slice(start, end).join("\n").trim().slice(0, 500);
 }
 
+/** Génère des descriptions via Claude pour un lot de méthodes */
 function generateDescriptions(
     methods: Array<{ signature: string; code: string }>
 ): string[] {
@@ -68,6 +72,7 @@ function generateDescriptions(
             "```",
             "",
         ].join("\n")),
+    /** Génère des descriptions de méthodes via Claude CLI */
     ].join("\n");
 
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
@@ -91,12 +96,14 @@ function generateDescriptions(
         }
         return descs;
     } catch {
+        /** Insère des commentaires JSDoc dans le fichier source */
         return new Array<string>(methods.length).fill("");
     }
 }
 
 // ─── Insertion JSDoc dans le fichier source ────────────────────────────────────
 
+/** Insère des JSDoc dans un fichier source */
 function insertJsDoc(
     filePath: string,
     entries: Array<{ line: number; description: string }>
@@ -129,6 +136,7 @@ function insertJsDoc(
 
 // ─── GET — statistiques ────────────────────────────────────────────────────────
 
+/** Retourne les stats de documentation de l'index */
 export function GET() {
     const projectRoot = getProjectRoot();
     const byFile      = getUndescribedByFile(projectRoot);
@@ -141,6 +149,7 @@ export function GET() {
 
 // ─── POST — agent de commentaire ──────────────────────────────────────────────
 
+/** Lance la génération de descriptions sur les méthodes manquantes */
 export async function POST({ request }: { request: Request }) {
     const body  = await request.json().catch(() => ({}));
     const limit = Math.min(body.limit ?? 500, 1000);

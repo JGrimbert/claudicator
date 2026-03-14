@@ -2,6 +2,7 @@ import fs from "fs";
 
 const ANALYSIS_FILE = ".agent/analysis.md";
 
+/** Lit et retourne un fichier roadmap ou analyse */
 export async function GET({ url }: { url: URL }) {
     const id = url.searchParams.get("id");
     const filePath = id ? `.agent/roadmaps/${id}.md` : ANALYSIS_FILE;

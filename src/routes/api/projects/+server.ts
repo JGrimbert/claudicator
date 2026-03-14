@@ -1,10 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { listProjects, addProject } from "$lib/server/services/projects";
 
+/** Liste tous les projets */
 export async function GET() {
     return json(listProjects());
 }
 
+/** Ajoute un projet par chemin */
 export async function POST({ request }) {
     const body = await request.json();
     const projectPath: string = body.path?.trim();

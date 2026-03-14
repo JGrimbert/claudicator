@@ -3,6 +3,7 @@ import { getTask, updateTask } from "$lib/server/services/tasks";
 import { getBranchState } from "$lib/server/services/git";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Synchronise l'état push/merge d'une tâche */
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

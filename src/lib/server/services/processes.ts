@@ -4,18 +4,22 @@ import type { ChildProcess } from "child_process";
 /** Map taskId → process en cours d'exécution */
 const active = new Map<string, ChildProcess>();
 
+/** Enregistre un processus actif */
 export function register(taskId: string, proc: ChildProcess) {
     active.set(taskId, proc);
 }
 
+/** Supprime un processus de la map */
 export function unregister(taskId: string) {
     active.delete(taskId);
 }
 
+/** Retourne le processus associé */
 export function getProcess(taskId: string): ChildProcess | undefined {
     return active.get(taskId);
 }
 
+/** Vérifie si un processus est actif */
 export function isRunning(taskId: string): boolean {
     return active.has(taskId);
 }

@@ -1,6 +1,7 @@
 import { destroySession } from "$lib/server/services/claude-session";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 
+/** Supprime une session de tâche en cours */
 export async function DELETE({ request }) {
     const { taskId } = await request.json();
     if (!taskId) {

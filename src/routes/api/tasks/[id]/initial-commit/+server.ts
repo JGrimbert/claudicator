@@ -6,6 +6,7 @@ import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import { createIssueComment } from "$lib/server/services/github";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Génère un nom de branche git depuis un titre */
 function toBranchName(issueNumber: number | undefined, title: string): string {
     const slug = title
         .toLowerCase()
@@ -19,6 +20,7 @@ function toBranchName(issueNumber: number | undefined, title: string): string {
     return issueNumber ? `issue-${issueNumber}-${slug}` : `task-${slug}`;
 }
 
+/** Crée la branche initiale pour une tâche */
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

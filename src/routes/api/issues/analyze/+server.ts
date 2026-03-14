@@ -8,6 +8,7 @@ import { spawnClaudeStream } from "$lib/server/agent/claude-stream";
 const ANALYSIS_FILE = ".agent/analysis.md";
 const SNAPSHOT_FILE = ".agent/analysis-snapshot.json";
 
+/** Sauvegarde une analyse Markdown sur disque */
 function saveAnalysis(content: string, roadmapId?: string | null) {
     if (roadmapId) {
         fs.mkdirSync(".agent/roadmaps", { recursive: true });
@@ -18,11 +19,13 @@ function saveAnalysis(content: string, roadmapId?: string | null) {
     }
 }
 
+/** Persiste un snapshot JSON des issues */
 function saveSnapshot(issues: Array<{ number: number; title: string; updatedAt: string }>) {
     fs.mkdirSync(".agent", { recursive: true });
     fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(issues, null, 2), "utf-8");
 }
 
+/** Endpoint POST : déclenche une analyse GitHub */
 export async function POST({ request }: { request: Request }) {
     const body = await request.json().catch(() => ({}));
     const roadmapId: string | null = body.roadmapId ?? null;
