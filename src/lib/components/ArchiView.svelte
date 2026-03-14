@@ -58,11 +58,6 @@
 </script>
 
 <div class="atlas">
-    <div class="atlas-header">
-        <span class="atlas-title">ATLAS SÉMANTIQUE</span>
-        <span class="atlas-subtitle">Classification des régions du projet</span>
-    </div>
-
     {#if loading}
         <div class="atlas-loading">chargement…</div>
     {:else if error}
