@@ -2,12 +2,13 @@ import fs from "fs";
 
 const ANALYSIS_FILE = ".agent/analysis.md";
 
-export async function GET() {
+/** Lit et retourne un fichier roadmap ou analyse */
+export async function GET({ url }: { url: URL }) {
+    const id = url.searchParams.get("id");
+    const filePath = id ? `.agent/roadmaps/${id}.md` : ANALYSIS_FILE;
     try {
-        if (!fs.existsSync(ANALYSIS_FILE)) {
-            return new Response("", { status: 404 });
-        }
-        const content = fs.readFileSync(ANALYSIS_FILE, "utf-8");
+        if (!fs.existsSync(filePath)) return new Response("", { status: 404 });
+        const content = fs.readFileSync(filePath, "utf-8");
         return new Response(content, {
             headers: { "Content-Type": "text/plain; charset=utf-8" }
         });

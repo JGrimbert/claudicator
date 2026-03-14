@@ -4,6 +4,7 @@ import { loadMethodSnippets } from "$lib/server/agent/context";
 import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
 import { generateAtlasStrings } from "$lib/server/services/cartography";
 
+/** Crée le commit initial d'un plan de tâche */
 export async function POST({ request }) {
     const body = await request.json();
     const { plan, taskId, projectRoot } = body;

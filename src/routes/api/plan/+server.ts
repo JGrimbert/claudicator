@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { existsSync, readFileSync } from "fs";
 
+/** Retourne le plan global d'une issue si existant */
 export async function GET({ url }) {
     const issue = url.searchParams.get("issue");
     if (!issue) return json({ error: "issue manquant" }, { status: 400 });

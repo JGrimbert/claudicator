@@ -3,6 +3,7 @@ import path from "path";
 import { json } from "@sveltejs/kit";
 import { getTask, getTasksDir } from "$lib/server/services/tasks";
 
+/** Lit et retourne le plan d'une tâche */
 export async function GET({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

@@ -91,6 +91,7 @@ function buildQuery(title: string, description?: string): string {
     return `${title} ${extra}`;
 }
 
+/** Assemble le contexte agent complet pour une tâche donnée. */
 export function buildContext(
     task: Pick<Task, "id" | "title">,
     projectRoot: string,

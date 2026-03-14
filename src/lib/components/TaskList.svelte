@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import PromptUsage from "$lib/components/PromptUsage.svelte";
 
@@ -46,18 +46,19 @@
     const FILTERS = ["specification", "implementation", "validation", "merged"] as const;
     type Filter = typeof FILTERS[number];
 
-    function statusToFilter(status: TaskStatus): Filter | null {
-        if (status === "specification" || status === "planification") return "specification";
-        if (status === "implementation") return "implementation";
-        if (status === "documentation" || status === "validation") return "validation";
-        if (status === "merged") return "merged";
+    function taskToFilter(task: Task): Filter | null {
+        if (task.status === "planification" && task.hasPlan) return "implementation";
+        if (task.status === "specification" || task.status === "planification") return "specification";
+        if (task.status === "implementation") return "implementation";
+        if (task.status === "documentation" || task.status === "validation") return "validation";
+        if (task.status === "merged") return "merged";
         return null;
     }
 
     let tasks: Task[] = [];
     let loading = true;
     let filter: Filter | null = null;
-    $: selectedTaskFilter = selected ? statusToFilter(selected.status) : null;
+    $: selectedTaskFilter = selected ? taskToFilter(selected) : null;
     let selected: Task | null = null;
     let newTitle = "";
     let creating = false;
@@ -181,16 +182,10 @@
         }
         const base = filter === null
             ? tasks
-            : tasks.filter(t => filter === "validation"
-                ? (t.status === "validation" || t.status === "documentation")
-                : t.status === filter);
+            : tasks.filter(t => taskToFilter(t) === filter);
         return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
     })();
-    $: countOf = (f: Filter) => tasks.filter(t =>
-        f === "validation"
-            ? (t.status === "validation" || t.status === "documentation")
-            : t.status === f
-    ).length;
+    $: countOf = (f: Filter) => tasks.filter(t => taskToFilter(t) === f).length;
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
     $: currentStep = (() => {
@@ -218,11 +213,13 @@
     onMount(async () => {
         await loadTasks();
         const savedId = localStorage.getItem(SELECTED_KEY);
-        // Priorité : task "planification" > task sauvegardée > première task avec plan
+        const savedTask = savedId ? tasks.find(t => t.id === savedId) : null;
+        const validSaved = savedTask && savedTask.status !== "merged" && savedTask.status !== "failed" ? savedTask : null;
+        // Priorité : task "planification" > task sauvegardée active > première task avec plan
         const toSelect = tasks.find(t => t.status === "planification")
-            ?? (savedId ? tasks.find(t => t.id === savedId) : null)
-            ?? tasks.find(t => t.hasPlan);
-        if (toSelect) await selectTask(toSelect);
+            ?? validSaved
+            ?? tasks.find(t => t.hasPlan && t.status !== "merged" && t.status !== "failed");
+        if (toSelect) await selectTask(toSelect, true);
         tasksReady.set(true);
     });
 
@@ -239,7 +236,6 @@
     // On délègue à une fonction pour isoler le scope de tracking.
     $: if ($taskRefreshTick) onRefreshTick();
 
-    $: planModeTask.set(selected ? { id: selected.id, title: selected.title } : null);
 
     function onRefreshTick() {
         (async () => {
@@ -266,7 +262,7 @@
                 const prev = selected.status;
                 selected = tasks.find(t => t.id === selected!.id) ?? null;
                 if (selected && selected.status !== prev) {
-                    const f = statusToFilter(selected.status);
+                    const f = taskToFilter(selected);
                     if (f) filter = f;
                 }
             }
@@ -286,7 +282,7 @@
                 const prev = selected.status;
                 selected = tasks.find(t => t.id === selected!.id) ?? null;
                 if (selected && selected.status !== prev) {
-                    const f = statusToFilter(selected.status);
+                    const f = taskToFilter(selected);
                     if (f) filter = f;
                 }
             }
@@ -353,10 +349,12 @@
         }
     }
 
-    async function selectTask(initialTask: Task) {
+    // silent=true : auto-restore au démarrage — ne bascule pas le centre vers "plan"
+    async function selectTask(initialTask: Task, silent = false) {
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             commitMsg = ""; selectedPanel = "plan"; wfError = "";
+            planModeTask.set(null);
             localStorage.removeItem(SELECTED_KEY);
             return;
         }
@@ -366,8 +364,13 @@
         commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
         linkedIssueState = null;
-        const taskFilter = statusToFilter(initialTask.status);
+        const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
+        // Ne bascule le centre que sur sélection explicite, et seulement pour tasks actives
+        if (!silent && initialTask.status !== "merged" && initialTask.status !== "failed") {
+            planModeTask.set({ id: initialTask.id, title: initialTask.title, issueNumber: initialTask.issueNumber });
+            consoleTab.set("symbols");
+        }
 
         let task = initialTask;
 
@@ -458,7 +461,7 @@
             if (selected?.id === task.id) {
                 selected = data;
                 if (prev && data.status !== prev) {
-                    const f = statusToFilter(data.status);
+                    const f = taskToFilter(data);
                     if (f) filter = f;
                 }
             }

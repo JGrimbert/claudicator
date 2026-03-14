@@ -1,6 +1,7 @@
 import { logEmitter } from "$lib/server/logs";
 import type { Log } from "$lib/server/logs";
 
+/** Stream les logs en temps réel via SSE */
 export async function GET() {
     let listener: ((log: Log) => void) | null = null;
 

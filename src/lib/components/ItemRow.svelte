@@ -5,12 +5,22 @@
     export let state = "open";
     export let active = false;
     export let onclick: () => void = () => {};
+    export let action: { label: string; loading?: boolean; done?: boolean; onclick: () => void } | undefined = undefined;
 </script>
 
 <button class="item-row" class:active class:closed={state === "closed"} {onclick}>
     <div class="item-top">
         {#if prefix}<span class="item-prefix">{prefix}</span>{/if}
         <span class="item-title">{title}</span>
+        {#if action}
+            <button
+                class="item-action"
+                class:done={action.done}
+                onclick={e => { e.stopPropagation(); action!.onclick(); }}
+                disabled={action.loading || action.done}
+                title={action.label}
+            >{action.done ? "✓" : action.loading ? "…" : action.label}</button>
+        {/if}
     </div>
 
     {#if labels.length > 0}
@@ -59,6 +69,22 @@
     line-height: 1.3;
 }
 .item-row.closed .item-title { color: #555; text-decoration: line-through; }
+.item-action {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid #333;
+    color: #555;
+    font-size: 0.58rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.15s, border-color 0.15s;
+}
+.item-action:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
+.item-action:disabled { opacity: 0.5; cursor: default; }
+.item-action.done { color: #3a8a3a; border-color: #1a4a1a; cursor: default; }
 .item-labels {
     display: flex;
     flex-wrap: wrap;

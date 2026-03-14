@@ -2,6 +2,7 @@ import { json } from "@sveltejs/kit";
 import { getIssues, createIssue } from "$lib/server/services/github";
 import { getCurrentProject } from "$lib/server/services/projects";
 
+/** Récupère les issues GitHub du projet actuel */
 export async function GET() {
     try {
         const project = getCurrentProject();
@@ -33,6 +34,7 @@ export async function GET() {
     }
 }
 
+/** Crée une nouvelle issue GitHub */
 export async function POST({ request }) {
     try {
         const { title, body } = await request.json();

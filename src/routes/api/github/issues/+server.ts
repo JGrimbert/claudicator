@@ -4,6 +4,7 @@ import { createIssue } from "$lib/server/services/github";
 
 
 
+/** Crée une issue GitHub pour le projet courant */
 export async function POST({ request }) {
     const { title, body } = await request.json();
     if (!title?.trim()) return json({ error: "Titre manquant" }, { status: 400 });

@@ -3,6 +3,7 @@ import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Lit l'index des méthodes depuis le cache */
 export async function GET() {
     const projectPath = getProjectRoot();
     const indexPath   = join(projectPath, ".cache/method-index.json");

@@ -4,6 +4,7 @@ import { buildContext } from "$lib/server/agent/context";
 import { getProjectRoot, getCurrentProject } from "$lib/server/services/projects";
 import { getIssue } from "$lib/server/services/github";
 
+/** Crée le commit initial pour une task liée */
 export async function POST({ request }) {
     const body = await request.json();
     const { taskId, projectRoot } = body;

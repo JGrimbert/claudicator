@@ -2,6 +2,7 @@ import { json } from "@sveltejs/kit";
 import { listAccessibleRepos } from "$lib/server/services/github";
 import { listProjects } from "$lib/server/services/projects";
 
+/** Liste les repos GitHub accessibles avec statut configuré */
 export async function GET() {
     try {
         const repos = await listAccessibleRepos();

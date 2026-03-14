@@ -4,6 +4,7 @@ import { getIssue } from "../services/github";
 import { getRemoteRepo } from "../services/git";
 import { emitLog } from "../logs";
 
+/** Génère et sauvegarde un plan pour une issue GitHub. */
 export async function createIssuePlan(issueNumber: number) {
 
     emitLog("INFO", `Chargement de l'issue #${issueNumber}`);

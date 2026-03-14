@@ -1,10 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { listTasks, createTask } from "$lib/server/services/tasks";
 
+/** Retourne la liste de toutes les tâches */
 export async function GET() {
     return json(listTasks());
 }
 
+/** Crée une tâche ou retourne l'existante */
 export async function POST({ request }) {
     const body = await request.json();
     if (!body.title?.trim()) {

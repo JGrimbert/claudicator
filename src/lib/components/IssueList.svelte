@@ -3,6 +3,8 @@
     import { agentState, agentRunState, issueAnalysis, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
 
+    export let hideHeader = false;
+
     let issues: Issue[] = [];
     let loading = true;
     let refreshing = false;
@@ -236,6 +238,7 @@
 </script>
 
 <div class="panel">
+    {#if !hideHeader}
     <div class="panel-header">
         <span>Issues {#if refreshing}<span class="refreshing">↻</span>{/if}</span>
         <div class="header-actions">
@@ -249,6 +252,7 @@
             </button>
         </div>
     </div>
+    {/if}
     {#if diffBadge}
         <div class="diff-badge">
             <span>⚠ {diffBadge}</span>

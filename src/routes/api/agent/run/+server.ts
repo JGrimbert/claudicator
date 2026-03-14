@@ -16,6 +16,7 @@ import {
     isSessionBusy,
 } from "$lib/server/services/claude-session";
 
+/** Supprime les séquences d'échappement ANSI d'une chaîne */
 function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
 }
@@ -30,6 +31,7 @@ function savePlan(taskId: string, lines: string[]) {
     } catch { /* silencieux */ }
 }
 
+/** Reçoit une requête agent et détermine la phase d'exécution */
 export async function POST({ request }) {
     const body = await request.json();
     const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp } = body;

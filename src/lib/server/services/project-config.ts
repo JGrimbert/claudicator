@@ -19,6 +19,7 @@ export const DEFAULT_CONFIG: ProjectConfig = {
     commentOnlyKeywords: ["todo", "fixme", "hack", "xxx"],
 };
 
+/** Chemin fichier config du projet courant */
 function configFilePath(): string {
     const id = getCurrentProject()?.id ?? "default";
     return id === "default"
@@ -26,6 +27,7 @@ function configFilePath(): string {
         : path.join(".agent", id, "config.json");
 }
 
+/** Lire config projet avec valeurs par défaut */
 export function getProjectConfig(): ProjectConfig {
     const p = configFilePath();
     if (fs.existsSync(p)) {
@@ -37,6 +39,7 @@ export function getProjectConfig(): ProjectConfig {
     return { ...DEFAULT_CONFIG };
 }
 
+/** Fusionner et persister patch de config */
 export function setProjectConfig(patch: Partial<ProjectConfig>): ProjectConfig {
     const p = configFilePath();
     fs.mkdirSync(path.dirname(p), { recursive: true });

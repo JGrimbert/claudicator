@@ -3,6 +3,7 @@ import { getTask } from "$lib/server/services/tasks";
 import { revertAll } from "$lib/server/services/git";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Annule toutes les modifications non commitées de la branche */
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

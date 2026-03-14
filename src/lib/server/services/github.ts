@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+/** Lit la clé privée depuis le fichier */
 function getPrivateKey(): string {
     const keyPath = process.env.GITHUB_PRIVATE_KEY_PATH;
     if (keyPath) {
@@ -14,6 +15,7 @@ function getPrivateKey(): string {
     throw new Error("GITHUB_PRIVATE_KEY_PATH manquant dans .env");
 }
 
+/** Crée un client Octokit authentifié */
 function getOctokit() {
     const appId = process.env.GITHUB_APP_ID;
     const installationId = Number(process.env.GITHUB_INSTALLATION_ID);
@@ -31,6 +33,7 @@ function getOctokit() {
     });
 }
 
+/** Récupère une issue par numéro */
 export async function getIssue(owner: string, repo: string, number: number) {
     const octokit = getOctokit();
     const { data } = await octokit.issues.get({
@@ -41,12 +44,14 @@ export async function getIssue(owner: string, repo: string, number: number) {
     return data;
 }
 
+/** Liste les issues ouvertes d'un dépôt */
 export async function getIssues(owner: string, repo: string) {
     const octokit = getOctokit();
     const { data } = await octokit.issues.listForRepo({ owner, repo, state: "open" });
     return data;
 }
 
+/** Liste les issues avec corps et labels */
 export async function getIssuesWithBodies(owner: string, repo: string): Promise<Array<{
     number: number;
     title: string;
@@ -67,6 +72,7 @@ export async function getIssuesWithBodies(owner: string, repo: string): Promise<
     }));
 }
 
+/** Lit un fichier du dépôt en base64 */
 export async function getRepoFile(owner: string, repo: string, path: string): Promise<string> {
     const octokit = getOctokit();
     const { data } = await octokit.repos.getContent({ owner, repo, path });
@@ -74,12 +80,14 @@ export async function getRepoFile(owner: string, repo: string, path: string): Pr
     return Buffer.from(data.content, "base64").toString("utf-8");
 }
 
+/** Crée une nouvelle issue */
 export async function createIssue(owner: string, repo: string, title: string, body: string) {
     const octokit = getOctokit();
     const { data } = await octokit.issues.create({ owner, repo, title, body });
     return data;
 }
 
+/** Récupère les sous-issues d'une issue */
 export async function getSubIssues(owner: string, repo: string, number: number) {
     const octokit = getOctokit();
     const { data } = await octokit.request(
@@ -94,6 +102,7 @@ export async function getSubIssues(owner: string, repo: string, number: number) 
     return data as Array<{ number: number; title: string; state: string }>;
 }
 
+/** Liste les dépôts accessibles à l'installation */
 export async function listAccessibleRepos() {
     const octokit = getOctokit();
     const { data } = await octokit.apps.listReposAccessibleToInstallation({ per_page: 100 });
@@ -105,12 +114,14 @@ export async function listAccessibleRepos() {
     }));
 }
 
+/** Trouve une PR ouverte entre deux branches */
 export async function findOpenPullRequest(owner: string, repo: string, head: string, base: string) {
     const octokit = getOctokit();
     const { data } = await octokit.pulls.list({ owner, repo, state: "open", head: `${owner}:${head}`, base });
     return data[0] ?? null;
 }
 
+/** Crée une PR GitHub entre deux branches */
 export async function createPullRequest(
     owner: string, repo: string,
     title: string, body: string,
@@ -121,17 +132,20 @@ export async function createPullRequest(
     return data;
 }
 
+/** Merge une PR par squash */
 export async function mergePullRequest(owner: string, repo: string, pullNumber: number) {
     const octokit = getOctokit();
     const { data } = await octokit.pulls.merge({ owner, repo, pull_number: pullNumber, merge_method: "squash" });
     return data;
 }
 
+/** Ferme une issue GitHub */
 export async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
     const octokit = getOctokit();
     await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
 }
 
+/** Ajoute un commentaire à une issue */
 export async function createIssueComment(issueNumber: number, body: string) {
     const { getCurrentProject } = await import("./projects");
     const project = getCurrentProject();

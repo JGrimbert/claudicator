@@ -3,6 +3,7 @@ import { getTask, updateTask } from "$lib/server/services/tasks";
 import { pushBranch } from "$lib/server/services/git";
 import { getProjectRoot } from "$lib/server/services/projects";
 
+/** Pousse la branche d'une tâche vers le remote */
 export async function POST({ params }) {
     const task = getTask(params.id);
     if (!task) return json({ error: "Task introuvable" }, { status: 404 });

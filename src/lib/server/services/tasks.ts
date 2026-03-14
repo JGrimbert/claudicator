@@ -41,10 +41,12 @@ export function getTasksDir(): string {
     return id === "default" ? ".agent/tasks" : path.join(".agent/tasks", id);
 }
 
+/** Crée le dossier tasks si absent */
 function ensureDir() {
     fs.mkdirSync(getTasksDir(), { recursive: true });
 }
 
+/** Chemin vers le fichier JSON d'une task */
 function taskPath(id: string) {
     return path.join(getTasksDir(), `${id}.json`);
 }
@@ -69,6 +71,7 @@ function migrateTaskStatus(raw: any): Task {
     return task;
 }
 
+/** Liste toutes les tasks triées par date */
 export function listTasks(): Task[] {
     ensureDir();
     const dir = getTasksDir();
@@ -82,12 +85,14 @@ export function listTasks(): Task[] {
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/** Charge une task par son identifiant */
 export function getTask(id: string): Task | null {
     const p = taskPath(id);
     if (!fs.existsSync(p)) return null;
     return migrateTaskStatus(JSON.parse(fs.readFileSync(p, "utf-8")));
 }
 
+/** Crée une task (déduplique par numéro d'issue) */
 export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issueNumber" | "branch">>): Task {
     ensureDir();
     if (data.issueNumber !== undefined) {
@@ -108,6 +113,7 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
     return task;
 }
 
+/** Met à jour les champs d'une task */
 export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage">>): Task | null {
     const task = getTask(id);
     if (!task) return null;
@@ -116,6 +122,7 @@ export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "log
     return updated;
 }
 
+/** Supprime le fichier d'une task */
 export function deleteTask(id: string): boolean {
     const p = taskPath(id);
     if (!fs.existsSync(p)) return false;

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, notifyTaskCreated, agentRunState, planModeTask } from "$lib/stores/agent";
+    import { agentState, agentRunState, planModeTask, consoleTab } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import ContextViewer from "$lib/components/ContextViewer.svelte";
 
@@ -23,7 +23,6 @@
             }
         });
         loadStats();
-        loadTodos();
         loadMethods();
     });
 
@@ -96,11 +95,6 @@
     };
     type GrepResult = { file: string; line: number; content: string; };
 
-    // Résultats TODO (chargés au montage, indépendants)
-    let todoGrep:    GrepResult[]   = [];
-    let todoMethods: SearchResult[] = [];
-    let todoLoading  = false;
-
     // Résultats de la recherche utilisateur
     let searchQuery   = "";
     let queryLabel    = "";
@@ -129,7 +123,8 @@
     }
 
     // ─── Onglet actif ─────────────────────────────────────────────────────────
-    let activeTab = "codebase";
+    let activeTab = $consoleTab;
+    $: consoleTab.set(activeTab);
 
     // Dérive les méthodes filtrées selon l'onglet actif
     $: filteredMethods = (() => {
@@ -159,7 +154,6 @@
                 t.push({ id: `role:${role}`, label: role, count });
             }
         }
-        t.push({ id: "todo",  label: "todo",  count: todoGrep.length || (todoLoading ? "…" : 0) });
         t.push({ id: "codebase", label: "codebase", count: "" });
         t.push({ id: "documentation", label: "docs", count: files.length });
         t.push({ id: "symbols", label: "symboles", count: "" });
@@ -174,17 +168,6 @@
             body: JSON.stringify({ query: q })
         });
         return res.json();
-    }
-
-    async function loadTodos() {
-        todoLoading = true;
-        try {
-            const data = await fetchSearch("TODO");
-            todoGrep    = data.grepResults ?? [];
-            todoMethods = data.grepMethods ?? [];
-        } catch { /* silencieux */ } finally {
-            todoLoading = false;
-        }
     }
 
     async function search() {
@@ -213,50 +196,6 @@
         if (e.key === "Enter") search();
     }
 
-    // ─── Créer une task depuis un TODO ────────────────────────────────────────
-    let creatingTodo: Record<string, boolean> = {};
-    let createdTodo:  Record<string, boolean> = {};
-
-    async function createTaskFromTodo(g: GrepResult) {
-        const key = `${g.file}:${g.line}`;
-        if (creatingTodo[key] || createdTodo[key]) return;
-        creatingTodo = { ...creatingTodo, [key]: true };
-        try {
-            const rawTitle = g.content.trim()
-                .replace(/^(\/\/|\/\*+)\s*TODO:?\s*/i, "")
-                .replace(/\*\/\s*$/, "")
-                .trim();
-            const title = (rawTitle || g.content.trim()).slice(0, 120);
-
-            const match = g.content.match(/#(\d+)/);
-            let issueNumber: number | undefined;
-
-            if (match) {
-                issueNumber = Number(match[1]);
-            } else {
-                const res = await fetch("/api/github/issues", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        title: title.slice(0, 80),
-                        body: `Trouvé dans \`${g.file}:${g.line}\`\n\n\`\`\`\n${g.content.trim()}\n\`\`\``
-                    })
-                });
-                const data = await res.json();
-                if (data.number) issueNumber = data.number;
-            }
-
-            await fetch("/api/tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, issueNumber })
-            });
-            createdTodo = { ...createdTodo, [key]: true };
-            notifyTaskCreated();
-        } catch { /* silencieux */ } finally {
-            creatingTodo = { ...creatingTodo, [key]: false };
-        }
-    }
 
 </script>
 
@@ -317,27 +256,17 @@
 
         {#if searchError && activeTab === "query"}
             <p class="err-line">{searchError}</p>
-        {:else if activeTab === "todo" || activeTab === "query"}
-            {@const grep    = activeTab === "todo" ? todoGrep    : queryGrep}
-            {@const methods = activeTab === "todo" ? todoMethods : queryMethods}
-            {@const sem     = activeTab === "todo" ? []          : querySemantic}
+        {:else if activeTab === "query"}
+            {@const grep    = queryGrep}
+            {@const methods = queryMethods}
+            {@const sem     = querySemantic}
             <div class="result-area">
                 {#if grep.length > 0}
                     <div class="result-list grouped">
                         {#each grep as g}
-                            {@const key = `${g.file}:${g.line}`}
                             <div class="grep-item">
                                 <div class="grep-item-top">
                                     <span class="grep-file">{g.file}<span class="grep-line">:{g.line}</span></span>
-                                    {#if activeTab === "todo"}
-                                        <button
-                                            class="todo-task-btn"
-                                            class:done={createdTodo[key]}
-                                            onclick={() => createTaskFromTodo(g)}
-                                            disabled={creatingTodo[key] || createdTodo[key]}
-                                            title="Créer une task depuis ce TODO"
-                                        >{createdTodo[key] ? "✓" : creatingTodo[key] ? "…" : "→ Task"}</button>
-                                    {/if}
                                 </div>
                                 <span class="grep-content">{g.content}</span>
                             </div>
@@ -713,21 +642,6 @@
     white-space: pre-wrap;
     word-break: break-all;
 }
-.todo-task-btn {
-    background: none;
-    border: 1px solid #2a2a2a;
-    color: #444;
-    font-size: 0.6rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.1s, border-color 0.1s;
-}
-.todo-task-btn:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
-.todo-task-btn.done { color: #4caf50; border-color: #4caf50; }
-.todo-task-btn:disabled { opacity: 0.5; cursor: default; }
 .result-list::-webkit-scrollbar { width: 6px; }
 .result-list::-webkit-scrollbar-track { background: transparent; }
 .result-list::-webkit-scrollbar-thumb {

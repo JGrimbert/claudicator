@@ -15,6 +15,156 @@
     let createLoading = false;
     let createFeedback = "";
 
+    // ── Roadmaps nommées ──────────────────────────────────────────────────
+    let roadmaps: Array<{ id: string; name: string; updatedAt: string }> = [];
+    let showNewRoadmap = false;
+    let newRoadmapName = "";
+
+    async function loadRoadmaps() {
+        try {
+            const r = await fetch("/api/issues/roadmaps");
+            if (r.ok) roadmaps = await r.json();
+        } catch { /* silencieux */ }
+    }
+
+    async function onRoadmapChange(e: Event) {
+        const select = e.target as HTMLSelectElement;
+        const val = select.value;
+        if (val === "__new__") {
+            select.value = $issueAnalysis.roadmapId ?? "";
+            showNewRoadmap = true;
+            return;
+        }
+        issueAnalysis.update(s => ({ ...s, roadmapId: val || null, result: null, logs: [] }));
+        mermaidRendered = false;
+        const url = val ? `/api/issues/analysis?id=${val}` : "/api/issues/analysis";
+        try {
+            const r = await fetch(url);
+            if (r.ok) {
+                const text = await r.text();
+                if (text.trim()) issueAnalysis.update(s => ({ ...s, result: text }));
+            }
+        } catch { /* silencieux */ }
+    }
+
+    async function createNewRoadmap() {
+        if (!newRoadmapName.trim()) return;
+        const slug = newRoadmapName.trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+        showNewRoadmap = false;
+        newRoadmapName = "";
+        issueAnalysis.update(s => ({ ...s, roadmapId: slug, result: null, logs: [], running: true, dismissed: false }));
+        mermaidRendered = false;
+        try {
+            const res = await fetch("/api/issues/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ roadmapId: slug })
+            });
+            if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, running: false })); return; }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+                    try {
+                        const entry = JSON.parse(part.slice(5).trim());
+                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
+                    } catch { /* ignore */ }
+                }
+            }
+        } finally {
+            try {
+                const r = await fetch(`/api/issues/analysis?id=${slug}`);
+                if (r.ok) {
+                    const text = await r.text();
+                    if (text.trim()) {
+                        issueAnalysis.update(s => ({ ...s, running: false, result: text }));
+                        await loadRoadmaps();
+                        return;
+                    }
+                }
+            } catch { /* silencieux */ }
+            issueAnalysis.update(s => ({ ...s, running: false }));
+        }
+    }
+
+    // ── Console chat agent roadmap ────────────────────────────────────────
+    let chatMessage = "";
+    let focusedGroup: Group | null = null;
+    let focusInstruction = "";
+
+    function focusGroup(group: Group) {
+        if (focusedGroup?.name === group.name) {
+            focusedGroup = null;
+            focusInstruction = "";
+        } else {
+            focusedGroup = group;
+            focusInstruction = "";
+        }
+    }
+
+    async function sendFocusMessage(group: Group) {
+        if (!focusInstruction.trim()) return;
+        chatMessage = `Approfondis le groupe "${group.name}" (issues ${group.issues.map(n => `#${n}`).join(", ")}) : ${focusInstruction}`;
+        focusedGroup = null;
+        focusInstruction = "";
+        await sendChat();
+    }
+
+    async function sendChat() {
+        if (!chatMessage.trim() || $issueAnalysis.chatRunning) return;
+        const msg = chatMessage.trim();
+        chatMessage = "";
+        issueAnalysis.update(s => ({ ...s, chatRunning: true, logs: [] }));
+        mermaidRendered = false;
+        try {
+            const res = await fetch("/api/issues/roadmap/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: msg, roadmapId: $issueAnalysis.roadmapId ?? undefined })
+            });
+            if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, chatRunning: false })); return; }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            const newAgentLines: string[] = [];
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+                    try {
+                        const entry = JSON.parse(part.slice(5).trim());
+                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
+                        if (entry.type === "agent") newAgentLines.push(entry.line);
+                    } catch { /* ignore */ }
+                }
+            }
+            if (newAgentLines.length > 0) {
+                issueAnalysis.update(s => ({ ...s, result: newAgentLines.join("\n"), chatRunning: false }));
+            } else {
+                issueAnalysis.update(s => ({ ...s, chatRunning: false }));
+            }
+        } catch {
+            issueAnalysis.update(s => ({ ...s, chatRunning: false }));
+        }
+    }
+
+    function onChatKeydown(e: KeyboardEvent) {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+    }
+
     // ── Tasks pour coloriser les chips ────────────────────────────────────
     let issueTaskStatus = new Map<number, string>();
 
@@ -34,6 +184,7 @@
         spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80);
         loadResult();
         loadTaskStatuses();
+        loadRoadmaps();
     });
     onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
@@ -299,10 +450,12 @@
     }
 
     function dismiss() {
-        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, updating: false, snapshotDiff: null }));
+        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, updating: false, chatRunning: false, snapshotDiff: null }));
         mermaidRendered = false;
         createFeedback = "";
         groupFeedback = {};
+        focusedGroup = null;
+        chatMessage = "";
     }
 
     // ── Parser les groupes depuis le texte Markdown de l'analyse ──────────
@@ -514,20 +667,45 @@
     $: lastStatus  = systemLogs.length > 0 ? systemLogs[systemLogs.length - 1].line : "";
     $: groups = $issueAnalysis.result ? parseGroups($issueAnalysis.result) : [];
     $: planLogs = $agentRunState.logs.filter(l => l.type !== "usage" && !/^\[pid:\d+\]$/.test(l.line));
-    $: isActive = $issueAnalysis.running || $issueAnalysis.updating;
+    $: isActive = $issueAnalysis.running || $issueAnalysis.updating || $issueAnalysis.chatRunning;
+    $: activeLabel = $issueAnalysis.chatRunning ? "Raffinement de la roadmap" : $issueAnalysis.updating ? "Intégration des issues" : "Analyse des issues";
+    $: activeHint  = $issueAnalysis.chatRunning ? "Raffinement en cours…" : $issueAnalysis.updating ? "Intégration des nouvelles issues…" : "Initialisation de l'analyse…";
 </script>
 
 <div class="analysis">
     <div class="analysis-header">
         <span class="dot" class:running={isActive}></span>
-        <span class="label">{$issueAnalysis.updating ? "Intégration des issues" : "Analyse des issues"}</span>
+        <span class="label">{activeLabel}</span>
+        {#if roadmaps.length > 0 || $issueAnalysis.roadmapId || $issueAnalysis.result}
+            <div class="roadmap-selector">
+                <select onchange={onRoadmapChange} value={$issueAnalysis.roadmapId ?? ""} disabled={isActive}>
+                    <option value="">Analyse par défaut</option>
+                    {#each roadmaps as rm}
+                        <option value={rm.id}>{rm.name}</option>
+                    {/each}
+                    <option value="__new__">＋ Nouvelle…</option>
+                </select>
+            </div>
+        {/if}
+        {#if showNewRoadmap}
+            <div class="new-roadmap-input">
+                <input
+                    bind:value={newRoadmapName}
+                    placeholder="Nom de la roadmap…"
+                    onkeydown={(e) => { if (e.key === "Enter") createNewRoadmap(); if (e.key === "Escape") { showNewRoadmap = false; newRoadmapName = ""; } }}
+                    autofocus
+                />
+                <button onclick={createNewRoadmap} disabled={!newRoadmapName.trim()}>→</button>
+                <button onclick={() => { showNewRoadmap = false; newRoadmapName = ""; }}>✕</button>
+            </div>
+        {/if}
     </div>
 
     {#if isActive}
         <!-- Console de logs temps réel -->
         <div class="log-area" bind:this={logArea} onscroll={onScroll}>
             {#if visibleLogs.length === 0}
-                <span class="hint blink">{FRAMES[frame]} {$issueAnalysis.updating ? "Intégration des nouvelles issues…" : "Initialisation de l'analyse…"}</span>
+                <span class="hint blink">{FRAMES[frame]} {activeHint}</span>
             {:else}
                 {#each visibleLogs as entry}
                     <div class="log-line" class:sys={entry.type === "system"}>{entry.line}</div>
@@ -564,12 +742,29 @@
                                         <span class="group-dep">après {group.dependsOn.join(", ")}</span>
                                     {/if}
                                     <button
+                                        class="btn-focus"
+                                        onclick={() => focusGroup(group)}
+                                        title="Instruction ciblée sur ce groupe"
+                                        class:active={focusedGroup?.name === group.name}
+                                    >⊙</button>
+                                    <button
                                         class="btn-group-tasks"
                                         onclick={() => createGroupTasks(group)}
                                         disabled={createLoading}
                                         title="Créer les tasks pour ce groupe"
                                     >{groupFeedback[group.name] ?? "＋ Tasks"}</button>
                                 </div>
+                                {#if focusedGroup?.name === group.name}
+                                    <div class="focus-input">
+                                        <input
+                                            bind:value={focusInstruction}
+                                            placeholder="Instruction spécifique pour ce groupe…"
+                                            onkeydown={(e) => { if (e.key === "Enter") sendFocusMessage(group); if (e.key === "Escape") { focusedGroup = null; } }}
+                                            autofocus
+                                        />
+                                        <button onclick={() => sendFocusMessage(group)} disabled={!focusInstruction.trim()}>→</button>
+                                    </div>
+                                {/if}
                                 {#if group.summary}
                                     <div class="group-summary">{group.summary}</div>
                                 {/if}
@@ -629,6 +824,21 @@
                 {/each}
             </div>
         {/if}
+
+        <div class="chat-console" class:chat-running={$issueAnalysis.chatRunning}>
+            <textarea
+                bind:value={chatMessage}
+                placeholder="Instruction pour l'agent roadmap…"
+                disabled={$issueAnalysis.chatRunning}
+                onkeydown={onChatKeydown}
+                rows="2"
+            ></textarea>
+            <button
+                class="chat-send"
+                onclick={sendChat}
+                disabled={$issueAnalysis.chatRunning || !chatMessage.trim()}
+            >{$issueAnalysis.chatRunning ? FRAMES[frame] : "→"}</button>
+        </div>
 
     {:else}
         <div class="empty">
@@ -1040,4 +1250,138 @@
     justify-content: center;
     padding: 2rem;
 }
+/* ── Roadmap selector ── */
+.roadmap-selector select {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: #555;
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    outline: none;
+    max-width: 130px;
+}
+.roadmap-selector select:disabled { opacity: 0.4; cursor: default; }
+.new-roadmap-input {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.new-roadmap-input input {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
+    color: var(--text-primary);
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    width: 120px;
+}
+.new-roadmap-input button {
+    background: none;
+    border: 1px solid var(--border);
+    color: #555;
+    font-size: 0.65rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+}
+.new-roadmap-input button:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent); }
+.new-roadmap-input button:disabled { opacity: 0.4; cursor: default; }
+/* ── Focus button ── */
+.btn-focus {
+    background: none;
+    border: 1px solid transparent;
+    color: #333;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s;
+}
+.btn-focus:hover { color: #7c6af7; border-color: #3a2a5a; }
+.btn-focus.active { color: #7c6af7; border-color: #3a2a5a; }
+.focus-input {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-top: 1px solid var(--border);
+    background: #0e0e1a;
+}
+.focus-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-strong);
+    color: var(--text-primary);
+    font-size: 0.62rem;
+    padding: 0.1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+}
+.focus-input button {
+    background: none;
+    border: 1px solid var(--border);
+    color: #555;
+    font-size: 0.65rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+}
+.focus-input button:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent); }
+.focus-input button:disabled { opacity: 0.4; cursor: default; }
+/* ── Chat console ── */
+.chat-console {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-panel);
+    flex-shrink: 0;
+}
+.chat-console.chat-running { opacity: 0.6; }
+.chat-console textarea {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.5rem;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+}
+.chat-console textarea:focus { border-color: var(--accent); }
+.chat-console textarea::placeholder { color: var(--border-strong); }
+.chat-send {
+    background: #1a1040;
+    border: 1px solid #4a3a8a;
+    color: #9181f9;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+    align-self: flex-end;
+    transition: background 0.15s;
+    min-width: 2.2rem;
+    text-align: center;
+}
+.chat-send:hover:not(:disabled) { background: #251850; }
+.chat-send:disabled { opacity: 0.4; cursor: default; }
 </style>

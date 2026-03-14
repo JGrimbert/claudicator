@@ -5,10 +5,12 @@ import {
     GLOBAL_IGNORE_DIRS,
 } from "$lib/server/services/project-config";
 
+/** Retourne la configuration projet courante */
 export async function GET() {
     return json({ ...getProjectConfig(), globalIgnoreDirs: GLOBAL_IGNORE_DIRS });
 }
 
+/** Met à jour la configuration projet */
 export async function PATCH({ request }) {
     try {
         const body = await request.json();

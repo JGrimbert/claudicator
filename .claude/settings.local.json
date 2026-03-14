@@ -25,7 +25,13 @@
       "Bash(for f in \"C:/claudicator/src/routes/api/github/issues/+server.ts\" \"C:/claudicator/src/routes/api/issue/+server.ts\" \"C:/claudicator/src/routes/api/repo-file/+server.ts\")",
       "Bash(find:*)",
       "Bash(for f:*)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(ls -la \"C:\\\\claudicator\\\\src\\\\routes\\\\api\\\\issues\\\\\" 2>/dev/null || echo \"Directory does not exist or is not accessible\")",
+      "Bash(cd C:/claudicator && npx svelte-kit sync 2>&1 | head -20 && node_modules/.bin/tsc --noEmit 2>&1 | head -60)",
+      "Bash(cd C:/claudicator && npx vite build 2>&1 | tail -30)",
+      "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|warning|✓|✗\\)\" | head -20)",
+      "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|Error|warning|✓|✗\\)\" | head -20)",
+      "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|Error|✓|✗\\)\" | head -10)"
     ]
   }
 }

@@ -5,6 +5,7 @@ import { getIssue, getSubIssues } from "$lib/server/services/github";
 
 
 
+/** Récupère une issue GitHub avec ses sous-issues */
 export async function GET({ url }) {
     const number = Number(url.searchParams.get("number"));
 
@@ -34,6 +35,7 @@ export async function GET({ url }) {
     });
 }
 
+/** Génère un plan pour une issue donnée */
 export async function POST({ request }) {
     const { issue } = await request.json();
     const result = await createIssuePlan(issue);

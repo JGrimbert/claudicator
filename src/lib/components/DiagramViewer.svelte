@@ -151,7 +151,57 @@
 
     onDestroy(() => { editor?.dispose(); });
 
-    onMount(load);
+    // ── Agent de commentaire ───────────────────────────────────────────────
+    let commentRunning = false;
+    let commentLogs: string[] = [];
+    let commentDone = false;
+    let undescribedCount = 0;
+
+    async function loadUndescribedCount() {
+        try {
+            const res = await fetch("/api/cartography/comment");
+            if (res.ok) { undescribedCount = (await res.json()).undescribed ?? 0; }
+        } catch { /* silencieux */ }
+    }
+
+    async function startCommentAgent(limit = 500) {
+        if (commentRunning) return;
+        commentRunning = true;
+        commentLogs = [];
+        commentDone = false;
+        try {
+            const res = await fetch("/api/cartography/comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ limit }),
+            });
+            if (!res.ok || !res.body) { commentRunning = false; return; }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+                    try {
+                        const { line } = JSON.parse(part.slice(5).trim());
+                        commentLogs = [...commentLogs, line].slice(-12);
+                    } catch { /* ignore */ }
+                }
+            }
+            commentDone = true;
+            await loadUndescribedCount();
+            await load(); // recharger le diagramme avec les nouvelles descriptions
+        } finally {
+            commentRunning = false;
+        }
+    }
+
+    onMount(async () => { await load(); await loadUndescribedCount(); });
 
     async function load() {
         loading = true; error = "";
@@ -286,6 +336,42 @@
             {/each}
         </div>
 
+        <!-- ── Agent commentaire ────────────────────────────────── -->
+        {#if commentRunning || undescribedCount > 0 || commentDone}
+            <div class="dv-comment-bar" class:dv-comment-bar--expanded={commentRunning || commentDone}>
+                {#if commentRunning}
+                    <div class="dv-comment-header">
+                        <span class="dv-comment-status">⠿ En cours…</span>
+                    </div>
+                    <div class="dv-comment-log">
+                        {#each commentLogs.slice(-8) as log}
+                            <div class="dv-clog-line" class:dv-clog-error={log.startsWith("⚠")}>{log}</div>
+                        {/each}
+                    </div>
+                {:else if commentDone}
+                    <div class="dv-comment-header">
+                        <span class="dv-comment-status ok">✓ {commentLogs[commentLogs.length - 1] ?? "Terminé"}</span>
+                        {#if undescribedCount > 0}
+                            <span class="dv-comment-count">{undescribedCount} restantes</span>
+                            <button class="dv-comment-btn" onclick={() => startCommentAgent()}>Relancer</button>
+                        {/if}
+                    </div>
+                    {#if commentLogs.some(l => l.startsWith("⚠"))}
+                        <div class="dv-comment-log">
+                            {#each commentLogs.filter(l => l.startsWith("⚠")) as log}
+                                <div class="dv-clog-line dv-clog-error">{log}</div>
+                            {/each}
+                        </div>
+                    {/if}
+                {:else}
+                    <span class="dv-comment-count">{undescribedCount} méthode{undescribedCount > 1 ? "s" : ""} sans description</span>
+                    <button class="dv-comment-btn" onclick={() => startCommentAgent()}>
+                        Commenter avec Claude
+                    </button>
+                {/if}
+            </div>
+        {/if}
+
         <!-- ── Role legend ───────────────────────────────────────── -->
         <div class="dv-legend">
             {#each Object.entries(RC).filter(([r]) => r !== 'internal') as [role, color]}
@@ -330,6 +416,72 @@
     color: #777;
 }
 
+
+/* ── Agent commentaire ── */
+.dv-comment-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.28rem 0.9rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-panel);
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 1.8rem;
+}
+.dv-comment-bar--expanded {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.4rem 0.9rem;
+}
+.dv-comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.dv-comment-count {
+    font-size: 0.57rem;
+    color: #555;
+    flex: 1;
+}
+.dv-comment-status {
+    font-size: 0.57rem;
+    color: #555;
+    font-style: italic;
+}
+.dv-comment-status.ok { color: #4caf50; font-style: normal; }
+.dv-comment-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.6rem;
+    color: #666;
+    max-height: 6rem;
+    overflow-y: auto;
+}
+.dv-clog-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dv-clog-error {
+    color: #f97316;
+}
+.dv-comment-btn {
+    background: #1a1040;
+    border: 1px solid #4a3a8a;
+    color: #9181f9;
+    font-size: 0.57rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.dv-comment-btn:hover { background: #251850; }
 
 /* Role legend (footer) */
 .dv-legend {

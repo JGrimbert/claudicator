@@ -7,6 +7,8 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
+    import RunConsole from "$lib/components/RunConsole.svelte";
+    import IssuesTodoPanel from "$lib/components/IssuesTodoPanel.svelte";
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady, taskRefreshTick, type RunLog } from "$lib/stores/agent";
 
     let activeMiddleTab: "roadmap" | "plan" = "roadmap";
@@ -527,7 +529,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
                 onmousedown={startDragV}
                 class:active={draggingV}
             ></div>
-            <IssueList />
+            <IssuesTodoPanel />
         </aside>
         <div
             class="handle"
@@ -571,7 +573,11 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             ></div>
             <!-- ── CARTO (bas) ── -->
             <div class="main-carto">
-                <AgentConsole />
+                {#if $agentRunState.taskId !== null}
+                    <RunConsole />
+                {:else}
+                    <AgentConsole />
+                {/if}
             </div>
             <!-- ── Input global : stdin (en cours) ou suivi (session active) ── -->
             {#if $agentRunState.running || $agentRunState.sessionAlive}

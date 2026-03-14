@@ -2,7 +2,7 @@
     import type { Snippet } from 'svelte';
     import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
 
-    type Task = { id: string; title: string };
+    type Task = { id: string; title: string; issueNumber?: number };
     type Section = { key: string; content: string };
 
     let {
@@ -198,15 +198,18 @@
     <div class="prompt-pane">
 
         <div class="ai-header">
-            <span class="ai-label">Prompt agent</span>
+            <span class="ai-label">
+                {#if task.issueNumber}<span class="ai-issue">#{task.issueNumber}</span>{/if}
+                {task.title}
+            </span>
             {#if loadingContext}
                 <span class="ai-hint">Chargement…</span>
             {:else if contextError}
                 <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
             {:else if mode === "impl"}
-                <span class="ai-hint plan">Implémentation</span>
+                <span class="ai-hint plan">impl</span>
             {:else}
-                <span class="ai-hint">Spécification</span>
+                <span class="ai-hint">spec</span>
             {/if}
             <button
                 class="ai-reload"
@@ -328,10 +331,19 @@
     flex-shrink: 0;
 }
 .ai-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #333;
+    font-size: 0.6rem;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+.ai-issue {
+    color: #7c6af7;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    margin-right: 0.3rem;
 }
 .ai-hint {
     font-size: 0.6rem;
@@ -341,8 +353,8 @@
 .ai-hint.err  { color: #7a2a2a; }
 .ai-hint.plan { color: #4a7a4a; }
 .ai-reload {
-    margin-left: auto;
     background: none;
+    flex-shrink: 0;
     border: none;
     color: #2a2a2a;
     font-size: 0.85rem;

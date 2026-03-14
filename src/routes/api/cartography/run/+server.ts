@@ -12,6 +12,7 @@ const ALLOWED_CMDS: Record<string, string[]> = {
     "stats":       ["annotate", "stats"],
 };
 
+/** Lance une commande cartographie autorisée en SSE */
 export async function POST({ request }) {
     const { cmd } = await request.json();
     const args = ALLOWED_CMDS[cmd];
