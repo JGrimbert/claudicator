@@ -70,8 +70,6 @@
     // Plan
     let planContent: string | null = null;
     let planLoading = false;
-    let implEdit = "";
-    let initialCommitting = false;
 
     // Diff / commit
     let diffContent: string | null = null;
@@ -332,7 +330,6 @@
             const res = await fetch(`/api/tasks/${taskId}/plan`);
             const data = await res.json();
             planContent = data.content ?? null;
-            if (planContent) implEdit = planContent;
         } catch { planContent = null; }
         finally { planLoading = false; }
     }
@@ -359,14 +356,14 @@
     async function selectTask(initialTask: Task) {
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
-            implEdit = ""; commitMsg = ""; selectedPanel = "plan"; wfError = "";
+            commitMsg = ""; selectedPanel = "plan"; wfError = "";
             localStorage.removeItem(SELECTED_KEY);
             return;
         }
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
         planContent = null; diffContent = null;
-        implEdit = ""; commitMsg = ""; wfError = ""; revertConfirm = false;
+        commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
         linkedIssueState = null;
         const taskFilter = statusToFilter(initialTask.status);
@@ -415,57 +412,6 @@
         }
     }
 
-    async function clickImplement(task: Task) {
-        if (!implEdit.trim() || $agentRunState.running) return;
-        wfError = "";
-
-        // Initial commit si pas encore de branche
-        if (!task.branch) {
-            initialCommitting = true;
-            try {
-                const res = await fetch(`/api/tasks/${task.id}/initial-commit`, { method: "POST" });
-                const data = await res.json();
-                if (data.error && res.status !== 409) { wfError = data.error; return; }
-                await loadTasks();
-            } finally {
-                initialCommitting = false;
-            }
-        }
-
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false });
-        try {
-            const res = await fetch("/api/agent/run", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ plan: implEdit, taskId: task.id })
-            });
-            if (!res.ok || !res.body) { agentRunState.update(s => ({ ...s, running: false })); return; }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                for (const raw of dec.decode(value).split("\n")) {
-                    if (!raw.startsWith("data: ")) continue;
-                    try {
-                        const event = JSON.parse(raw.slice(6));
-                        if (event.type === "session_status") {
-                            agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
-                        } else {
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
-                        }
-                    } catch { /* ligne vide */ }
-                }
-            }
-        } finally {
-            agentRunState.update(s => ({ ...s, running: false }));
-            taskRefreshTick.update(n => n + 1);
-            if (selected?.id === task.id) {
-                await loadDiff(task.id);
-                selectedPanel = "commit";
-            }
-        }
-    }
 
     async function commitChanges(task: Task) {
         if (!commitMsg.trim() || committing) return;
@@ -531,7 +477,6 @@
             selected = null;
             planContent = null;
             diffContent = null;
-            implEdit = "";
             commitMsg = "";
             localStorage.removeItem(SELECTED_KEY);
             await loadTasks();
@@ -668,41 +613,19 @@
                             {/if}
 
                         {:else if selectedPanel === "implement"}
-                            <div class="impl-panel">
-                                <textarea
-                                    class="impl-textarea"
-                                    bind:value={implEdit}
-                                    rows={10}
-                                    placeholder={planLoading ? "Chargement du plan…" : "Coller ou écrire le plan…"}
-                                    disabled={planLoading}
-                                ></textarea>
-                                <div class="impl-footer">
-                                    {#if task.branch}
-                                        <button
-                                            class="impl-skip"
-                                            onclick={() => selectedPanel = "commit"}
-                                        >→ Commiter</button>
-                                    {:else if planContent}
-                                        <button
-                                            class="impl-skip"
-                                            onclick={() => createBranchAndShowDiff(task)}
-                                            disabled={branchCreating}
-                                        >{branchCreating ? "Création branche…" : "→ Créer branche + diff"}</button>
-                                    {/if}
+                            <div class="impl-actions">
+                                {#if task.branch}
                                     <button
-                                        class="impl-launch"
-                                        onclick={() => clickImplement(task)}
-                                        disabled={!implEdit.trim() || $agentRunState.running || initialCommitting}
-                                    >
-                                        {#if initialCommitting}
-                                            Création branche…
-                                        {:else if $agentRunState.running}
-                                            En cours…
-                                        {:else}
-                                            <span class="impl-launch-label">Lancer l'agent</span><span class="impl-launch-arrow"> →</span>
-                                        {/if}
-                                    </button>
-                                </div>
+                                        class="impl-skip"
+                                        onclick={() => selectedPanel = "commit"}
+                                    >→ Commiter</button>
+                                {:else if planContent}
+                                    <button
+                                        class="impl-skip"
+                                        onclick={() => createBranchAndShowDiff(task)}
+                                        disabled={branchCreating}
+                                    >{branchCreating ? "Création branche…" : "→ Créer branche + diff"}</button>
+                                {/if}
                                 {#if task.implUsage}
                                     <PromptUsage usage={task.implUsage} totalUsage={task.totalUsage} label="Implémentation" />
                                 {/if}
@@ -1020,24 +943,14 @@
 }
 
 /* ── Panneau Implémenter ── */
-.impl-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
-.impl-textarea {
-    background: var(--bg-deep);
-    border: none;
-    border-bottom: 1px solid var(--border);
-    color: #777;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    line-height: 1.55;
+.impl-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.5rem 1rem;
-    resize: vertical;
-    outline: none;
-    min-height: 80px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
 }
-.impl-textarea:focus { color: #bbb; }
-.impl-textarea::placeholder { color: var(--border-strong); }
-.impl-textarea:disabled { opacity: 0.5; cursor: wait; }
-.impl-footer { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; flex-shrink: 0; }
 .impl-skip {
     margin-right: auto;
     background: none;
@@ -1051,22 +964,7 @@
     transition: color 0.1s, border-color 0.1s;
 }
 .impl-skip:hover { color: #7cbf7c; border-color: #4a7a4a; }
-.impl-launch {
-    background: #1e1540;
-    border: 1px solid #3a2e70;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    padding: 0.3rem 0.9rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.03em;
-    display: inline-flex;
-    align-items: center;
-}
-.impl-launch-label { color: var(--color-impl); }
-.impl-launch-arrow { color: #fff; }
-.impl-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
-.impl-launch:disabled { opacity: 0.35; cursor: default; }
+.impl-skip:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Panneau Commit ── */
 .commit-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }

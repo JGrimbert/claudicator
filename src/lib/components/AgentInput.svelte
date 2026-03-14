@@ -1,22 +1,35 @@
 <script lang="ts">
+    import type { Snippet } from 'svelte';
     import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
 
     type Task = { id: string; title: string };
     type Section = { key: string; content: string };
 
-    let { task, projectRoot = "" }: { task: Task; projectRoot?: string } = $props();
+    let {
+        task,
+        projectRoot = "",
+        mode = "spec",
+        footerExtra,
+        onBeforeLaunch,
+        onLaunchComplete,
+    }: {
+        task: Task;
+        projectRoot?: string;
+        mode?: "spec" | "impl";
+        footerExtra?: Snippet;
+        onBeforeLaunch?: () => Promise<boolean>;
+        onLaunchComplete?: () => void;
+    } = $props();
 
     // ── State ──────────────────────────────────────────────────────────────────
     let loadingContext = $state(false);
     let contextError   = $state("");
     let loadedId       = $state("");
-    let hasPlan        = $state(false);
+    let preLaunching   = $state(false);
 
-    // Champs éditables (Row 1)
     let taskText = $state("");
-    let descText = $state("");
+    let planMode = $state(true);
 
-    // Sections parsées (pour affichage read-only)
     let sections = $state<Section[]>([]);
 
     // ── Parsing ────────────────────────────────────────────────────────────────
@@ -24,7 +37,8 @@
         'TASK', 'DESCRIPTION', 'OBJECTIF', 'CONTRAINTES',
         'FORMAT DU PLAN', 'DOCUMENTATION', 'ATLAS', 'CONCEPTS',
     ];
-    const ENRICH_KEYS  = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN', 'DOCUMENTATION', 'CONCEPTS']);
+    const PLAN_KEYS   = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN']);
+    const DOC_KEYS    = new Set(['DOCUMENTATION', 'CONCEPTS']);
     const ATLAS_SUB_KEYS = ['SYSTEM', 'MODULES', 'API ROUTES', 'DÉPENDANCES'];
 
     function parseByKeys(text: string, keys: string[]): Section[] {
@@ -45,7 +59,8 @@
     }
 
     // ── Dérivés ────────────────────────────────────────────────────────────────
-    let enrichSections = $derived(sections.filter(s => ENRICH_KEYS.has(s.key)));
+    let planSections = $derived(sections.filter(s => PLAN_KEYS.has(s.key)));
+    let docSections  = $derived(sections.filter(s => DOC_KEYS.has(s.key)));
 
     let atlasSubs = $derived.by(() => {
         const atlasSection = sections.find(s => s.key === 'ATLAS');
@@ -53,16 +68,16 @@
         return parseByKeys(atlasSection.content, ATLAS_SUB_KEYS);
     });
 
-    let hasAtlas   = $derived(sections.some(s => s.key === 'ATLAS'));
-    let atlasRaw   = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
+    let hasAtlas = $derived(sections.some(s => s.key === 'ATLAS'));
+    let atlasRaw = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
 
     // ── Assemblage prompt complet ──────────────────────────────────────────────
     function buildFullPrompt(): string {
         const parts: string[] = [];
         parts.push(`TASK\n${taskText.trim()}\n`);
-        if (descText.trim()) parts.push(`\nDESCRIPTION\n${descText.trim()}\n`);
+        const skipKeys = new Set(['TASK', 'DESCRIPTION', ...(planMode ? [] : ['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN'])]);
         for (const s of sections) {
-            if (s.key !== 'TASK' && s.key !== 'DESCRIPTION') {
+            if (!skipKeys.has(s.key)) {
                 parts.push(`\n${s.key}\n${s.content}\n`);
             }
         }
@@ -80,17 +95,17 @@
     async function loadContext(taskId: string) {
         loadingContext = true;
         contextError   = "";
-        hasPlan        = false;
+        taskText       = "";
+        sections       = [];
         try {
+            // Charger le plan existant dans taskText (spec et impl)
             const planRes  = await fetch(`/api/tasks/${taskId}/plan`);
             const planData = await planRes.json();
             if (planData.content) {
-                taskText  = planData.content;
-                descText  = "";
-                sections  = [];
-                hasPlan   = true;
-                return;
+                taskText = planData.content;
             }
+
+            // Charger le contexte enrichi dans tous les cas
             const res  = await fetch("/api/context", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -100,20 +115,19 @@
             const data = await res.json();
             if (data.error) {
                 contextError = data.error;
-                sections     = [];
-                taskText     = task.title;
-                descText     = "";
+                if (!taskText) taskText = task.title;
             } else {
                 const parsed = parseByKeys(data.prompt ?? task.title, TOP_KEYS);
-                sections     = parsed;
-                taskText     = parsed.find(s => s.key === 'TASK')?.content ?? task.title;
-                descText     = parsed.find(s => s.key === 'DESCRIPTION')?.content ?? "";
+                sections = parsed;
+                if (!taskText) {
+                    const taskContent = parsed.find(s => s.key === 'TASK')?.content ?? task.title;
+                    const descContent = parsed.find(s => s.key === 'DESCRIPTION')?.content ?? "";
+                    taskText = descContent ? `${taskContent}\n\n${descContent}` : taskContent;
+                }
             }
         } catch (e: any) {
             contextError = e.message;
-            sections     = [];
-            taskText     = task.title;
-            descText     = "";
+            if (!taskText) taskText = task.title;
         } finally {
             loadingContext = false;
         }
@@ -121,15 +135,28 @@
 
     // ── Lancement ──────────────────────────────────────────────────────────────
     async function launch() {
-        const text = (hasPlan ? taskText : buildFullPrompt()).trim();
-        if (!text || $agentRunState.running) return;
+        const text = mode === "impl" ? taskText.trim() : buildFullPrompt().trim();
+        if (!text || $agentRunState.running || preLaunching) return;
 
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
+        if (onBeforeLaunch) {
+            preLaunching = true;
+            try {
+                const ok = await onBeforeLaunch();
+                if (!ok) return;
+            } finally {
+                preLaunching = false;
+            }
+        }
+
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false });
         try {
+            const body = mode === "impl"
+                ? { plan: text, taskId: task.id }
+                : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: text, taskId: task.id, projectRoot: projectRoot || undefined }),
+                body: JSON.stringify(body),
             });
             if (!res.ok || !res.body) {
                 agentRunState.update(s => ({
@@ -147,7 +174,11 @@
                     if (raw.startsWith("data: ")) {
                         try {
                             const event = JSON.parse(raw.slice(6));
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
+                            if (event.type === "session_status") {
+                                agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
+                            } else {
+                                agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
+                            }
                         } catch { /* skip */ }
                     }
                 }
@@ -155,6 +186,7 @@
         } finally {
             agentRunState.update(s => ({ ...s, running: false }));
             taskRefreshTick.update(n => n + 1);
+            onLaunchComplete?.();
         }
     }
 
@@ -171,10 +203,10 @@
                 <span class="ai-hint">Chargement…</span>
             {:else if contextError}
                 <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
-            {:else if hasPlan}
-                <span class="ai-hint plan">Plan chargé</span>
+            {:else if mode === "impl"}
+                <span class="ai-hint plan">Implémentation</span>
             {:else}
-                <span class="ai-hint">TASK · DESCRIPTION éditables</span>
+                <span class="ai-hint">Spécification</span>
             {/if}
             <button
                 class="ai-reload"
@@ -187,87 +219,79 @@
         <!-- Corps scrollable -->
         <div class="prompt-body">
 
-            {#if hasPlan}
-                <!-- Mode plan : textarea unique -->
+            <!-- ── Row 1 : Input utilisateur (éditable) ── -->
+            <div class="prompt-row row-input">
+                <span class="row-badge">INPUT</span>
                 <textarea
-                    class="ai-textarea plan-textarea"
+                    class="field-ta"
                     bind:value={taskText}
-                    placeholder="Contenu du plan…"
+                    placeholder={loadingContext ? "Génération…" : "Tâche…"}
                     disabled={loadingContext}
+                    rows="4"
                 ></textarea>
+            </div>
 
-            {:else}
-                <!-- ── Row 1 : Input utilisateur (éditable) ── -->
-                <div class="prompt-row row-input">
-                    <span class="row-badge">INPUT</span>
+            <!-- ── Toggle plan ── -->
+            <label class="plan-toggle-row">
+                <span class="plan-toggle-label">plan</span>
+                <span class="plan-toggle-track" class:on={planMode}>
+                    <span class="plan-toggle-thumb"></span>
+                </span>
+                <input type="checkbox" bind:checked={planMode} hidden />
+            </label>
 
-                    <div class="field-group">
-                        <span class="field-key">TASK</span>
-                        <textarea
-                            class="field-ta"
-                            bind:value={taskText}
-                            placeholder={loadingContext ? "Génération…" : "Titre de la tâche…"}
-                            disabled={loadingContext}
-                            rows="2"
-                        ></textarea>
-                    </div>
-
-                    <div class="field-group">
-                        <span class="field-key">DESCRIPTION</span>
-                        <textarea
-                            class="field-ta"
-                            bind:value={descText}
-                            placeholder="Description optionnelle…"
-                            disabled={loadingContext}
-                            rows="3"
-                        ></textarea>
-                    </div>
-                </div>
-
-                <!-- ── Row 2 : Enrichissement (read-only) ── -->
-                {#if enrichSections.length > 0}
-                    <div class="prompt-row row-enrich">
-                        <span class="row-badge">ENRICHISSEMENT</span>
-                        <div class="ro-grid">
-                            {#each enrichSections as s}
+            <!-- ── Row 2 : Enrichissement (read-only) ── -->
+            {#if (planMode && planSections.length > 0) || docSections.length > 0}
+                <div class="prompt-row row-enrich">
+                    <span class="row-badge">ENRICHISSEMENT</span>
+                    <div class="ro-grid">
+                        {#if planMode}
+                            {#each planSections as s}
                                 <div class="ro-block">
                                     <div class="ro-key">{s.key}</div>
                                     <pre class="ro-pre">{s.content}</pre>
                                 </div>
                             {/each}
-                        </div>
-                    </div>
-                {/if}
-
-                <!-- ── Row 3 : Atlas (read-only) ── -->
-                {#if hasAtlas}
-                    <div class="prompt-row row-atlas">
-                        <span class="row-badge">ATLAS</span>
-                        {#if atlasSubs.length > 0}
-                            <div class="atlas-grid">
-                                {#each atlasSubs as sub}
-                                    <div class="atlas-block">
-                                        <div class="ro-key">{sub.key}</div>
-                                        <pre class="ro-pre atlas-pre">{sub.content}</pre>
-                                    </div>
-                                {/each}
-                            </div>
-                        {:else}
-                            <pre class="ro-pre">{atlasRaw}</pre>
                         {/if}
+                        {#each docSections as s}
+                            <div class="ro-block">
+                                <div class="ro-key">{s.key}</div>
+                                <pre class="ro-pre">{s.content}</pre>
+                            </div>
+                        {/each}
                     </div>
-                {/if}
-
+                </div>
             {/if}
+
+            <!-- ── Row 3 : Atlas (read-only) ── -->
+            {#if hasAtlas}
+                <div class="prompt-row row-atlas">
+                    <span class="row-badge">ATLAS</span>
+                    {#if atlasSubs.length > 0}
+                        <div class="atlas-grid">
+                            {#each atlasSubs as sub}
+                                <div class="atlas-block">
+                                    <div class="ro-key">{sub.key}</div>
+                                    <pre class="ro-pre atlas-pre">{sub.content}</pre>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else}
+                        <pre class="ro-pre">{atlasRaw}</pre>
+                    {/if}
+                </div>
+            {/if}
+
         </div><!-- /prompt-body -->
 
         <div class="ai-footer">
+            {@render footerExtra?.()}
             <button
                 class="ai-launch"
                 onclick={launch}
-                disabled={!taskText.trim() || $agentRunState.running || loadingContext}
+                disabled={!taskText.trim() || $agentRunState.running || loadingContext || preLaunching}
             >
-                {#if $agentRunState.running}
+                {#if $agentRunState.running || preLaunching}
                     En cours…
                 {:else}
                     <span class="ai-launch-label">Lancer l'agent</span><span class="ai-launch-arrow"> →</span>
@@ -340,23 +364,6 @@
 .prompt-body::-webkit-scrollbar { width: 3px; }
 .prompt-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Plan mode ── */
-.plan-textarea {
-    flex: 1;
-    min-height: 0;
-    background: var(--bg-deep);
-    border: none;
-    color: #777;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    line-height: 1.55;
-    padding: 0.5rem 1rem;
-    resize: none;
-    outline: none;
-}
-.plan-textarea:focus { color: #bbb; }
-.plan-textarea:disabled { opacity: 0.5; cursor: wait; }
-
 /* ── Rows avec border pointillée ── */
 .prompt-row {
     position: relative;
@@ -385,20 +392,6 @@
 .row-atlas  .row-badge { color: #7a6a3a; }
 
 /* ── Row 1 : champs éditables ── */
-.field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    margin-bottom: 0.4rem;
-}
-.field-group:last-child { margin-bottom: 0; }
-.field-key {
-    font-size: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #4a4a6a;
-    font-family: 'JetBrains Mono', monospace;
-}
 .field-ta {
     background: var(--bg-deep);
     border: 1px solid var(--border);
@@ -416,6 +409,53 @@
 .field-ta:focus { color: #ccc; border-color: var(--border-strong); }
 .field-ta:disabled { opacity: 0.45; cursor: wait; }
 .field-ta::placeholder { color: var(--border-strong); }
+
+/* ── Toggle plan ── */
+.plan-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.35rem 0.7rem 0;
+    cursor: pointer;
+    user-select: none;
+    width: fit-content;
+}
+.plan-toggle-label {
+    font-size: 0.46rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #4a4a6a;
+    font-family: 'JetBrains Mono', monospace;
+}
+.plan-toggle-track {
+    display: inline-flex;
+    align-items: center;
+    width: 22px;
+    height: 11px;
+    border-radius: 6px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+    flex-shrink: 0;
+}
+.plan-toggle-track.on {
+    background: #1e1540;
+    border-color: #3a2e70;
+}
+.plan-toggle-thumb {
+    position: absolute;
+    left: 1px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #666;
+    transition: left 0.15s, background 0.15s;
+}
+.plan-toggle-track.on .plan-toggle-thumb {
+    left: 12px;
+    background: #9a8ad4;
+}
 
 /* ── Row 2 : enrichissement ── */
 .ro-grid {
@@ -460,7 +500,9 @@
 /* ── Footer ── */
 .ai-footer {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: 0.4rem;
     padding: 0.4rem 1rem;
     flex-shrink: 0;
     border-top: 1px solid var(--border);
