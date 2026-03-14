@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { AgentContext, MethodSnippet } from "./context";
+import type { Skill } from "./skills";
 
 export type PromptOptions = {
     /** Description longue de la tâche ou corps de l'issue GitHub */
@@ -11,6 +12,8 @@ export type PromptOptions = {
     projectDocs?: ProjectDocs;
     /** Vue compressée de l'architecture du projet cible (générée par lolve-carto) */
     atlas?: string;
+    /** Skill sélectionnée pour cette tâche (focus + contraintes injectés dans le prompt) */
+    skill?: Skill;
 };
 
 export type ProjectDocs = {
@@ -80,7 +83,7 @@ export function loadProjectDocs(projectRoot: string): ProjectDocs {
  *   TASK / DESCRIPTION / OBJECTIF / CONTRAINTES / FORMAT DU PLAN / DOCUMENTATION / CONCEPTS / SYMBOL MAP
  */
 export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): string {
-    const { description, conceptMap, projectDocs, atlas } = opts;
+    const { description, conceptMap, projectDocs, atlas, skill } = opts;
     const lines: string[] = [];
 
     // ── En-tête ──────────────────────────────────────────────────────────────
@@ -135,6 +138,16 @@ export function formatPrompt(ctx: AgentContext, opts: PromptOptions = {}): strin
             lines.push(...docLines);
             lines.push("");
         }
+    }
+
+    // ── Skill sélectionnée ───────────────────────────────────────────────────
+    if (skill) {
+        lines.push("SKILL");
+        lines.push(`${skill.label}`);
+        lines.push(`Focus : ${skill.focus}`);
+        lines.push("Contraintes :");
+        for (const c of skill.constraints) lines.push(`- ${c}`);
+        lines.push("");
     }
 
     // ── Atlas architectural du projet cible ───────────────────────────────────

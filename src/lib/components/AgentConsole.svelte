@@ -3,6 +3,7 @@
     import { agentState, agentRunState, planModeTask, consoleTab } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import SymbolsView from "$lib/components/SymbolsView.svelte";
+    import ArchiView from "$lib/components/ArchiView.svelte";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -162,6 +163,7 @@
         t.push({ id: "codebase", label: "codebase", count: "" });
         t.push({ id: "documentation", label: "docs", count: files.length });
         t.push({ id: "symbols", label: "symboles", count: "" });
+        t.push({ id: "archi", label: "archi", count: "" });
         if (queryLabel) t.push({ id: "query", label: queryLabel, count: queryGrep.length });
         return t.filter(t => !HIDDEN_TABS.has(t.id));
     })();
@@ -325,6 +327,10 @@
         {:else if activeTab === "symbols"}
             <div class="dv-panel">
                 <SymbolsView initialQuery={symbolsQuery} />
+            </div>
+        {:else if activeTab === "archi"}
+            <div class="dv-panel">
+                <ArchiView />
             </div>
         {:else if activeTab === "documentation"}
             <div class="doc-files-tab">
