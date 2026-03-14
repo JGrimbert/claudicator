@@ -1,3 +1,4 @@
+/** Projets — définit ou supprime le projet courant (PATCH, DELETE) */
 import { json } from "@sveltejs/kit";
 import { setCurrentProject, getCurrentProject, removeProject, listProjects } from "$lib/server/services/projects";
 

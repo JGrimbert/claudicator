@@ -1,3 +1,4 @@
+/** Cartographie — liste les méthodes indexées avec métadonnées (GET) */
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";

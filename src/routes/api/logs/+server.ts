@@ -1,3 +1,4 @@
+/** Logs — diffuse les logs en temps réel via SSE (GET) */
 import { logEmitter } from "$lib/server/logs";
 import type { Log } from "$lib/server/logs";
 

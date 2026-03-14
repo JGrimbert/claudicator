@@ -1,3 +1,4 @@
+/** Usage — retourne la consommation de tokens du projet (GET) */
 import { getProjectUsage } from "$lib/server/services/usage";
 
 /** Retourne l'utilisation courante du projet */

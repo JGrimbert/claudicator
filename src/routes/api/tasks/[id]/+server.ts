@@ -1,3 +1,4 @@
+/** Tâches — lit, met à jour ou supprime une tâche (GET, PATCH, DELETE) */
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask, deleteTask } from "$lib/server/services/tasks";
 

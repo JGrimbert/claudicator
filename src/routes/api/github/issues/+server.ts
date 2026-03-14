@@ -1,3 +1,4 @@
+/** GitHub — crée une issue dans le dépôt courant (POST) */
 import { json } from "@sveltejs/kit";
 import { getCurrentProject } from "$lib/server/services/projects";
 import { createIssue } from "$lib/server/services/github";

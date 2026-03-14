@@ -1,3 +1,4 @@
+/** Git — opérations sur le dépôt cible (branches, commits, diff, push) */
 import simpleGit from "simple-git";
 
 const git = simpleGit();

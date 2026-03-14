@@ -1,3 +1,4 @@
+/** Dépôt — récupère un fichier depuis GitHub (GET) */
 import { json } from "@sveltejs/kit";
 import { getCurrentProject } from "$lib/server/services/projects";
 import { getRepoFile } from "$lib/server/services/github";

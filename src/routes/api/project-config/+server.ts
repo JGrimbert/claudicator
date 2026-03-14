@@ -1,3 +1,4 @@
+/** Config — lit ou met à jour la configuration du projet (GET, PATCH) */
 import { json } from "@sveltejs/kit";
 import {
     getProjectConfig,

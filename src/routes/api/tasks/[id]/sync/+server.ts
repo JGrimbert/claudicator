@@ -1,3 +1,4 @@
+/** Tâches — synchronise l'état push/merge de la tâche (POST) */
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 import { getBranchState } from "$lib/server/services/git";

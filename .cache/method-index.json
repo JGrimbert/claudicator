@@ -1,14 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-03-14T19:42:28.617Z",
+  "generated": "2026-03-14T23:24:17.051Z",
   "files": {
-    "src\\lib\\index.js": {
-      "mtime": 1772885109315.4622,
-      "size": 75,
-      "hash": "ffcb0e97b69e",
-      "classCount": 0,
-      "methodCount": 0
-    },
     "src\\hooks.server.ts": {
       "mtime": 1773479384818.9192,
       "size": 561,
@@ -16,442 +9,547 @@
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\lib\\index.js": {
+      "mtime": 1772885109315.4622,
+      "size": 75,
+      "hash": "ffcb0e97b69e",
+      "classCount": 0,
+      "methodCount": 0
+    },
     "src\\lib\\server\\agent\\claude-stream.ts": {
-      "mtime": 1773485167513.1619,
+      "mtime": 1773521136785.9988,
       "size": 5023,
       "hash": "15d0d1f41dd1",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\lib\\server\\agent\\context.ts": {
-      "mtime": 1773485443207.7854,
-      "size": 4562,
-      "hash": "4a2411237ca7",
+      "mtime": 1773526444946.2988,
+      "size": 5117,
+      "hash": "8a95d1f3e065",
       "classCount": 0,
       "methodCount": 5
     },
     "src\\lib\\server\\agent\\issue-analysis.ts": {
-      "mtime": 1773484105035.5818,
+      "mtime": 1773521136786.996,
       "size": 10317,
       "hash": "c603e3dd688c",
       "classCount": 0,
       "methodCount": 9
     },
     "src\\lib\\server\\agent\\issue.ts": {
-      "mtime": 1773485444325.146,
-      "size": 1527,
-      "hash": "1eda755e71fa",
+      "mtime": 1773528824089.5415,
+      "size": 1604,
+      "hash": "69ea9e12acfb",
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\lib\\server\\agent\\orchestrator.ts": {
+      "mtime": 1773526444946.2988,
+      "size": 8344,
+      "hash": "ff7d793e9aba",
+      "classCount": 0,
+      "methodCount": 2
+    },
     "src\\lib\\server\\agent\\prompt.ts": {
-      "mtime": 1773246395142.9104,
-      "size": 9106,
-      "hash": "654bb24bc42a",
+      "mtime": 1773528825610.6394,
+      "size": 9803,
+      "hash": "8b61fe3e5ca1",
       "classCount": 0,
       "methodCount": 5
     },
+    "src\\lib\\server\\agent\\segments.ts": {
+      "mtime": 1773526444947.3003,
+      "size": 973,
+      "hash": "0a7520535d16",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\lib\\server\\agent\\skills.ts": {
+      "mtime": 1773526444947.3003,
+      "size": 3378,
+      "hash": "3df5f22e200f",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\lib\\server\\logs.ts": {
-      "mtime": 1773485445434.5557,
-      "size": 511,
-      "hash": "d2bed3041cc7",
+      "mtime": 1773528826411.7449,
+      "size": 581,
+      "hash": "bf92db5a8d62",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\lib\\server\\services\\cartography.ts": {
-      "mtime": 1773485450071.737,
+      "mtime": 1773521136787.9956,
       "size": 14036,
       "hash": "d0c70dad12f5",
       "classCount": 0,
       "methodCount": 10
     },
-    "src\\lib\\server\\services\\claude.ts": {
-      "mtime": 1773485445998.1455,
-      "size": 364,
-      "hash": "800b24a87b4b",
-      "classCount": 0,
-      "methodCount": 1
-    },
     "src\\lib\\server\\services\\claude-session.ts": {
-      "mtime": 1773485685647.3645,
+      "mtime": 1773521136788.9958,
       "size": 6737,
       "hash": "cfc9031f5866",
       "classCount": 0,
       "methodCount": 8
     },
+    "src\\lib\\server\\services\\claude.ts": {
+      "mtime": 1773528819952.6655,
+      "size": 431,
+      "hash": "0e0c1bc569d0",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\lib\\server\\services\\git.ts": {
-      "mtime": 1773497403676.5723,
-      "size": 3199,
-      "hash": "35cbe3de9b59",
+      "mtime": 1773528820737.6921,
+      "size": 3282,
+      "hash": "df1ea1e2bc6b",
       "classCount": 0,
       "methodCount": 11
     },
     "src\\lib\\server\\services\\github.ts": {
-      "mtime": 1773497187625.058,
-      "size": 5660,
-      "hash": "07d782eee28a",
+      "mtime": 1773521136789.996,
+      "size": 5674,
+      "hash": "74765443e71d",
       "classCount": 0,
       "methodCount": 14
     },
     "src\\lib\\server\\services\\processes.ts": {
-      "mtime": 1773497197909.9087,
-      "size": 1503,
-      "hash": "c371eb6512c3",
+      "mtime": 1773528821826.0781,
+      "size": 1583,
+      "hash": "c7cd26203b46",
       "classCount": 0,
       "methodCount": 6
     },
     "src\\lib\\server\\services\\project-config.ts": {
-      "mtime": 1773497201848.3298,
-      "size": 1737,
-      "hash": "821d3145ed5b",
+      "mtime": 1773521136790.9966,
+      "size": 1740,
+      "hash": "09c5fc661ff8",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\lib\\server\\services\\projects.ts": {
-      "mtime": 1773497209220.6838,
-      "size": 3320,
-      "hash": "bbb324fa0de7",
+      "mtime": 1773521136790.9966,
+      "size": 3328,
+      "hash": "a2a44a45a519",
       "classCount": 0,
       "methodCount": 8
     },
     "src\\lib\\server\\services\\tasks.ts": {
-      "mtime": 1773497409247.1528,
-      "size": 4654,
-      "hash": "0d656dfef736",
+      "mtime": 1773528822946.5298,
+      "size": 4745,
+      "hash": "d2870bb3a0d8",
       "classCount": 0,
       "methodCount": 9
     },
     "src\\lib\\server\\services\\usage.ts": {
-      "mtime": 1773497213006.8147,
-      "size": 1279,
-      "hash": "87bc18d43d5a",
+      "mtime": 1773521136791.996,
+      "size": 1282,
+      "hash": "136f894ea0a3",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\lib\\stores\\agent.ts": {
-      "mtime": 1773497413251.9138,
-      "size": 4167,
-      "hash": "9c908da76214",
+      "mtime": 1773521136793.0027,
+      "size": 4169,
+      "hash": "392cd04e4944",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\agent\\input\\+server.ts": {
-      "mtime": 1773497216811.6743,
-      "size": 557,
-      "hash": "1838a574c172",
+      "mtime": 1773528853449.0935,
+      "size": 627,
+      "hash": "353e1925e173",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\kill\\+server.ts": {
-      "mtime": 1773497219940.9917,
-      "size": 558,
-      "hash": "ffa86844e840",
+      "mtime": 1773528854645.3025,
+      "size": 624,
+      "hash": "7a431cf38fa9",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\preview-prompt\\+server.ts": {
-      "mtime": 1773497420132.8843,
-      "size": 1561,
-      "hash": "52c318ce4af7",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\agent\\session\\+server.ts": {
-      "mtime": 1773497433686.8066,
-      "size": 854,
-      "hash": "44b6cd68923e",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\+server.ts": {
-      "mtime": 1773497224417.745,
-      "size": 1917,
-      "hash": "ef67d981623a",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\diagram\\+server.ts": {
-      "mtime": 1773497229099.3174,
-      "size": 9285,
-      "hash": "d0228dfdc028",
-      "classCount": 0,
-      "methodCount": 4
-    },
-    "src\\routes\\api\\cartography\\enrich\\+server.ts": {
-      "mtime": 1773497234870.8745,
-      "size": 1941,
-      "hash": "3b3edc103526",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\methods\\+server.ts": {
-      "mtime": 1773497240807.7004,
-      "size": 1200,
-      "hash": "03f91b88c3c6",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\refresh\\+server.ts": {
-      "mtime": 1773497244259.3013,
-      "size": 639,
-      "hash": "381f77dc256c",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\run\\+server.ts": {
-      "mtime": 1773497248117.419,
-      "size": 2199,
-      "hash": "d4ce43343d96",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\cartography\\snippet\\+server.ts": {
-      "mtime": 1773497252002.0464,
-      "size": 3646,
-      "hash": "f6b445b6f61e",
-      "classCount": 0,
-      "methodCount": 3
-    },
-    "src\\routes\\api\\cartography\\stats\\+server.ts": {
-      "mtime": 1773497256600.6514,
-      "size": 2222,
-      "hash": "02daabb1684d",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\context\\+server.ts": {
-      "mtime": 1773497447514.995,
-      "size": 1811,
-      "hash": "af33e7b12670",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\github\\issues\\+server.ts": {
-      "mtime": 1773497260693.3635,
-      "size": 658,
-      "hash": "badea491037b",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issue\\+server.ts": {
-      "mtime": 1773497267109.4988,
-      "size": 1269,
-      "hash": "2ade036d8148",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\issues\\+server.ts": {
-      "mtime": 1773497270841.5562,
-      "size": 2066,
-      "hash": "f0838c701ab4",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\issues\\analysis\\+server.ts": {
-      "mtime": 1773497451017.5264,
-      "size": 643,
-      "hash": "9556831bb8ab",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issues\\analyze\\+server.ts": {
-      "mtime": 1773497455526.8762,
-      "size": 3266,
-      "hash": "c06633fcfaaa",
-      "classCount": 0,
-      "methodCount": 3
-    },
-    "src\\routes\\api\\issues\\analyze\\update\\+server.ts": {
-      "mtime": 1773497460381.3796,
-      "size": 3696,
-      "hash": "9945919be522",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issues\\roadmap\\chat\\+server.ts": {
-      "mtime": 1773497465792.7622,
-      "size": 1782,
-      "hash": "58bfd315c8cf",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issues\\roadmaps\\+server.ts": {
-      "mtime": 1773497469914.0408,
-      "size": 1034,
-      "hash": "678a42fd34e9",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issues\\snapshot\\+server.ts": {
-      "mtime": 1773497275749.6,
-      "size": 753,
-      "hash": "334bb792333b",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\issues\\[number]\\close\\+server.ts": {
-      "mtime": 1773497279897.1074,
-      "size": 876,
-      "hash": "72da554c6105",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\logs\\+server.ts": {
-      "mtime": 1773497283967.7495,
-      "size": 1009,
-      "hash": "673e0f90b4ca",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\plan\\+server.ts": {
-      "mtime": 1773497288038.8987,
-      "size": 548,
-      "hash": "e33379d63e48",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\project-config\\+server.ts": {
-      "mtime": 1773497294310.5396,
-      "size": 658,
-      "hash": "cd62743e88b7",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\projects\\+server.ts": {
-      "mtime": 1773497299021.6377,
-      "size": 730,
-      "hash": "006968e05d3d",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\projects\\current\\+server.ts": {
-      "mtime": 1773497302961.1426,
-      "size": 619,
-      "hash": "eb984633c7bd",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\projects\\github\\+server.ts": {
-      "mtime": 1773497307027.4153,
-      "size": 767,
-      "hash": "de443381ee2d",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\repo-file\\+server.ts": {
-      "mtime": 1773497311962.3093,
-      "size": 684,
-      "hash": "0a860e80b531",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\repo-info\\+server.ts": {
-      "mtime": 1773497316002.1072,
-      "size": 314,
-      "hash": "0c9d4034fc1c",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\+server.ts": {
-      "mtime": 1773497320866.9304,
-      "size": 885,
-      "hash": "131f75cb0207",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\tasks\\[id]\\+server.ts": {
-      "mtime": 1773497324786.166,
-      "size": 850,
-      "hash": "7f900fa1a5ad",
-      "classCount": 0,
-      "methodCount": 3
-    },
-    "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts": {
-      "mtime": 1773497328198.6792,
-      "size": 1092,
-      "hash": "e448fd4c039d",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts": {
-      "mtime": 1773497332470.2207,
-      "size": 750,
-      "hash": "8e59bf3e33fb",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts": {
-      "mtime": 1773497336701.3948,
-      "size": 2859,
-      "hash": "43d7161cf493",
-      "classCount": 0,
-      "methodCount": 2
-    },
-    "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
-      "mtime": 1773497473799.108,
-      "size": 2183,
-      "hash": "13b78b350317",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts": {
-      "mtime": 1773497478426.043,
-      "size": 4777,
-      "hash": "52d39ec154e9",
-      "classCount": 0,
-      "methodCount": 3
-    },
-    "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts": {
-      "mtime": 1773497341004.648,
-      "size": 609,
-      "hash": "f9670db6b934",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\push\\+server.ts": {
-      "mtime": 1773497345413.409,
-      "size": 854,
-      "hash": "0fbbca2feaa4",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts": {
-      "mtime": 1773497349675.3052,
-      "size": 815,
-      "hash": "3579dc04eef7",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts": {
-      "mtime": 1773497353779.832,
-      "size": 1002,
-      "hash": "0a55b65e16bd",
-      "classCount": 0,
-      "methodCount": 1
-    },
-    "src\\routes\\api\\usage\\+server.ts": {
-      "mtime": 1773497358151.5889,
-      "size": 296,
-      "hash": "3c72a95aa281",
+      "mtime": 1773528858194.4644,
+      "size": 1628,
+      "hash": "1f02f8fa9d4d",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\run\\+server.ts": {
-      "mtime": 1773509288086.9668,
-      "size": 15951,
-      "hash": "47463bad40e6",
+      "mtime": 1773528851049.7715,
+      "size": 18656,
+      "hash": "886305ceb7e0",
       "classCount": 0,
       "methodCount": 3
     },
+    "src\\routes\\api\\agent\\session\\+server.ts": {
+      "mtime": 1773528856007.1765,
+      "size": 916,
+      "hash": "523b1d0094f5",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\atlas\\+server.ts": {
+      "mtime": 1773528914086.6465,
+      "size": 2026,
+      "hash": "67911f556989",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\cartography\\+server.ts": {
+      "mtime": 1773528861738.802,
+      "size": 1987,
+      "hash": "5d9d145f4931",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\cartography\\comment\\+server.ts": {
-      "mtime": 1773517348582.63,
-      "size": 15062,
-      "hash": "e35596231997",
+      "mtime": 1773528863662.3777,
+      "size": 15718,
+      "hash": "4945d71609ca",
       "classCount": 0,
       "methodCount": 10
+    },
+    "src\\routes\\api\\cartography\\diagram\\+server.ts": {
+      "mtime": 1773528865604.5996,
+      "size": 9366,
+      "hash": "bf0cdcdbcf8a",
+      "classCount": 0,
+      "methodCount": 4
+    },
+    "src\\routes\\api\\cartography\\enrich\\+server.ts": {
+      "mtime": 1773528867202.0442,
+      "size": 2076,
+      "hash": "a906c44004a1",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\methods\\+server.ts": {
+      "mtime": 1773528868696.9285,
+      "size": 1313,
+      "hash": "31ce2b484724",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\refresh\\+server.ts": {
+      "mtime": 1773528870601.1985,
+      "size": 703,
+      "hash": "aac751dbcec6",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\run\\+server.ts": {
+      "mtime": 1773528872118.3828,
+      "size": 2338,
+      "hash": "01503bd501dd",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\cartography\\snippet\\+server.ts": {
+      "mtime": 1773528873630.296,
+      "size": 3720,
+      "hash": "31354747fed7",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\cartography\\stats\\+server.ts": {
+      "mtime": 1773528875184.3105,
+      "size": 2354,
+      "hash": "510d51c035df",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\context\\+server.ts": {
+      "mtime": 1773528879571.9832,
+      "size": 1892,
+      "hash": "340622d25f17",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\github\\issues\\+server.ts": {
+      "mtime": 1773528881375.0269,
+      "size": 741,
+      "hash": "178cf619226e",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issue\\+server.ts": {
+      "mtime": 1773528883213.0212,
+      "size": 1371,
+      "hash": "705ba7de6adc",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\issues\\+server.ts": {
+      "mtime": 1773528885155.9658,
+      "size": 2127,
+      "hash": "a963e74cd186",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\issues\\analysis\\+server.ts": {
+      "mtime": 1773528886702.3196,
+      "size": 711,
+      "hash": "b5bc2ff7a2d2",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\analyze\\+server.ts": {
+      "mtime": 1773528888981.361,
+      "size": 3334,
+      "hash": "0e0e30792b82",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\issues\\analyze\\update\\+server.ts": {
+      "mtime": 1773528890560.7925,
+      "size": 3768,
+      "hash": "e6b30d266c02",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\roadmap\\chat\\+server.ts": {
+      "mtime": 1773528892852.4895,
+      "size": 1847,
+      "hash": "dadd12931153",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\roadmaps\\+server.ts": {
+      "mtime": 1773528894454.4343,
+      "size": 1109,
+      "hash": "d5bdc76cefac",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\snapshot\\+server.ts": {
+      "mtime": 1773528895624.8994,
+      "size": 826,
+      "hash": "8d14d0854e67",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\issues\\[number]\\close\\+server.ts": {
+      "mtime": 1773521136801.996,
+      "size": 877,
+      "hash": "dc7bac80ebca",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\logs\\+server.ts": {
+      "mtime": 1773528899070.8025,
+      "size": 1073,
+      "hash": "ee04995253e2",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\plan\\+server.ts": {
+      "mtime": 1773528900580.4924,
+      "size": 609,
+      "hash": "32433b052dd6",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\project-config\\+server.ts": {
+      "mtime": 1773528902535.9836,
+      "size": 738,
+      "hash": "2f45991615de",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\projects\\+server.ts": {
+      "mtime": 1773528904113.4268,
+      "size": 798,
+      "hash": "88f6bc14d253",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\projects\\current\\+server.ts": {
+      "mtime": 1773528906083.0442,
+      "size": 696,
+      "hash": "5163233f0788",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\projects\\github\\+server.ts": {
+      "mtime": 1773528907981.417,
+      "size": 832,
+      "hash": "af9a24f12dff",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\repo-file\\+server.ts": {
+      "mtime": 1773528910361.7095,
+      "size": 767,
+      "hash": "c73e249370a2",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\repo-info\\+server.ts": {
+      "mtime": 1773528911497.0234,
+      "size": 391,
+      "hash": "a11a11b79ad6",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\skills\\+server.ts": {
+      "mtime": 1773528915632.412,
+      "size": 292,
+      "hash": "0bfe93bd66d9",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\+server.ts": {
+      "mtime": 1773528832318.125,
+      "size": 960,
+      "hash": "1ce0e5284f2c",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\tasks\\[id]\\+server.ts": {
+      "mtime": 1773528832585.7722,
+      "size": 934,
+      "hash": "002fd290d8d5",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts": {
+      "mtime": 1773528834855.9258,
+      "size": 1172,
+      "hash": "507ddb9337dd",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts": {
+      "mtime": 1773528836479.5232,
+      "size": 811,
+      "hash": "4c0311c40f43",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts": {
+      "mtime": 1773528838344.2703,
+      "size": 2933,
+      "hash": "923eadeaa155",
+      "classCount": 0,
+      "methodCount": 2
+    },
+    "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
+      "mtime": 1773528839832.7683,
+      "size": 2257,
+      "hash": "d55e692b9c3c",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts": {
+      "mtime": 1773528841316.4153,
+      "size": 4855,
+      "hash": "7fa6b88bafbd",
+      "classCount": 0,
+      "methodCount": 3
+    },
+    "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts": {
+      "mtime": 1773528842831.8828,
+      "size": 678,
+      "hash": "5959b046a67b",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\push\\+server.ts": {
+      "mtime": 1773528844386.0305,
+      "size": 928,
+      "hash": "84e544a9b6e1",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts": {
+      "mtime": 1773528845880.3381,
+      "size": 885,
+      "hash": "15c142ebfdbf",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts": {
+      "mtime": 1773528847591.5825,
+      "size": 1074,
+      "hash": "37746451bc66",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\usage\\+server.ts": {
+      "mtime": 1773528912576.649,
+      "size": 366,
+      "hash": "c598a97caa06",
+      "classCount": 0,
+      "methodCount": 1
     }
   },
   "methods": {
+    "getVueScriptOffset": {
+      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
+      "class": null,
+      "name": "getVueScriptOffset",
+      "signature": "getVueScriptOffset(filePath)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Pour les fichiers Vue SFC, le method-indexer stocke des numéros de ligne relatifs\nau contenu trimmé du bloc <script>. Retourne l'offset à ajouter pour obtenir\nla ligne réelle dans le fichier. Retourne 0 pour les fichiers non-Vue.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5c6b8e44f05a",
+      "line": 14,
+      "endLine": 27
+    },
+    "extractSnippet": {
+      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
+      "class": null,
+      "name": "extractSnippet",
+      "signature": "extractSnippet(filePath, startLine, endLine)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Extrait un bloc de code depuis un fichier",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "7b450cb99cad",
+      "line": 41,
+      "endLine": 65
+    },
+    "stripAnsi": {
+      "file": "src\\routes\\api\\agent\\run\\+server.ts",
+      "class": null,
+      "name": "stripAnsi",
+      "signature": "stripAnsi(str)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Supprime les séquences d'échappement ANSI d'une chaîne",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "68d1d42849bd",
+      "line": 22,
+      "endLine": 24
+    },
     "resetStaleTasks": {
       "file": "src\\hooks.server.ts",
       "class": null,
@@ -512,8 +610,8 @@
         "provides": []
       },
       "bodyHash": "50a68875b3ea",
-      "line": 31,
-      "endLine": 35
+      "line": 34,
+      "endLine": 38
     },
     "loadMethodSnippets": {
       "file": "src\\lib\\server\\agent\\context.ts",
@@ -533,8 +631,8 @@
         "provides": []
       },
       "bodyHash": "eb8e468bb9bf",
-      "line": 42,
-      "endLine": 55
+      "line": 45,
+      "endLine": 58
     },
     "loadSymbolMap": {
       "file": "src\\lib\\server\\agent\\context.ts",
@@ -554,8 +652,8 @@
         "provides": []
       },
       "bodyHash": "ae840dc08249",
-      "line": 62,
-      "endLine": 75
+      "line": 65,
+      "endLine": 78
     },
     "buildQuery": {
       "file": "src\\lib\\server\\agent\\context.ts",
@@ -575,14 +673,14 @@
         "provides": []
       },
       "bodyHash": "fa4e688a33ca",
-      "line": 88,
-      "endLine": 92
+      "line": 91,
+      "endLine": 95
     },
     "buildContext": {
       "file": "src\\lib\\server\\agent\\context.ts",
       "class": null,
       "name": "buildContext",
-      "signature": "buildContext(task, projectRoot, description)",
+      "signature": "buildContext(task, projectRoot, description, skillOverride)",
       "isStatic": false,
       "isPrivate": false,
       "isAsync": false,
@@ -595,9 +693,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "89a0d471f9f1",
-      "line": 95,
-      "endLine": 114
+      "bodyHash": "38f3bcf5c089",
+      "line": 98,
+      "endLine": 125
     },
     "summarizeIssueBody": {
       "file": "src\\lib\\server\\agent\\issue-analysis.ts",
@@ -806,8 +904,50 @@
         "provides": []
       },
       "bodyHash": "96ce7ea1f534",
-      "line": 8,
-      "endLine": 58
+      "line": 9,
+      "endLine": 59
+    },
+    "spawnClaudeOneShot": {
+      "file": "src\\lib\\server\\agent\\orchestrator.ts",
+      "class": null,
+      "name": "spawnClaudeOneShot",
+      "signature": "spawnClaudeOneShot(prompt, projectRoot, onText, onSystem)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a9be6ea4b949",
+      "line": 31,
+      "endLine": 108
+    },
+    "orchestrate": {
+      "file": "src\\lib\\server\\agent\\orchestrator.ts",
+      "class": null,
+      "name": "orchestrate",
+      "signature": "orchestrate(task, projectRoot, description, onEvent)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b61add3ffc93",
+      "line": 119,
+      "endLine": 194
     },
     "loadConceptMap": {
       "file": "src\\lib\\server\\agent\\prompt.ts",
@@ -827,8 +967,8 @@
         "provides": []
       },
       "bodyHash": "c7f45b562723",
-      "line": 29,
-      "endLine": 36
+      "line": 33,
+      "endLine": 40
     },
     "loadProjectDiagram": {
       "file": "src\\lib\\server\\agent\\prompt.ts",
@@ -848,8 +988,8 @@
         "provides": []
       },
       "bodyHash": "7dd7a7b2d8f9",
-      "line": 39,
-      "endLine": 47
+      "line": 43,
+      "endLine": 51
     },
     "loadProjectDocs": {
       "file": "src\\lib\\server\\agent\\prompt.ts",
@@ -869,8 +1009,8 @@
         "provides": []
       },
       "bodyHash": "6f23f5013efe",
-      "line": 53,
-      "endLine": 74
+      "line": 57,
+      "endLine": 78
     },
     "formatPrompt": {
       "file": "src\\lib\\server\\agent\\prompt.ts",
@@ -889,9 +1029,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "aafaad0f32c1",
-      "line": 82,
-      "endLine": 157
+      "bodyHash": "0e16144875e8",
+      "line": 86,
+      "endLine": 171
     },
     "formatImplementationPrompt": {
       "file": "src\\lib\\server\\agent\\prompt.ts",
@@ -911,8 +1051,50 @@
         "provides": []
       },
       "bodyHash": "1bc6eeb47701",
-      "line": 163,
-      "endLine": 230
+      "line": 177,
+      "endLine": 244
+    },
+    "classifyFile": {
+      "file": "src\\lib\\server\\agent\\segments.ts",
+      "class": null,
+      "name": "classifyFile",
+      "signature": "classifyFile(filePath)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "63d300c1b119",
+      "line": 14,
+      "endLine": 20
+    },
+    "selectSkill": {
+      "file": "src\\lib\\server\\agent\\skills.ts",
+      "class": null,
+      "name": "selectSkill",
+      "signature": "selectSkill(regions)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "fa7aeddb6493",
+      "line": 84,
+      "endLine": 94
     },
     "emitLog": {
       "file": "src\\lib\\server\\logs.ts",
@@ -932,8 +1114,8 @@
         "provides": []
       },
       "bodyHash": "688b966af269",
-      "line": 13,
-      "endLine": 20
+      "line": 14,
+      "endLine": 21
     },
     "ensureLoaded": {
       "file": "src\\lib\\server\\services\\cartography.ts",
@@ -1062,7 +1244,7 @@
       "endLine": 214
     },
     "walkSrc": {
-      "file": "src\\lib\\server\\services\\cartography.ts",
+      "file": "src\\routes\\api\\atlas\\+server.ts",
       "class": null,
       "name": "walkSrc",
       "signature": "walkSrc(dir, out: string[] = [])",
@@ -1071,16 +1253,16 @@
       "isAsync": false,
       "isExported": false,
       "role": "internal",
-      "description": "Collecte tous les fichiers .ts/.svelte sous srcDir récursivement.",
+      "description": null,
       "effects": {},
       "consumers": [],
       "context": {
         "requires": [],
         "provides": []
       },
-      "bodyHash": "be6f3ce81d6e",
-      "line": 219,
-      "endLine": 228
+      "bodyHash": "0f96b35eb5ab",
+      "line": 9,
+      "endLine": 18
     },
     "buildAtlasDeps": {
       "file": "src\\lib\\server\\services\\cartography.ts",
@@ -1144,69 +1326,6 @@
       "bodyHash": "8792e1b0a0a8",
       "line": 351,
       "endLine": 361
-    },
-    "askClaude": {
-      "file": "src\\lib\\server\\services\\claude.ts",
-      "class": null,
-      "name": "askClaude",
-      "signature": "askClaude(prompt)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "f654e57c1f05",
-      "line": 4,
-      "endLine": 13
-    },
-    "getVueScriptOffset": {
-      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
-      "class": null,
-      "name": "getVueScriptOffset",
-      "signature": "getVueScriptOffset(filePath)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Pour les fichiers Vue SFC, le method-indexer stocke des numéros de ligne relatifs\nau contenu trimmé du bloc <script>. Retourne l'offset à ajouter pour obtenir\nla ligne réelle dans le fichier. Retourne 0 pour les fichiers non-Vue.",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "5c6b8e44f05a",
-      "line": 13,
-      "endLine": 26
-    },
-    "extractSnippet": {
-      "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
-      "class": null,
-      "name": "extractSnippet",
-      "signature": "extractSnippet(filePath, startLine, endLine)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Extrait un bloc de code depuis un fichier",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "7b450cb99cad",
-      "line": 40,
-      "endLine": 64
     },
     "processStdoutLine": {
       "file": "src\\lib\\server\\services\\claude-session.ts",
@@ -1355,6 +1474,27 @@
       "line": 177,
       "endLine": 180
     },
+    "askClaude": {
+      "file": "src\\lib\\server\\services\\claude.ts",
+      "class": null,
+      "name": "askClaude",
+      "signature": "askClaude(prompt)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f654e57c1f05",
+      "line": 5,
+      "endLine": 14
+    },
     "createBranch": {
       "file": "src\\lib\\server\\services\\git.ts",
       "class": null,
@@ -1373,8 +1513,8 @@
         "provides": []
       },
       "bodyHash": "65f39ae2a0fb",
-      "line": 6,
-      "endLine": 8
+      "line": 7,
+      "endLine": 9
     },
     "commit": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1394,8 +1534,8 @@
         "provides": []
       },
       "bodyHash": "733a3020abf8",
-      "line": 11,
-      "endLine": 14
+      "line": 12,
+      "endLine": 15
     },
     "getRemoteRepo": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1415,8 +1555,8 @@
         "provides": []
       },
       "bodyHash": "099203d3fea5",
-      "line": 17,
-      "endLine": 26
+      "line": 18,
+      "endLine": 27
     },
     "getDiff": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1436,8 +1576,8 @@
         "provides": []
       },
       "bodyHash": "97846142c6e0",
-      "line": 29,
-      "endLine": 34
+      "line": 30,
+      "endLine": 35
     },
     "commitAll": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1457,8 +1597,8 @@
         "provides": []
       },
       "bodyHash": "147d98119a45",
-      "line": 37,
-      "endLine": 41
+      "line": 38,
+      "endLine": 42
     },
     "revertAll": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1478,8 +1618,8 @@
         "provides": []
       },
       "bodyHash": "8af65d1b3234",
-      "line": 44,
-      "endLine": 48
+      "line": 45,
+      "endLine": 49
     },
     "pushBranch": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1499,8 +1639,8 @@
         "provides": []
       },
       "bodyHash": "543d81f690ea",
-      "line": 51,
-      "endLine": 54
+      "line": 52,
+      "endLine": 55
     },
     "getBranchState": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1520,8 +1660,8 @@
         "provides": []
       },
       "bodyHash": "d3f9d1dd0f6d",
-      "line": 57,
-      "endLine": 65
+      "line": 58,
+      "endLine": 66
     },
     "getMainBranch": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1541,8 +1681,8 @@
         "provides": []
       },
       "bodyHash": "c7c9ff63b3ca",
-      "line": 68,
-      "endLine": 72
+      "line": 69,
+      "endLine": 73
     },
     "mergeBranch": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1562,8 +1702,8 @@
         "provides": []
       },
       "bodyHash": "3e461ea31eff",
-      "line": 75,
-      "endLine": 81
+      "line": 76,
+      "endLine": 82
     },
     "checkoutMain": {
       "file": "src\\lib\\server\\services\\git.ts",
@@ -1583,8 +1723,8 @@
         "provides": []
       },
       "bodyHash": "86c1fb5a7940",
-      "line": 84,
-      "endLine": 89
+      "line": 85,
+      "endLine": 90
     },
     "getPrivateKey": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1898,8 +2038,8 @@
         "provides": []
       },
       "bodyHash": "abbb134fe718",
-      "line": 8,
-      "endLine": 10
+      "line": 9,
+      "endLine": 11
     },
     "unregister": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -1919,8 +2059,8 @@
         "provides": []
       },
       "bodyHash": "d89192856911",
-      "line": 13,
-      "endLine": 15
+      "line": 14,
+      "endLine": 16
     },
     "getProcess": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -1940,8 +2080,8 @@
         "provides": []
       },
       "bodyHash": "9899182bc231",
-      "line": 18,
-      "endLine": 20
+      "line": 19,
+      "endLine": 21
     },
     "isRunning": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -1961,8 +2101,8 @@
         "provides": []
       },
       "bodyHash": "3b18b280d2f6",
-      "line": 23,
-      "endLine": 25
+      "line": 24,
+      "endLine": 26
     },
     "writeInput": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -1982,8 +2122,8 @@
         "provides": []
       },
       "bodyHash": "db3d3848e87f",
-      "line": 28,
-      "endLine": 33
+      "line": 29,
+      "endLine": 34
     },
     "killProcess": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -2003,8 +2143,8 @@
         "provides": []
       },
       "bodyHash": "21dcd14478a0",
-      "line": 39,
-      "endLine": 49
+      "line": 40,
+      "endLine": 50
     },
     "configFilePath": {
       "file": "src\\lib\\server\\services\\project-config.ts",
@@ -2255,8 +2395,8 @@
         "provides": []
       },
       "bodyHash": "4c6d05532b59",
-      "line": 39,
-      "endLine": 42
+      "line": 40,
+      "endLine": 43
     },
     "ensureDir": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2276,8 +2416,8 @@
         "provides": []
       },
       "bodyHash": "f2bb140d69a9",
-      "line": 45,
-      "endLine": 47
+      "line": 46,
+      "endLine": 48
     },
     "taskPath": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2297,8 +2437,8 @@
         "provides": []
       },
       "bodyHash": "f3435e50153d",
-      "line": 50,
-      "endLine": 52
+      "line": 51,
+      "endLine": 53
     },
     "migrateTaskStatus": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2318,8 +2458,8 @@
         "provides": []
       },
       "bodyHash": "b0b67ab902af",
-      "line": 55,
-      "endLine": 72
+      "line": 56,
+      "endLine": 73
     },
     "listTasks": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2339,8 +2479,8 @@
         "provides": []
       },
       "bodyHash": "78db16aef6c2",
-      "line": 75,
-      "endLine": 86
+      "line": 76,
+      "endLine": 87
     },
     "getTask": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2360,8 +2500,8 @@
         "provides": []
       },
       "bodyHash": "763762fe2717",
-      "line": 89,
-      "endLine": 93
+      "line": 90,
+      "endLine": 94
     },
     "createTask": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2381,8 +2521,8 @@
         "provides": []
       },
       "bodyHash": "2de4778b69f0",
-      "line": 96,
-      "endLine": 114
+      "line": 97,
+      "endLine": 115
     },
     "updateTask": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2402,8 +2542,8 @@
         "provides": []
       },
       "bodyHash": "ddc52153e76c",
-      "line": 117,
-      "endLine": 123
+      "line": 118,
+      "endLine": 124
     },
     "deleteTask": {
       "file": "src\\lib\\server\\services\\tasks.ts",
@@ -2423,8 +2563,8 @@
         "provides": []
       },
       "bodyHash": "87a4366ec36b",
-      "line": 126,
-      "endLine": 131
+      "line": 127,
+      "endLine": 132
     },
     "loadUsage": {
       "file": "src\\lib\\server\\services\\usage.ts",
@@ -2549,8 +2689,8 @@
         "provides": []
       },
       "bodyHash": "aa235d5b7fd6",
-      "line": 5,
-      "endLine": 12
+      "line": 6,
+      "endLine": 13
     },
     "api.agent.kill.POST": {
       "file": "src\\routes\\api\\agent\\kill\\+server.ts",
@@ -2570,8 +2710,8 @@
         "provides": []
       },
       "bodyHash": "4b65a2df68d3",
-      "line": 6,
-      "endLine": 15
+      "line": 7,
+      "endLine": 16
     },
     "api.agent.preview-prompt.POST": {
       "file": "src\\routes\\api\\agent\\preview-prompt\\+server.ts",
@@ -2591,8 +2731,50 @@
         "provides": []
       },
       "bodyHash": "b39e640d11a3",
-      "line": 8,
-      "endLine": 38
+      "line": 9,
+      "endLine": 39
+    },
+    "savePlan": {
+      "file": "src\\routes\\api\\agent\\run\\+server.ts",
+      "class": null,
+      "name": "savePlan",
+      "signature": "savePlan(taskId, lines)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Sauvegarde uniquement le texte produit par l'agent (type \"agent\") dans <taskId>.plan.md.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5d3ec460813e",
+      "line": 27,
+      "endLine": 34
+    },
+    "api.agent.run.POST": {
+      "file": "src\\routes\\api\\agent\\run\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "aeb27be1e779",
+      "line": 37,
+      "endLine": 362
     },
     "api.agent.session.DELETE": {
       "file": "src\\routes\\api\\agent\\session\\+server.ts",
@@ -2612,8 +2794,29 @@
         "provides": []
       },
       "bodyHash": "fc9cbae55a4a",
-      "line": 5,
-      "endLine": 25
+      "line": 6,
+      "endLine": 26
+    },
+    "api.atlas.GET": {
+      "file": "src\\routes\\api\\atlas\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "115f407602b1",
+      "line": 25,
+      "endLine": 52
     },
     "api.cartography.POST": {
       "file": "src\\routes\\api\\cartography\\+server.ts",
@@ -2633,8 +2836,218 @@
         "provides": []
       },
       "bodyHash": "655a3407f244",
-      "line": 8,
-      "endLine": 52
+      "line": 9,
+      "endLine": 53
+    },
+    "readIndex": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "readIndex",
+      "signature": "readIndex(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Lit l'index des méthodes depuis le cache",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "5a838f25384c",
+      "line": 21,
+      "endLine": 25
+    },
+    "getUndescribedByFile": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "getUndescribedByFile",
+      "signature": "getUndescribedByFile(projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Regroupe les méthodes non documentées par fichier",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "27978902f15f",
+      "line": 28,
+      "endLine": 47
+    },
+    "buildFileGraph": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "buildFileGraph",
+      "signature": "buildFileGraph(files, projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Construit le graphe d'imports entre les fichiers du projet.\ngraph[A] = [B, C] signifie que A importe B et C.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "35af67b0e6b2",
+      "line": 53,
+      "endLine": 80
+    },
+    "topoSort": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "topoSort",
+      "signature": "topoSort(files, graph)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Tri topologique par DFS post-order.\nLes feuilles (fichiers sans imports internes) arrivent en premier —\nce sont les utilitaires de bas niveau, plus simples à annoter.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "31ba66201f01",
+      "line": 87,
+      "endLine": 103
+    },
+    "computeDepths": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "computeDepths",
+      "signature": "computeDepths(files, graph)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Calcule la profondeur de chaque fichier dans le graphe (0 = feuille pure)",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "0ee0b24004c3",
+      "line": 106,
+      "endLine": 131
+    },
+    "extractCode": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "extractCode",
+      "signature": "extractCode(fileLines, startLine, endLine)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Extrait le code source d'une plage de lignes",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "93d5118f5e6c",
+      "line": 134,
+      "endLine": 138
+    },
+    "generateDescriptions": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "generateDescriptions",
+      "signature": "generateDescriptions(methods)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": false,
+      "role": "internal",
+      "description": "Génère des descriptions via Claude pour un lot de méthodes (async — ne bloque pas l'event loop)",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "600e1ab0938c",
+      "line": 141,
+      "endLine": 211
+    },
+    "insertJsDoc": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "insertJsDoc",
+      "signature": "insertJsDoc(filePath, entries)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Insère des JSDoc dans un fichier source",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "cbd8c97768ce",
+      "line": 214,
+      "endLine": 243
+    },
+    "api.cartography.comment.GET": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a71427ed33a3",
+      "line": 246,
+      "endLine": 254
+    },
+    "api.cartography.comment.POST": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a2e809ae9950",
+      "line": 257,
+      "endLine": 383
     },
     "scanJs": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -2654,8 +3067,8 @@
         "provides": []
       },
       "bodyHash": "93d19940e161",
-      "line": 27,
-      "endLine": 40
+      "line": 28,
+      "endLine": 41
     },
     "extractExtends": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -2675,8 +3088,8 @@
         "provides": []
       },
       "bodyHash": "249ff66f5fa2",
-      "line": 43,
-      "endLine": 45
+      "line": 44,
+      "endLine": 46
     },
     "capitalize": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -2696,8 +3109,8 @@
         "provides": []
       },
       "bodyHash": "4bda8c2eda94",
-      "line": 48,
-      "endLine": 48
+      "line": 49,
+      "endLine": 49
     },
     "api.cartography.diagram.GET": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -2717,8 +3130,8 @@
         "provides": []
       },
       "bodyHash": "5ec94c4c98c1",
-      "line": 51,
-      "endLine": 207
+      "line": 52,
+      "endLine": 208
     },
     "api.cartography.enrich.POST": {
       "file": "src\\routes\\api\\cartography\\enrich\\+server.ts",
@@ -2737,9 +3150,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "ab02426851a2",
-      "line": 6,
-      "endLine": 53
+      "bodyHash": "4489aeec991b",
+      "line": 7,
+      "endLine": 54
     },
     "api.cartography.methods.GET": {
       "file": "src\\routes\\api\\cartography\\methods\\+server.ts",
@@ -2758,9 +3171,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "9fff4976fb36",
-      "line": 7,
-      "endLine": 33
+      "bodyHash": "d6b7a2aa924f",
+      "line": 8,
+      "endLine": 34
     },
     "api.cartography.refresh.POST": {
       "file": "src\\routes\\api\\cartography\\refresh\\+server.ts",
@@ -2780,8 +3193,8 @@
         "provides": []
       },
       "bodyHash": "aaed02f33ccf",
-      "line": 6,
-      "endLine": 17
+      "line": 7,
+      "endLine": 18
     },
     "api.cartography.run.POST": {
       "file": "src\\routes\\api\\cartography\\run\\+server.ts",
@@ -2800,9 +3213,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "6e8a0f99f64e",
-      "line": 16,
-      "endLine": 62
+      "bodyHash": "f4862660ac3d",
+      "line": 17,
+      "endLine": 63
     },
     "api.cartography.snippet.GET": {
       "file": "src\\routes\\api\\cartography\\snippet\\+server.ts",
@@ -2822,8 +3235,8 @@
         "provides": []
       },
       "bodyHash": "b47419deacb8",
-      "line": 53,
-      "endLine": 100
+      "line": 54,
+      "endLine": 101
     },
     "api.cartography.stats.GET": {
       "file": "src\\routes\\api\\cartography\\stats\\+server.ts",
@@ -2842,9 +3255,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "8a02ff5abf92",
-      "line": 7,
-      "endLine": 62
+      "bodyHash": "5c5795ce722a",
+      "line": 8,
+      "endLine": 63
     },
     "api.context.POST": {
       "file": "src\\routes\\api\\context\\+server.ts",
@@ -2864,8 +3277,8 @@
         "provides": []
       },
       "bodyHash": "d49de8a651df",
-      "line": 8,
-      "endLine": 47
+      "line": 9,
+      "endLine": 48
     },
     "api.github.issues.POST": {
       "file": "src\\routes\\api\\github\\issues\\+server.ts",
@@ -2884,9 +3297,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "f641a565d659",
-      "line": 8,
-      "endLine": 17
+      "bodyHash": "c555dbaf009d",
+      "line": 9,
+      "endLine": 18
     },
     "api.issue.GET": {
       "file": "src\\routes\\api\\issue\\+server.ts",
@@ -2905,9 +3318,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "08682e650afb",
-      "line": 9,
-      "endLine": 36
+      "bodyHash": "eedf6c500588",
+      "line": 10,
+      "endLine": 37
     },
     "api.issue.POST": {
       "file": "src\\routes\\api\\issue\\+server.ts",
@@ -2926,9 +3339,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "6c060a7225e1",
-      "line": 39,
-      "endLine": 43
+      "bodyHash": "607079e13e6e",
+      "line": 40,
+      "endLine": 44
     },
     "api.issues.GET": {
       "file": "src\\routes\\api\\issues\\+server.ts",
@@ -2948,8 +3361,8 @@
         "provides": []
       },
       "bodyHash": "8d2429b0f944",
-      "line": 6,
-      "endLine": 35
+      "line": 7,
+      "endLine": 36
     },
     "api.issues.POST": {
       "file": "src\\routes\\api\\issues\\+server.ts",
@@ -2969,8 +3382,8 @@
         "provides": []
       },
       "bodyHash": "ebee8d81824f",
-      "line": 38,
-      "endLine": 54
+      "line": 39,
+      "endLine": 55
     },
     "api.issues.analysis.GET": {
       "file": "src\\routes\\api\\issues\\analysis\\+server.ts",
@@ -2990,8 +3403,8 @@
         "provides": []
       },
       "bodyHash": "dc0f1c305915",
-      "line": 6,
-      "endLine": 18
+      "line": 7,
+      "endLine": 19
     },
     "saveAnalysis": {
       "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
@@ -3011,8 +3424,8 @@
         "provides": []
       },
       "bodyHash": "a94cf8e7745f",
-      "line": 12,
-      "endLine": 20
+      "line": 13,
+      "endLine": 21
     },
     "saveSnapshot": {
       "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
@@ -3032,8 +3445,8 @@
         "provides": []
       },
       "bodyHash": "dba0fced18bc",
-      "line": 23,
-      "endLine": 26
+      "line": 24,
+      "endLine": 27
     },
     "api.issues.analyze.POST": {
       "file": "src\\routes\\api\\issues\\analyze\\+server.ts",
@@ -3053,8 +3466,8 @@
         "provides": []
       },
       "bodyHash": "943338bbc774",
-      "line": 29,
-      "endLine": 80
+      "line": 30,
+      "endLine": 81
     },
     "api.issues.analyze.update.POST": {
       "file": "src\\routes\\api\\issues\\analyze\\update\\+server.ts",
@@ -3074,8 +3487,8 @@
         "provides": []
       },
       "bodyHash": "4052db2698ca",
-      "line": 12,
-      "endLine": 84
+      "line": 13,
+      "endLine": 85
     },
     "api.issues.roadmap.chat.POST": {
       "file": "src\\routes\\api\\issues\\roadmap\\chat\\+server.ts",
@@ -3095,8 +3508,8 @@
         "provides": []
       },
       "bodyHash": "499144fef132",
-      "line": 9,
-      "endLine": 46
+      "line": 10,
+      "endLine": 47
     },
     "api.issues.roadmaps.GET": {
       "file": "src\\routes\\api\\issues\\roadmaps\\+server.ts",
@@ -3116,8 +3529,8 @@
         "provides": []
       },
       "bodyHash": "0f93be089421",
-      "line": 5,
-      "endLine": 25
+      "line": 6,
+      "endLine": 26
     },
     "api.issues.snapshot.GET": {
       "file": "src\\routes\\api\\issues\\snapshot\\+server.ts",
@@ -3137,8 +3550,8 @@
         "provides": []
       },
       "bodyHash": "c1084457fe90",
-      "line": 10,
-      "endLine": 21
+      "line": 11,
+      "endLine": 22
     },
     "api.issues.[number].close.POST": {
       "file": "src\\routes\\api\\issues\\[number]\\close\\+server.ts",
@@ -3179,8 +3592,8 @@
         "provides": []
       },
       "bodyHash": "1073c3239fe9",
-      "line": 5,
-      "endLine": 34
+      "line": 6,
+      "endLine": 35
     },
     "api.plan.GET": {
       "file": "src\\routes\\api\\plan\\+server.ts",
@@ -3200,8 +3613,8 @@
         "provides": []
       },
       "bodyHash": "bb42b0950ba0",
-      "line": 5,
-      "endLine": 16
+      "line": 6,
+      "endLine": 17
     },
     "api.project-config.GET": {
       "file": "src\\routes\\api\\project-config\\+server.ts",
@@ -3221,8 +3634,8 @@
         "provides": []
       },
       "bodyHash": "9e0858f35ddf",
-      "line": 9,
-      "endLine": 11
+      "line": 10,
+      "endLine": 12
     },
     "api.project-config.PATCH": {
       "file": "src\\routes\\api\\project-config\\+server.ts",
@@ -3242,8 +3655,8 @@
         "provides": []
       },
       "bodyHash": "85a89e0e4f75",
-      "line": 14,
-      "endLine": 22
+      "line": 15,
+      "endLine": 23
     },
     "api.projects.GET": {
       "file": "src\\routes\\api\\projects\\+server.ts",
@@ -3263,8 +3676,8 @@
         "provides": []
       },
       "bodyHash": "a223bb772648",
-      "line": 5,
-      "endLine": 7
+      "line": 6,
+      "endLine": 8
     },
     "api.projects.POST": {
       "file": "src\\routes\\api\\projects\\+server.ts",
@@ -3284,8 +3697,8 @@
         "provides": []
       },
       "bodyHash": "74b97c288fc1",
-      "line": 10,
-      "endLine": 21
+      "line": 11,
+      "endLine": 22
     },
     "api.projects.current.PATCH": {
       "file": "src\\routes\\api\\projects\\current\\+server.ts",
@@ -3305,8 +3718,8 @@
         "provides": []
       },
       "bodyHash": "293fadc9cbfa",
-      "line": 5,
-      "endLine": 9
+      "line": 6,
+      "endLine": 10
     },
     "api.projects.current.DELETE": {
       "file": "src\\routes\\api\\projects\\current\\+server.ts",
@@ -3326,8 +3739,8 @@
         "provides": []
       },
       "bodyHash": "2677c4c6ee78",
-      "line": 12,
-      "endLine": 16
+      "line": 13,
+      "endLine": 17
     },
     "api.projects.github.GET": {
       "file": "src\\routes\\api\\projects\\github\\+server.ts",
@@ -3347,8 +3760,8 @@
         "provides": []
       },
       "bodyHash": "fac4f66968c4",
-      "line": 6,
-      "endLine": 17
+      "line": 7,
+      "endLine": 18
     },
     "api.repo-file.GET": {
       "file": "src\\routes\\api\\repo-file\\+server.ts",
@@ -3367,9 +3780,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "8e29e0415c95",
-      "line": 8,
-      "endLine": 21
+      "bodyHash": "c666b71bac6a",
+      "line": 9,
+      "endLine": 22
     },
     "api.repo-info.GET": {
       "file": "src\\routes\\api\\repo-info\\+server.ts",
@@ -3389,7 +3802,28 @@
         "provides": []
       },
       "bodyHash": "13422cbf4f7f",
-      "line": 5,
+      "line": 6,
+      "endLine": 9
+    },
+    "api.skills.GET": {
+      "file": "src\\routes\\api\\skills\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d587fc0ca6ab",
+      "line": 6,
       "endLine": 8
     },
     "api.tasks.GET": {
@@ -3410,8 +3844,8 @@
         "provides": []
       },
       "bodyHash": "495867a10ad1",
-      "line": 5,
-      "endLine": 7
+      "line": 6,
+      "endLine": 8
     },
     "api.tasks.POST": {
       "file": "src\\routes\\api\\tasks\\+server.ts",
@@ -3431,8 +3865,8 @@
         "provides": []
       },
       "bodyHash": "e41307630f54",
-      "line": 10,
-      "endLine": 26
+      "line": 11,
+      "endLine": 27
     },
     "api.tasks.[id].GET": {
       "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
@@ -3452,8 +3886,8 @@
         "provides": []
       },
       "bodyHash": "c23aee42c103",
-      "line": 5,
-      "endLine": 9
+      "line": 6,
+      "endLine": 10
     },
     "api.tasks.[id].PATCH": {
       "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
@@ -3473,8 +3907,8 @@
         "provides": []
       },
       "bodyHash": "6f5e88d51de2",
-      "line": 12,
-      "endLine": 17
+      "line": 13,
+      "endLine": 18
     },
     "api.tasks.[id].DELETE": {
       "file": "src\\routes\\api\\tasks\\[id]\\+server.ts",
@@ -3494,8 +3928,8 @@
         "provides": []
       },
       "bodyHash": "b0e0de6868d4",
-      "line": 20,
-      "endLine": 24
+      "line": 21,
+      "endLine": 25
     },
     "api.tasks.[id].commit.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts",
@@ -3515,8 +3949,8 @@
         "provides": []
       },
       "bodyHash": "fad0add1720f",
-      "line": 7,
-      "endLine": 25
+      "line": 8,
+      "endLine": 26
     },
     "api.tasks.[id].diff.GET": {
       "file": "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts",
@@ -3536,8 +3970,8 @@
         "provides": []
       },
       "bodyHash": "716a2536f2f5",
-      "line": 7,
-      "endLine": 20
+      "line": 8,
+      "endLine": 21
     },
     "toBranchName": {
       "file": "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts",
@@ -3557,8 +3991,8 @@
         "provides": []
       },
       "bodyHash": "f18d50f66e1d",
-      "line": 10,
-      "endLine": 21
+      "line": 11,
+      "endLine": 22
     },
     "api.tasks.[id].initial-commit.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts",
@@ -3578,8 +4012,8 @@
         "provides": []
       },
       "bodyHash": "8039b4f0f189",
-      "line": 24,
-      "endLine": 70
+      "line": 25,
+      "endLine": 71
     },
     "api.tasks.[id].merge.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts",
@@ -3599,8 +4033,8 @@
         "provides": []
       },
       "bodyHash": "a8f32593732a",
-      "line": 8,
-      "endLine": 50
+      "line": 9,
+      "endLine": 51
     },
     "api.tasks.[id].methods.GET": {
       "file": "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts",
@@ -3620,8 +4054,8 @@
         "provides": []
       },
       "bodyHash": "4d336e51181a",
-      "line": 67,
-      "endLine": 133
+      "line": 68,
+      "endLine": 134
     },
     "api.tasks.[id].plan.GET": {
       "file": "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts",
@@ -3641,8 +4075,8 @@
         "provides": []
       },
       "bodyHash": "5dc914a40519",
-      "line": 7,
-      "endLine": 18
+      "line": 8,
+      "endLine": 19
     },
     "api.tasks.[id].push.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\push\\+server.ts",
@@ -3662,8 +4096,8 @@
         "provides": []
       },
       "bodyHash": "fc18644313e3",
-      "line": 7,
-      "endLine": 20
+      "line": 8,
+      "endLine": 21
     },
     "api.tasks.[id].revert.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts",
@@ -3683,8 +4117,8 @@
         "provides": []
       },
       "bodyHash": "4bbdc9089071",
-      "line": 7,
-      "endLine": 20
+      "line": 8,
+      "endLine": 21
     },
     "api.tasks.[id].sync.POST": {
       "file": "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts",
@@ -3704,8 +4138,8 @@
         "provides": []
       },
       "bodyHash": "7886e8c31f36",
-      "line": 7,
-      "endLine": 28
+      "line": 8,
+      "endLine": 29
     },
     "api.usage.GET": {
       "file": "src\\routes\\api\\usage\\+server.ts",
@@ -3725,281 +4159,8 @@
         "provides": []
       },
       "bodyHash": "b27c9d7c8b3f",
-      "line": 4,
-      "endLine": 9
-    },
-    "stripAnsi": {
-      "file": "src\\routes\\api\\agent\\run\\+server.ts",
-      "class": null,
-      "name": "stripAnsi",
-      "signature": "stripAnsi(str)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Supprime les séquences d'échappement ANSI d'une chaîne",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "68d1d42849bd",
-      "line": 20,
-      "endLine": 22
-    },
-    "savePlan": {
-      "file": "src\\routes\\api\\agent\\run\\+server.ts",
-      "class": null,
-      "name": "savePlan",
-      "signature": "savePlan(taskId, lines)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Sauvegarde uniquement le texte produit par l'agent (type \"agent\") dans <taskId>.plan.md.",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "5d3ec460813e",
-      "line": 25,
-      "endLine": 32
-    },
-    "api.agent.run.POST": {
-      "file": "src\\routes\\api\\agent\\run\\+server.ts",
-      "class": null,
-      "name": "POST",
-      "signature": "POST({ request })",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": true,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "a9dc80e602d9",
-      "line": 35,
-      "endLine": 305
-    },
-    "readIndex": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "readIndex",
-      "signature": "readIndex(projectRoot)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Lit l'index des méthodes depuis le cache",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "5a838f25384c",
-      "line": 20,
-      "endLine": 24
-    },
-    "getUndescribedByFile": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "getUndescribedByFile",
-      "signature": "getUndescribedByFile(projectRoot)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Regroupe les méthodes non documentées par fichier",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "27978902f15f",
-      "line": 27,
-      "endLine": 46
-    },
-    "buildFileGraph": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "buildFileGraph",
-      "signature": "buildFileGraph(files, projectRoot)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Construit le graphe d'imports entre les fichiers du projet.\ngraph[A] = [B, C] signifie que A importe B et C.",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "35af67b0e6b2",
-      "line": 52,
-      "endLine": 79
-    },
-    "topoSort": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "topoSort",
-      "signature": "topoSort(files, graph)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Tri topologique par DFS post-order.\nLes feuilles (fichiers sans imports internes) arrivent en premier —\nce sont les utilitaires de bas niveau, plus simples à annoter.",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "31ba66201f01",
-      "line": 86,
-      "endLine": 102
-    },
-    "computeDepths": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "computeDepths",
-      "signature": "computeDepths(files, graph)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Calcule la profondeur de chaque fichier dans le graphe (0 = feuille pure)",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "0ee0b24004c3",
-      "line": 105,
-      "endLine": 130
-    },
-    "extractCode": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "extractCode",
-      "signature": "extractCode(fileLines, startLine, endLine)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Extrait le code source d'une plage de lignes",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "93d5118f5e6c",
-      "line": 133,
-      "endLine": 137
-    },
-    "generateDescriptions": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "generateDescriptions",
-      "signature": "generateDescriptions(methods)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": true,
-      "isExported": false,
-      "role": "internal",
-      "description": "Génère des descriptions via Claude pour un lot de méthodes (async — ne bloque pas l'event loop)",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "600e1ab0938c",
-      "line": 140,
-      "endLine": 210
-    },
-    "insertJsDoc": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "insertJsDoc",
-      "signature": "insertJsDoc(filePath, entries)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": "Insère des JSDoc dans un fichier source",
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "fcd6a6df27e9",
-      "line": 213,
-      "endLine": 242
-    },
-    "api.cartography.comment.GET": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "GET",
-      "signature": "GET()",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "a71427ed33a3",
-      "line": 245,
-      "endLine": 253
-    },
-    "api.cartography.comment.POST": {
-      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
-      "class": null,
-      "name": "POST",
-      "signature": "POST({ request })",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": true,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "9af801bd4c43",
-      "line": 256,
-      "endLine": 382
+      "line": 5,
+      "endLine": 10
     }
   },
   "classes": {}

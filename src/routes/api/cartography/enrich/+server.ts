@@ -1,3 +1,4 @@
+/** Cartographie — enrichit les descriptions de méthodes via Claude (POST) */
 import { spawn } from "child_process";
 import { join } from "path";
 import { getProjectRoot } from "$lib/server/services/projects";

@@ -1,3 +1,4 @@
+/** Contexte — construit le contexte agent (symbol map + snippets) (POST) */
 import { json } from "@sveltejs/kit";
 import { getTask } from "$lib/server/services/tasks";
 import { buildContext } from "$lib/server/agent/context";

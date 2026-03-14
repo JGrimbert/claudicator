@@ -1,3 +1,4 @@
+/** Cartographie — génère l'arbre visuel JS/TS avec méthodes (POST) */
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join, basename } from "path";

@@ -1,3 +1,4 @@
+/** Prompts — formate les prompts d'implémentation pour Claude */
 import fs from "fs";
 import path from "path";
 import type { AgentContext, MethodSnippet } from "./context";

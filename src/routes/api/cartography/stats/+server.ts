@@ -1,3 +1,4 @@
+/** Cartographie — retourne les statistiques d'indexation (GET) */
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";

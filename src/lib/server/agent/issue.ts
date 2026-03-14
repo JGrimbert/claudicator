@@ -1,3 +1,4 @@
+/** Issue Agent — génère et sauvegarde le plan pour une issue GitHub */
 import fs from "fs";
 import { askClaude } from "../services/claude";
 import { getIssue } from "../services/github";

@@ -1,3 +1,4 @@
+/** Dépôt — retourne les infos du projet courant (owner/repo) (GET) */
 import { json } from "@sveltejs/kit";
 import { getCurrentProject } from "$lib/server/services/projects";
 

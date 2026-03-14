@@ -1,3 +1,4 @@
+/** Claude CLI — exécute un prompt via le CLI claude (POST) */
 import { execSync } from "child_process";
 
 /** Exécute un prompt via la CLI Claude et retourne la réponse. */

@@ -1,3 +1,4 @@
+/** Agent — lance Claude en SSE, sauvegarde le plan (POST) */
 import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";

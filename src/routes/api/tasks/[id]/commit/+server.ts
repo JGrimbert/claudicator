@@ -1,3 +1,4 @@
+/** Tâches — commite les changements sur la branche de la tâche (POST) */
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 import { commitAll } from "$lib/server/services/git";

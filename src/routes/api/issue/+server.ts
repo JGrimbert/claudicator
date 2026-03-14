@@ -1,3 +1,4 @@
+/** GitHub — lit une issue avec ses sous-issues (GET) */
 import { json } from "@sveltejs/kit";
 import { getCurrentProject } from "$lib/server/services/projects";
 import { createIssuePlan } from "$lib/server/agent/issue";

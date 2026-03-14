@@ -1,3 +1,4 @@
+/** Plans — retourne le plan global d'une issue (GET) */
 import { json } from "@sveltejs/kit";
 import { existsSync, readFileSync } from "fs";
 
