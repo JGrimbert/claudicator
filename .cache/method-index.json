@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-03-14T19:34:16.046Z",
+  "generated": "2026-03-14T19:42:28.617Z",
   "files": {
     "src\\lib\\index.js": {
       "mtime": 1772885109315.4622,
@@ -444,9 +444,9 @@
       "methodCount": 3
     },
     "src\\routes\\api\\cartography\\comment\\+server.ts": {
-      "mtime": 1773516856016.5237,
-      "size": 16460,
-      "hash": "ff72d3fbbfc2",
+      "mtime": 1773517348582.63,
+      "size": 15062,
+      "hash": "e35596231997",
       "classCount": 0,
       "methodCount": 10
     }
@@ -3809,8 +3809,8 @@
         "provides": []
       },
       "bodyHash": "5a838f25384c",
-      "line": 22,
-      "endLine": 26
+      "line": 20,
+      "endLine": 24
     },
     "getUndescribedByFile": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3830,8 +3830,8 @@
         "provides": []
       },
       "bodyHash": "27978902f15f",
-      "line": 29,
-      "endLine": 48
+      "line": 27,
+      "endLine": 46
     },
     "buildFileGraph": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3851,8 +3851,8 @@
         "provides": []
       },
       "bodyHash": "35af67b0e6b2",
-      "line": 56,
-      "endLine": 83
+      "line": 52,
+      "endLine": 79
     },
     "topoSort": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3872,8 +3872,8 @@
         "provides": []
       },
       "bodyHash": "31ba66201f01",
-      "line": 90,
-      "endLine": 106
+      "line": 86,
+      "endLine": 102
     },
     "computeDepths": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3893,8 +3893,8 @@
         "provides": []
       },
       "bodyHash": "0ee0b24004c3",
-      "line": 109,
-      "endLine": 134
+      "line": 105,
+      "endLine": 130
     },
     "extractCode": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3914,8 +3914,8 @@
         "provides": []
       },
       "bodyHash": "93d5118f5e6c",
-      "line": 139,
-      "endLine": 143
+      "line": 133,
+      "endLine": 137
     },
     "generateDescriptions": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3935,8 +3935,8 @@
         "provides": []
       },
       "bodyHash": "600e1ab0938c",
-      "line": 146,
-      "endLine": 216
+      "line": 140,
+      "endLine": 210
     },
     "insertJsDoc": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3955,9 +3955,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "6f503791587d",
-      "line": 221,
-      "endLine": 250
+      "bodyHash": "fcd6a6df27e9",
+      "line": 213,
+      "endLine": 242
     },
     "api.cartography.comment.GET": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3976,9 +3976,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "b5cb82a36765",
-      "line": 257,
-      "endLine": 266
+      "bodyHash": "a71427ed33a3",
+      "line": 245,
+      "endLine": 253
     },
     "api.cartography.comment.POST": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3997,9 +3997,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "86e3ac35af59",
-      "line": 274,
-      "endLine": 399
+      "bodyHash": "9af801bd4c43",
+      "line": 256,
+      "endLine": 382
     }
   },
   "classes": {}

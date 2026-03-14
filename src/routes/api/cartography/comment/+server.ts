@@ -230,7 +230,7 @@ function insertJsDoc(
         let checkIdx = idx - 1;
         while (checkIdx >= 0 && (fileLines[checkIdx] ?? "").trim() === "") checkIdx--;
         const prev = (fileLines[checkIdx] ?? "").trimEnd();
-        if (/^\s*(\/\*|\*|\/\/|@)/.test(prev)) continue;
+        if (/^\s*\/\*[\s\S]|^\s*\*[\s/]/.test(prev)) continue;
 
         const indent = (fileLines[idx].match(/^(\s*)/) ?? ["", ""])[1];
         fileLines.splice(idx, 0, `${indent}/** ${description} */`);
@@ -259,63 +259,69 @@ export async function POST({ request }: { request: Request }) {
 
     const projectRoot = getProjectRoot();
     const byFile      = getUndescribedByFile(projectRoot);
-
-    if (byFile.size === 0) {
-        return json({ message: "Toutes les méthodes sont déjà documentées" });
-    }
-
-    // Construire la liste des fichiers à traiter en respectant la limite
-    let remaining = limit;
-    const fileMap = new Map<string, IndexMethod[]>();
-    for (const [file, methods] of byFile) {
-        if (remaining <= 0) break;
-        fileMap.set(file, methods.slice(0, remaining));
-        remaining -= Math.min(methods.length, remaining);
-    }
-
-    // Pré-filtrer : exclure les méthodes qui ont déjà un commentaire dans la source
-    // (l'index incrémental ne détecte pas les ajouts de JSDoc car le bodyHash ne change pas)
-    for (const file of [...fileMap.keys()]) {
-        const fullPath = join(projectRoot, file);
-        if (!existsSync(fullPath)) { fileMap.delete(file); continue; }
-        const lines = readFileSync(fullPath, "utf-8").split("\n");
-        const filtered = fileMap.get(file)!.filter(m => {
-            const idx = m.line - 1;
-            if (idx <= 0) return true;
-            let checkIdx = idx - 1;
-            while (checkIdx >= 0 && (lines[checkIdx] ?? "").trim() === "") checkIdx--;
-            const prev = (lines[checkIdx] ?? "").trimEnd();
-            return !/^\s*(\/\*|\*|\/\/|@)/.test(prev);
-        });
-        if (filtered.length === 0) fileMap.delete(file);
-        else fileMap.set(file, filtered);
-    }
-
-    if (fileMap.size === 0) {
-        return json({ message: "Toutes les méthodes sont déjà documentées" });
-    }
-
-    // Trier par ordre topologique (feuilles d'abord → utilitaires de bas niveau en premier)
-    const allFiles     = [...fileMap.keys()];
-    const graph        = buildFileGraph(allFiles, projectRoot);
-    const depths       = computeDepths(allFiles, graph);
-    const sortedFiles  = topoSort(allFiles, graph);
-    const filesToProcess = sortedFiles.map(f => ({ file: f, methods: fileMap.get(f)! }));
-
-    const encoder = new TextEncoder();
+    const encoder     = new TextEncoder();
 
     const stream = new ReadableStream({
         start(controller) {
             const emit = (line: string, type = "system") => {
-                try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`));
-                } catch { /* stream fermé */ }
+                try { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`)); } catch { /* fermé */ }
             };
 
             (async () => {
+                // ── Diagnostic ──────────────────────────────────────────────
+                const totalUndescribed = [...byFile.values()].reduce((n, a) => n + a.length, 0);
+                emit(`index: ${byFile.size} fichiers, ${totalUndescribed} méthodes sans description`);
+
+                if (byFile.size === 0) {
+                    emit("⊘ Index : toutes les méthodes sont déjà documentées");
+                    controller.close(); return;
+                }
+
+                // Construire fileMap
+                let remaining = limit;
+                const fileMap = new Map<string, IndexMethod[]>();
+                for (const [file, methods] of byFile) {
+                    if (remaining <= 0) break;
+                    fileMap.set(file, methods.slice(0, remaining));
+                    remaining -= Math.min(methods.length, remaining);
+                }
+
+                // Pré-filtrer : déjà commentée dans la source
+                for (const file of [...fileMap.keys()]) {
+                    const fullPath = join(projectRoot, file);
+                    if (!existsSync(fullPath)) { fileMap.delete(file); continue; }
+                    const lines = readFileSync(fullPath, "utf-8").split("\n");
+                    const before = fileMap.get(file)!.length;
+
+                    const filtered = fileMap.get(file)!.filter(m => {
+                        const idx = m.line - 1;
+                        if (idx <= 0) return true;
+                        let checkIdx = idx - 1;
+                        while (checkIdx >= 0 && (lines[checkIdx] ?? "").trim() === "") checkIdx--;
+                        const prev = (lines[checkIdx] ?? "").trimEnd();
+                        return !/^\s*\/\*[\s\S]|^\s*\*[\s/]/.test(prev);
+                    });
+
+                    emit(`  ${file}: ${before} → ${filtered.length} après filtre commentaires`);
+                    if (filtered.length === 0) fileMap.delete(file);
+                    else fileMap.set(file, filtered);
+                }
+
+                if (fileMap.size === 0) {
+                    emit("⊘ Tout est déjà commenté dans la source");
+                    controller.close(); return;
+                }
+
+                // Trier par ordre topologique
+                const allFiles    = [...fileMap.keys()];
+                const graph       = buildFileGraph(allFiles, projectRoot);
+                const depths      = computeDepths(allFiles, graph);
+                const sorted      = topoSort(allFiles, graph);
+                const toProcess   = sorted.map(f => ({ file: f, methods: fileMap.get(f)! }));
+
                 let totalAdded = 0;
 
-                for (const { file, methods } of filesToProcess) {
+                for (const { file, methods } of toProcess) {
                     const fullPath = join(projectRoot, file);
                     if (!existsSync(fullPath)) { emit(`⊘ ${file} introuvable`); continue; }
 
@@ -324,7 +330,6 @@ export async function POST({ request }: { request: Request }) {
                     emit(`[${depthLabel}] ${file} (${methods.length})…`);
 
                     const fileLines = readFileSync(fullPath, "utf-8").split("\n");
-
                     const allDescriptions: Array<{ line: number; description: string }> = [];
 
                     for (let i = 0; i < methods.length; i += BATCH_SIZE) {
@@ -362,10 +367,7 @@ export async function POST({ request }: { request: Request }) {
 
                 try { controller.close(); } catch { /* déjà fermé */ }
             })().catch(err => {
-                try {
-                    emit(`Erreur fatale : ${err.message}`);
-                    controller.close();
-                } catch { /* déjà fermé */ }
+                try { emit(`Erreur fatale : ${err.message}`); controller.close(); } catch { /* déjà fermé */ }
             });
         }
     });
