@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { agentState, agentRunState, planModeTask, consoleTab } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
-    import ContextViewer from "$lib/components/ContextViewer.svelte";
+    import SymbolsView from "$lib/components/SymbolsView.svelte";
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -123,6 +123,11 @@
     }
 
     // ─── Onglet actif ─────────────────────────────────────────────────────────
+    let symbolsQuery = $planModeTask?.title ?? $agentState.issue?.title ?? "";
+    let _prevPlanTask = $planModeTask;
+    let _prevIssue = $agentState.issue;
+    $: if ($planModeTask !== _prevPlanTask) { _prevPlanTask = $planModeTask; if ($planModeTask) symbolsQuery = $planModeTask.title; }
+    $: if ($agentState.issue !== _prevIssue) { _prevIssue = $agentState.issue; if ($agentState.issue) symbolsQuery = $agentState.issue.title; }
     let activeTab = $consoleTab;
     $: consoleTab.set(activeTab);
 
@@ -319,11 +324,7 @@
             </div>
         {:else if activeTab === "symbols"}
             <div class="dv-panel">
-                {#if $planModeTask}
-                    <ContextViewer taskId={$planModeTask.id} />
-                {:else}
-                    <div class="sym-placeholder">Aucune task sélectionnée</div>
-                {/if}
+                <SymbolsView initialQuery={symbolsQuery} />
             </div>
         {:else if activeTab === "documentation"}
             <div class="doc-files-tab">
@@ -704,15 +705,4 @@
 .blink { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
 
-/* ── Onglet symboles ──────────────────────────────────────────────── */
-.sym-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    color: #1e1e2a;
-    font-size: 0.65rem;
-    font-style: italic;
-    font-family: 'JetBrains Mono', monospace;
-}
 </style>
