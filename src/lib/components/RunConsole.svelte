@@ -1,6 +1,6 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
-    import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
+    import { agentRunState, taskRefreshTick, type RunLog } from "$lib/stores/agent";
     import PromptUsage from "$lib/components/PromptUsage.svelte";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -13,8 +13,6 @@
     onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
     let logArea: HTMLDivElement;
-    let userInput = "";
-    let sendingInput = false;
     let autoScroll = true;
 
     afterUpdate(() => {
@@ -40,32 +38,23 @@
     }
 
     function dismiss() {
-        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false });
+        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false });
     }
 
-    async function sendInput() {
-        const text = userInput.trim();
-        if (!text || !$agentRunState.taskId || sendingInput) return;
-        sendingInput = true;
-        try {
-            await fetch("/api/agent/input", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId: $agentRunState.taskId, input: text })
-            });
-            agentRunState.update(s => ({ ...s, logs: [...s.logs, { line: `> ${text}`, type: "system" }] }));
-            userInput = "";
-        } finally {
-            sendingInput = false;
-        }
+    async function terminateSession() {
+        const taskId = $agentRunState.taskId;
+        if (!taskId) return;
+        await fetch("/api/agent/session", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ taskId })
+        });
+        agentRunState.update(s => ({ ...s, sessionAlive: false }));
+        taskRefreshTick.update(n => n + 1);
     }
 
-    function onKey(e: KeyboardEvent) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendInput(); }
-    }
-
-    // Filtre les lignes purement techniques ([pid:...]) et les events usage/context
-    $: visibleLogs = $agentRunState.logs.filter(l => l.type !== 'usage' && l.type !== 'context' && !/^\[pid:\d+\]$/.test(l.line));
+    // Filtre les lignes purement techniques ([pid:...]) et les events usage/context/session_status
+    $: visibleLogs = $agentRunState.logs.filter(l => l.type !== 'usage' && l.type !== 'context' && l.type !== 'session_status' && !/^\[pid:\d+\]$/.test(l.line));
     $: systemLogs  = $agentRunState.logs.filter(l => l.type === 'system' && !/^\[pid:\d+\]$/.test(l.line));
     $: agentLogs   = $agentRunState.logs.filter(l => l.type === 'agent');
 
@@ -111,14 +100,22 @@
         <span class="status-text">
             {#if $agentRunState.running}
                 {visibleLogs.length === 0 ? "Initialisation…" : "En cours…"}
+            {:else if $agentRunState.sessionAlive}
+                session active
             {:else if visibleLogs.length > 0}
                 Terminé
             {/if}
         </span>
+        {#if $agentRunState.sessionAlive && !$agentRunState.running}
+            <span class="badge-session">⬡ session</span>
+        {/if}
         {#if $agentRunState.running}
             <button class="btn-stop" onclick={stop}>■ Interrompre</button>
         {/if}
-        {#if !$agentRunState.running}
+        {#if $agentRunState.sessionAlive && !$agentRunState.running}
+            <button class="btn-terminate" onclick={terminateSession}>⏹ Terminer</button>
+        {/if}
+        {#if !$agentRunState.running && !$agentRunState.sessionAlive}
             <button class="btn-dismiss" onclick={dismiss}>✕ Fermer</button>
         {/if}
     </div>
@@ -151,25 +148,6 @@
         <PromptUsage usage={lastUsage} context={lastContext} />
     {/if}
 
-    <!-- ── Input stdin (pour répondre à Claude) ── -->
-    {#if $agentRunState.running}
-        <div class="input-bar">
-            <span class="prompt-sym">›</span>
-            <input
-                class="stdin-input"
-                type="text"
-                placeholder="Répondre à Claude… (Entrée)"
-                bind:value={userInput}
-                onkeydown={onKey}
-                disabled={sendingInput}
-            />
-            <button
-                class="btn-send"
-                onclick={sendInput}
-                disabled={!userInput.trim() || sendingInput}
-            >↵</button>
-        </div>
-    {/if}
 </div>
 
 <style>
@@ -250,6 +228,27 @@
     font-family: 'JetBrains Mono', monospace;
 }
 .btn-dismiss:hover { border-color: #555; color: #777; }
+.badge-session {
+    font-size: 0.58rem;
+    color: #3a7a4a;
+    border: 1px solid #1e3a2a;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+}
+.btn-terminate {
+    background: none;
+    border: 1px solid #2a2a1e;
+    color: #5a5a30;
+    font-size: 0.62rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+}
+.btn-terminate:hover { border-color: #a09030; color: #c0b040; }
 
 /* ── Logs ── */
 .log-area {
@@ -290,43 +289,4 @@
 }
 
 
-/* ── Input stdin ── */
-.input-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    background: var(--bg-panel);
-}
-.prompt-sym {
-    color: #3a3a5a;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-}
-.stdin-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #777;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-}
-.stdin-input:focus { color: #bbb; }
-.stdin-input::placeholder { color: #252535; }
-.stdin-input:disabled { opacity: 0.4; }
-.btn-send {
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: #444;
-    font-size: 0.75rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-.btn-send:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.btn-send:disabled { opacity: 0.25; cursor: default; }
 </style>

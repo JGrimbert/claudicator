@@ -87,9 +87,6 @@
         { id: "full:force", label: "Init" },
     ];
 
-    let showContext = false;
-    $: if (!$planModeTask) showContext = false;
-
     // ─── AGENT — recherche ────────────────────────────────────────────────────
     type SearchResult = {
         key: string; file: string; startLine: number | null; endLine: number | null;
@@ -165,6 +162,7 @@
         t.push({ id: "todo",  label: "todo",  count: todoGrep.length || (todoLoading ? "…" : 0) });
         t.push({ id: "codebase", label: "codebase", count: "" });
         t.push({ id: "documentation", label: "docs", count: files.length });
+        t.push({ id: "symbols", label: "symboles", count: "" });
         if (queryLabel) t.push({ id: "query", label: queryLabel, count: queryGrep.length });
         return t.filter(t => !HIDDEN_TABS.has(t.id));
     })();
@@ -273,24 +271,10 @@
         <pre class="exp-content">{expandedFile.content}</pre>
     </div>
 {:else}
-    {#if showContext && $planModeTask}
-        <div class="cv-wrap">
-            <div class="section-header">
-                ATLAS
-                <div class="header-actions">
-                    <button class="cmd-btn ctx-active" onclick={() => showContext = false}>{"{ contexte }"}</button>
-                </div>
-            </div>
-            <ContextViewer taskId={$planModeTask.id} />
-        </div>
-    {:else}
     <div class="projet-section">
         <div class="section-header">
             ATLAS
             <div class="header-actions">
-                {#if $planModeTask}
-                    <button class="cmd-btn" onclick={() => showContext = true}>{"{ contexte }"}</button>
-                {/if}
                 {#each CMD_BUTTONS as btn}
                     <button
                         class="cmd-btn"
@@ -404,6 +388,14 @@
             <div class="dv-panel">
                 <DiagramViewer />
             </div>
+        {:else if activeTab === "symbols"}
+            <div class="dv-panel">
+                {#if $planModeTask}
+                    <ContextViewer taskId={$planModeTask.id} />
+                {:else}
+                    <div class="sym-placeholder">Aucune task sélectionnée</div>
+                {/if}
+            </div>
         {:else if activeTab === "documentation"}
             <div class="doc-files-tab">
                 {#each files as file}
@@ -443,7 +435,6 @@
         {/if}
         </div>
     </div>
-    {/if}
 {/if}
 
 <style>
@@ -799,13 +790,15 @@
 .blink { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
 
-/* ── Onglet contexte ──────────────────────────────────────────────── */
-.cv-wrap {
+/* ── Onglet symboles ──────────────────────────────────────────────── */
+.sym-placeholder {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    color: #1e1e2a;
+    font-size: 0.65rem;
+    font-style: italic;
+    font-family: 'JetBrains Mono', monospace;
 }
-.cmd-btn.ctx-active { color: var(--accent-hover); border-color: #4a3a8a; background: var(--bg-subtle); }
 </style>

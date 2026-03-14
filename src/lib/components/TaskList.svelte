@@ -432,7 +432,7 @@
             }
         }
 
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false });
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
@@ -446,10 +446,15 @@
                 const { done, value } = await reader.read();
                 if (done) break;
                 for (const raw of dec.decode(value).split("\n")) {
-                    if (raw.startsWith("data: ")) {
-                        try { agentRunState.update(s => ({ ...s, logs: [...s.logs, JSON.parse(raw.slice(6))] })); }
-                        catch { }
-                    }
+                    if (!raw.startsWith("data: ")) continue;
+                    try {
+                        const event = JSON.parse(raw.slice(6));
+                        if (event.type === "session_status") {
+                            agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
+                        } else {
+                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
+                        }
+                    } catch { /* ligne vide */ }
                 }
             }
         } finally {

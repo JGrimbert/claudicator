@@ -18,18 +18,20 @@ export const contextState = writable<Context>({
     error: "",
 });
 
-export type RunLog = { line: string; type: "agent" | "system" | "usage" | "context" };
+export type RunLog = { line: string; type: "agent" | "system" | "usage" | "context" | "session_status" };
 
 export const agentRunState = writable<{
     taskId: string | null;
     taskTitle: string;
     logs: RunLog[];
     running: boolean;
+    sessionAlive: boolean;
 }>({
     taskId: null,
     taskTitle: "",
     logs: [],
     running: false,
+    sessionAlive: false,
 });
 
 export const taskRefreshTick = writable(0);

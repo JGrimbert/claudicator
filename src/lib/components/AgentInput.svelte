@@ -1,9 +1,7 @@
 <script lang="ts">
     import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
-    import ContextViewer from "$lib/components/ContextViewer.svelte";
 
     type Task = { id: string; title: string };
-    type SymbolGroup = { file?: string; sigs: string[] };
     type Section = { key: string; content: string };
 
     let { task, projectRoot = "" }: { task: Task; projectRoot?: string } = $props();
@@ -12,7 +10,6 @@
     let loadingContext = $state(false);
     let contextError   = $state("");
     let loadedId       = $state("");
-    let symbolMap      = $state<Record<string, SymbolGroup>>({});
     let hasPlan        = $state(false);
 
     // Champs éditables (Row 1)
@@ -59,16 +56,6 @@
     let hasAtlas   = $derived(sections.some(s => s.key === 'ATLAS'));
     let atlasRaw   = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
 
-    let byFile = $derived.by(() => {
-        const m = new Map<string, { cls: string; sigs: string[] }[]>();
-        for (const [cls, group] of Object.entries(symbolMap)) {
-            const file = group.file ?? "?";
-            if (!m.has(file)) m.set(file, []);
-            m.get(file)!.push({ cls, sigs: group.sigs });
-        }
-        return [...m.entries()];
-    });
-
     // ── Assemblage prompt complet ──────────────────────────────────────────────
     function buildFullPrompt(): string {
         const parts: string[] = [];
@@ -102,7 +89,6 @@
                 descText  = "";
                 sections  = [];
                 hasPlan   = true;
-                symbolMap = {};
                 return;
             }
             const res  = await fetch("/api/context", {
@@ -117,20 +103,17 @@
                 sections     = [];
                 taskText     = task.title;
                 descText     = "";
-                symbolMap    = {};
             } else {
                 const parsed = parseByKeys(data.prompt ?? task.title, TOP_KEYS);
                 sections     = parsed;
                 taskText     = parsed.find(s => s.key === 'TASK')?.content ?? task.title;
                 descText     = parsed.find(s => s.key === 'DESCRIPTION')?.content ?? "";
-                symbolMap    = data.symbolMap ?? {};
             }
         } catch (e: any) {
             contextError = e.message;
             sections     = [];
             taskText     = task.title;
             descText     = "";
-            symbolMap    = {};
         } finally {
             loadingContext = false;
         }
@@ -175,46 +158,12 @@
         }
     }
 
-    // ── Split redimensionnable ─────────────────────────────────────────────────
-    const SPLIT_KEY    = "claudicator:agent-input-split";
-    let splitPct       = $state(55);
-    let splitEl: HTMLElement | null = null;
-    let dragging       = $state(false);
-    let dragStartY     = 0;
-    let dragStartPct   = 55;
-
-    $effect(() => {
-        try {
-            const v = Number(localStorage.getItem(SPLIT_KEY));
-            if (!isNaN(v) && v >= 20 && v <= 85) splitPct = v;
-        } catch { /* ignore */ }
-    });
-
-    function startDrag(e: MouseEvent) {
-        dragging     = true;
-        dragStartY   = e.clientY;
-        dragStartPct = splitPct;
-        e.preventDefault();
-    }
-    function onMove(e: MouseEvent) {
-        if (!dragging || !splitEl) return;
-        const h     = splitEl.offsetHeight;
-        const delta = ((e.clientY - dragStartY) / h) * 100;
-        splitPct    = Math.max(20, Math.min(85, dragStartPct + delta));
-    }
-    function onUp() {
-        if (!dragging) return;
-        dragging = false;
-        try { localStorage.setItem(SPLIT_KEY, String(splitPct)); } catch { /* ignore */ }
-    }
 </script>
 
-<svelte:window onmousemove={onMove} onmouseup={onUp} />
-
-<div class="agent-input" bind:this={splitEl} class:dragging>
+<div class="agent-input">
 
     <!-- ── Prompt pane ── -->
-    <div class="prompt-pane" style="height: {splitPct}%">
+    <div class="prompt-pane">
 
         <div class="ai-header">
             <span class="ai-label">Prompt agent</span>
@@ -309,34 +258,6 @@
                     </div>
                 {/if}
 
-                <!-- Symboles principaux -->
-                {#if byFile.length > 0}
-                    <div class="sym-diag">
-                        <div class="sym-diag-header">
-                            <span class="sym-diag-label">Entrées principales</span>
-                            <span class="sym-diag-hint">analyser en priorité avant toute autre recherche</span>
-                        </div>
-                        <div class="sym-diag-body">
-                            {#each byFile as [file, classes]}
-                                <div class="sym-file">
-                                    <span class="sym-file-path">{file}</span>
-                                    {#each classes as { cls, sigs }}
-                                        <div class="sym-cls">
-                                            <span class="sym-cls-name">{cls}</span>
-                                            {#each sigs as sig, i}
-                                                <div class="sym-sig">
-                                                    <span class="sym-tree">{i === sigs.length - 1 ? '└─' : '├─'}</span>
-                                                    <span class="sym-sig-text">{sig}</span>
-                                                </div>
-                                            {/each}
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
-                {/if}
-
             {/if}
         </div><!-- /prompt-body -->
 
@@ -356,20 +277,6 @@
 
     </div><!-- /prompt-pane -->
 
-    <!-- ── Séparateur ── -->
-    <div
-        class="vhandle"
-        role="separator"
-        aria-label="Redimensionner prompt / contexte carto"
-        onmousedown={startDrag}
-        class:active={dragging}
-    ></div>
-
-    <!-- ── Contexte carto ── -->
-    <div class="ctx-pane">
-        <ContextViewer taskId={task.id} />
-    </div>
-
 </div>
 
 <style>
@@ -379,13 +286,12 @@
     height: 100%;
     border-top: 1px solid var(--border);
 }
-.agent-input.dragging { user-select: none; cursor: row-resize; }
 
 /* ── Prompt pane ── */
 .prompt-pane {
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    flex: 1;
     min-height: 0;
     overflow: hidden;
 }
@@ -551,87 +457,6 @@
     color: #3a4a3a;
 }
 
-/* ── Symboles principaux ── */
-.sym-diag {
-    flex-shrink: 0;
-    border-top: 1px solid var(--border);
-    background: var(--bg-deep);
-    max-height: 130px;
-    overflow-y: auto;
-    margin-top: auto;
-}
-.sym-diag::-webkit-scrollbar { width: 3px; }
-.sym-diag::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.sym-diag-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.2rem 1rem;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-.sym-diag-label {
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #5a4aaa;
-}
-.sym-diag-hint {
-    font-size: 0.55rem;
-    color: #2a2a3a;
-    font-style: italic;
-}
-.sym-diag-body {
-    padding: 0.3rem 1rem 0.4rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-}
-.sym-file {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 140px;
-}
-.sym-file-path {
-    font-size: 0.58rem;
-    color: #3a3a5a;
-    letter-spacing: 0.03em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.sym-cls {
-    padding-left: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.05rem;
-}
-.sym-cls-name { font-size: 0.6rem; color: #7c6af7; }
-.sym-sig {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    padding-left: 0.75rem;
-}
-.sym-tree {
-    font-size: 0.55rem;
-    color: #2a2a3a;
-    flex-shrink: 0;
-    font-family: 'JetBrains Mono', monospace;
-}
-.sym-sig-text {
-    font-size: 0.58rem;
-    color: #4a4a6a;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 /* ── Footer ── */
 .ai-footer {
     display: flex;
@@ -657,24 +482,4 @@
 .ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 .ai-launch:disabled { opacity: 0.35; cursor: default; }
 
-/* ── Séparateur ── */
-.vhandle {
-    flex-shrink: 0;
-    height: 6px;
-    cursor: row-resize;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: transparent;
-    transition: border-color 0.15s;
-}
-.vhandle:hover, .vhandle.active { border-color: var(--border-strong); }
-
-/* ── Contexte pane ── */
-.ctx-pane {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
 </style>
