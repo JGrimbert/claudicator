@@ -1,128 +1,229 @@
 import { json } from "@sveltejs/kit";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, writeFileSync } from "fs";
 import { join } from "path";
+import { execFileSync } from "child_process";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { refreshIndex } from "$lib/server/services/cartography";
-import { spawnClaudeStream } from "$lib/server/agent/claude-stream";
 
-type MethodEntry = {
-    file: string;
+/** Méthodes non décrites, groupées par fichier. */
+type IndexMethod = {
+    key:       string;
+    file:      string;
     signature: string;
-    startLine: number;
-    description: string | null;
-    isPrivate?: boolean;
+    line:      number;
+    endLine:   number;
 };
 
-/** Lit l'index et retourne les méthodes sans description. */
-function getUndescribedMethods(projectRoot: string): MethodEntry[] {
-    const indexPath = join(projectRoot, ".cache/method-index.json");
-    if (!existsSync(indexPath)) return [];
+const BATCH_SIZE = 10; // méthodes par appel Claude
+
+// ─── Lecture de l'index ────────────────────────────────────────────────────────
+
+function readIndex(projectRoot: string): Record<string, any> {
+    const p = join(projectRoot, ".cache/method-index.json");
+    if (!existsSync(p)) return {};
+    try { return JSON.parse(readFileSync(p, "utf-8")).methods ?? {}; } catch { return {}; }
+}
+
+function getUndescribedByFile(projectRoot: string): Map<string, IndexMethod[]> {
+    const methods = readIndex(projectRoot);
+    const byFile = new Map<string, IndexMethod[]>();
+
+    for (const [key, m] of Object.entries(methods) as [string, any][]) {
+        if (m.description || m.isPrivate || !m.file || !m.line) continue;
+        const file = (m.file as string).split("\\").join("/");
+        if (!byFile.has(file)) byFile.set(file, []);
+        byFile.get(file)!.push({
+            key,
+            file,
+            signature: m.signature ?? key,
+            line:    m.line,
+            endLine: m.endLine ?? m.line + 5,
+        });
+    }
+
+    for (const arr of byFile.values()) arr.sort((a, b) => a.line - b.line);
+    return byFile;
+}
+
+// ─── Génération des descriptions via claude -p ─────────────────────────────────
+
+function extractCode(fileLines: string[], startLine: number, endLine: number): string {
+    const start = Math.max(0, startLine - 1);
+    const end   = Math.min(fileLines.length, Math.max(endLine, startLine + 1));
+    return fileLines.slice(start, end).join("\n").trim().slice(0, 500);
+}
+
+function generateDescriptions(
+    methods: Array<{ signature: string; code: string }>
+): string[] {
+    const prompt = [
+        "Génère une description courte (5-10 mots max) pour chacune des méthodes ci-dessous.",
+        "Réponds UNIQUEMENT avec une liste numérotée, une description par ligne.",
+        "Format exact : 1. description, 2. description, etc.",
+        "",
+        ...methods.map((m, i) => [
+            `[${i + 1}] ${m.signature}`,
+            "```",
+            m.code,
+            "```",
+            "",
+        ].join("\n")),
+    ].join("\n");
+
+    const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
+
     try {
-        const index = JSON.parse(readFileSync(indexPath, "utf-8"));
-        const methods = index.methods ?? {};
-        return Object.entries(methods)
-            .filter(([, m]: [string, any]) => !m.description && !m.isPrivate)
-            .map(([, m]: [string, any]): MethodEntry => ({
-                file:      (m.file ?? "").split("\\").join("/"),
-                signature: m.signature ?? "",
-                startLine: m.startLine ?? m.line ?? 0,
-                description: null,
-            }))
-            .filter(m => m.file && m.signature && m.startLine > 0)
-            .sort((a, b) => a.file.localeCompare(b.file) || a.startLine - b.startLine);
-    } catch {
-        return [];
-    }
-}
+        const output = execFileSync("claude", ["-p", "--dangerously-skip-permissions"], {
+            input:    prompt,
+            encoding: "utf-8",
+            env:      cleanEnv as NodeJS.ProcessEnv,
+            shell:    true,
+            timeout:  90_000,
+        });
 
-/** Construit le prompt pour Claude. */
-function buildCommentPrompt(
-    groups: Array<{ file: string; methods: Array<{ signature: string; startLine: number }> }>
-): string {
-    const lines: string[] = [];
-    lines.push("TASK");
-    lines.push("Ajouter des commentaires JSDoc aux méthodes non documentées");
-    lines.push("");
-    lines.push("OBJECTIF");
-    lines.push("Les méthodes listées ci-dessous n'ont pas de commentaire dans le code source.");
-    lines.push("Pour chaque méthode, ajoute /** description concise */ sur une seule ligne juste avant la déclaration.");
-    lines.push("");
-    lines.push("CONTRAINTES");
-    lines.push("- Format strict : /** description en 5-10 mots max */ sur une SEULE ligne avant la déclaration");
-    lines.push("- Ne modifie PAS la signature, le corps, ni toute autre ligne du fichier");
-    lines.push("- Un seul Edit par fichier : lis le fichier entier, puis édite une seule fois avec tous les commentaires");
-    lines.push("- Si une méthode a déjà un commentaire (/** */ ou //, ou une ligne vide suivie d'un commentaire), ignore-la");
-    lines.push("- Les chemins de fichiers sont relatifs à la racine du projet (ton cwd)");
-    lines.push("");
-    lines.push("MÉTHODES À COMMENTER");
-
-    for (const group of groups) {
-        lines.push("");
-        lines.push(`### ${group.file}`);
-        for (const m of group.methods) {
-            lines.push(`- ligne ${m.startLine} : ${m.signature}`);
+        const descs = new Array<string>(methods.length).fill("");
+        for (const line of output.trim().split("\n")) {
+            const m = line.match(/^(\d+)[.\)]\s*(.+)/);
+            if (m) {
+                const idx = parseInt(m[1]) - 1;
+                if (idx >= 0 && idx < methods.length) descs[idx] = m[2].trim();
+            }
         }
+        return descs;
+    } catch {
+        return new Array<string>(methods.length).fill("");
     }
-
-    return lines.join("\n");
 }
 
-/** GET — statistiques sur les méthodes non documentées. */
+// ─── Insertion JSDoc dans le fichier source ────────────────────────────────────
+
+function insertJsDoc(
+    filePath: string,
+    entries: Array<{ line: number; description: string }>
+): number {
+    if (!existsSync(filePath)) return 0;
+    const fileLines = readFileSync(filePath, "utf-8").split("\n");
+    let count = 0;
+
+    // Insérer de bas en haut pour que les numéros de ligne restent valides
+    const sorted = entries
+        .filter(e => e.description)
+        .sort((a, b) => b.line - a.line);
+
+    for (const { line, description } of sorted) {
+        const idx = line - 1; // 0-indexed : ligne cible de la déclaration
+        if (idx <= 0 || idx >= fileLines.length) continue;
+
+        // La ligne précédente a-t-elle déjà un commentaire ?
+        const prev = (fileLines[idx - 1] ?? "").trimEnd();
+        if (/^\s*(\/\*|\*|\/\/|@)/.test(prev)) continue;
+
+        const indent = (fileLines[idx].match(/^(\s*)/) ?? ["", ""])[1];
+        fileLines.splice(idx, 0, `${indent}/** ${description} */`);
+        count++;
+    }
+
+    if (count > 0) writeFileSync(filePath, fileLines.join("\n"), "utf-8");
+    return count;
+}
+
+// ─── GET — statistiques ────────────────────────────────────────────────────────
+
 export function GET() {
     const projectRoot = getProjectRoot();
-    const undescribed = getUndescribedMethods(projectRoot);
+    const byFile      = getUndescribedByFile(projectRoot);
+    const methods     = readIndex(projectRoot);
+    const total       = Object.keys(methods).length;
+    const undescribed = [...byFile.values()].reduce((n, arr) => n + arr.length, 0);
 
-    const indexPath = join(projectRoot, ".cache/method-index.json");
-    let total = 0;
-    if (existsSync(indexPath)) {
-        try {
-            const idx = JSON.parse(readFileSync(indexPath, "utf-8"));
-            total = Object.keys(idx.methods ?? {}).length;
-        } catch { /* ignore */ }
-    }
-
-    return json({
-        total,
-        undescribed: undescribed.length,
-        methods: undescribed.slice(0, 200).map(m => ({
-            file: m.file, signature: m.signature, startLine: m.startLine
-        })),
-    });
+    return json({ total, undescribed });
 }
 
-/** POST — lance l'agent Claude pour commenter les méthodes sans description. */
+// ─── POST — agent de commentaire ──────────────────────────────────────────────
+
 export async function POST({ request }: { request: Request }) {
-    const body = await request.json().catch(() => ({}));
-    const limit: number = Math.min(body.limit ?? 30, 100);
+    const body  = await request.json().catch(() => ({}));
+    const limit = Math.min(body.limit ?? 500, 1000);
 
     const projectRoot = getProjectRoot();
-    const undescribed = getUndescribedMethods(projectRoot).slice(0, limit);
+    const byFile      = getUndescribedByFile(projectRoot);
 
-    if (undescribed.length === 0) {
+    if (byFile.size === 0) {
         return json({ message: "Toutes les méthodes sont déjà documentées" });
     }
 
-    // Grouper par fichier
-    const byFile = new Map<string, Array<{ signature: string; startLine: number }>>();
-    for (const m of undescribed) {
-        if (!byFile.has(m.file)) byFile.set(m.file, []);
-        byFile.get(m.file)!.push({ signature: m.signature, startLine: m.startLine });
+    // Construire la liste des fichiers à traiter en respectant la limite
+    let remaining = limit;
+    const filesToProcess: Array<{ file: string; methods: IndexMethod[] }> = [];
+    for (const [file, methods] of byFile) {
+        if (remaining <= 0) break;
+        const slice = methods.slice(0, remaining);
+        filesToProcess.push({ file, methods: slice });
+        remaining -= slice.length;
     }
-    const groups = [...byFile.entries()].map(([file, methods]) => ({ file, methods }));
 
-    const prompt = buildCommentPrompt(groups);
+    const encoder = new TextEncoder();
 
-    const stream = spawnClaudeStream(
-        prompt,
-        { path: projectRoot },
-        (lines) => {
-            if (lines.length > 0) {
-                // Rafraîchir l'index pour prendre en compte les nouveaux commentaires
-                try { refreshIndex(projectRoot); } catch { /* silencieux */ }
-            }
-        },
-        { addDir: projectRoot }
-    );
+    const stream = new ReadableStream({
+        start(controller) {
+            const emit = (line: string, type = "system") => {
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`));
+                } catch { /* stream fermé */ }
+            };
+
+            (async () => {
+                let totalAdded = 0;
+
+                for (const { file, methods } of filesToProcess) {
+                    const fullPath = join(projectRoot, file);
+                    if (!existsSync(fullPath)) { emit(`⊘ ${file} introuvable`); continue; }
+
+                    emit(`${file} (${methods.length})…`);
+
+                    const fileLines = readFileSync(fullPath, "utf-8").split("\n");
+
+                    // Découper en batches, appeler claude -p par batch
+                    const allDescriptions: Array<{ line: number; description: string }> = [];
+
+                    for (let i = 0; i < methods.length; i += BATCH_SIZE) {
+                        const batch = methods.slice(i, i + BATCH_SIZE);
+                        const items = batch.map(m => ({
+                            signature: m.signature,
+                            code:      extractCode(fileLines, m.line, m.endLine),
+                        }));
+                        const descs = generateDescriptions(items);
+                        for (let j = 0; j < batch.length; j++) {
+                            if (descs[j]) allDescriptions.push({ line: batch[j].line, description: descs[j] });
+                        }
+                    }
+
+                    const added = insertJsDoc(fullPath, allDescriptions);
+                    totalAdded += added;
+                    emit(added > 0
+                        ? `✓ ${file} — ${added} commentaire${added > 1 ? "s" : ""}`
+                        : `⊘ ${file} — déjà commenté`
+                    );
+                }
+
+                // Refresh index pour que lolve-cartography lise les nouveaux commentaires
+                try {
+                    emit("Rafraîchissement de l'index…");
+                    refreshIndex(projectRoot);
+                    emit(`✓ Terminé — ${totalAdded} commentaire${totalAdded > 1 ? "s" : ""} ajouté${totalAdded > 1 ? "s" : ""}`);
+                } catch (e: any) {
+                    emit(`⚠ Refresh index : ${e.message}`);
+                }
+
+                try { controller.close(); } catch { /* déjà fermé */ }
+            })().catch(err => {
+                try {
+                    emit(`Erreur fatale : ${err.message}`);
+                    controller.close();
+                } catch { /* déjà fermé */ }
+            });
+        }
+    });
 
     return new Response(stream, {
         headers: {

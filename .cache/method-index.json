@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-03-14T10:51:11.656Z",
+  "generated": "2026-03-14T10:54:48.466Z",
   "files": {
     "src\\lib\\index.js": {
       "mtime": 1772885109315.4622,
@@ -331,13 +331,6 @@
       "classCount": 0,
       "methodCount": 10
     },
-    "src\\lib\\server\\services\\claude-session.ts": {
-      "mtime": 1773479384822.4229,
-      "size": 6532,
-      "hash": "62493b0ef491",
-      "classCount": 0,
-      "methodCount": 8
-    },
     "src\\lib\\server\\services\\claude.ts": {
       "mtime": 1773485445998.1455,
       "size": 364,
@@ -449,30 +442,16 @@
       "hash": "0840c4ed5f15",
       "classCount": 0,
       "methodCount": 3
+    },
+    "src\\lib\\server\\services\\claude-session.ts": {
+      "mtime": 1773485685647.3645,
+      "size": 6737,
+      "hash": "cfc9031f5866",
+      "classCount": 0,
+      "methodCount": 8
     }
   },
   "methods": {
-    "stripAnsi": {
-      "file": "src\\routes\\api\\agent\\run\\+server.ts",
-      "class": null,
-      "name": "stripAnsi",
-      "signature": "stripAnsi(str)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "68d1d42849bd",
-      "line": 19,
-      "endLine": 21
-    },
     "getPrivateKey": {
       "file": "src\\lib\\server\\services\\github.ts",
       "class": null,
@@ -2825,153 +2804,6 @@
       "line": 351,
       "endLine": 361
     },
-    "processStdoutLine": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "processStdoutLine",
-      "signature": "processStdoutLine(rawLine, session)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "d70803735a80",
-      "line": 27,
-      "endLine": 67
-    },
-    "createSession": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "createSession",
-      "signature": "createSession(sessionId, cwd, addDir)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "6e2abfab861c",
-      "line": 69,
-      "endLine": 127
-    },
-    "sendTurn": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "sendTurn",
-      "signature": "sendTurn(sessionId, message, onEvent)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "9d26d45e33da",
-      "line": 130,
-      "endLine": 147
-    },
-    "destroySession": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "destroySession",
-      "signature": "destroySession(sessionId)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "c643967cd68b",
-      "line": 150,
-      "endLine": 160
-    },
-    "destroyAllSessions": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "destroyAllSessions",
-      "signature": "destroyAllSessions()",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "23caa174df0d",
-      "line": 163,
-      "endLine": 165
-    },
-    "isSessionAlive": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "isSessionAlive",
-      "signature": "isSessionAlive(sessionId)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "419d66d41263",
-      "line": 168,
-      "endLine": 171
-    },
-    "isSessionBusy": {
-      "file": "src\\lib\\server\\services\\claude-session.ts",
-      "class": null,
-      "name": "isSessionBusy",
-      "signature": "isSessionBusy(sessionId)",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": true,
-      "role": "helper",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "4582ede27a4f",
-      "line": 174,
-      "endLine": 177
-    },
     "askClaude": {
       "file": "src\\lib\\server\\services\\claude.ts",
       "class": null,
@@ -3874,6 +3706,174 @@
       "bodyHash": "4d336e51181a",
       "line": 65,
       "endLine": 131
+    },
+    "stripAnsi": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "stripAnsi",
+      "signature": "stripAnsi(str)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Supprime les séquences ANSI d'une chaîne.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c1021a6c139f",
+      "line": 24,
+      "endLine": 26
+    },
+    "processStdoutLine": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "processStdoutLine",
+      "signature": "processStdoutLine(rawLine, session)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Parse une ligne JSON stdout et émet les événements au callback.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "d70803735a80",
+      "line": 29,
+      "endLine": 69
+    },
+    "createSession": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "createSession",
+      "signature": "createSession(sessionId, cwd, addDir)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6e2abfab861c",
+      "line": 72,
+      "endLine": 130
+    },
+    "sendTurn": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "sendTurn",
+      "signature": "sendTurn(sessionId, message, onEvent)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9d26d45e33da",
+      "line": 133,
+      "endLine": 150
+    },
+    "destroySession": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "destroySession",
+      "signature": "destroySession(sessionId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c643967cd68b",
+      "line": 153,
+      "endLine": 163
+    },
+    "destroyAllSessions": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "destroyAllSessions",
+      "signature": "destroyAllSessions()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "23caa174df0d",
+      "line": 166,
+      "endLine": 168
+    },
+    "isSessionAlive": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "isSessionAlive",
+      "signature": "isSessionAlive(sessionId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "419d66d41263",
+      "line": 171,
+      "endLine": 174
+    },
+    "isSessionBusy": {
+      "file": "src\\lib\\server\\services\\claude-session.ts",
+      "class": null,
+      "name": "isSessionBusy",
+      "signature": "isSessionBusy(sessionId)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "4582ede27a4f",
+      "line": 177,
+      "endLine": 180
     }
   },
   "classes": {}

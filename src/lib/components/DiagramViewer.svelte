@@ -164,7 +164,7 @@
         } catch { /* silencieux */ }
     }
 
-    async function startCommentAgent(limit = 30) {
+    async function startCommentAgent(limit = 500) {
         if (commentRunning) return;
         commentRunning = true;
         commentLogs = [];
@@ -340,21 +340,19 @@
         {#if commentRunning || undescribedCount > 0 || commentDone}
             <div class="dv-comment-bar">
                 {#if commentRunning}
-                    <span class="dv-comment-status">⠿ Commentaire en cours…</span>
+                    <span class="dv-comment-status">⠿ En cours…</span>
                     <div class="dv-comment-log">
-                        {#each commentLogs.slice(-3) as line}
-                            <div class="dv-clog-line">{line}</div>
-                        {/each}
+                        <div class="dv-clog-line">{commentLogs[commentLogs.length - 1] ?? ""}</div>
                     </div>
                 {:else if commentDone}
-                    <span class="dv-comment-status ok">✓ Commentaires ajoutés · index rafraîchi</span>
-                    <span class="dv-comment-count">{undescribedCount > 0 ? `${undescribedCount} restantes` : "toutes documentées"}</span>
+                    <span class="dv-comment-status ok">✓ {commentLogs[commentLogs.length - 1] ?? "Terminé"}</span>
                     {#if undescribedCount > 0}
-                        <button class="dv-comment-btn" onclick={() => startCommentAgent(30)}>Continuer</button>
+                        <span class="dv-comment-count">{undescribedCount} restantes</span>
+                        <button class="dv-comment-btn" onclick={() => startCommentAgent()}>Relancer</button>
                     {/if}
                 {:else}
                     <span class="dv-comment-count">{undescribedCount} méthode{undescribedCount > 1 ? "s" : ""} sans description</span>
-                    <button class="dv-comment-btn" onclick={() => startCommentAgent(30)}>
+                    <button class="dv-comment-btn" onclick={() => startCommentAgent()}>
                         Commenter avec Claude
                     </button>
                 {/if}

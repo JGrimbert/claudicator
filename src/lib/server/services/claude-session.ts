@@ -20,10 +20,12 @@ interface Session {
 
 const sessions = new Map<string, Session>();
 
+/** Supprime les séquences ANSI d'une chaîne. */
 function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").trim();
 }
 
+/** Parse une ligne JSON stdout et émet les événements au callback. */
 function processStdoutLine(rawLine: string, session: Session): void {
     const cb = session.currentCallback;
     if (!cb) return;
@@ -66,6 +68,7 @@ function processStdoutLine(rawLine: string, session: Session): void {
     }
 }
 
+/** Crée et enregistre une session Claude persistante avec stdin/stdout. */
 export function createSession(sessionId: string, cwd: string, addDir: string): void {
     if (sessions.has(sessionId)) return;
 
