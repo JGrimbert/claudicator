@@ -1,3 +1,4 @@
+/** Tâches — cycle de vie des tâches (create, read, update, delete, status) */
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";

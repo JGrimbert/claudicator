@@ -1,3 +1,4 @@
+/** Agent — envoie une entrée stdin au processus actif (POST) */
 import { json } from "@sveltejs/kit";
 import { writeInput, isRunning } from "$lib/server/services/processes";
 

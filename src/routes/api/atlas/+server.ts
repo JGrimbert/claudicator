@@ -1,3 +1,4 @@
+/** Atlas — retourne les régions sémantiques et compétences (GET) */
 import { json } from "@sveltejs/kit";
 import fs from "fs";
 import path from "path";

@@ -1,3 +1,4 @@
+/** Projets — liste les dépôts GitHub accessibles (GET) */
 import { json } from "@sveltejs/kit";
 import { listAccessibleRepos } from "$lib/server/services/github";
 import { listProjects } from "$lib/server/services/projects";

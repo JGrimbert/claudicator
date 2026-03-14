@@ -1,3 +1,4 @@
+/** Cartographie — génère un commentaire pour une méthode via Claude (POST) */
 import { json } from "@sveltejs/kit";
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { join, dirname } from "path";

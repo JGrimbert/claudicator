@@ -1,3 +1,4 @@
+/** Issues — lit le snapshot d'issue et le statut d'analyse (GET) */
 import fs from "fs";
 import { json } from "@sveltejs/kit";
 

@@ -1,3 +1,4 @@
+/** Agent — détruit la session Claude active (DELETE) */
 import { destroySession } from "$lib/server/services/claude-session";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 

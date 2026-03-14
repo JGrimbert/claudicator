@@ -1,3 +1,4 @@
+/** Issues — met à jour une analyse existante via Claude (POST) */
 import fs from "fs";
 import { getIssuesWithBodies } from "$lib/server/services/github";
 import { getCurrentProject } from "$lib/server/services/projects";

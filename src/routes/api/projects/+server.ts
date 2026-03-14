@@ -1,3 +1,4 @@
+/** Projets — liste les projets ou en ajoute un (GET, POST) */
 import { json } from "@sveltejs/kit";
 import { listProjects, addProject } from "$lib/server/services/projects";
 

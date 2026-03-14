@@ -1,3 +1,4 @@
+/** Cartographie — extrait le snippet de code d'une méthode (GET) */
 import { json } from "@sveltejs/kit";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";

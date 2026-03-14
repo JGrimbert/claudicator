@@ -1,3 +1,4 @@
+/** Tâches — crée une PR et merge la branche de la tâche (POST) */
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";

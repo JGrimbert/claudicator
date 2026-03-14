@@ -1,3 +1,4 @@
+/** Cartographie — relance l'indexation du projet (POST) */
 import { json } from "@sveltejs/kit";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { refreshIndex } from "$lib/server/services/cartography";

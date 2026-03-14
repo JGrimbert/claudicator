@@ -1,3 +1,4 @@
+/** GitHub — liste toutes les issues du projet (GET) */
 import { json } from "@sveltejs/kit";
 import { getIssues, createIssue } from "$lib/server/services/github";
 import { getCurrentProject } from "$lib/server/services/projects";

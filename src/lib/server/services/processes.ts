@@ -1,3 +1,4 @@
+/** Processus — registre taskId → ChildProcess actif (stdin/stdout) */
 import { spawn } from "child_process";
 import type { ChildProcess } from "child_process";
 

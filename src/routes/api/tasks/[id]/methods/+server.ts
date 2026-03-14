@@ -1,3 +1,4 @@
+/** Tâches — retourne les méthodes pertinentes pour la tâche (GET) */
 import { json } from "@sveltejs/kit";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";

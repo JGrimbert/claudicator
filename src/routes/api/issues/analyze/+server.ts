@@ -1,3 +1,4 @@
+/** Issues — analyse et génère un plan de roadmap (POST) */
 import fs from "fs";
 import { getIssuesWithBodies, getSubIssues } from "$lib/server/services/github";
 import { getCurrentProject } from "$lib/server/services/projects";

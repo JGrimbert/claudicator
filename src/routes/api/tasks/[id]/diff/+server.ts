@@ -1,3 +1,4 @@
+/** Tâches — retourne le git diff de la tâche (GET) */
 import { json } from "@sveltejs/kit";
 import { getTask } from "$lib/server/services/tasks";
 import { getDiff } from "$lib/server/services/git";

@@ -1,3 +1,4 @@
+/** Tâches — annule tous les changements non commités (POST) */
 import { json } from "@sveltejs/kit";
 import { getTask } from "$lib/server/services/tasks";
 import { revertAll } from "$lib/server/services/git";

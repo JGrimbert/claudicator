@@ -1,3 +1,4 @@
+/** Agent — prévisualise le prompt avant exécution (POST) */
 import { getTask } from "$lib/server/services/tasks";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { loadMethodSnippets } from "$lib/server/agent/context";

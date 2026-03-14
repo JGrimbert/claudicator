@@ -1,3 +1,4 @@
+/** Cartographie — recherche sémantique dans le projet (POST) */
 import { json } from "@sveltejs/kit";
 import { execSync } from "child_process";
 import { resolve } from "path";

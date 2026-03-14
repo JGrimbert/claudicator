@@ -1,3 +1,4 @@
+/** Issues — déclenche l'analyse d'issues via Claude (POST) */
 import fs from "fs";
 
 const ANALYSIS_FILE = ".agent/analysis.md";

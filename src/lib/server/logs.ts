@@ -1,3 +1,4 @@
+/** Logs — bus d'événements de logging serveur (EventEmitter) */
 import { EventEmitter } from "events";
 
 export type Log = {

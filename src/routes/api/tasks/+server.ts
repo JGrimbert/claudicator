@@ -1,3 +1,4 @@
+/** Tâches — liste toutes les tâches ou en crée une (GET, POST) */
 import { json } from "@sveltejs/kit";
 import { listTasks, createTask } from "$lib/server/services/tasks";
 

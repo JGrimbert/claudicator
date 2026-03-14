@@ -1,3 +1,4 @@
+/** Agent — interrompt le processus Claude en cours (POST) */
 import { json } from "@sveltejs/kit";
 import { killProcess, isRunning } from "$lib/server/services/processes";
 import { updateTask } from "$lib/server/services/tasks";
