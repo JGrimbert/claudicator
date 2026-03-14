@@ -338,17 +338,30 @@
 
         <!-- ── Agent commentaire ────────────────────────────────── -->
         {#if commentRunning || undescribedCount > 0 || commentDone}
-            <div class="dv-comment-bar">
+            <div class="dv-comment-bar" class:dv-comment-bar--expanded={commentRunning || commentDone}>
                 {#if commentRunning}
-                    <span class="dv-comment-status">⠿ En cours…</span>
+                    <div class="dv-comment-header">
+                        <span class="dv-comment-status">⠿ En cours…</span>
+                    </div>
                     <div class="dv-comment-log">
-                        <div class="dv-clog-line">{commentLogs[commentLogs.length - 1] ?? ""}</div>
+                        {#each commentLogs.slice(-8) as log}
+                            <div class="dv-clog-line" class:dv-clog-error={log.startsWith("⚠")}>{log}</div>
+                        {/each}
                     </div>
                 {:else if commentDone}
-                    <span class="dv-comment-status ok">✓ {commentLogs[commentLogs.length - 1] ?? "Terminé"}</span>
-                    {#if undescribedCount > 0}
-                        <span class="dv-comment-count">{undescribedCount} restantes</span>
-                        <button class="dv-comment-btn" onclick={() => startCommentAgent()}>Relancer</button>
+                    <div class="dv-comment-header">
+                        <span class="dv-comment-status ok">✓ {commentLogs[commentLogs.length - 1] ?? "Terminé"}</span>
+                        {#if undescribedCount > 0}
+                            <span class="dv-comment-count">{undescribedCount} restantes</span>
+                            <button class="dv-comment-btn" onclick={() => startCommentAgent()}>Relancer</button>
+                        {/if}
+                    </div>
+                    {#if commentLogs.some(l => l.startsWith("⚠"))}
+                        <div class="dv-comment-log">
+                            {#each commentLogs.filter(l => l.startsWith("⚠")) as log}
+                                <div class="dv-clog-line dv-clog-error">{log}</div>
+                            {/each}
+                        </div>
                     {/if}
                 {:else}
                     <span class="dv-comment-count">{undescribedCount} méthode{undescribedCount > 1 ? "s" : ""} sans description</span>
@@ -416,6 +429,17 @@
     font-family: 'JetBrains Mono', monospace;
     min-height: 1.8rem;
 }
+.dv-comment-bar--expanded {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.4rem 0.9rem;
+}
+.dv-comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
 .dv-comment-count {
     font-size: 0.57rem;
     color: #555;
@@ -428,15 +452,21 @@
 }
 .dv-comment-status.ok { color: #4caf50; font-style: normal; }
 .dv-comment-log {
-    flex: 1;
-    overflow: hidden;
-    font-size: 0.54rem;
-    color: #3a3a5a;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.6rem;
+    color: #666;
+    max-height: 6rem;
+    overflow-y: auto;
 }
 .dv-clog-line {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.dv-clog-error {
+    color: #f97316;
 }
 .dv-comment-btn {
     background: #1a1040;

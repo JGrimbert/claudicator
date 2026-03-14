@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-03-14T17:34:08.722Z",
+  "generated": "2026-03-14T19:33:06.363Z",
   "files": {
     "src\\lib\\index.js": {
       "mtime": 1772885109315.4622,
@@ -444,11 +444,11 @@
       "methodCount": 3
     },
     "src\\routes\\api\\cartography\\comment\\+server.ts": {
-      "mtime": 1773509401172.12,
-      "size": 10124,
-      "hash": "42184d831bea",
+      "mtime": 1773516786310.448,
+      "size": 16277,
+      "hash": "dae9d491b62a",
       "classCount": 0,
-      "methodCount": 7
+      "methodCount": 10
     }
   },
   "methods": {
@@ -3833,6 +3833,69 @@
       "line": 29,
       "endLine": 48
     },
+    "buildFileGraph": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "buildFileGraph",
+      "signature": "buildFileGraph(files, projectRoot)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Construit le graphe d'imports entre les fichiers du projet.\ngraph[A] = [B, C] signifie que A importe B et C.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "35af67b0e6b2",
+      "line": 56,
+      "endLine": 83
+    },
+    "topoSort": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "topoSort",
+      "signature": "topoSort(files, graph)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Tri topologique par DFS post-order.\nLes feuilles (fichiers sans imports internes) arrivent en premier —\nce sont les utilitaires de bas niveau, plus simples à annoter.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "31ba66201f01",
+      "line": 90,
+      "endLine": 106
+    },
+    "computeDepths": {
+      "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
+      "class": null,
+      "name": "computeDepths",
+      "signature": "computeDepths(files, graph)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Calcule la profondeur de chaque fichier dans le graphe (0 = feuille pure)",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "0ee0b24004c3",
+      "line": 109,
+      "endLine": 134
+    },
     "extractCode": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
       "class": null,
@@ -3851,8 +3914,8 @@
         "provides": []
       },
       "bodyHash": "93d5118f5e6c",
-      "line": 53,
-      "endLine": 57
+      "line": 139,
+      "endLine": 143
     },
     "generateDescriptions": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3861,19 +3924,19 @@
       "signature": "generateDescriptions(methods)",
       "isStatic": false,
       "isPrivate": false,
-      "isAsync": false,
+      "isAsync": true,
       "isExported": false,
       "role": "internal",
-      "description": "Génère des descriptions via Claude pour un lot de méthodes",
+      "description": "Génère des descriptions via Claude pour un lot de méthodes (async — ne bloque pas l'event loop)",
       "effects": {},
       "consumers": [],
       "context": {
         "requires": [],
         "provides": []
       },
-      "bodyHash": "8c18569a7382",
-      "line": 60,
-      "endLine": 102
+      "bodyHash": "600e1ab0938c",
+      "line": 146,
+      "endLine": 216
     },
     "insertJsDoc": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3892,9 +3955,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "aed92ac20037",
-      "line": 107,
-      "endLine": 135
+      "bodyHash": "6f503791587d",
+      "line": 221,
+      "endLine": 250
     },
     "api.cartography.comment.GET": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3913,9 +3976,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "a71427ed33a3",
-      "line": 140,
-      "endLine": 148
+      "bodyHash": "b5cb82a36765",
+      "line": 256,
+      "endLine": 265
     },
     "api.cartography.comment.POST": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3934,9 +3997,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "89116f0f7106",
-      "line": 153,
-      "endLine": 244
+      "bodyHash": "37e03f8764bf",
+      "line": 271,
+      "endLine": 395
     }
   },
   "classes": {}
