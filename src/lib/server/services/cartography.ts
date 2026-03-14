@@ -271,6 +271,7 @@ function buildAtlasDeps(projectRoot: string): string | null {
     return lines.length > 1 ? lines.join('\n') : null;
 }
 
+/** Construit la section MODULES/CLASSES de l'atlas pour le prompt. */
 function buildAtlasText(
     projectRoot: string,
     index: { methods: Record<string, any>; classes: Record<string, any> },

@@ -2,15 +2,18 @@ import simpleGit from "simple-git";
 
 const git = simpleGit();
 
+/** Crée et bascule sur une nouvelle branche locale. */
 export async function createBranch(name: string) {
     await git.checkoutLocalBranch(name);
 }
 
+/** Stague les fichiers donnés et crée un commit. */
 export async function commit(files: string[], message: string) {
     await git.add(files);
     await git.commit(message);
 }
 
+/** Extrait owner et repo depuis l'URL remote origin. */
 export async function getRemoteRepo() {
     const remote = await git.remote(["get-url", "origin"]);
 
@@ -22,6 +25,7 @@ export async function getRemoteRepo() {
     };
 }
 
+/** Retourne le diff staged et unstaged d'un dépôt. */
 export async function getDiff(root: string): Promise<string> {
     const g = simpleGit(root);
     const staged   = await g.diff(["--cached"]);
@@ -29,23 +33,27 @@ export async function getDiff(root: string): Promise<string> {
     return (staged + unstaged).trim();
 }
 
+/** Stague tous les fichiers et crée un commit. */
 export async function commitAll(root: string, message: string): Promise<void> {
     const g = simpleGit(root);
     await g.add(["-A"]);
     await g.commit(message);
 }
 
+/** Annule toutes les modifications et fichiers non commités. */
 export async function revertAll(root: string): Promise<void> {
     const g = simpleGit(root);
     await g.raw(["checkout", "."]);
     await g.raw(["clean", "-fd"]);
 }
 
+/** Pousse une branche vers origin avec suivi automatique. */
 export async function pushBranch(root: string, branch: string): Promise<void> {
     const g = simpleGit(root);
     await g.push("origin", branch, ["--set-upstream"]);
 }
 
+/** Vérifie si une branche est pushée et/ou mergée sur main. */
 export async function getBranchState(root: string, branch: string): Promise<{ pushed: boolean; merged: boolean }> {
     const g = simpleGit(root);
     const remote = await g.branch(["-r"]);
@@ -56,6 +64,7 @@ export async function getBranchState(root: string, branch: string): Promise<{ pu
     return { pushed, merged };
 }
 
+/** Retourne "main" ou "master" selon la branche existante. */
 export async function getMainBranch(root: string): Promise<string> {
     const g = simpleGit(root);
     const branches = await g.branchLocal();

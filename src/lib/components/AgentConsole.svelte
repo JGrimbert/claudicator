@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, notifyTaskCreated, agentRunState, planModeTask } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, agentRunState, planModeTask, consoleTab } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import ContextViewer from "$lib/components/ContextViewer.svelte";
 
@@ -129,7 +129,8 @@
     }
 
     // ─── Onglet actif ─────────────────────────────────────────────────────────
-    let activeTab = "codebase";
+    let activeTab = $consoleTab;
+    $: consoleTab.set(activeTab);
 
     // Dérive les méthodes filtrées selon l'onglet actif
     $: filteredMethods = (() => {

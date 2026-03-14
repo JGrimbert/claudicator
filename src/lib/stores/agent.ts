@@ -46,6 +46,7 @@ export const hoveredIssueNumber = writable<number | null>(null);
 export const issueAnalysis = writable<{
     running: boolean;
     updating: boolean;
+    chatRunning: boolean;
     result: string | null;
     dismissed: boolean;
     logs: RunLog[];
@@ -54,11 +55,13 @@ export const issueAnalysis = writable<{
         removed: number[];
         modified: number[];
     } | null;
-}>({ running: false, updating: false, result: null, dismissed: false, logs: [], snapshotDiff: null });
+    roadmapId: string | null;
+}>({ running: false, updating: false, chatRunning: false, result: null, dismissed: false, logs: [], snapshotDiff: null, roadmapId: null });
 
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
-export const planModeTask = writable<{ id: string; title: string } | null>(null);
+export const planModeTask = writable<{ id: string; title: string; issueNumber?: number } | null>(null);
+export const consoleTab = writable<string>("codebase");
 
 /** Passe à true une fois que TaskList a chargé les tasks et sélectionné l'éventuelle task en cours */
 export const tasksReady = writable(false);
