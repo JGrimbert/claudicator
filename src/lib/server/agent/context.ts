@@ -1,6 +1,8 @@
 import type { Task } from "../services/tasks";
 import { formatPrompt, loadConceptMap, loadProjectDocs } from "./prompt";
 import { searchMethods, getSessionWithCode, generateAtlasStrings } from "../services/cartography";
+import { classifyFile } from "./segments";
+import { selectSkill, type Skill } from "./skills";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +23,7 @@ export type AgentContext = {
     task:      { id: string; title: string };
     symbolMap: Record<string, SymbolGroup>;
     prompt:    string;
+    skill?:    Skill;
 };
 
 // ─── API publique ─────────────────────────────────────────────────────────────
@@ -95,20 +98,28 @@ function buildQuery(title: string, description?: string): string {
 export function buildContext(
     task: Pick<Task, "id" | "title">,
     projectRoot: string,
-    description?: string
+    description?: string,
+    skillOverride?: Skill
 ): AgentContext {
     const query     = buildQuery(task.title, description);
     const symbolMap = loadSymbolMap(projectRoot, query);
+
+    // Détecter les régions touchées par la tâche à partir des fichiers du symbolMap
+    const affectedFiles = Object.values(symbolMap).map(g => g.file ?? '').filter(Boolean);
+    const regions = [...new Set(affectedFiles.map(f => classifyFile(f)))].filter(r => r !== 'config');
+    const skill = skillOverride ?? (regions.length > 0 ? selectSkill(regions) : undefined);
+
     const ctx: AgentContext = {
         task: { id: task.id, title: task.title },
         symbolMap,
         prompt: "",
+        skill,
     };
 
     const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
     const projectDocs = loadProjectDocs(projectRoot);
     const atlas       = generateAtlasStrings(projectRoot, query)?.compressed;
-    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, atlas });
+    ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, atlas, skill });
 
     return ctx;
 }

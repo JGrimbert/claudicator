@@ -9,9 +9,10 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
     import RunConsole from "$lib/components/RunConsole.svelte";
     import IssuesTodoPanel from "$lib/components/IssuesTodoPanel.svelte";
+    import AtlasView from "$lib/components/AtlasView.svelte";
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady, taskRefreshTick, type RunLog } from "$lib/stores/agent";
 
-    let activeMiddleTab: "roadmap" | "plan" = "roadmap";
+    let activeMiddleTab: "roadmap" | "plan" | "atlas" = "roadmap";
     $: if ($planModeTask)          activeMiddleTab = "plan";
     $: if ($issueAnalysis.running) activeMiddleTab = "roadmap";
 
@@ -546,6 +547,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
                 <div class="mid-tab-bar">
                     <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "roadmap"} onclick={() => activeMiddleTab = "roadmap"}>roadmap</button>
                     <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "plan"} onclick={() => activeMiddleTab = "plan"}>plan</button>
+                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "atlas"} onclick={() => activeMiddleTab = "atlas"}>atlas</button>
                 </div>
                 <div class="mid-tab-content">
                     {#if activeMiddleTab === "roadmap"}
@@ -560,6 +562,8 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
                         {:else}
                             <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
                         {/if}
+                    {:else if activeMiddleTab === "atlas"}
+                        <AtlasView />
                     {/if}
                 </div>
             </div>

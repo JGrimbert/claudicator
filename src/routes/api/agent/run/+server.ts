@@ -9,6 +9,7 @@ import { addProjectUsage } from "$lib/server/services/usage";
 import { loadMethodSnippets } from "$lib/server/agent/context";
 import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
 import { generateAtlasStrings } from "$lib/server/services/cartography";
+import { orchestrate } from "$lib/server/agent/orchestrator";
 import {
     createSession,
     sendTurn,
@@ -34,7 +35,7 @@ function savePlan(taskId: string, lines: string[]) {
 /** Reçoit une requête agent et détermine la phase d'exécution */
 export async function POST({ request }) {
     const body = await request.json();
-    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp } = body;
+    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated } = body;
     const root = projectRoot?.trim() || getProjectRoot();
 
     // Phase : plan si aucun plan fourni, implémentation sinon, suivi si isFollowUp
@@ -57,6 +58,61 @@ export async function POST({ request }) {
         } else {
             prompt = plan;
         }
+    }
+
+    // Mode orchestré : bypass du flux one-shot normal
+    if (orchestrated && taskId && !isFollowUp) {
+        const task = getTask(taskId);
+        if (!task) {
+            return new Response(JSON.stringify({ error: "Task introuvable" }), {
+                status: 404,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+        updateTask(taskId, { status: "planification", logs: [] });
+
+        const encoder = new TextEncoder();
+        const allLogs: string[] = [];
+        const planLines: string[] = [];
+
+        const stream = new ReadableStream({
+            start(controller) {
+                const emit = (line: string, type: "agent" | "system" | "segment" = "agent") => {
+                    try { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`)); } catch { /* fermé */ }
+                    allLogs.push(line);
+                    if (type === "agent" || type === "segment") planLines.push(line);
+                };
+
+                const desc = rawPrompt || undefined;
+                orchestrate(task, root, desc, (event) => {
+                    if (event.type === "text") {
+                        emit(event.payload, event.segment === "merged" ? "agent" : "segment");
+                    } else if (event.type === "system") {
+                        emit(event.payload, "system");
+                    } else if (event.type === "error") {
+                        emit(`[erreur segment ${event.segment}: ${event.payload}]`, "system");
+                    }
+                    // "done" per-segment : pas d'émission, suivi interne
+                }).then((result) => {
+                    savePlan(taskId, planLines);
+                    updateTask(taskId, { status: "implementation", logs: allLogs });
+                    emit("[✓ orchestration terminée]", "system");
+                    try { controller.close(); } catch { /* déjà fermé */ }
+                }).catch((err: Error) => {
+                    emit(`[erreur orchestration: ${err.message}]`, "system");
+                    updateTask(taskId, { status: "failed", logs: allLogs });
+                    try { controller.close(); } catch { /* déjà fermé */ }
+                });
+            }
+        });
+
+        return new Response(stream, {
+            headers: {
+                "Content-Type":  "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection":    "keep-alive"
+            }
+        });
     }
 
     if (!prompt?.trim()) {
