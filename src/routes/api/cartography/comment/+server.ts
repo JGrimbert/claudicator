@@ -16,8 +16,6 @@ type IndexMethod = {
 
 const BATCH_SIZE = 50; // méthodes par appel Claude
 
-// ─── Lecture de l'index ────────────────────────────────────────────────────────
-
 /** Lit l'index des méthodes depuis le cache */
 function readIndex(projectRoot: string): Record<string, any> {
     const p = join(projectRoot, ".cache/method-index.json");
@@ -46,8 +44,6 @@ function getUndescribedByFile(projectRoot: string): Map<string, IndexMethod[]> {
     for (const arr of byFile.values()) arr.sort((a, b) => a.line - b.line);
     return byFile;
 }
-
-// ─── Graphe d'imports ─────────────────────────────────────────────────────────
 
 /**
  * Construit le graphe d'imports entre les fichiers du projet.
@@ -133,8 +129,6 @@ function computeDepths(files: string[], graph: Map<string, string[]>): Map<strin
     return depths;
 }
 
-// ─── Génération des descriptions via claude -p ─────────────────────────────────
-
 /** Extrait le code source d'une plage de lignes */
 function extractCode(fileLines: string[], startLine: number, endLine: number): string {
     const start = Math.max(0, startLine - 1);
@@ -215,8 +209,6 @@ async function generateDescriptions(
     });
 }
 
-// ─── Insertion JSDoc dans le fichier source ────────────────────────────────────
-
 /** Insère des JSDoc dans un fichier source */
 function insertJsDoc(
     filePath: string,
@@ -235,12 +227,12 @@ function insertJsDoc(
         const idx = line - 1; // 0-indexed : ligne cible de la déclaration
         if (idx <= 0 || idx >= fileLines.length) continue;
 
-        // La ligne précédente a-t-elle déjà un commentaire ?
-        const prev = (fileLines[idx - 1] ?? "").trimEnd();
+        let checkIdx = idx - 1;
+        while (checkIdx >= 0 && (fileLines[checkIdx] ?? "").trim() === "") checkIdx--;
+        const prev = (fileLines[checkIdx] ?? "").trimEnd();
         if (/^\s*(\/\*|\*|\/\/|@)/.test(prev)) continue;
 
         const indent = (fileLines[idx].match(/^(\s*)/) ?? ["", ""])[1];
-        /** Retourne les statistiques des méthodes indexées */
         fileLines.splice(idx, 0, `${indent}/** ${description} */`);
         count++;
     }
@@ -250,12 +242,8 @@ function insertJsDoc(
 }
 
 /** Retourne les stats de documentation de l'index */
-// ─── GET — statistiques ────────────────────────────────────────────────────────
-
-/** Retourne les stats de documentation de l'index */
 export function GET() {
     const projectRoot = getProjectRoot();
-    /** Lance la génération de descriptions manquantes */
     const byFile      = getUndescribedByFile(projectRoot);
     const methods     = readIndex(projectRoot);
     const total       = Object.keys(methods).length;
@@ -263,9 +251,6 @@ export function GET() {
 
     return json({ total, undescribed });
 }
-
-/** Lance la génération de descriptions manquantes */
-// ─── POST — agent de commentaire ──────────────────────────────────────────────
 
 /** Lance la génération de descriptions sur les méthodes manquantes */
 export async function POST({ request }: { request: Request }) {
@@ -297,7 +282,9 @@ export async function POST({ request }: { request: Request }) {
         const filtered = fileMap.get(file)!.filter(m => {
             const idx = m.line - 1;
             if (idx <= 0) return true;
-            const prev = (lines[idx - 1] ?? "").trimEnd();
+            let checkIdx = idx - 1;
+            while (checkIdx >= 0 && (lines[checkIdx] ?? "").trim() === "") checkIdx--;
+            const prev = (lines[checkIdx] ?? "").trimEnd();
             return !/^\s*(\/\*|\*|\/\/|@)/.test(prev);
         });
         if (filtered.length === 0) fileMap.delete(file);
@@ -338,7 +325,6 @@ export async function POST({ request }: { request: Request }) {
 
                     const fileLines = readFileSync(fullPath, "utf-8").split("\n");
 
-                    // Découper en batches, appeler claude -p par batch
                     const allDescriptions: Array<{ line: number; description: string }> = [];
 
                     for (let i = 0; i < methods.length; i += BATCH_SIZE) {
@@ -366,7 +352,6 @@ export async function POST({ request }: { request: Request }) {
                     );
                 }
 
-                // Refresh index pour que lolve-cartography lise les nouveaux commentaires
                 try {
                     emit("Rafraîchissement de l'index…");
                     refreshIndex(projectRoot);
