@@ -1,5 +1,6 @@
 <script lang="ts">
     import { agentState, notifyTaskCreated } from "$lib/stores/agent";
+    import type { SymbolEntry } from "$lib/types/symbols";
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
     let prevIssue = 0;
@@ -22,19 +23,14 @@
     }
 
     // ─── Symboles ─────────────────────────────────────────────────────────────
-    type SymRow = { key: string; file: string; role: string | null; summary: string | null };
-
-    let symbols: SymRow[] = [];
+    let symbols: SymbolEntry[] = [];
     let symbolsLoading = false;
 
-    /** Mots significatifs (≥ 3 chars, hors stopwords) */
+    /** Mots significatifs (≥ 3 chars) */
     function keywords(text: string): string[] {
-        const stop = new Set(['les', 'des', 'une', 'avec', 'dans', 'pour', 'par', 'sur', 'son',
-            'ses', 'leur', 'leurs', 'est', 'sont', 'the', 'and', 'with', 'from',
-            'that', 'this', 'they', 'have', 'selon', 'projet', 'chemin']);
         return text.toLowerCase()
             .split(/[\s\n\r\\\/.,;:!?()\[\]{}#*`|]+/)
-            .filter(w => w.length >= 3 && !stop.has(w));
+            .filter(w => w.length >= 3);
     }
 
     async function loadSymbols(title: string, body: string) {
@@ -58,7 +54,7 @@
 
             const [carto, atlas] = await Promise.all([cartoP, atlasP]);
 
-            const result: SymRow[] = [];
+            const result: SymbolEntry[] = [];
             const seenKeys  = new Set<string>();
             const seenFiles = new Set<string>();
 
@@ -67,7 +63,11 @@
                 if (seenKeys.has(s.key)) continue;
                 seenKeys.add(s.key);
                 seenFiles.add(s.file ?? '');
-                result.push({ key: s.key, file: s.file ?? '', role: s.role ?? null, summary: s.summary ?? null });
+                result.push({
+                    key: s.key, file: s.file ?? '',
+                    startLine: s.startLine ?? null, score: s.score ?? null,
+                    role: s.role ?? null, summary: s.summary ?? null,
+                });
             }
 
             // Résultats atlas — fichiers dont le nom correspond aux mots-clés
@@ -80,7 +80,7 @@
                         const key = (filePath.split('/').pop() ?? filePath).replace(/\.[^.]+$/, '');
                         seenKeys.add(key);
                         seenFiles.add(filePath);
-                        result.push({ key, file: filePath, role: region, summary: null });
+                        result.push({ key, file: filePath, startLine: null, score: null, role: region, summary: null });
                     }
                 }
             }
@@ -90,7 +90,7 @@
         finally { symbolsLoading = false; }
     }
 
-    function groupByFile(syms: SymRow[]): [string, SymRow[]][] {
+    function groupByFile(syms: SymbolEntry[]): [string, SymbolEntry[]][] {
         const map = new Map<string, SymRow[]>();
         for (const s of syms) {
             const arr = map.get(s.file) ?? [];

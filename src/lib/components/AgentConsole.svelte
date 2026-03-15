@@ -326,7 +326,7 @@
             </div>
         {:else if activeTab === "symbols"}
             <div class="dv-panel">
-                <SymbolsView initialQuery={symbolsQuery} />
+                <SymbolsView initialQuery={symbolsQuery} extraContext={$agentState.issue?.body ?? ''} />
             </div>
         {:else if activeTab === "archi"}
             <div class="dv-panel">

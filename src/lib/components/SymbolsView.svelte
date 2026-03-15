@@ -1,10 +1,13 @@
 <script lang="ts">
-    export let initialQuery: string = "";
+    import type { SymbolEntry } from "$lib/types/symbols";
 
-    type SearchResult = {
-        key: string; file: string; startLine: number | null; endLine: number | null;
-        score: number; role: string; summary: string;
-        codeSnippet: string | null; snippetError: string | null;
+    export let initialQuery: string = "";
+    export let extraContext: string = "";
+
+    type SearchResult = SymbolEntry & {
+        endLine: number | null;
+        codeSnippet: string | null;
+        snippetError: string | null;
     };
 
     let results: SearchResult[] = [];
@@ -22,6 +25,7 @@
 
     async function doSearch(q: string) {
         if (!q.trim()) return;
+        const enriched = extraContext ? q + '\n' + extraContext.slice(0, 300) : q;
         loading = true;
         error = "";
         results = [];
@@ -31,7 +35,7 @@
             const res = await fetch("/api/cartography", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: q })
+                body: JSON.stringify({ query: enriched })
             });
             const data = await res.json();
             if (data.error) { error = data.error; return; }
