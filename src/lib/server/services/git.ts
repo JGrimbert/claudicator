@@ -88,3 +88,32 @@ export async function checkoutMain(root: string): Promise<void> {
     await g.checkout(main);
     await g.pull("origin", main);
 }
+
+/** Retourne le SHA du commit HEAD d'un dépôt. */
+export async function getHeadCommit(root: string): Promise<string> {
+    const g = simpleGit(root);
+    const log = await g.log({ "--max-count": "1" } as any);
+    return log.latest?.hash ?? "";
+}
+
+/** Retourne les N derniers commits d'un dépôt. */
+export async function getCommitLog(
+    root:  string,
+    limit: number = 200
+): Promise<{ sha: string; message: string; date: string; author: string }[]> {
+    const g = simpleGit(root);
+    const log = await g.log({ "--max-count": String(limit) } as any);
+    return log.all.map(c => ({
+        sha:     c.hash,
+        message: c.message,
+        date:    c.date,
+        author:  c.author_name,
+    }));
+}
+
+/** Retourne la liste des fichiers modifiés par un commit. */
+export async function getCommitFiles(root: string, sha: string): Promise<string[]> {
+    const g = simpleGit(root);
+    const out = await g.raw(["diff-tree", "--no-commit-id", "-r", "--name-only", sha]);
+    return out.trim().split("\n").filter(Boolean);
+}

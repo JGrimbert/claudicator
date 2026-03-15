@@ -544,7 +544,20 @@
                 {#if selected?.id === task.id}
                     <div class="inline-detail">
 
-                        {#if task.status !== "merged"}
+                        {#if task.status === "merged"}
+                            <!-- ── Task mergée ── -->
+                            <div class="merged-panel">
+                                <span class="merged-badge">✓ Mergée</span>
+                                {#if task.branch}
+                                    <span class="merged-branch">{task.branch}</span>
+                                {/if}
+                                {#if task.issueNumber}
+                                    <span class="merged-issue">#{task.issueNumber}</span>
+                                {/if}
+                                <button class="merged-delete" onclick={() => remove(task)} title="Supprimer cette task">✕ Supprimer</button>
+                            </div>
+
+                        {:else}
 
                         <!-- ── Task bloquée / échouée ── -->
                         {#if task.status === "planification" || task.status === "failed"}
@@ -710,7 +723,7 @@
                             </div>
                         {/if}
 
-                        {/if}<!-- /merged guard -->
+                        {/if}<!-- /merged else -->
 
                     </div>
                 {/if}
@@ -845,6 +858,51 @@
 .issue-state.closed { color: #7c6af7; background: rgba(124,106,247,0.1); }
 .close-issue-btn { color: #a04040 !important; border-color: #3a2a2a !important; }
 .close-issue-btn:hover:not(:disabled) { color: #f44336 !important; border-color: #f44336 !important; }
+
+/* ── Task mergée ── */
+.merged-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1rem;
+    border-bottom: 1px solid #0a160c;
+    background: #05100a;
+}
+.merged-badge {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #4caf50;
+    flex-shrink: 0;
+}
+.merged-branch {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a5a3a;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.merged-issue {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a4a2a;
+    flex-shrink: 0;
+}
+.merged-delete {
+    background: none;
+    border: 1px solid #1a2a1a;
+    color: #2a4a2a;
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.1s, border-color 0.1s;
+}
+.merged-delete:hover { color: #f44336; border-color: #f44336; }
 
 /* ── Task bloquée ── */
 .stuck-bar {
