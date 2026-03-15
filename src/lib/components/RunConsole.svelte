@@ -38,7 +38,7 @@
     }
 
     function dismiss() {
-        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false });
+        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false, consoleMinimized: false });
     }
 
     async function terminateSession() {

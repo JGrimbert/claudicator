@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
-    import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
+    import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
 
     type Task = { id: string; title: string; issueNumber?: number };
     type Section = { key: string; content: string };
@@ -156,7 +156,7 @@
             }
         }
 
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false });
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false });
         try {
             const body = mode === "impl"
                 ? { plan: text, taskId: task.id }
@@ -166,31 +166,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-            if (!res.ok || !res.body) {
-                agentRunState.update(s => ({
-                    ...s, running: false,
-                    logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" }],
-                }));
-                return;
-            }
-            const reader = res.body.getReader();
-            const dec    = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                for (const raw of dec.decode(value).split("\n")) {
-                    if (raw.startsWith("data: ")) {
-                        try {
-                            const event = JSON.parse(raw.slice(6));
-                            if (event.type === "session_status") {
-                                agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
-                            } else {
-                                agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
-                            }
-                        } catch { /* skip */ }
-                    }
-                }
-            }
+            await startConsoleStream(res);
         } finally {
             agentRunState.update(s => ({ ...s, running: false }));
             taskRefreshTick.update(n => n + 1);

@@ -7,9 +7,8 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
-    import RunConsole from "$lib/components/RunConsole.svelte";
     import IssuesTodoPanel from "$lib/components/IssuesTodoPanel.svelte";
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady, taskRefreshTick, type RunLog } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady, taskRefreshTick, startConsoleStream, type RunLog } from "$lib/stores/agent";
 
     let activeMiddleTab: "roadmap" | "plan" = "roadmap";
     $: if ($planModeTask)          activeMiddleTab = "plan";
@@ -327,31 +326,14 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
         if (!text || !taskId || sendingInput) return;
         sendingInput = true;
         userInput = "";
-        agentRunState.update(s => ({ ...s, running: true, logs: [] }));
+        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ taskId, prompt: text, isFollowUp: true })
             });
-            if (!res.ok || !res.body) { agentRunState.update(s => ({ ...s, running: false })); return; }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                for (const raw of dec.decode(value).split("\n")) {
-                    if (!raw.startsWith("data: ")) continue;
-                    try {
-                        const event = JSON.parse(raw.slice(6)) as RunLog;
-                        if (event.type === "session_status") {
-                            agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
-                        } else {
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event] }));
-                        }
-                    } catch { /* ligne vide ou malformée */ }
-                }
-            }
+            await startConsoleStream(res);
         } finally {
             sendingInput = false;
             agentRunState.update(s => ({ ...s, running: false }));
@@ -579,11 +561,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             ></div>
             <!-- ── CARTO (bas) ── -->
             <div class="main-carto">
-                {#if $agentRunState.taskId !== null}
-                    <RunConsole />
-                {:else}
-                    <AgentConsole />
-                {/if}
+                <AgentConsole />
             </div>
             <!-- ── Input global : stdin (en cours) ou suivi (session active) ── -->
             {#if $agentRunState.running || $agentRunState.sessionAlive}
