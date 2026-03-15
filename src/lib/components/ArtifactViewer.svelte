@@ -148,6 +148,103 @@
         });
     }
 
+    // ─── Édition inline ───────────────────────────────────────────────────────
+    let editingTitle  = false;
+    let editingBody   = false;
+    let editTitle     = "";
+    let editBody      = "";
+    let saveError     = "";
+    let saving        = false;
+
+    // Réinitialiser l'édition au changement d'issue
+    $: if ($agentState.issue?.number) {
+        editingTitle = false;
+        editingBody  = false;
+        saveError    = "";
+    }
+
+    function startEditTitle() {
+        editTitle    = $agentState.issue?.title ?? "";
+        editingTitle = true;
+        editingBody  = false;
+    }
+    function startEditBody() {
+        editBody     = $agentState.issue?.body ?? "";
+        editingBody  = true;
+        editingTitle = false;
+    }
+    function cancelEdit() {
+        editingTitle = false;
+        editingBody  = false;
+        saveError    = "";
+    }
+    async function save() {
+        if (!$agentState.issue || saving) return;
+        saving    = true;
+        saveError = "";
+        try {
+            const res = await fetch("/api/issue", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    number: $agentState.issue.number,
+                    ...(editingTitle ? { title: editTitle } : {}),
+                    ...(editingBody  ? { body:  editBody  } : {}),
+                })
+            });
+            const data = await res.json();
+            if (data.error) { saveError = data.error; return; }
+            agentState.update(s => ({
+                ...s,
+                issue: s.issue ? { ...s.issue, title: data.title, body: data.body } : s.issue
+            }));
+            editingTitle = false;
+            editingBody  = false;
+        } finally {
+            saving = false;
+        }
+    }
+
+    // ─── Création d'issue ─────────────────────────────────────────────────────
+    let newTitle      = "";
+    let newBody       = "";
+    let createError   = "";
+    let createLoading = false;
+
+    async function submitCreate() {
+        if (!newTitle.trim() || createLoading) return;
+        createLoading = true;
+        createError   = "";
+        try {
+            const res = await fetch("/api/issues", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: newTitle, body: newBody })
+            });
+            const data = await res.json();
+            if (data.error) { createError = data.error; return; }
+            newTitle = "";
+            newBody  = "";
+            agentState.update(s => ({
+                ...s,
+                issue: {
+                    number: data.number,
+                    title: data.title,
+                    body: data.body ?? "",
+                    state: "open",
+                    subIssues: [],
+                    created: new Date().toISOString(),
+                    labels: []
+                },
+                status: "idle"
+            }));
+        } catch (e: any) {
+            createError = e.message;
+        } finally {
+            createLoading = false;
+        }
+    }
+
     // ─── Créer une task ───────────────────────────────────────────────────────
     let taskCreated = false;
 
@@ -174,34 +271,67 @@
             </button>
         {/if}
         <span>Artefact</span>
+        {#if editingTitle || editingBody}
+            <div class="edit-actions">
+                <button class="edit-btn edit-btn--confirm" onclick={save} disabled={saving} title="Valider">✓</button>
+                <button class="edit-btn edit-btn--cancel"  onclick={cancelEdit} title="Annuler">✕</button>
+            </div>
+        {:else if !$agentState.issue && newTitle.trim()}
+            <div class="edit-actions">
+                <button class="edit-btn edit-btn--confirm" onclick={submitCreate} disabled={createLoading} title="Créer">✓</button>
+                <button class="edit-btn edit-btn--cancel"  onclick={() => { newTitle = ""; newBody = ""; createError = ""; }} title="Vider">✕</button>
+            </div>
+        {/if}
     </div>
 
     <div class="content">
-        {#if $agentState.issue?.body}
-            <div class="issue-body">
-                <h2 class="issue-title">#{$agentState.issue.number} — {$agentState.issue.title}</h2>
-                <pre class="body-text">{$agentState.issue.body}</pre>
-                {#if $agentState.issue.subIssues?.length}
-                    <div class="sub-issues">
-                        <p class="sub-label">Sub-issues ({$agentState.issue.subIssues.length})</p>
-                        <ul>
-                            {#each $agentState.issue.subIssues as sub}
-                                <li class="sub-item" class:closed={sub.state === "closed"}>
-                                    <span class="sub-check">{sub.state === "closed" ? "✓" : "○"}</span>
-                                    <button class="sub-btn" onclick={() => navigateToSubIssue(sub.number)}>
-                                        <span class="sub-num">#{sub.number}</span>
-                                        <span class="sub-title">{sub.title}</span>
-                                    </button>
-                                </li>
-                            {/each}
-                        </ul>
-                    </div>
-                {/if}
-            </div>
-        {:else if $agentState.status === "loading"}
-            <p class="hint blink">Chargement...</p>
+        {#if $agentState.issue !== null}
+            {#if $agentState.status === "loading" && !$agentState.issue.body}
+                <p class="hint blink">Chargement...</p>
+            {:else}
+                <div class="issue-body">
+                    <!-- Titre -->
+                    {#if editingTitle}
+                        <input class="edit-inline" bind:value={editTitle} />
+                    {:else}
+                        <h2 class="issue-title" onclick={startEditTitle}>
+                            #{$agentState.issue.number} — {$agentState.issue.title}
+                        </h2>
+                    {/if}
+
+                    <!-- Corps -->
+                    {#if editingBody}
+                        <textarea class="edit-inline edit-inline--body" bind:value={editBody}></textarea>
+                    {:else}
+                        <pre class="body-text" onclick={startEditBody}>{$agentState.issue.body}</pre>
+                    {/if}
+
+                    {#if saveError}<span class="save-error">{saveError}</span>{/if}
+
+                    {#if $agentState.issue.subIssues?.length}
+                        <div class="sub-issues">
+                            <p class="sub-label">Sub-issues ({$agentState.issue.subIssues.length})</p>
+                            <ul>
+                                {#each $agentState.issue.subIssues as sub}
+                                    <li class="sub-item" class:closed={sub.state === "closed"}>
+                                        <span class="sub-check">{sub.state === "closed" ? "✓" : "○"}</span>
+                                        <button class="sub-btn" onclick={() => navigateToSubIssue(sub.number)}>
+                                            <span class="sub-num">#{sub.number}</span>
+                                            <span class="sub-title">{sub.title}</span>
+                                        </button>
+                                    </li>
+                                {/each}
+                            </ul>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         {:else}
-            <p class="hint">Sélectionnez une issue pour commencer.</p>
+            <div class="create-row">
+                <input class="edit-inline" placeholder="Titre de l'issue…" bind:value={newTitle} disabled={createLoading} />
+                <textarea class="edit-inline edit-inline--body" placeholder="Description…" bind:value={newBody} rows="4" disabled={createLoading}></textarea>
+                {#if createError}<span class="save-error">{createError}</span>{/if}
+            </div>
         {/if}
     </div>
 
@@ -401,6 +531,61 @@ ul { list-style: none; padding: 0; margin: 0; }
     color: #2a2a2a;
     font-size: 0.8rem;
     font-family: 'JetBrains Mono', monospace;
+}
+.edit-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+}
+.edit-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.edit-btn:hover:not(:disabled) { opacity: 1; }
+.edit-btn:disabled { opacity: 0.3; cursor: default; }
+.edit-btn--cancel { border-color: #555; color: #555; }
+.edit-inline {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+    width: 100%;
+    resize: none;
+    padding: 0;
+}
+.edit-inline--body {
+    font-size: 0.78rem;
+    font-weight: normal;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    min-height: 4rem;
+}
+.issue-title, .body-text { cursor: text; }
+.issue-title:hover, .body-text:hover {
+    background: rgba(255,255,255,0.02);
+    border-radius: 3px;
+}
+.save-error {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: #f44336;
+}
+.create-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 .blink {
     color: #555;

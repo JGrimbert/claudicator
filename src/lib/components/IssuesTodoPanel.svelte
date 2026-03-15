@@ -1,14 +1,22 @@
 <script lang="ts">
     import IssueList from "./IssueList.svelte";
     import TodoList from "./TodoList.svelte";
+    import { agentState } from "$lib/stores/agent";
 
     let activeTab: "issues" | "todos" = "issues";
+
+    function openCreate() {
+        agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
+    }
 </script>
 
 <div class="panel">
     <div class="panel-tabs">
         <button class="tab" class:tab-active={activeTab === "issues"} onclick={() => activeTab = "issues"}>issues</button>
         <button class="tab" class:tab-active={activeTab === "todos"} onclick={() => activeTab = "todos"}>todos</button>
+        {#if activeTab === "issues"}
+            <button class="tab-action" onclick={openCreate} title="Nouvelle issue">+</button>
+        {/if}
     </div>
     {#if activeTab === "issues"}
         <IssueList hideHeader={true} />
@@ -50,4 +58,19 @@
 }
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
+.tab-action {
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #333;
+    padding: 0 0.55rem;
+    height: 100%;
+    margin-left: auto;
+    transition: color 0.1s;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+}
+.tab-action:hover { color: var(--accent-hover); }
 </style>

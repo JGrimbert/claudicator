@@ -179,41 +179,6 @@
         }
     }
 
-    // ── Création d'issue ──────────────────────────────────────────────────
-    let creating = false;
-    let newTitle = "";
-    let newBody = "";
-    let createError = "";
-    let createLoading = false;
-
-    function openCreate() { creating = true; newTitle = ""; newBody = ""; createError = ""; }
-    function closeCreate() { creating = false; }
-
-    async function submitCreate() {
-        if (!newTitle.trim() || createLoading) return;
-        createLoading = true;
-        createError = "";
-        try {
-            const res = await fetch("/api/issues", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: newTitle, body: newBody })
-            });
-            const data = await res.json();
-            if (data.error) { createError = data.error; return; }
-            creating = false;
-            issues = [...issues, { number: data.number, title: data.title, state: data.state, created: new Date().toISOString(), labels: [], body: "", subIssues: [] }];
-        } catch (e: any) {
-            createError = e.message;
-        } finally {
-            createLoading = false;
-        }
-    }
-
-    function onTitleKey(e: KeyboardEvent) {
-        if (e.key === "Escape") closeCreate();
-    }
-
     async function select(issue: Issue) {
         agentState.update(s => ({
             ...s,
@@ -247,9 +212,6 @@
                     ⊟ Roadmap
                 </button>
             {/if}
-            <button class="new-btn" on:click={creating ? closeCreate : openCreate} title="Nouvelle issue">
-                {creating ? "✕" : "+"}
-            </button>
         </div>
     </div>
     {/if}
@@ -261,34 +223,6 @@
                     ⊕ Intégrer
                 </button>
             {/if}
-        </div>
-    {/if}
-
-    {#if creating}
-        <div class="create-form">
-            <input
-                class="create-input"
-                placeholder="Titre de l'issue"
-                bind:value={newTitle}
-                on:keydown={onTitleKey}
-                disabled={createLoading}
-            />
-            <textarea
-                class="create-body"
-                placeholder="Description (optionnelle)"
-                bind:value={newBody}
-                rows="3"
-                disabled={createLoading}
-            ></textarea>
-            {#if createError}
-                <span class="create-error">{createError}</span>
-            {/if}
-            <div class="create-actions">
-                <button class="btn-submit" on:click={submitCreate} disabled={!newTitle.trim() || createLoading}>
-                    {createLoading ? "Création…" : "Créer l'issue"}
-                </button>
-                <button class="btn-cancel-sm" on:click={closeCreate} disabled={createLoading}>Annuler</button>
-            </div>
         </div>
     {/if}
 
@@ -364,18 +298,6 @@
     transition: color 0.15s, border-color 0.15s;
 }
 .plan-btn:hover { color: var(--accent-hover); border-color: var(--accent-hover); }
-.new-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.62rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.15s, border-color 0.15s;
-}
-.new-btn:hover { color: var(--accent-hover); border-color: var(--accent-hover); }
 .diff-badge {
     padding: 0.25rem 0.75rem;
     font-size: 0.6rem;
@@ -403,64 +325,6 @@
     white-space: nowrap;
 }
 .integrate-btn:hover { color: #f0c040; border-color: #8a6a00; }
-.create-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    background: var(--bg-panel);
-}
-.create-input, .create-body {
-    background: var(--bg-deep);
-    border: 1px solid var(--border-strong);
-    border-radius: 3px;
-    color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    padding: 0.3rem 0.5rem;
-    outline: none;
-    resize: none;
-    transition: border-color 0.15s;
-}
-.create-input:focus, .create-body:focus { border-color: var(--accent); }
-.create-input::placeholder, .create-body::placeholder { color: var(--border-strong); }
-.create-body { line-height: 1.5; }
-.create-error {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    color: #f44336;
-}
-.create-actions {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-}
-.btn-submit {
-    background: #1a1040;
-    border: 1px solid #4a3a8a;
-    color: var(--accent-hover);
-    font-size: 0.65rem;
-    padding: 0.22rem 0.65rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: background 0.15s;
-}
-.btn-submit:hover:not(:disabled) { background: #251850; }
-.btn-submit:disabled { opacity: 0.35; cursor: default; }
-.btn-cancel-sm {
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: #444;
-    font-size: 0.65rem;
-    padding: 0.22rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-}
-.btn-cancel-sm:hover { color: #777; border-color: #444; }
 .list {
     flex: 1;
     min-height: 0;
