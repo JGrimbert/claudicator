@@ -1,5 +1,8 @@
 import { writable, derived } from "svelte/store";
 
+// Référence module-level à la connexion SSE active (survit aux changements de composants)
+let _streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
 export type ContextItem =
     | { kind: "method"; key: string; file: string; startLine: number | null; summary: string; snippet: string | null }
     | { kind: "grep";   file: string; line: number; content: string }
@@ -26,13 +29,74 @@ export const agentRunState = writable<{
     logs: RunLog[];
     running: boolean;
     sessionAlive: boolean;
+    consoleMinimized: boolean;
 }>({
     taskId: null,
     taskTitle: "",
     logs: [],
     running: false,
     sessionAlive: false,
+    consoleMinimized: false,
 });
+
+/**
+ * Consomme un stream SSE (fetch Response) et pousse les événements dans agentRunState.
+ * La référence au reader est stockée au niveau module pour survivre aux changements de composants.
+ * Appelle opts.onDone() à la fin (succès ou erreur).
+ */
+export async function startConsoleStream(
+    res: Response,
+    opts?: { onDone?: () => void }
+): Promise<void> {
+    if (!res.ok || !res.body) {
+        agentRunState.update(s => ({
+            ...s,
+            running: false,
+            logs: [...s.logs, { line: `[erreur HTTP ${res.status}]`, type: "system" as RunLog["type"] }],
+        }));
+        opts?.onDone?.();
+        return;
+    }
+    const reader = res.body.getReader();
+    _streamReader = reader;
+    const dec = new TextDecoder();
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            for (const raw of dec.decode(value).split("\n")) {
+                if (!raw.startsWith("data: ")) continue;
+                try {
+                    const event = JSON.parse(raw.slice(6)) as { line: string; type: RunLog["type"] };
+                    if (event.type === "session_status") {
+                        agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
+                    } else {
+                        agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
+                    }
+                } catch { /* ligne malformée */ }
+            }
+        }
+    } catch { /* stream annulé ou erreur réseau */ }
+    finally {
+        _streamReader = null;
+        agentRunState.update(s => ({ ...s, running: false }));
+        opts?.onDone?.();
+    }
+}
+
+/** Annule le stream SSE actif et passe running à false. */
+export function stopConsoleStream(): void {
+    if (_streamReader) {
+        _streamReader.cancel().catch(() => {});
+        _streamReader = null;
+    }
+    agentRunState.update(s => ({ ...s, running: false }));
+}
+
+/** Bascule l'état minimisé/développé du ConsoleDrawer. */
+export function toggleConsoleMinimized(): void {
+    agentRunState.update(s => ({ ...s, consoleMinimized: !s.consoleMinimized }));
+}
 
 export const taskRefreshTick = writable(0);
 export const pendingSelectTaskId = writable<string | null>(null);
