@@ -281,6 +281,10 @@
                 <button class="edit-btn edit-btn--confirm" onclick={submitCreate} disabled={createLoading} title="Créer">✓</button>
                 <button class="edit-btn edit-btn--cancel"  onclick={() => { newTitle = ""; newBody = ""; createError = ""; }} title="Vider">✕</button>
             </div>
+        {:else if $agentState.issue}
+            <button class="task-btn-top" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
+                {taskCreated ? "✓ créée" : "Task →"}
+            </button>
         {/if}
     </div>
 
@@ -366,9 +370,6 @@
         <div class="plan-section">
             <div class="plan-header">
                 <span class="plan-label">Plan — #{$agentState.issue.number}</span>
-                <button class="plan-btn" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
-                    {taskCreated ? "✓ créée" : "+ Task"}
-                </button>
             </div>
             {#if $agentState.plan}
                 <div class="plan-content">
@@ -443,18 +444,21 @@
     letter-spacing: 0.1em;
     color: #444;
 }
-.plan-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.62rem;
-    padding: 0.15rem 0.5rem;
+.task-btn-top {
+    background: #1e1540;
+    border: 1px solid #3a2e70;
     border-radius: 3px;
+    color: cornsilk;
+    font-size: 0.62rem;
+    padding: 0.25rem 0.7rem;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+    margin-left: auto;
+    flex-shrink: 0;
 }
-.plan-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
-.plan-btn:disabled { opacity: 0.4; cursor: default; }
+.task-btn-top:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
+.task-btn-top:disabled { opacity: 0.4; cursor: default; }
 .plan-content {
     flex: 1;
     overflow-y: auto;
