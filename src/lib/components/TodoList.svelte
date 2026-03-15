@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { notifyTaskCreated } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import Fuse from 'fuse.js';
 
     type GrepResult = { file: string; line: number; content: string; };
 
@@ -9,6 +10,12 @@
 
     let todos: GrepResult[] = [];
     let loading = false;
+    let filterQuery = "";
+
+    $: todoFuse = new Fuse(todos, { keys: ['content', 'file'], threshold: 0.45 });
+    $: displayedTodos = filterQuery.trim()
+        ? todoFuse.search(filterQuery).map(r => r.item)
+        : todos;
 
     function shortFile(path: string) {
         return path.split(/[\\/]/).pop() ?? path;
@@ -85,13 +92,20 @@
         <button class="refresh-btn" onclick={load} disabled={loading} title="Recharger">↻</button>
     </div>
     {/if}
+    <div class="search-bar">
+        <input class="search-input" placeholder="Filtrer…" bind:value={filterQuery} />
+        {#if filterQuery}
+            <button class="search-clear" onclick={() => filterQuery = ''}>✕</button>
+        {/if}
+    </div>
+
     <div class="list">
         {#if loading}
             <p class="hint">Chargement...</p>
-        {:else if todos.length === 0}
-            <p class="hint">Aucun TODO trouvé</p>
+        {:else if displayedTodos.length === 0}
+            <p class="hint">{filterQuery ? 'Aucun résultat' : 'Aucun TODO trouvé'}</p>
         {:else}
-            {#each todos as g}
+            {#each displayedTodos as g}
                 {@const key = `${g.file}:${g.line}`}
                 <ItemRow
                     prefix="{shortFile(g.file)}:{g.line}"
@@ -146,6 +160,32 @@
 }
 .refresh-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
 .refresh-btn:disabled { opacity: 0.35; cursor: default; }
+.search-bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+}
+.search-input::placeholder { color: var(--border-strong); }
+.search-clear {
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    font-size: 0.7rem;
+}
+.search-clear:hover { color: #888; }
 .list {
     flex: 1;
     min-height: 0;
