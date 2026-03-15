@@ -5,19 +5,28 @@
     type DirCluster   = { dir: string; symbols: SymbolEntry[]; issues: number[]; count: number };
     type MixedSymbol  = { name: string; dir: string; issues: number[] };
     type MixedCluster = { dirs: string[]; symbols: MixedSymbol[]; issues: number[]; count: number };
+    type CoalSymbol   = { key: string; dir: string };
+    type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number };
 
     let activeTab: "clusters" | "étape" | "étapes" = "clusters";
     let dirs:  DirCluster[]   = [];
     let mixed: MixedCluster[] = [];
+    let coal:  CoalNode[]     = [];
     let clustersLoading = false;
     let clustersLoaded  = false;
 
-    // section ouverte dans les mixed: index → expanded
     let mixedExpanded = new Set<number>();
     function toggleMixed(i: number) {
         const next = new Set(mixedExpanded);
         if (next.has(i)) next.delete(i); else next.add(i);
         mixedExpanded = next;
+    }
+
+    let coalExpanded = new Set<number>();
+    function toggleCoal(i: number) {
+        const next = new Set(coalExpanded);
+        if (next.has(i)) next.delete(i); else next.add(i);
+        coalExpanded = next;
     }
 
     $: activeGroup = $planGroups[$activePlanGroupIndex] ?? null;
@@ -36,6 +45,7 @@
                 const data = await res.json();
                 dirs  = data.dirs  ?? [];
                 mixed = data.mixed ?? [];
+                coal  = data.coal  ?? [];
             }
         } catch { /* silencieux */ }
         finally {
@@ -68,7 +78,7 @@
         {#if activeTab === "clusters"}
             {#if clustersLoading}
                 <p class="hint">Calcul en cours…</p>
-            {:else if dirs.length === 0 && mixed.length === 0}
+            {:else if dirs.length === 0 && mixed.length === 0 && coal.length === 0}
                 <p class="hint">{clustersLoaded ? "Aucun cluster détecté" : "Chargement…"}</p>
             {:else}
                 <!-- ── Clusters par dossier ── -->
@@ -101,6 +111,45 @@
                                                     <span class="sym-issue-id">#{n}</span>
                                                 {/each}
                                             </span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                {/if}
+
+                <!-- ── Coalescence ── -->
+                {#if coal.length > 0}
+                    <div class="section-label section-label--coal">COALESCENCE</div>
+                    {#each coal as node, i}
+                        {@const open = coalExpanded.has(i)}
+                        <div class="dir-row coal-row">
+                            <button class="dir-head" onclick={() => toggleCoal(i)}>
+                                <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                                <span class="coal-preview">
+                                    {#each node.symbols.slice(0, 4) as s, si}
+                                        <span class="coal-sym-tag">{s.key.split(".").at(-1)}</span>{#if si < Math.min(node.symbols.length, 4) - 1}<span class="coal-dot"> · </span>{/if}
+                                    {/each}
+                                    {#if node.symbols.length > 4}<span class="coal-more">+{node.symbols.length - 4}</span>{/if}
+                                </span>
+                                <span class="coal-score">{node.score}</span>
+                            </button>
+                            <div class="dir-issues">
+                                {#each node.issues as num}
+                                    <span class="issue-chip issue-chip--coal">#{num}</span>
+                                {/each}
+                            </div>
+                            {#if open}
+                                <div class="dir-symbols">
+                                    {#each node.symbols as sym}
+                                        <div class="sym-line">
+                                            <button
+                                                class="sym-name"
+                                                class:sym-active={$clusterFocusedSymbol?.name === sym.key}
+                                                onclick={() => clusterFocusedSymbol.set({ name: sym.key, dir: sym.dir })}
+                                            >{sym.key.split(".").at(-1)}</button>
+                                            <span class="sym-dir-tag">{sym.dir}</span>
                                         </div>
                                     {/each}
                                 </div>
@@ -263,6 +312,7 @@
 }
 .section-label:first-child { border-top: none; margin-top: 0; }
 .section-label--mixed { color: #3a2a4a; }
+.section-label--coal  { color: #2a4a3a; }
 /* ── Clusters / arbo ── */
 .dir-row {
     border-bottom: 1px solid #111;
@@ -345,6 +395,45 @@
     font-size: 0.54rem;
     font-family: 'JetBrains Mono', monospace;
     color: #2a3a4a;
+}
+/* ── Coalescence ── */
+.coal-row .dir-head { background: transparent; }
+.coal-row .dir-head:hover { background: #0d1a12; }
+.coal-preview {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0;
+    overflow: hidden;
+}
+.coal-sym-tag {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #4a7a5a;
+}
+.coal-dot {
+    font-size: 0.5rem;
+    color: #2a2a3a;
+}
+.coal-more {
+    font-size: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a4a3a;
+    margin-left: 0.2rem;
+}
+.coal-score {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a4a3a;
+    flex-shrink: 0;
+    margin-right: 0.3rem;
+}
+.issue-chip--coal {
+    color: #4a7a5a;
+    background: #121a14;
+    border: 1px solid #1a4a2a;
 }
 /* ── Mixed clusters ── */
 .mixed-row .dir-head { background: transparent; }
