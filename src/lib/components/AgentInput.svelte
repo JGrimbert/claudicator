@@ -27,18 +27,26 @@
     let loadedId       = $state("");
     let preLaunching   = $state(false);
 
-    let taskText = $state("");
-    let planMode = $state(true);
+    let taskText  = $state("");
+    let planMode  = $state(true);
+    let hasPlan   = $state(false);
+    let sections  = $state<Section[]>([]);
+    let collapsed = $state(new Set<string>());
 
-    let sections = $state<Section[]>([]);
+    function toggleSec(name: string) {
+        const next = new Set(collapsed);
+        if (next.has(name)) next.delete(name);
+        else next.add(name);
+        collapsed = next;
+    }
 
     // ── Parsing ────────────────────────────────────────────────────────────────
     const TOP_KEYS = [
         'TASK', 'DESCRIPTION', 'OBJECTIF', 'CONTRAINTES',
         'FORMAT DU PLAN', 'DOCUMENTATION', 'ATLAS', 'CONCEPTS',
     ];
-    const PLAN_KEYS   = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN']);
-    const DOC_KEYS    = new Set(['DOCUMENTATION', 'CONCEPTS']);
+    const PLAN_KEYS      = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN']);
+    const DOC_KEYS       = new Set(['DOCUMENTATION', 'CONCEPTS']);
     const ATLAS_SUB_KEYS = ['SYSTEM', 'MODULES', 'API ROUTES', 'DÉPENDANCES'];
 
     function parseByKeys(text: string, keys: string[]): Section[] {
@@ -97,15 +105,15 @@
         contextError   = "";
         taskText       = "";
         sections       = [];
+        hasPlan        = false;
         try {
-            // Charger le plan existant dans taskText (spec et impl)
             const planRes  = await fetch(`/api/tasks/${taskId}/plan`);
             const planData = await planRes.json();
             if (planData.content) {
                 taskText = planData.content;
+                hasPlan  = true;
             }
 
-            // Charger le contexte enrichi dans tous les cas
             const res  = await fetch("/api/context", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -194,7 +202,6 @@
 
 <div class="agent-input">
 
-    <!-- ── Prompt pane ── -->
     <div class="prompt-pane">
 
         <div class="ai-header">
@@ -219,22 +226,90 @@
             >↺</button>
         </div>
 
-        <!-- Corps scrollable -->
-        <div class="prompt-body">
+        <!-- Corps document unifié -->
+        <div class="doc-scroll">
 
-            <!-- ── Row 1 : Input utilisateur (éditable) ── -->
-            <div class="prompt-row row-input">
-                <span class="row-badge">INPUT</span>
-                <textarea
-                    class="field-ta"
-                    bind:value={taskText}
-                    placeholder={loadingContext ? "Génération…" : "Tâche…"}
-                    disabled={loadingContext}
-                    rows="4"
-                ></textarea>
+            <!-- Section INPUT — pas de toggle -->
+            <div class="doc-sec sec-input">
+                {#if hasPlan}
+                    <pre class="plan-md">{taskText}</pre>
+                {:else}
+                    <textarea
+                        class="field-ta"
+                        bind:value={taskText}
+                        placeholder={loadingContext ? "Génération…" : "Tâche…"}
+                        disabled={loadingContext}
+                        rows="4"
+                    ></textarea>
+                {/if}
             </div>
 
-            <!-- ── Toggle plan ── -->
+            <!-- Section PLAN — toggleable -->
+            {#if planMode && planSections.length > 0}
+                <div class="doc-sec">
+                    <button class="sec-toggle" onclick={() => toggleSec('plan')}>
+                        plan {collapsed.has('plan') ? '▸' : '▾'}
+                    </button>
+                    {#if !collapsed.has('plan')}
+                        <div class="sec-body">
+                            {#each planSections as s}
+                                <div class="ro-block">
+                                    <div class="ro-key">{s.key}</div>
+                                    <pre class="ro-pre">{s.content}</pre>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+
+            <!-- Section DOCUMENTATION — toggleable -->
+            {#if docSections.length > 0}
+                <div class="doc-sec">
+                    <button class="sec-toggle" onclick={() => toggleSec('doc')}>
+                        documentation {collapsed.has('doc') ? '▸' : '▾'}
+                    </button>
+                    {#if !collapsed.has('doc')}
+                        <div class="sec-body">
+                            {#each docSections as s}
+                                <div class="ro-block">
+                                    <div class="ro-key">{s.key}</div>
+                                    <pre class="ro-pre">{s.content}</pre>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+
+            <!-- Section ATLAS — toggleable -->
+            {#if hasAtlas}
+                <div class="doc-sec">
+                    <button class="sec-toggle" onclick={() => toggleSec('atlas')}>
+                        atlas {collapsed.has('atlas') ? '▸' : '▾'}
+                    </button>
+                    {#if !collapsed.has('atlas')}
+                        <div class="sec-body">
+                            {#if atlasSubs.length > 0}
+                                <div class="atlas-grid">
+                                    {#each atlasSubs as sub}
+                                        <div class="atlas-block">
+                                            <div class="ro-key">{sub.key}</div>
+                                            <pre class="ro-pre">{sub.content}</pre>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {:else}
+                                <pre class="ro-pre">{atlasRaw}</pre>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+
+        </div><!-- /doc-scroll -->
+
+        <div class="ai-footer">
             <label class="plan-toggle-row">
                 <span class="plan-toggle-label">plan</span>
                 <span class="plan-toggle-track" class:on={planMode}>
@@ -242,52 +317,6 @@
                 </span>
                 <input type="checkbox" bind:checked={planMode} hidden />
             </label>
-
-            <!-- ── Row 2 : Enrichissement (read-only) ── -->
-            {#if (planMode && planSections.length > 0) || docSections.length > 0}
-                <div class="prompt-row row-enrich">
-                    <span class="row-badge">ENRICHISSEMENT</span>
-                    <div class="ro-grid">
-                        {#if planMode}
-                            {#each planSections as s}
-                                <div class="ro-block">
-                                    <div class="ro-key">{s.key}</div>
-                                    <pre class="ro-pre">{s.content}</pre>
-                                </div>
-                            {/each}
-                        {/if}
-                        {#each docSections as s}
-                            <div class="ro-block">
-                                <div class="ro-key">{s.key}</div>
-                                <pre class="ro-pre">{s.content}</pre>
-                            </div>
-                        {/each}
-                    </div>
-                </div>
-            {/if}
-
-            <!-- ── Row 3 : Atlas (read-only) ── -->
-            {#if hasAtlas}
-                <div class="prompt-row row-atlas">
-                    <span class="row-badge">ATLAS</span>
-                    {#if atlasSubs.length > 0}
-                        <div class="atlas-grid">
-                            {#each atlasSubs as sub}
-                                <div class="atlas-block">
-                                    <div class="ro-key">{sub.key}</div>
-                                    <pre class="ro-pre atlas-pre">{sub.content}</pre>
-                                </div>
-                            {/each}
-                        </div>
-                    {:else}
-                        <pre class="ro-pre">{atlasRaw}</pre>
-                    {/if}
-                </div>
-            {/if}
-
-        </div><!-- /prompt-body -->
-
-        <div class="ai-footer">
             {@render footerExtra?.()}
             <button
                 class="ai-launch"
@@ -365,45 +394,61 @@
 .ai-reload:hover:not(:disabled) { color: #7c6af7; }
 .ai-reload:disabled { opacity: 0.3; cursor: default; }
 
-/* ── Corps scrollable ── */
-.prompt-body {
+/* ── Document scrollable ── */
+.doc-scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
-.prompt-body::-webkit-scrollbar { width: 3px; }
-.prompt-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.doc-scroll::-webkit-scrollbar { width: 3px; }
+.doc-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Rows avec border pointillée ── */
-.prompt-row {
-    position: relative;
-    margin: 0.55rem 0.7rem 0;
-    border: 1px dashed var(--border);
-    border-radius: 3px;
-    padding: 0.6rem 0.65rem 0.5rem;
+/* ── Sections ── */
+.doc-sec {
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem 0.7rem 0;
     flex-shrink: 0;
 }
-.prompt-row:last-of-type { margin-bottom: 0.55rem; }
+.sec-input { padding-top: 0.5rem; }
 
-/* Badge flottant sur la bordure */
-.row-badge {
-    position: absolute;
-    top: -0.48em;
-    left: 0.55rem;
-    background: var(--bg-deep);
+.sec-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.46rem;
+    color: #333;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    padding: 0 0.3rem;
-    line-height: 1;
+    text-align: left;
+    padding: 0.25rem 0;
+    width: 100%;
 }
-.row-input  .row-badge { color: #7c6af7; }
-.row-enrich .row-badge { color: #4a7a5a; }
-.row-atlas  .row-badge { color: #7a6a3a; }
+.sec-toggle:hover { color: #666; }
 
-/* ── Row 1 : champs éditables ── */
+.sec-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-bottom: 0.2rem;
+}
+
+/* ── Plan rendu (hasPlan) ── */
+.plan-md {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.67rem;
+    color: #888;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    padding: 0.1rem 0;
+}
+
+/* ── Textarea éditable ── */
 .field-ta {
     background: var(--bg-deep);
     border: 1px solid var(--border);
@@ -422,15 +467,56 @@
 .field-ta:disabled { opacity: 0.45; cursor: wait; }
 .field-ta::placeholder { color: var(--border-strong); }
 
-/* ── Toggle plan ── */
+/* ── Blocs read-only ── */
+.ro-block { display: flex; flex-direction: column; gap: 0.1rem; }
+.ro-key {
+    font-size: 0.48rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #3a4a3a;
+    font-family: 'JetBrains Mono', monospace;
+}
+.ro-pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: #3a3a4a;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    max-height: 72px;
+    overflow-y: auto;
+}
+.ro-pre::-webkit-scrollbar { width: 2px; }
+.ro-pre::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* ── Atlas grid ── */
+.atlas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.5rem 0.8rem;
+}
+.atlas-block { display: flex; flex-direction: column; gap: 0.1rem; }
+
+/* ── Footer ── */
+.ai-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+}
+
+/* ── Toggle plan (dans footer) ── */
 .plan-toggle-row {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    margin: 0.35rem 0.7rem 0;
     cursor: pointer;
     user-select: none;
-    width: fit-content;
+    margin-right: auto;
 }
 .plan-toggle-label {
     font-size: 0.46rem;
@@ -469,56 +555,6 @@
     background: #9a8ad4;
 }
 
-/* ── Row 2 : enrichissement ── */
-.ro-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-.ro-block { display: flex; flex-direction: column; gap: 0.1rem; }
-.ro-key {
-    font-size: 0.48rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #3a4a3a;
-    font-family: 'JetBrains Mono', monospace;
-}
-.ro-pre {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    color: #3a3a4a;
-    line-height: 1.45;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-    max-height: 72px;
-    overflow-y: auto;
-}
-.ro-pre::-webkit-scrollbar { width: 2px; }
-.ro-pre::-webkit-scrollbar-thumb { background: var(--border); }
-
-/* ── Row 3 : atlas ── */
-.atlas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.5rem 0.8rem;
-}
-.atlas-block { display: flex; flex-direction: column; gap: 0.1rem; }
-.atlas-pre {
-    max-height: 90px;
-    color: #3a4a3a;
-}
-
-/* ── Footer ── */
-.ai-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.4rem;
-    padding: 0.4rem 1rem;
-    flex-shrink: 0;
-    border-top: 1px solid var(--border);
-}
 .ai-launch {
     background: #1e1540;
     border: 1px solid #3a2e70;
