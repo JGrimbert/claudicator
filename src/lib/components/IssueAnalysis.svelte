@@ -98,26 +98,6 @@
 
     // ── Console chat agent roadmap ────────────────────────────────────────
     let chatMessage = "";
-    let focusedGroup: Group | null = null;
-    let focusInstruction = "";
-
-    function focusGroup(group: Group) {
-        if (focusedGroup?.name === group.name) {
-            focusedGroup = null;
-            focusInstruction = "";
-        } else {
-            focusedGroup = group;
-            focusInstruction = "";
-        }
-    }
-
-    async function sendFocusMessage(group: Group) {
-        if (!focusInstruction.trim()) return;
-        chatMessage = `Approfondis le groupe "${group.name}" (issues ${group.issues.map(n => `#${n}`).join(", ")}) : ${focusInstruction}`;
-        focusedGroup = null;
-        focusInstruction = "";
-        await sendChat();
-    }
 
     async function sendChat() {
         if (!chatMessage.trim() || $issueAnalysis.chatRunning) return;
@@ -222,7 +202,11 @@
 
     // Rendre le texte sans le bloc mermaid (pour affichage dans <pre>)
     function textWithoutMermaid(text: string): string {
-        return text.replace(/```mermaid[\s\S]*?```/g, "[Diagramme Mermaid ci-dessous]");
+        const clean = text
+            .replace(/```mermaid[\s\S]*?```/g, "")
+            .replace(/###\s+Groupe\s+\d+[\s\S]*/g, "")
+            .trim();
+        return clean || "Aucun contenu textuel. Relancez l'analyse pour générer un diagramme.";
     }
 
     async function renderMermaid() {
@@ -453,8 +437,6 @@
         issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, updating: false, chatRunning: false, snapshotDiff: null }));
         mermaidRendered = false;
         createFeedback = "";
-        groupFeedback = {};
-        focusedGroup = null;
         chatMessage = "";
     }
 
@@ -484,31 +466,6 @@
         return groups;
     }
 
-    // ── Créer les tasks pour une liste d'issues ────────────────────────────
-    let groupFeedback: Record<string, string> = {};
-
-    async function createTasksForIssues(
-        issueNumbers: number[],
-        feedbackKey: string,
-        snapshot: Array<{ number: number; title: string }>
-    ) {
-        const targets = snapshot.filter(s => issueNumbers.includes(s.number));
-        if (!targets.length) { groupFeedback = { ...groupFeedback, [feedbackKey]: "Aucune issue" }; return; }
-        let created = 0, existing = 0;
-        await Promise.all(targets.map(async issue => {
-            const r = await fetch("/api/tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: issue.title, issueNumber: issue.number })
-            });
-            if (r.ok) { (await r.json()).alreadyExisted ? existing++ : created++; }
-            else { existing++; }
-        }));
-        const msg = `${created} créée${created > 1 ? "s" : ""}${existing ? `, ${existing} existaient` : ""}`;
-        groupFeedback = { ...groupFeedback, [feedbackKey]: msg };
-        if (created > 0) notifyTaskCreated();
-    }
-
     async function createTasks(issueNumbers?: number[]) {
         if (createLoading) return;
         createLoading = true;
@@ -536,20 +493,6 @@
             if (created > 0) notifyTaskCreated();
         } catch (e: any) {
             createFeedback = e.message ?? "Erreur";
-        } finally {
-            createLoading = false;
-        }
-    }
-
-    async function createGroupTasks(group: Group) {
-        if (createLoading) return;
-        createLoading = true;
-        groupFeedback = { ...groupFeedback, [group.name]: "…" };
-        try {
-            const snap = await fetch("/api/issues/snapshot");
-            if (!snap.ok) return;
-            const { snapshot } = await snap.json();
-            await createTasksForIssues(group.issues, group.name, snapshot);
         } finally {
             createLoading = false;
         }
@@ -719,7 +662,6 @@
     {:else if $issueAnalysis.result}
         <div class="result-area">
             <div class="roadmap-inline">
-
             <!-- Diagramme Mermaid -->
             {#if extractMermaid($issueAnalysis.result)}
                 <div class="mermaid-section">
@@ -727,90 +669,28 @@
                         <span class="hint">{FRAMES[frame]} Rendu du diagramme…</span>
                     </div>
                 </div>
-            {/if}
-
-            <!-- Groupes actionnables -->
-            {#if groups.length > 0}
-                <div class="groups-section">
-                    <div class="groups-cards">
-                        {#each groups as group, i}
-                            <div class="group-card" id="group-card-{i}" class:highlighted={highlightedGroup === group.name}>
-                                <div class="group-header">
-                                    <span class="group-index">{i + 1}</span>
-                                    <span class="group-name">{group.name}</span>
-                                    {#if group.dependsOn.length > 0}
-                                        <span class="group-dep">après {group.dependsOn.join(", ")}</span>
-                                    {/if}
-                                    <button
-                                        class="btn-focus"
-                                        onclick={() => focusGroup(group)}
-                                        title="Instruction ciblée sur ce groupe"
-                                        class:active={focusedGroup?.name === group.name}
-                                    >⊙</button>
-                                    <button
-                                        class="btn-group-tasks"
-                                        onclick={() => createGroupTasks(group)}
-                                        disabled={createLoading}
-                                        title="Créer les tasks pour ce groupe"
-                                    >{groupFeedback[group.name] ?? "＋ Tasks"}</button>
-                                </div>
-                                {#if focusedGroup?.name === group.name}
-                                    <div class="focus-input">
-                                        <input
-                                            bind:value={focusInstruction}
-                                            placeholder="Instruction spécifique pour ce groupe…"
-                                            onkeydown={(e) => { if (e.key === "Enter") sendFocusMessage(group); if (e.key === "Escape") { focusedGroup = null; } }}
-                                            autofocus
-                                        />
-                                        <button onclick={() => sendFocusMessage(group)} disabled={!focusInstruction.trim()}>→</button>
-                                    </div>
-                                {/if}
-                                {#if group.summary}
-                                    <div class="group-summary">{group.summary}</div>
-                                {/if}
-                                <div class="group-issues">
-                                    {#each group.issues as n}
-                                        {@const taskStatus = issueTaskStatus.get(n)}
-                                        <button
-                                            class="issue-chip"
-                                            class:chip-impl={taskStatus === "implementation" || taskStatus === "documentation"}
-                                            class:chip-plan={taskStatus === "planification"}
-                                            class:chip-merged={taskStatus === "merged"}
-                                            class:chip-failed={taskStatus === "failed"}
-                                            class:chip-spec={taskStatus === "specification"}
-                                            onclick={() => openIssue(n)}
-                                            title="Ouvrir l'issue #{n}{taskStatus ? ` · ${taskStatus}` : ''}"
-                                        >#{n}</button>
-                                    {/each}
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
-
-                    <div class="action-bar">
-                        {#if planFeedback}
-                            <span class="feedback">{planFeedback}</span>
-                        {:else if createFeedback}
-                            <span class="feedback">{createFeedback}</span>
-                        {/if}
-                        <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
-                            {createLoading ? "Création…" : "Créer tasks"}
-                        </button>
-                        <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
-                            {#if planLoading}
-                                {planDone}/{planTotal} ⠿
-                            {:else}
-                                Planifier tasks
-                            {/if}
-                        </button>
-                    </div>
-                </div>
             {:else}
-                <!-- Fallback texte brut si le parsing échoue -->
                 <pre class="result-text">{textWithoutMermaid($issueAnalysis.result)}</pre>
             {/if}
+        </div>
 
-            </div>
+        <div class="action-bar">
+            {#if planFeedback}
+                <span class="feedback">{planFeedback}</span>
+            {:else if createFeedback}
+                <span class="feedback">{createFeedback}</span>
+            {/if}
+            <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
+                {createLoading ? "Création…" : "Créer tasks"}
+            </button>
+            <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
+                {#if planLoading}
+                    {planDone}/{planTotal} ⠿
+                {:else}
+                    Planifier tasks
+                {/if}
+            </button>
+        </div>
         </div>
 
         {#if planLoading || ($agentRunState.taskId && planLogs.length > 0 && !$agentRunState.running && planFeedback)}
@@ -929,11 +809,9 @@
     flex-direction: column;
 }
 .roadmap-inline {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
 }
 .result-text {
     font-size: 0.7rem;
@@ -944,9 +822,7 @@
     margin: 0;
 }
 .mermaid-section {
-    width: 50%;
-    flex-shrink: 0;
-    align-self: flex-start;
+    width: 100%;
 }
 .mermaid-label {
     font-size: 0.58rem;
@@ -1043,134 +919,14 @@
     word-break: break-word;
     margin: 0;
 }
-/* ── Groupes actionnables ── */
-.groups-section {
-    width: 50%;
-    flex: 1;
-    min-width: 0;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.groups-cards {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-bottom: 3.5rem;
-    padding-right: 0.5rem;
-}
-.groups-cards::-webkit-scrollbar { width: 4px; }
-.groups-cards::-webkit-scrollbar-track { background: transparent; }
-.groups-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.group-card {
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--bg-panel);
-    overflow: hidden;
-    transition: border-color 0.2s, background 0.2s;
-}
-.group-card.highlighted {
-    border-color: #3a2a5a;
-    background: #1a1428;
-}
-.group-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.7rem;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-}
-.group-index {
-    font-size: 0.55rem;
-    color: var(--text-dim);
-    background: var(--bg-base);
-    border-radius: 50%;
-    width: 1.3em;
-    height: 1.3em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.group-name {
-    font-size: 0.68rem;
-    color: var(--accent-hover);
-    font-weight: 500;
-    flex: 1;
-    min-width: 0;
-}
-.group-dep {
-    font-size: 0.57rem;
-    color: #333;
-    font-style: italic;
-    flex-shrink: 0;
-}
-.btn-group-tasks {
-    background: none;
-    border: 1px solid #2a2a4a;
-    color: #4a4a7a;
-    font-size: 0.58rem;
-    padding: 0.1rem 0.45rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-    white-space: nowrap;
-}
-.btn-group-tasks:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent); }
-.btn-group-tasks:disabled { opacity: 0.4; cursor: default; }
-.group-summary {
-    font-size: 0.62rem;
-    color: var(--text-muted);
-    padding: 0.25rem 0.7rem;
-    font-style: italic;
-    border-bottom: 1px solid var(--border);
-    line-height: 1.5;
-}
-.group-issues {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    padding: 0.35rem 0.7rem;
-}
-.issue-chip {
-    font-size: 0.6rem;
-    color: #4a9eff;
-    background: #0a1020;
-    border: 1px solid #1a2a40;
-    border-radius: 3px;
-    padding: 0.05rem 0.35rem;
-    font-family: 'JetBrains Mono', monospace;
-    cursor: pointer;
-    transition: color 0.12s, border-color 0.12s, background 0.12s;
-}
-.issue-chip:hover { color: #7cb8ff; border-color: #2a4a6a; }
-.issue-chip.chip-impl  { color: var(--color-impl); background: #1a1200; border-color: #4a3a00; }
-.issue-chip.chip-impl:hover { color: #fff8dc; border-color: #7a6000; }
-.issue-chip.chip-plan  { color: #f7c948; background: #1a1400; border-color: #3a2e00; }
-.issue-chip.chip-plan:hover { border-color: #7a6a00; }
-.issue-chip.chip-merged { color: #4caf50; background: #0a1a0a; border-color: #1a3a1a; }
-.issue-chip.chip-merged:hover { border-color: #2a5a2a; }
-.issue-chip.chip-failed { color: #f44336; background: #1a0a0a; border-color: #3a1a1a; }
-.issue-chip.chip-spec  { color: #777; border-color: #2a2a2a; }
-
 .action-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     align-items: center;
     gap: 0.8rem;
     padding: 0.5rem 1.2rem;
     background: var(--bg-deep);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
 }
 .btn-tasks {
     background: #1a1040;

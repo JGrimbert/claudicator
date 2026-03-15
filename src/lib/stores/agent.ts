@@ -140,7 +140,7 @@ export const planAllState = writable<{
 export const activePlanGroupIndex = writable<number>(0);
 export const globalPlanPrompt = writable<string | null>(null);
 
-export type PlanGroup = { index: number; name: string; issues: number[] };
+export type PlanGroup = { index: number; name: string; issues: number[]; summary: string; dependsOn: string[] };
 
 /** Parse le texte en groupes de plan structurés */
 function parseGroups(text: string): PlanGroup[] {
@@ -153,8 +153,14 @@ function parseGroups(text: string): PlanGroup[] {
         const issues = issueMatch
             ? [...issueMatch[1].matchAll(/#(\d+)/g)].map(m => parseInt(m[1]))
             : [];
+        const depMatch = block.match(/Dépend de\s*:\s*(.+)/);
+        const dependsOn = depMatch
+            ? depMatch[1].split(/[,;]/).map(s => s.trim()).filter(Boolean)
+            : [];
+        const summaryMatch = block.match(/Résumé\s*:\s*(.+)/);
+        const summary = summaryMatch ? summaryMatch[1].trim() : "";
         if (issues.length > 0)
-            groups.push({ index: groups.length + 1, name: nameMatch[1].trim(), issues });
+            groups.push({ index: groups.length + 1, name: nameMatch[1].trim(), issues, summary, dependsOn });
     }
     return groups;
 }

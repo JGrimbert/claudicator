@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { planGroups, activePlanGroupIndex, clusterFocusedSymbol } from "$lib/stores/agent";
+    import { onMount } from "svelte";
+    import { planGroups, activePlanGroupIndex, clusterFocusedSymbol, agentState } from "$lib/stores/agent";
+    import type { PlanGroup } from "$lib/stores/agent";
     import IssueChip from "$lib/components/IssueChip.svelte";
 
     type SymbolEntry  = { name: string; issues: number[] };
@@ -103,6 +105,70 @@
         const next = new Set(histExpanded);
         if (next.has(i)) next.delete(i); else next.add(i);
         histExpanded = next;
+    }
+
+    // ── Task statuses pour coloriser les chips ────────────────────────────
+    let issueTaskStatus = new Map<number, string>();
+
+    async function loadTaskStatuses() {
+        try {
+            const r = await fetch("/api/tasks");
+            if (r.ok) {
+                const ts: Array<{ issueNumber?: number; status: string }> = await r.json();
+                const m = new Map<number, string>();
+                for (const t of ts) { if (t.issueNumber) m.set(t.issueNumber, t.status); }
+                issueTaskStatus = m;
+            }
+        } catch { /* silencieux */ }
+    }
+
+    onMount(loadTaskStatuses);
+
+    // ── Créer les tasks pour un groupe ────────────────────────────────────
+    let groupFeedback: Record<string, string> = {};
+    let creatingGroup: string | null = null;
+
+    async function createGroupTasks(group: PlanGroup) {
+        if (creatingGroup) return;
+        creatingGroup = group.name;
+        groupFeedback = { ...groupFeedback, [group.name]: "…" };
+        try {
+            const snap = await fetch("/api/issues/snapshot");
+            if (!snap.ok) return;
+            const { snapshot } = await snap.json();
+            const targets = (snapshot as Array<{ number: number; title: string }>)
+                .filter(s => group.issues.includes(s.number));
+            if (!targets.length) { groupFeedback = { ...groupFeedback, [group.name]: "Aucune issue" }; return; }
+            let created = 0, existing = 0;
+            await Promise.all(targets.map(async issue => {
+                const r = await fetch("/api/tasks", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: issue.title, issueNumber: issue.number })
+                });
+                if (r.ok) { (await r.json()).alreadyExisted ? existing++ : created++; }
+                else { existing++; }
+            }));
+            const msg = `${created} créée${created > 1 ? "s" : ""}${existing ? `, ${existing} existaient` : ""}`;
+            groupFeedback = { ...groupFeedback, [group.name]: msg };
+        } finally {
+            creatingGroup = null;
+        }
+    }
+
+    async function openIssue(n: number) {
+        agentState.update(s => ({ ...s, status: "loading", plan: null }));
+        try {
+            const res = await fetch(`/api/issue?number=${n}`);
+            if (!res.ok) return;
+            const full = await res.json();
+            agentState.update(s => ({
+                ...s, issue: full, status: "idle", navigationStack: [],
+                knownSubIssueNumbers: [...new Set([...s.knownSubIssueNumbers, ...(full.subIssues?.map((si: any) => si.number) ?? [])])]
+            }));
+        } catch {
+            agentState.update(s => ({ ...s, status: "idle" }));
+        }
     }
 
     $: activeGroup = $planGroups[$activePlanGroupIndex] ?? null;
@@ -356,7 +422,16 @@
 
         {:else if activeTab === "étape"}
             {#if activeGroup}
-                <div class="group-header">{activeGroup.name}</div>
+                <div class="group-header">
+                    <span class="step-index">{activeGroup.index}</span>
+                    <span class="group-title">{activeGroup.name}</span>
+                </div>
+                {#if activeGroup.summary}
+                    <div class="step-summary">{activeGroup.summary}</div>
+                {/if}
+                {#if activeGroup.dependsOn.length > 0}
+                    <div class="step-dep">après {activeGroup.dependsOn.join(", ")}</div>
+                {/if}
                 <div class="group-issues">
                     {#each activeGroup.issues as num}
                         <IssueChip number={num} />
@@ -523,15 +598,41 @@
                 <p class="hint">Aucune roadmap disponible</p>
             {:else}
                 {#each $planGroups as group}
-                    <button
-                        class="step-row"
-                        class:step-active={$activePlanGroupIndex === group.index - 1}
-                        onclick={() => selectGroup(group.index - 1)}
-                    >
-                        <span class="step-index">{group.index}</span>
-                        <span class="step-name">{group.name}</span>
-                        <span class="step-count">{group.issues.length} issues</span>
-                    </button>
+                    <div class="step-card" class:step-active={$activePlanGroupIndex === group.index - 1}>
+                        <div class="step-head">
+                            <button class="step-title-btn" onclick={() => selectGroup(group.index - 1)}>
+                                <span class="step-index">{group.index}</span>
+                                <span class="step-name">{group.name}</span>
+                            </button>
+                            <button
+                                class="btn-create-task"
+                                onclick={() => createGroupTasks(group)}
+                                disabled={creatingGroup === group.name}
+                                title="Créer les tasks pour ce groupe"
+                            >{groupFeedback[group.name] ?? "＋ task"}</button>
+                        </div>
+                        {#if group.summary}
+                            <div class="step-summary">{group.summary}</div>
+                        {/if}
+                        {#if group.dependsOn.length > 0}
+                            <div class="step-dep">après {group.dependsOn.join(", ")}</div>
+                        {/if}
+                        <div class="step-issues">
+                            {#each group.issues as n}
+                                {@const status = issueTaskStatus.get(n)}
+                                <button
+                                    class="step-chip"
+                                    class:chip-impl={status === "implementation" || status === "documentation"}
+                                    class:chip-plan={status === "planification"}
+                                    class:chip-merged={status === "merged"}
+                                    class:chip-failed={status === "failed"}
+                                    class:chip-spec={status === "specification"}
+                                    onclick={() => openIssue(n)}
+                                    title="#{n}{status ? ` · ${status}` : ''}"
+                                >#{n}</button>
+                            {/each}
+                        </div>
+                    </div>
                 {/each}
             {/if}
         {/if}
@@ -780,15 +881,24 @@
 }
 /* ── Étape ── */
 .group-header {
-    padding: 0.5rem 0.75rem 0.25rem;
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem 0.3rem;
+    border-bottom: 1px solid #111;
     font-family: 'JetBrains Mono', monospace;
 }
+.group-title {
+    font-size: 0.65rem;
+    color: #888;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .group-issues {
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.75rem 0.3rem 1.65rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
@@ -970,20 +1080,27 @@
 .sa-sec--mixte .sa-key                               { color: #c8a454; }
 
 /* ── Étapes ── */
-.step-row {
+.step-card {
+    border-bottom: 1px solid #111;
+    transition: background 0.1s;
+}
+.step-card:hover { background: #0a0d12; }
+.step-active { background: #0d1118; }
+.step-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+}
+.step-title-btn {
     all: unset;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.4rem 0.75rem;
+    flex: 1;
+    min-width: 0;
     cursor: pointer;
-    width: 100%;
-    box-sizing: border-box;
-    border-bottom: 1px solid #111;
-    transition: background 0.1s;
 }
-.step-row:hover { background: #111; }
-.step-active { background: #0d1118; }
 .step-index {
     font-size: 0.6rem;
     color: #444;
@@ -1001,10 +1118,59 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.step-count {
-    font-size: 0.55rem;
-    color: #444;
+.btn-create-task {
+    background: none;
+    border: 1px solid #1a3a6a;
+    color: #3a6aaa;
+    font-size: 0.56rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    cursor: pointer;
     font-family: 'JetBrains Mono', monospace;
     flex-shrink: 0;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
 }
+.btn-create-task:hover:not(:disabled) { color: cornsilk; border-color: #4a8acc; }
+.btn-create-task:disabled { opacity: 0.4; cursor: default; }
+.step-summary {
+    font-size: 0.6rem;
+    color: #555;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: italic;
+    padding: 0 0.75rem 0.2rem 1.65rem;
+    line-height: 1.45;
+}
+.step-dep {
+    font-size: 0.54rem;
+    color: #3a3a5a;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0 0.75rem 0.2rem 1.65rem;
+}
+.step-issues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.1rem 0.75rem 0.35rem 1.65rem;
+}
+.step-chip {
+    font-size: 0.58rem;
+    color: #4a9eff;
+    background: #0a1020;
+    border: 1px solid #1a2a40;
+    border-radius: 3px;
+    padding: 0.04rem 0.32rem;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+}
+.step-chip:hover { color: cornsilk; border-color: #2a4a6a; }
+.step-chip.chip-impl  { color: #c8a020; background: #1a1200; border-color: #4a3a00; }
+.step-chip.chip-impl:hover  { color: cornsilk; border-color: #7a6000; }
+.step-chip.chip-plan  { color: #f7c948; background: #1a1400; border-color: #3a2e00; }
+.step-chip.chip-plan:hover  { border-color: #7a6a00; }
+.step-chip.chip-merged { color: #4caf50; background: #0a1a0a; border-color: #1a3a1a; }
+.step-chip.chip-merged:hover { border-color: #2a5a2a; }
+.step-chip.chip-failed { color: #f44336; background: #1a0a0a; border-color: #3a1a1a; }
+.step-chip.chip-spec  { color: #666; border-color: #2a2a2a; }
 </style>
