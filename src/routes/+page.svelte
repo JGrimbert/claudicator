@@ -8,12 +8,14 @@
     import ProjetPanel from "$lib/components/ProjetPanel.svelte";
     import PlanPanel from "$lib/components/PlanPanel.svelte";
     import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt } from "$lib/stores/agent";
+    import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol } from "$lib/stores/agent";
 
-    let activeMiddleTab: "roadmap" | "plan" = "roadmap";
-    $: if ($planModeTask)          activeMiddleTab = "plan";
-    $: if ($globalPlanPrompt)      activeMiddleTab = "plan";
-    $: if ($issueAnalysis.running) activeMiddleTab = "roadmap";
+    let activeMiddleTab: "roadmap" | "plan" | "cluster" = "roadmap";
+    $: if ($planModeTask)             activeMiddleTab = "plan";
+    $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
+    $: if ($issueAnalysis.running)    activeMiddleTab = "roadmap";
+    $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
 
     /**
      *  TODO: floralwhite, moccasin, peachpuff
@@ -485,6 +487,9 @@
                 <div class="mid-tab-bar">
                     <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "roadmap"} onclick={() => activeMiddleTab = "roadmap"}>roadmap</button>
                     <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "plan"} onclick={() => activeMiddleTab = "plan"}>plan</button>
+                    {#if $clusterFocusedSymbol}
+                        <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "cluster"} onclick={() => activeMiddleTab = "cluster"}>cluster</button>
+                    {/if}
                 </div>
                 <div class="mid-tab-content">
                     {#if activeMiddleTab === "roadmap"}
@@ -500,6 +505,12 @@
                             <AgentInput task={$planModeTask} />
                         {:else}
                             <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
+                        {/if}
+                    {:else if activeMiddleTab === "cluster"}
+                        {#if $clusterFocusedSymbol}
+                            <ClusterCodeView symbol={$clusterFocusedSymbol} />
+                        {:else}
+                            <div class="plan-placeholder"><span>Cliquer sur un symbole dans CLUSTERS</span></div>
                         {/if}
                     {/if}
                 </div>

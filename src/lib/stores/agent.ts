@@ -160,6 +160,8 @@ function parseGroups(text: string): PlanGroup[] {
 
 export const planGroups = derived(issueAnalysis, $a => $a.result ? parseGroups($a.result) : []);
 
+export const clusterFocusedSymbol = writable<{ name: string; dir: string } | null>(null);
+
 export type Log = {
     ts: string;
     level: "INFO" | "SUCCESS" | "ERROR";
