@@ -3,6 +3,7 @@
     import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import PromptUsage from "$lib/components/PromptUsage.svelte";
+    import Fuse from 'fuse.js';
 
 
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
@@ -60,8 +61,7 @@
     let filter: Filter | null = null;
     $: selectedTaskFilter = selected ? taskToFilter(selected) : null;
     let selected: Task | null = null;
-    let newTitle = "";
-    let creating = false;
+    let filterQuery = "";
 
 
     // Workflow state
@@ -170,7 +170,7 @@
     }
 
 
-    $: filtered = (() => {
+    $: statusFiltered = (() => {
         const groups = $planGroups;
         function pos(n: number | undefined): number {
             if (!n || !groups.length) return Infinity;
@@ -185,6 +185,10 @@
             : tasks.filter(t => taskToFilter(t) === filter);
         return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
     })();
+    $: fuse = new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 });
+    $: filtered = filterQuery.trim()
+        ? fuse.search(filterQuery).map(r => r.item)
+        : statusFiltered;
     $: countOf = (f: Filter) => tasks.filter(t => taskToFilter(t) === f).length;
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
@@ -293,34 +297,10 @@
         } catch { /* silencieux */ }
     }
 
-    async function createTask() {
-        if (!newTitle.trim() || creating) return;
-        creating = true;
-        try {
-            const issueNumber = $agentState.issue?.number;
-            const res = await fetch("/api/tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: newTitle.trim(), issueNumber }),
-            });
-            const created = await res.json();
-            newTitle = "";
-            await loadTasks();
-            const newTask = tasks.find(t => t.id === created.id);
-            if (newTask) await selectTask(newTask);
-        } finally {
-            creating = false;
-        }
-    }
-
     async function remove(task: Task) {
         await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
         if (selected?.id === task.id) { selected = null; planContent = null; diffContent = null; }
         await loadTasks();
-    }
-
-    function onKey(e: KeyboardEvent) {
-        if (e.key === "Enter") createTask();
     }
 
     async function loadPlan(taskId: string) {
@@ -506,14 +486,15 @@
         <button class="refresh-btn" onclick={loadTasks} title="Rafraîchir">↺</button>
     </div>
 
-    <div class="new-task">
+    <div class="search-bar">
         <input
-            class="new-input"
-            placeholder="Nouvelle task…"
-            bind:value={newTitle}
-            onkeydown={onKey}
-            disabled={creating}
+            class="search-input"
+            placeholder="Filtrer…"
+            bind:value={filterQuery}
         />
+        {#if filterQuery}
+            <button class="search-clear" onclick={() => filterQuery = ''}>✕</button>
+        {/if}
     </div>
 
     <div class="list">
@@ -789,22 +770,32 @@
     line-height: 1;
 }
 .refresh-btn:hover { color: #555; }
-.new-task { border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.new-input {
-    display: block;
-    width: 100%;
+.search-bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.search-input {
+    flex: 1;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text-muted);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.68rem;
-    letter-spacing: 0.05em;
-    padding: 0.6rem 1rem;
-    box-sizing: border-box;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
 }
-.new-input:focus { color: #aaa; }
-.new-input::placeholder { color: var(--border-strong); }
+.search-input::placeholder { color: var(--border-strong); }
+.search-clear {
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    font-size: 0.7rem;
+}
+.search-clear:hover { color: #888; }
 .list { flex: 1; min-height: 0; overflow-y: auto; }
 .list::-webkit-scrollbar { width: 4px; }
 .list::-webkit-scrollbar-track { background: transparent; }

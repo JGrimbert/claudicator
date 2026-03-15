@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import Fuse from 'fuse.js';
 
     export let hideHeader = false;
 
@@ -10,10 +11,15 @@
     let refreshing = false;
     let error = "";
     let hasResult = false;
+    let filterQuery = "";
 
     $: filteredIssues = issues.filter(i =>
         i.state === "open" && !$agentState.knownSubIssueNumbers.includes(i.number)
     );
+    $: issueFuse = new Fuse(filteredIssues, { keys: ['title'], threshold: 0.4 });
+    $: displayedIssues = filterQuery.trim()
+        ? issueFuse.search(filterQuery).map(r => r.item)
+        : filteredIssues;
 
     $: diffBadge = (() => {
         const diff = $issueAnalysis.snapshotDiff;
@@ -244,15 +250,22 @@
         </div>
     {/if}
 
+    <div class="search-bar">
+        <input class="search-input" placeholder="Filtrer…" bind:value={filterQuery} />
+        {#if filterQuery}
+            <button class="search-clear" onclick={() => filterQuery = ''}>✕</button>
+        {/if}
+    </div>
+
     <div class="list">
         {#if loading}
             <p class="hint">Chargement...</p>
         {:else if error}
             <p class="error">{error}</p>
-        {:else if filteredIssues.length === 0}
-            <p class="hint">Aucune issue ouverte</p>
+        {:else if displayedIssues.length === 0}
+            <p class="hint">{filterQuery ? 'Aucun résultat' : 'Aucune issue ouverte'}</p>
         {:else}
-            {#each filteredIssues as issue}
+            {#each displayedIssues as issue}
                 <ItemRow
                     prefix="#{issue.number}"
                     title={issue.title}
@@ -343,6 +356,32 @@
     white-space: nowrap;
 }
 .integrate-btn:hover { color: #f0c040; border-color: #8a6a00; }
+.search-bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+}
+.search-input::placeholder { color: var(--border-strong); }
+.search-clear {
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    font-size: 0.7rem;
+}
+.search-clear:hover { color: #888; }
 .list {
     flex: 1;
     min-height: 0;
