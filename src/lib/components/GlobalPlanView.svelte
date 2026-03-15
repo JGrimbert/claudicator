@@ -1,5 +1,6 @@
 <script lang="ts">
     import { globalPlanPrompt, agentRunState, startConsoleStream, planModeTask } from "$lib/stores/agent";
+    import CtaButton from "$lib/components/CtaButton.svelte";
 
     let launching = false;
 
@@ -35,13 +36,12 @@
         <pre class="prompt-text">{$globalPlanPrompt ?? ""}</pre>
     </div>
     <div class="footer">
-        <button
-            class="launch-btn"
+        <CtaButton
+            label="Lancer l'agent"
+            loading={launching || $agentRunState.running}
+            useCase="launch-global-plan"
             onclick={launch}
-            disabled={launching || $agentRunState.running}
-        >
-            {launching ? "Lancement…" : "Lancer l'agent"}
-        </button>
+        />
     </div>
 </div>
 
@@ -103,17 +103,4 @@
     display: flex;
     justify-content: flex-end;
 }
-.launch-btn {
-    background: none;
-    border: 1px solid #2a3a5a;
-    color: #4a6a9a;
-    font-size: 0.62rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.15s, border-color 0.15s;
-}
-.launch-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
-.launch-btn:disabled { opacity: 0.35; cursor: default; }
 </style>

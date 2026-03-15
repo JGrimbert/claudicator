@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
-    import { onMount, onDestroy } from 'svelte';
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
+    import CtaButton from "$lib/components/CtaButton.svelte";
 
     type Task = { id: string; title: string; issueNumber?: number };
     type Section = { key: string; content: string };
@@ -23,12 +23,6 @@
     } = $props();
 
     // ── State ──────────────────────────────────────────────────────────────────
-    const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-    let spinFrame = $state(0);
-    let _spinInterval: ReturnType<typeof setInterval> | null = null;
-    onMount(() => { _spinInterval = setInterval(() => { spinFrame = (spinFrame + 1) % FRAMES.length; }, 80); });
-    onDestroy(() => { if (_spinInterval) clearInterval(_spinInterval); });
-
     let loadingContext = $state(false);
     let contextError   = $state("");
     let loadedId       = $state("");
@@ -350,16 +344,13 @@
                 </label>
             {/if}
             {@render footerExtra?.()}
-            <button
-                class="ai-launch"
+            <CtaButton
+                label={hasPlan ? "Affiner" : "Lancer l'agent"}
+                loading={$agentRunState.running || preLaunching}
+                disabled={!taskText.trim() || loadingContext}
+                useCase={hasPlan ? "refine" : "launch-agent"}
                 onclick={launch}
-                disabled={!taskText.trim() || $agentRunState.running || loadingContext || preLaunching}
-            >
-                {#if $agentRunState.running || preLaunching}
-                    <span class="ai-spin">{FRAMES[spinFrame]}</span>
-                {/if}
-                <span class="ai-launch-label">{hasPlan ? "Affiner" : "Lancer l'agent"}</span><span class="ai-launch-arrow"> →</span>
-            </button>
+            />
         </div>
 
     </div><!-- /prompt-pane -->
@@ -592,27 +583,5 @@
     background: #9a8ad4;
 }
 
-.ai-launch {
-    background: #1e1540;
-    border: 1px solid #3a2e70;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    padding: 0.3rem 0.9rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.03em;
-    display: inline-flex;
-    align-items: center;
-}
-.ai-spin {
-    color: cornsilk;
-    font-size: 0.65rem;
-    margin-right: 0.3rem;
-    opacity: 0.8;
-}
-.ai-launch-label { color: var(--color-impl); }
-.ai-launch-arrow { color: #fff; }
-.ai-launch:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
-.ai-launch:disabled { opacity: 0.35; cursor: default; }
 
 </style>

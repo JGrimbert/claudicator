@@ -1,12 +1,18 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, issueStates, type Issue } from "$lib/stores/agent";
+    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, issueStates, planGroups, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
+    import CtaButton from "$lib/components/CtaButton.svelte";
     import Fuse from 'fuse.js';
 
     export let hideHeader = false;
 
+    function openCreate() {
+        agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
+    }
+
     let issues: Issue[] = [];
+    let snapshotData: Array<{ number: number }> = [];
     let loading = true;
     let refreshing = false;
     let error = "";
@@ -20,6 +26,22 @@
     $: displayedIssues = filterQuery.trim()
         ? issueFuse.search(filterQuery).map(r => r.item)
         : filteredIssues;
+
+    // Réactif : recalcule issueStates dès que le snapshot, les issues open ou le plan changent
+    $: {
+        if (snapshotData.length > 0 || $planGroups.length > 0) {
+            const openNums = new Set(issues.map(i => i.number));
+            const closedSet = new Set<number>();
+            for (const s of snapshotData) if (!openNums.has(s.number)) closedSet.add(s.number);
+            for (const g of $planGroups) for (const n of g.issues) if (!openNums.has(n)) closedSet.add(n);
+            if (closedSet.size > 0) {
+                const stateMap = new Map<number, string>();
+                for (const s of snapshotData) stateMap.set(s.number, closedSet.has(s.number) ? "closed" : "open");
+                for (const n of closedSet) if (!stateMap.has(n)) stateMap.set(n, "closed");
+                issueStates.set(stateMap);
+            }
+        }
+    }
 
     $: diffBadge = (() => {
         const diff = $issueAnalysis.snapshotDiff;
@@ -74,14 +96,7 @@
                 .map(i => i.number);
 
             issueAnalysis.update(s => ({ ...s, snapshotDiff: { added, removed, modified } }));
-
-            // Mettre à jour issueStates : les issues du snapshot absentes de la liste open sont fermées
-            if (removed.length > 0) {
-                const closedSet = new Set(removed);
-                const stateMap = new Map<number, string>();
-                for (const s of snapshot) stateMap.set(s.number, closedSet.has(s.number) ? "closed" : "open");
-                issueStates.set(stateMap);
-            }
+            snapshotData = snapshot;
         } catch { /* silencieux */ }
     }
 
@@ -245,6 +260,7 @@
                     ⊟ Roadmap
                 </button>
             {/if}
+            <CtaButton label="Nouvelle issue" useCase="create-issue" onclick={openCreate} />
         </div>
     </div>
     {/if}

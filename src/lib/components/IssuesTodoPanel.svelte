@@ -1,6 +1,7 @@
 <script lang="ts">
     import IssueList from "./IssueList.svelte";
     import TodoList from "./TodoList.svelte";
+    import CtaButton from "./CtaButton.svelte";
     import { agentState } from "$lib/stores/agent";
 
     let activeTab: "issues" | "todos" = "issues";
@@ -15,7 +16,9 @@
         <button class="tab" class:tab-active={activeTab === "issues"} onclick={() => activeTab = "issues"}>issues</button>
         <button class="tab" class:tab-active={activeTab === "todos"} onclick={() => activeTab = "todos"}>todos</button>
         {#if activeTab === "issues"}
-            <button class="tab-action" onclick={openCreate} title="Nouvelle issue">+</button>
+            <div class="tab-cta">
+                <CtaButton label="Nouvelle issue" useCase="create-issue" onclick={openCreate} />
+            </div>
         {/if}
     </div>
     {#if activeTab === "issues"}
@@ -58,19 +61,10 @@
 }
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
-.tab-action {
-    background: none;
-    border: none;
-    border-left: 1px solid var(--border);
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: #333;
-    padding: 0 0.55rem;
-    height: 100%;
+.tab-cta {
     margin-left: auto;
-    transition: color 0.1s;
-    font-family: 'JetBrains Mono', monospace;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    padding-right: 0.4rem;
 }
-.tab-action:hover { color: var(--accent-hover); }
 </style>
