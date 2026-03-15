@@ -16,13 +16,6 @@
     let clustersLoading = false;
     let clustersLoaded  = false;
 
-    let mixedExpanded = new Set<number>();
-    function toggleMixed(i: number) {
-        const next = new Set(mixedExpanded);
-        if (next.has(i)) next.delete(i); else next.add(i);
-        mixedExpanded = next;
-    }
-
     let coalExpanded = new Set<number>();
     function toggleCoal(i: number) {
         const next = new Set(coalExpanded);
@@ -189,42 +182,33 @@
                 <!-- ── Mixed clusters ── -->
                 {#if mixed.length > 0}
                     <div class="section-label section-label--mixed">PATTERNS MIXTES</div>
-                    {#each mixed as mx, i}
-                        {@const open = mixedExpanded.has(i)}
+                    {#each mixed as mx}
                         <div class="dir-row mixed-row">
-                            <button class="dir-head" onclick={() => toggleMixed(i)}>
-                                <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                            <div class="dir-head mixed-head">
                                 <span class="mixed-dirs">
                                     {#each mx.dirs as d, di}
                                         <span class="mixed-dir">{d}</span>{#if di < mx.dirs.length - 1}<span class="mixed-sep"> + </span>{/if}
                                     {/each}
                                 </span>
                                 <span class="dir-count">×{mx.count}</span>
-                            </button>
-                            <div class="dir-issues">
-                                {#each mx.issues as num}
-                                    <IssueChip number={num} />
+                            </div>
+                            <div class="dir-symbols">
+                                {#each mx.symbols as sym}
+                                    <div class="sym-line">
+                                        <button
+                                            class="sym-name"
+                                            class:sym-active={$clusterFocusedSymbol?.name === sym.name}
+                                            onclick={() => clusterFocusedSymbol.set({ name: sym.name, dir: sym.dir })}
+                                        >{sym.name.split(".").at(-1)}</button>
+                                        <span class="sym-dir-tag">{sym.dir}</span>
+                                        <span class="sym-issues">
+                                            {#each sym.issues as n}
+                                                <IssueChip number={n} />
+                                            {/each}
+                                        </span>
+                                    </div>
                                 {/each}
                             </div>
-                            {#if open}
-                                <div class="dir-symbols">
-                                    {#each mx.symbols as sym}
-                                        <div class="sym-line">
-                                            <button
-                                                class="sym-name"
-                                                class:sym-active={$clusterFocusedSymbol?.name === sym.name}
-                                                onclick={() => clusterFocusedSymbol.set({ name: sym.name, dir: sym.dir })}
-                                            >{sym.name.split(".").at(-1)}</button>
-                                            <span class="sym-dir-tag">{sym.dir}</span>
-                                            <span class="sym-issues">
-                                                {#each sym.issues as n}
-                                                    <IssueChip number={n} />
-                                                {/each}
-                                            </span>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
                         </div>
                     {/each}
                 {/if}
@@ -404,15 +388,15 @@
     padding: 0.5rem 0.6rem 0.2rem;
     font-size: 0.5rem;
     letter-spacing: 0.12em;
-    color: #2a3a4a;
+    color: #3a7a48;
     font-family: 'JetBrains Mono', monospace;
     text-transform: uppercase;
     border-top: 1px solid #111;
     margin-top: 0.25rem;
 }
 .section-label:first-child { border-top: none; margin-top: 0; }
-.section-label--mixed { color: #3a2a4a; }
-.section-label--coal  { color: #2a4a3a; }
+.section-label--coal  { color: #3a7f8f; }
+.section-label--mixed { color: #7a5e1e; }
 /* ── Clusters / arbo ── */
 .dir-row {
     border-bottom: 1px solid #111;
@@ -432,21 +416,22 @@
 .dir-head:hover { background: #0d1118; }
 .dir-toggle {
     font-size: 0.55rem;
-    color: #3a3a3a;
+    color: #3a7a48;
+    opacity: 0.5;
     flex-shrink: 0;
     width: 10px;
 }
 .dir-name {
     font-size: 0.65rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #7a8a9a;
+    color: #7abf82;
     flex: 1;
     min-width: 0;
 }
 .dir-count {
     font-size: 0.55rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #3a3a3a;
+    color: #3a7a48;
     flex-shrink: 0;
 }
 .dir-issues {
@@ -469,23 +454,33 @@
     all: unset;
     font-size: 0.58rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #3a4a5a;
+    color: #5a9a68;
     flex-shrink: 0;
     min-width: 7rem;
     cursor: pointer;
     transition: color 0.1s;
 }
-.sym-name:hover { color: #7a9aba; }
-.sym-name.sym-active { color: #9181f9; }
+.sym-name:hover { color: cornsilk; }
+.sym-name.sym-active { color: cornsilk; }
+/* coal rows override */
+.coal-row .sym-name         { color: #50a0b0; }
+.coal-row .sym-name:hover,
+.coal-row .sym-name.sym-active { color: cornsilk; }
+/* mixed rows override */
+.mixed-row .sym-name         { color: #b08840; }
+.mixed-row .sym-name:hover,
+.mixed-row .sym-name.sym-active { color: cornsilk; }
 .sym-dir-tag {
     font-size: 0.5rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #2a2a3a;
+    color: #3a7a48;
     flex-shrink: 0;
-    background: #1a1a28;
+    background: #0a160c;
     border-radius: 2px;
     padding: 0 0.3rem;
 }
+.coal-row .sym-dir-tag  { color: #3a7f8f; background: #061418; }
+.mixed-row .sym-dir-tag { color: #7a5e1e; background: #140e04; }
 .sym-issues {
     display: flex;
     flex-wrap: wrap;
@@ -498,7 +493,9 @@
 }
 /* ── Coalescence ── */
 .coal-row .dir-head { background: transparent; }
-.coal-row .dir-head:hover { background: #0d1a12; }
+.coal-row .dir-head:hover { background: #06141a; }
+.coal-row .dir-toggle { color: #3a7f8f; }
+.coal-row .dir-count  { color: #3a7f8f; }
 .coal-preview {
     flex: 1;
     min-width: 0;
@@ -511,28 +508,36 @@
 .coal-sym-tag {
     font-size: 0.58rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #4a7a5a;
+    color: #68c0cc;
 }
 .coal-dot {
     font-size: 0.5rem;
-    color: #2a2a3a;
+    color: #3a7f8f;
+    opacity: 0.5;
 }
 .coal-more {
     font-size: 0.5rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #2a4a3a;
+    color: #3a7f8f;
     margin-left: 0.2rem;
 }
 .coal-score {
     font-size: 0.52rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #2a4a3a;
+    color: #3a7f8f;
     flex-shrink: 0;
     margin-right: 0.3rem;
 }
 /* ── Mixed clusters ── */
-.mixed-row .dir-head { background: transparent; }
-.mixed-row .dir-head:hover { background: #0d0d1a; }
+.mixed-head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.mixed-row .dir-count { color: #7a5e1e; }
 .mixed-dirs {
     flex: 1;
     min-width: 0;
@@ -545,11 +550,12 @@
 .mixed-dir {
     font-size: 0.6rem;
     font-family: 'JetBrains Mono', monospace;
-    color: #6a5a8a;
+    color: #c8a454;
 }
 .mixed-sep {
     font-size: 0.5rem;
-    color: #2a2a3a;
+    color: #7a5e1e;
+    opacity: 0.6;
 }
 /* ── Étape ── */
 .group-header {
