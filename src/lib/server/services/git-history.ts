@@ -75,6 +75,57 @@ export function loadAllCommitRecords(): CommitRecord[] {
         .map(f => JSON.parse(fs.readFileSync(path.join(commitsDir(), f), "utf-8")) as CommitRecord);
 }
 
+export type HistoryStats = {
+    totalCommits:       number;   // commits enregistrés
+    commitsWithSymbols: number;   // commits où des symboles ont été trouvés
+    uniqueSymbols:      number;   // symboles distincts sur l'ensemble
+    uniqueIssues:       number;   // issues distinctes citées dans les messages
+    symbolPairs:        number;   // paires co-modifiées (fréquentes ≥2 commits)
+    conceptCount:       number;   // nœuds de coalescence historique
+};
+
+/** Calcule les statistiques globales de l'historique analysé. */
+export function getHistoryStats(): HistoryStats {
+    const records = loadAllCommitRecords();
+    const state   = getHistoryState();
+    const symSet  = new Set<string>();
+    const issSet  = new Set<number>();
+    // index sym → commits pour compter les paires fréquentes
+    const symCommits = new Map<string, Set<number>>();
+    let commitsWithSymbols = 0;
+
+    for (let i = 0; i < records.length; i++) {
+        const rec = records[i];
+        if (rec.symbols.length > 0) commitsWithSymbols++;
+        for (const s of rec.symbols) {
+            symSet.add(s);
+            if (!symCommits.has(s)) symCommits.set(s, new Set());
+            symCommits.get(s)!.add(i);
+        }
+        for (const n of (rec.issueRefs ?? [])) issSet.add(n);
+    }
+
+    // Paires de symboles co-modifiés dans ≥2 commits
+    const freqSyms = [...symCommits.entries()].filter(([, s]) => s.size >= 2).map(([k]) => k);
+    let pairs = 0;
+    for (let i = 0; i < freqSyms.length; i++) {
+        for (let j = i + 1; j < freqSyms.length; j++) {
+            const ca = symCommits.get(freqSyms[i])!;
+            const cb = symCommits.get(freqSyms[j])!;
+            if ([...ca].some(n => cb.has(n))) pairs++;
+        }
+    }
+
+    return {
+        totalCommits:       records.length,
+        commitsWithSymbols,
+        uniqueSymbols:      symSet.size,
+        uniqueIssues:       issSet.size,
+        symbolPairs:        pairs,
+        conceptCount:       state.coal.length,
+    };
+}
+
 /** Extrait les numéros d'issue (#N) cités dans un message de commit. */
 export function parseIssueRefs(message: string): number[] {
     return [...message.matchAll(/#(\d+)/g)]

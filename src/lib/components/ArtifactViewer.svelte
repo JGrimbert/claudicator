@@ -79,7 +79,7 @@
                         const base = (filePath.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase();
                         if (!kws.some(kw => base.includes(kw) || kw.includes(base))) continue;
                         const key = (filePath.split('/').pop() ?? filePath).replace(/\.[^.]+$/, '');
-                        seenKeys.add(key);
+                        // Ne pas bloquer via seenKeys — deux fichiers distincts peuvent avoir le même basename
                         seenFiles.add(filePath);
                         result.push({ key, file: filePath, startLine: null, score: null, role: region, summary: null });
                     }
@@ -353,7 +353,7 @@
                                 <span class="sym-label">Symboles</span>
                                 <span class="sym-state">{symbolsLoading ? '…' : symbols.length}</span>
                             </div>
-                            {#each symbols as s (s.key)}
+                            {#each symbols as s (s.file || s.key)}
                                 <div class="sym-row">
                                     <span class="sym-bullet">*</span>
                                     <span class="sym-key">{s.key}</span>

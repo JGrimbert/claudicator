@@ -1,8 +1,8 @@
 /** GET — état de l'historique git (état courant + slots par issue + isUpToDate) */
 import { json } from "@sveltejs/kit";
-import { getHistoryState, ensureHistoryDir, getIssueSlots } from "$lib/server/services/git-history";
-import { getProjectRoot }                                    from "$lib/server/services/projects";
-import { getHeadCommit }                                     from "$lib/server/services/git";
+import { getHistoryState, ensureHistoryDir, getIssueSlots, getHistoryStats } from "$lib/server/services/git-history";
+import { getProjectRoot }                                                      from "$lib/server/services/projects";
+import { getHeadCommit }                                                       from "$lib/server/services/git";
 
 export async function GET() {
     ensureHistoryDir();
@@ -14,6 +14,7 @@ export async function GET() {
 
     const isUpToDate = !!headSha && headSha === state.lastProcessedSha;
     const slots      = getIssueSlots();
+    const stats      = getHistoryStats();
 
-    return json({ state, headSha, isUpToDate, slots });
+    return json({ state, headSha, isUpToDate, slots, stats, coal: state.coal });
 }

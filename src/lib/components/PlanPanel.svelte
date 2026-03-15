@@ -15,6 +15,14 @@
     let mixed: MixedCluster[] = [];
     let coal:  CoalNode[]     = [];
     type IssueSlot = { issueNumber: number; commitCount: number; symbols: string[] };
+    type HistoryStats = {
+        totalCommits:       number;
+        commitsWithSymbols: number;
+        uniqueSymbols:      number;
+        uniqueIssues:       number;
+        symbolPairs:        number;
+        conceptCount:       number;
+    };
 
     let histCoal:    HistCoalNode[] = [];
     let histUpToDate = false;
@@ -23,6 +31,8 @@
 
     // ── Onglet history ────────────────────────────────────────────────────────
     let issueSlots:    IssueSlot[] = [];
+    let histStats:     HistoryStats | null = null;
+    let histConcepts:  HistCoalNode[] = [];
     let historyLoaded  = false;
 
     async function loadHistory() {
@@ -32,6 +42,8 @@
             const data = await res.json();
             issueSlots   = data.slots     ?? [];
             histUpToDate = data.isUpToDate ?? false;
+            histStats    = data.stats      ?? null;
+            histConcepts = data.coal       ?? [];
         } catch {}
         finally { historyLoaded = true; }
     }
@@ -211,44 +223,6 @@
                     {/each}
                 {/if}
 
-                <!-- ── Clusters par dossier ── -->
-                {#if dirs.length > 0}
-                    <div class="section-label">PAR DOSSIER</div>
-                    {#each dirs as c}
-                        {@const open = expanded.has(c.dir)}
-                        <div class="dir-row">
-                            <button class="dir-head" onclick={() => toggleExpand(c.dir)}>
-                                <span class="dir-toggle">{open ? "▾" : "▸"}</span>
-                                <span class="dir-name">{c.dir}/</span>
-                                <span class="dir-count">×{c.count}</span>
-                            </button>
-                            <div class="dir-issues">
-                                {#each c.issues as num}
-                                    <IssueChip number={num} />
-                                {/each}
-                            </div>
-                            {#if open}
-                                <div class="dir-symbols">
-                                    {#each c.symbols as sym}
-                                        <div class="sym-line">
-                                            <button
-                                                class="sym-name"
-                                                class:sym-active={$clusterFocusedSymbol?.name === sym.name}
-                                                onclick={() => clusterFocusedSymbol.set({ name: sym.name, dir: c.dir })}
-                                            >{sym.name.split(".").at(-1)}</button>
-                                            <span class="sym-issues">
-                                                {#each sym.issues as n}
-                                                    <IssueChip number={n} />
-                                                {/each}
-                                            </span>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
-                        </div>
-                    {/each}
-                {/if}
-
                 <!-- ── Coalescence ── -->
                 {#if coal.length > 0}
                     <div class="section-label section-label--coal">COALESCENCE</div>
@@ -318,6 +292,44 @@
                                     </div>
                                 {/each}
                             </div>
+                        </div>
+                    {/each}
+                {/if}
+
+                <!-- ── Clusters par dossier ── -->
+                {#if dirs.length > 0}
+                    <div class="section-label">PAR DOSSIER</div>
+                    {#each dirs as c}
+                        {@const open = expanded.has(c.dir)}
+                        <div class="dir-row">
+                            <button class="dir-head" onclick={() => toggleExpand(c.dir)}>
+                                <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                                <span class="dir-name">{c.dir}/</span>
+                                <span class="dir-count">×{c.count}</span>
+                            </button>
+                            <div class="dir-issues">
+                                {#each c.issues as num}
+                                    <IssueChip number={num} />
+                                {/each}
+                            </div>
+                            {#if open}
+                                <div class="dir-symbols">
+                                    {#each c.symbols as sym}
+                                        <div class="sym-line">
+                                            <button
+                                                class="sym-name"
+                                                class:sym-active={$clusterFocusedSymbol?.name === sym.name}
+                                                onclick={() => clusterFocusedSymbol.set({ name: sym.name, dir: c.dir })}
+                                            >{sym.name.split(".").at(-1)}</button>
+                                            <span class="sym-issues">
+                                                {#each sym.issues as n}
+                                                    <IssueChip number={n} />
+                                                {/each}
+                                            </span>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
                         </div>
                     {/each}
                 {/if}
@@ -424,8 +436,56 @@
                     <span class="hist-progress">{histUpToDate ? "à jour" : issueSlots.length > 0 ? "périmé" : "non analysé"}</span>
                 {/if}
             </div>
+
+            <!-- ── Rapport ── -->
+            {#if histStats && histStats.totalCommits > 0}
+                <div class="section-label section-label--hist">RAPPORT</div>
+                <div class="hist-report">
+                    <div class="hist-stat"><span class="hist-stat-label">commits</span><span class="hist-stat-val">{histStats.totalCommits}</span></div>
+                    <div class="hist-stat"><span class="hist-stat-label">avec sym</span><span class="hist-stat-val">{histStats.commitsWithSymbols}</span></div>
+                    <div class="hist-stat"><span class="hist-stat-label">symboles</span><span class="hist-stat-val">{histStats.uniqueSymbols}</span></div>
+                    <div class="hist-stat"><span class="hist-stat-label">issues</span><span class="hist-stat-val">{histStats.uniqueIssues}</span></div>
+                    <div class="hist-stat"><span class="hist-stat-label">paires</span><span class="hist-stat-val">{histStats.symbolPairs}</span></div>
+                    <div class="hist-stat"><span class="hist-stat-label">concepts</span><span class="hist-stat-val">{histStats.conceptCount}</span></div>
+                </div>
+            {/if}
+
+            <!-- ── Concepts historiques ── -->
+            {#if histConcepts.length > 0}
+                <div class="section-label section-label--hist">CONCEPTS ({histConcepts.length})</div>
+                {#each histConcepts as node, i}
+                    {@const open = histExpanded.has(i)}
+                    <div class="dir-row hist-row">
+                        <button class="dir-head" onclick={() => toggleHist(i)}>
+                            <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                            <span class="coal-preview">
+                                {#each node.symbols.slice(0, 4) as s, si}
+                                    <span class="hist-sym-tag">{s.split(".").at(-1)}</span>{#if si < Math.min(node.symbols.length, 4) - 1}<span class="coal-dot"> · </span>{/if}
+                                {/each}
+                                {#if node.symbols.length > 4}<span class="coal-more">+{node.symbols.length - 4}</span>{/if}
+                            </span>
+                            <span class="hist-score">{node.count}×</span>
+                        </button>
+                        {#if open}
+                            <div class="dir-symbols">
+                                {#each node.symbols as sym}
+                                    <div class="sym-line">
+                                        <button
+                                            class="sym-name"
+                                            class:sym-active={$clusterFocusedSymbol?.name === sym}
+                                            onclick={() => clusterFocusedSymbol.set({ name: sym, dir: "" })}
+                                        >{sym.split(".").at(-1)}</button>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            {/if}
+
             <!-- ── Liste des issues ── -->
             {#if issueSlots.length > 0}
+                <div class="section-label section-label--hist">ISSUES</div>
                 {#each issueSlots as slot}
                     <div class="hist-slot">
                         <IssueChip number={slot.issueNumber} />
@@ -435,7 +495,7 @@
                         {/if}
                     </div>
                 {/each}
-            {:else if historyLoaded}
+            {:else if historyLoaded && (!histStats || histStats.totalCommits === 0)}
                 <p class="hint">Aucune issue référencée dans les commits.<br>Lancez l'analyse pour indexer l'historique.</p>
             {/if}
 
@@ -757,6 +817,31 @@
     font-family: 'JetBrains Mono', monospace;
     color: #444;
     margin-left: auto;
+}
+.hist-report {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0.35rem 0.75rem 0.5rem;
+}
+.hist-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.12rem 0.5rem 0.12rem 0;
+    gap: 0.5rem;
+}
+.hist-stat-label {
+    font-size: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #5a3a5a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.hist-stat-val {
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #c090c0;
 }
 
 @keyframes blink-git { 50% { opacity: 0.3; } }
