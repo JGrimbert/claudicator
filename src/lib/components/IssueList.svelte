@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, agentRunState, issueAnalysis, type Issue } from "$lib/stores/agent";
+    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
 
     export let hideHeader = false;
@@ -179,6 +179,17 @@
         }
     }
 
+    function buildGlobalPlan() {
+        const issue = $agentState.issue;
+        if (!issue) return;
+        const parts: string[] = [`ISSUES À PLANIFIER\n`];
+        parts.push(`#${issue.number} — ${issue.title}\n${issue.body ?? ""}\n`);
+        for (const sub of issue.subIssues ?? []) {
+            parts.push(`#${sub.number} — ${sub.title}\n${sub.body ?? ""}\n`);
+        }
+        globalPlanPrompt.set(parts.join("\n---\n\n"));
+    }
+
     async function select(issue: Issue) {
         agentState.update(s => ({
             ...s,
@@ -208,7 +219,7 @@
         <span>Issues {#if refreshing}<span class="refreshing">↻</span>{/if}</span>
         <div class="header-actions">
             {#if hasResult && !$issueAnalysis.running}
-                <button class="plan-btn" on:click={() => { issueAnalysis.update(s => ({ ...s, dismissed: false })); openAnalysis(); }} title="Voir la roadmap">
+                <button class="plan-btn" onclick={() => { issueAnalysis.update(s => ({ ...s, dismissed: false })); openAnalysis(); }} title="Voir la roadmap">
                     ⊟ Roadmap
                 </button>
             {/if}
@@ -219,10 +230,17 @@
         <div class="diff-badge">
             <span>⚠ {diffBadge}</span>
             {#if hasResult && !$issueAnalysis.running && !$issueAnalysis.updating && ($issueAnalysis.snapshotDiff?.added.length || $issueAnalysis.snapshotDiff?.modified.length)}
-                <button class="integrate-btn" on:click={startUpdate} title="Intégrer les nouvelles issues dans l'analyse">
+                <button class="integrate-btn" onclick={startUpdate} title="Intégrer les nouvelles issues dans l'analyse">
                     ⊕ Intégrer
                 </button>
             {/if}
+        </div>
+    {/if}
+
+    {#if $agentState.issue?.subIssues?.length}
+        <div class="global-plan-bar">
+            <span class="gp-label">#{$agentState.issue.number} + {$agentState.issue.subIssues.length} sub-issue{$agentState.issue.subIssues.length > 1 ? "s" : ""}</span>
+            <button class="gp-btn" onclick={buildGlobalPlan}>Plan global</button>
         </div>
     {/if}
 
@@ -338,4 +356,36 @@
 .error { padding: 1rem; color: #f44336; font-size: 0.8rem; }
 .refreshing { font-size: 0.65rem; color: #444; margin-left: 0.3rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.global-plan-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.75rem;
+    background: #0d1520;
+    border-bottom: 1px solid #1a2a3a;
+    flex-shrink: 0;
+    gap: 0.5rem;
+}
+.gp-label {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #4a6a8a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gp-btn {
+    background: none;
+    border: 1px solid #1a3a5a;
+    color: #3a6a9a;
+    font-size: 0.58rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s;
+}
+.gp-btn:hover { color: var(--accent-hover); border-color: var(--accent-hover); }
 </style>

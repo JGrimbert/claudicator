@@ -1,17 +1,18 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import TopBar from "$lib/components/TopBar.svelte";
-    import IssueList from "$lib/components/IssueList.svelte";
     import AgentConsole from "$lib/components/AgentConsole.svelte";
-import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
+    import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
-    import TaskList from "$lib/components/TaskList.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
-    import IssuesTodoPanel from "$lib/components/IssuesTodoPanel.svelte";
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady } from "$lib/stores/agent";
+    import ProjetPanel from "$lib/components/ProjetPanel.svelte";
+    import PlanPanel from "$lib/components/PlanPanel.svelte";
+    import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt } from "$lib/stores/agent";
 
     let activeMiddleTab: "roadmap" | "plan" = "roadmap";
     $: if ($planModeTask)          activeMiddleTab = "plan";
+    $: if ($globalPlanPrompt)      activeMiddleTab = "plan";
     $: if ($issueAnalysis.running) activeMiddleTab = "roadmap";
 
     /**
@@ -449,9 +450,9 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             <button
                 class:active={!collapsed.aside}
                 onclick={() => toggleCollapse('aside')}
-                title="ArtifactViewer / Issues"
+                title="Projet"
             >
-                <span class="strip-label">ISSUES</span>
+                <span class="strip-label">PROJET</span>
             </button>
         </div>
 
@@ -467,7 +468,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
                 onmousedown={startDragV}
                 class:active={draggingV}
             ></div>
-            <IssuesTodoPanel />
+            <ProjetPanel />
         </aside>
         <div
             class="handle"
@@ -493,7 +494,9 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
                             <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
                         {/if}
                     {:else if activeMiddleTab === "plan"}
-                        {#if $planModeTask}
+                        {#if $globalPlanPrompt}
+                            <GlobalPlanView />
+                        {:else if $planModeTask}
                             <AgentInput task={$planModeTask} />
                         {:else}
                             <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
@@ -524,7 +527,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             class:active={dragging === "section"}
         ></div>
         <section style="width: {widths.section}px">
-            <TaskList />
+            <PlanPanel />
         </section>
         {/if}
 
@@ -533,9 +536,9 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             <button
                 class:active={!collapsed.section}
                 onclick={() => toggleCollapse('section')}
-                title="Tasks"
+                title="Plan"
             >
-                <span class="strip-label">TASKS</span>
+                <span class="strip-label">PLAN</span>
             </button>
         </div>
     </div>

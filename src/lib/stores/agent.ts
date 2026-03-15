@@ -136,6 +136,9 @@ export const planAllState = writable<{
     currentTaskId: string | null;
 }>({ running: false, currentTaskId: null });
 
+export const activePlanGroupIndex = writable<number>(0);
+export const globalPlanPrompt = writable<string | null>(null);
+
 export type PlanGroup = { index: number; name: string; issues: number[] };
 
 /** Parse le texte en groupes de plan structurés */
@@ -166,6 +169,7 @@ export type Log = {
 export type SubIssue = {
     number: number;
     title: string;
+    body?: string;
     state: string;
 };
 

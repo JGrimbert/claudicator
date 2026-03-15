@@ -31,6 +31,7 @@ export async function GET({ url }) {
         subIssues: subIssues.map(s => ({
             number: s.number,
             title: s.title,
+            body: s.body ?? "",
             state: s.state
         }))
     });
