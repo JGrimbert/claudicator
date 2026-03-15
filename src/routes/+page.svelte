@@ -8,7 +8,7 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import TaskList from "$lib/components/TaskList.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
     import IssuesTodoPanel from "$lib/components/IssuesTodoPanel.svelte";
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady, taskRefreshTick, startConsoleStream, type RunLog } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, tasksReady } from "$lib/stores/agent";
 
     let activeMiddleTab: "roadmap" | "plan" = "roadmap";
     $: if ($planModeTask)          activeMiddleTab = "plan";
@@ -299,56 +299,6 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
 
         // TODO: add support for multiple agents and switching between them
 
-    // ─── Input global (stdin / suivi session) ─────────────────────────────────
-    let userInput = "";
-    let sendingInput = false;
-
-    async function sendInput() {
-        const text = userInput.trim();
-        if (!text || !$agentRunState.taskId || sendingInput) return;
-        sendingInput = true;
-        try {
-            await fetch("/api/agent/input", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId: $agentRunState.taskId, input: text })
-            });
-            agentRunState.update(s => ({ ...s, logs: [...s.logs, { line: `> ${text}`, type: "system" as RunLog["type"] }] }));
-            userInput = "";
-        } finally {
-            sendingInput = false;
-        }
-    }
-
-    async function continuer() {
-        const text = userInput.trim();
-        const taskId = $agentRunState.taskId;
-        if (!text || !taskId || sendingInput) return;
-        sendingInput = true;
-        userInput = "";
-        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
-        try {
-            const res = await fetch("/api/agent/run", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId, prompt: text, isFollowUp: true })
-            });
-            await startConsoleStream(res);
-        } finally {
-            sendingInput = false;
-            agentRunState.update(s => ({ ...s, running: false }));
-            taskRefreshTick.update(n => n + 1);
-        }
-    }
-
-    function onInputKey(e: KeyboardEvent) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            if ($agentRunState.running) sendInput();
-            else if ($agentRunState.sessionAlive) continuer();
-        }
-    }
-
     // ─── Colonnes redimensionnables ───────────────────────────────────────────
     const STORAGE_KEY = "claudicator:panel-widths";
     const ASIDE_SPLIT_KEY = "claudicator:aside-split";
@@ -563,25 +513,6 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
             <div class="main-carto">
                 <AgentConsole />
             </div>
-            <!-- ── Input global : stdin (en cours) ou suivi (session active) ── -->
-            {#if $agentRunState.running || $agentRunState.sessionAlive}
-                <div class="global-input-bar">
-                    <span class="prompt-sym">›</span>
-                    <input
-                        class="stdin-input"
-                        type="text"
-                        placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : "Envoyer un suivi… (Entrée)"}
-                        bind:value={userInput}
-                        onkeydown={onInputKey}
-                        disabled={sendingInput}
-                    />
-                    <button
-                        class="btn-send"
-                        onclick={$agentRunState.running ? sendInput : continuer}
-                        disabled={!userInput.trim() || sendingInput}
-                    >↵</button>
-                </div>
-            {/if}
         </main>
 
         {#if !collapsed.section}
@@ -768,44 +699,4 @@ section {
     border-left: 1px solid #1e1e1e;
 }
 
-/* ── Input global stdin / suivi ── */
-.global-input-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    background: var(--bg-panel);
-    font-family: 'JetBrains Mono', monospace;
-}
-.prompt-sym {
-    color: #3a3a5a;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-}
-.stdin-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #777;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-}
-.stdin-input:focus { color: #bbb; }
-.stdin-input::placeholder { color: #252535; }
-.stdin-input:disabled { opacity: 0.4; }
-.btn-send {
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: #444;
-    font-size: 0.75rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-.btn-send:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.btn-send:disabled { opacity: 0.25; cursor: default; }
 </style>
