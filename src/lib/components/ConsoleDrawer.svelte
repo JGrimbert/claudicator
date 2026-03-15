@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
-    import { agentRunState, stopConsoleStream, toggleConsoleMinimized } from "$lib/stores/agent";
+    import { onMount } from "svelte";
+    import { agentRunState, stopConsoleStream, toggleConsoleMinimized, startConsoleStream, taskRefreshTick, type RunLog } from "$lib/stores/agent";
     import RunConsole from "$lib/components/RunConsole.svelte";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -52,10 +52,10 @@
         panelHeight = loadHeight();
         window.addEventListener("beforeunload", stopConsoleStream);
         spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80);
-    });
-    onDestroy(() => {
-        window.removeEventListener("beforeunload", stopConsoleStream);
-        if (spinnerInterval) clearInterval(spinnerInterval);
+        return () => {
+            window.removeEventListener("beforeunload", stopConsoleStream);
+            if (spinnerInterval) clearInterval(spinnerInterval);
+        };
     });
 
     // ── Affichage ──────────────────────────────────────────────────────────────
@@ -76,8 +76,57 @@
         } catch { return null; }
     })();
 
-    $: hasRun  = $agentRunState.taskId !== null;
+    $: hasRun   = $agentRunState.taskId !== null;
     $: expanded = hasRun && !$agentRunState.consoleMinimized;
+    $: canPrompt = hasRun;
+
+    // ── Input / prompt ─────────────────────────────────────────────────────────
+    let userInput   = "";
+    let sendingInput = false;
+
+    async function sendInput() {
+        const text = userInput.trim();
+        if (!text || !$agentRunState.taskId || sendingInput) return;
+        sendingInput = true;
+        try {
+            await fetch("/api/agent/input", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId: $agentRunState.taskId, input: text })
+            });
+            agentRunState.update(s => ({ ...s, logs: [...s.logs, { line: `> ${text}`, type: "system" as RunLog["type"] }] }));
+            userInput = "";
+        } finally { sendingInput = false; }
+    }
+
+    async function continuer() {
+        const text   = userInput.trim();
+        const taskId = $agentRunState.taskId;
+        if (!text || !taskId || sendingInput) return;
+        sendingInput = true;
+        userInput    = "";
+        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
+        try {
+            const res = await fetch("/api/agent/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId, prompt: text, isFollowUp: true })
+            });
+            await startConsoleStream(res);
+        } finally {
+            sendingInput = false;
+            agentRunState.update(s => ({ ...s, running: false }));
+            taskRefreshTick.update(n => n + 1);
+        }
+    }
+
+    function onInputKey(e: KeyboardEvent) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if ($agentRunState.running)      sendInput();
+            else if ($agentRunState.sessionAlive) continuer();
+        }
+    }
 </script>
 
 <svelte:window onmousemove={onMove} onmouseup={onUp} />
@@ -119,22 +168,34 @@
             <span class="bar-sep">·</span>
         {/if}
 
-        <span class="bar-line" class:sys={lastLine?.type === 'system'}>
-            {#if $agentRunState.running}
-                {FRAMES[frame]}&nbsp;{lastLine ? lastLine.line.slice(0, 100) : "initialisation…"}
-            {:else if lastLine}
-                {lastLine.line.slice(0, 120)}
-            {:else if $agentRunState.sessionAlive}
-                ⬡ session active
-            {:else if hasRun}
-                terminé
-            {:else}
-                console
+        {#if canPrompt}
+            <span class="prompt-sym">›</span>
+            <input
+                class="bar-input"
+                type="text"
+                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : "Nouveau prompt… (Entrée)"}
+                bind:value={userInput}
+                onkeydown={onInputKey}
+                disabled={sendingInput}
+            />
+            <button
+                class="bar-send"
+                onclick={$agentRunState.running ? sendInput : continuer}
+                disabled={!userInput.trim() || sendingInput}
+            >↵</button>
+        {:else}
+            <span class="bar-line" class:sys={lastLine?.type === 'system'}>
+                {#if lastLine}
+                    {lastLine.line.slice(0, 120)}
+                {:else if hasRun}
+                    terminé
+                {:else}
+                    console
+                {/if}
+            </span>
+            {#if lastTokens}
+                <span class="bar-tokens">{lastTokens}</span>
             {/if}
-        </span>
-
-        {#if lastTokens && !$agentRunState.running}
-            <span class="bar-tokens">{lastTokens}</span>
         {/if}
     </div>
 
@@ -244,4 +305,39 @@
     flex-shrink: 0;
     white-space: nowrap;
 }
+
+/* ── Input prompt ── */
+.prompt-sym {
+    color: #3a3a5a;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.bar-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0;
+}
+.bar-input:focus { color: #bbb; }
+.bar-input::placeholder { color: #252535; }
+.bar-input:disabled { opacity: 0.4; }
+.bar-send {
+    background: none;
+    border: 1px solid #2a2a3a;
+    color: #3a3a5a;
+    font-size: 0.7rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+.bar-send:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.bar-send:disabled { opacity: 0.2; cursor: default; }
 </style>

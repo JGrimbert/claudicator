@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
 
     type Task = { id: string; title: string; issueNumber?: number };
@@ -22,6 +23,12 @@
     } = $props();
 
     // ── State ──────────────────────────────────────────────────────────────────
+    const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    let spinFrame = $state(0);
+    let _spinInterval: ReturnType<typeof setInterval> | null = null;
+    onMount(() => { _spinInterval = setInterval(() => { spinFrame = (spinFrame + 1) % FRAMES.length; }, 80); });
+    onDestroy(() => { if (_spinInterval) clearInterval(_spinInterval); });
+
     let loadingContext = $state(false);
     let contextError   = $state("");
     let loadedId       = $state("");
@@ -325,10 +332,9 @@
                 disabled={!taskText.trim() || $agentRunState.running || loadingContext || preLaunching}
             >
                 {#if $agentRunState.running || preLaunching}
-                    En cours…
-                {:else}
-                    <span class="ai-launch-label">Lancer l'agent</span><span class="ai-launch-arrow"> →</span>
+                    <span class="ai-spin">{FRAMES[spinFrame]}</span>
                 {/if}
+                <span class="ai-launch-label">Lancer l'agent</span><span class="ai-launch-arrow"> →</span>
             </button>
         </div>
 
@@ -567,6 +573,12 @@
     letter-spacing: 0.03em;
     display: inline-flex;
     align-items: center;
+}
+.ai-spin {
+    color: cornsilk;
+    font-size: 0.65rem;
+    margin-right: 0.3rem;
+    opacity: 0.8;
 }
 .ai-launch-label { color: var(--color-impl); }
 .ai-launch-arrow { color: #fff; }
