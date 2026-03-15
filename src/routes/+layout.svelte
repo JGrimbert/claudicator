@@ -39,6 +39,7 @@
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         height: 100vh;
         overflow: hidden;
+        padding-bottom: 26px; /* ConsoleBar height */
     }
     :global(pre), :global(code), :global(.monospace) {
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
