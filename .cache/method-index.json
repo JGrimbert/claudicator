@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-03-14T23:24:17.051Z",
+  "generated": "2026-03-15T18:13:01.128Z",
   "files": {
     "src\\hooks.server.ts": {
       "mtime": 1773479384818.9192,
@@ -38,7 +38,7 @@
       "methodCount": 9
     },
     "src\\lib\\server\\agent\\issue.ts": {
-      "mtime": 1773528824089.5415,
+      "mtime": 1773532544243.3923,
       "size": 1604,
       "hash": "69ea9e12acfb",
       "classCount": 0,
@@ -52,16 +52,16 @@
       "methodCount": 2
     },
     "src\\lib\\server\\agent\\prompt.ts": {
-      "mtime": 1773528825610.6394,
+      "mtime": 1773532544243.3923,
       "size": 9803,
       "hash": "8b61fe3e5ca1",
       "classCount": 0,
       "methodCount": 5
     },
     "src\\lib\\server\\agent\\segments.ts": {
-      "mtime": 1773526444947.3003,
-      "size": 973,
-      "hash": "0a7520535d16",
+      "mtime": 1773533903778.5227,
+      "size": 1514,
+      "hash": "635046330f3d",
       "classCount": 0,
       "methodCount": 1
     },
@@ -73,7 +73,7 @@
       "methodCount": 1
     },
     "src\\lib\\server\\logs.ts": {
-      "mtime": 1773528826411.7449,
+      "mtime": 1773532544244.3926,
       "size": 581,
       "hash": "bf92db5a8d62",
       "classCount": 0,
@@ -94,28 +94,35 @@
       "methodCount": 8
     },
     "src\\lib\\server\\services\\claude.ts": {
-      "mtime": 1773528819952.6655,
+      "mtime": 1773532544244.3926,
       "size": 431,
       "hash": "0e0c1bc569d0",
       "classCount": 0,
       "methodCount": 1
     },
-    "src\\lib\\server\\services\\git.ts": {
-      "mtime": 1773528820737.6921,
-      "size": 3282,
-      "hash": "df1ea1e2bc6b",
-      "classCount": 0,
-      "methodCount": 11
-    },
-    "src\\lib\\server\\services\\github.ts": {
-      "mtime": 1773521136789.996,
-      "size": 5674,
-      "hash": "74765443e71d",
+    "src\\lib\\server\\services\\git-history.ts": {
+      "mtime": 1773597759847.0872,
+      "size": 10092,
+      "hash": "859d587e1df9",
       "classCount": 0,
       "methodCount": 14
     },
+    "src\\lib\\server\\services\\git.ts": {
+      "mtime": 1773594701167.9268,
+      "size": 4347,
+      "hash": "f3004c2d43fe",
+      "classCount": 0,
+      "methodCount": 14
+    },
+    "src\\lib\\server\\services\\github.ts": {
+      "mtime": 1773570126024.439,
+      "size": 6043,
+      "hash": "b3f0671e0808",
+      "classCount": 0,
+      "methodCount": 15
+    },
     "src\\lib\\server\\services\\processes.ts": {
-      "mtime": 1773528821826.0781,
+      "mtime": 1773532544244.3926,
       "size": 1583,
       "hash": "c7cd26203b46",
       "classCount": 0,
@@ -136,7 +143,7 @@
       "methodCount": 8
     },
     "src\\lib\\server\\services\\tasks.ts": {
-      "mtime": 1773528822946.5298,
+      "mtime": 1773532544245.8965,
       "size": 4745,
       "hash": "d2870bb3a0d8",
       "classCount": 0,
@@ -150,182 +157,210 @@
       "methodCount": 3
     },
     "src\\lib\\stores\\agent.ts": {
-      "mtime": 1773521136793.0027,
-      "size": 4169,
-      "hash": "392cd04e4944",
+      "mtime": 1773585564565.1006,
+      "size": 6942,
+      "hash": "fb7f95117a4c",
       "classCount": 0,
-      "methodCount": 2
+      "methodCount": 5
+    },
+    "src\\lib\\types\\symbols.ts": {
+      "mtime": 1773572959993.2654,
+      "size": 205,
+      "hash": "5dc83dd9e8ab",
+      "classCount": 0,
+      "methodCount": 0
     },
     "src\\routes\\api\\agent\\input\\+server.ts": {
-      "mtime": 1773528853449.0935,
+      "mtime": 1773532544245.8965,
       "size": 627,
       "hash": "353e1925e173",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\kill\\+server.ts": {
-      "mtime": 1773528854645.3025,
+      "mtime": 1773532544246.9016,
       "size": 624,
       "hash": "7a431cf38fa9",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\preview-prompt\\+server.ts": {
-      "mtime": 1773528858194.4644,
+      "mtime": 1773532544246.9016,
       "size": 1628,
       "hash": "1f02f8fa9d4d",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\agent\\run\\+server.ts": {
-      "mtime": 1773528851049.7715,
+      "mtime": 1773532544247.9016,
       "size": 18656,
       "hash": "886305ceb7e0",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\routes\\api\\agent\\session\\+server.ts": {
-      "mtime": 1773528856007.1765,
+      "mtime": 1773532544247.9016,
       "size": 916,
       "hash": "523b1d0094f5",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\atlas\\+server.ts": {
-      "mtime": 1773528914086.6465,
-      "size": 2026,
-      "hash": "67911f556989",
+      "mtime": 1773533896694.9692,
+      "size": 2018,
+      "hash": "1965d76fd62a",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\cartography\\+server.ts": {
-      "mtime": 1773528861738.802,
-      "size": 1987,
-      "hash": "5d9d145f4931",
+      "mtime": 1773536295832.3386,
+      "size": 5119,
+      "hash": "9c16774afdd2",
       "classCount": 0,
-      "methodCount": 1
+      "methodCount": 4
     },
     "src\\routes\\api\\cartography\\comment\\+server.ts": {
-      "mtime": 1773528863662.3777,
+      "mtime": 1773532544249.9055,
       "size": 15718,
       "hash": "4945d71609ca",
       "classCount": 0,
       "methodCount": 10
     },
     "src\\routes\\api\\cartography\\diagram\\+server.ts": {
-      "mtime": 1773528865604.5996,
-      "size": 9366,
-      "hash": "bf0cdcdbcf8a",
+      "mtime": 1773535341399.4873,
+      "size": 14697,
+      "hash": "d39637943c6d",
       "classCount": 0,
-      "methodCount": 4
+      "methodCount": 6
     },
     "src\\routes\\api\\cartography\\enrich\\+server.ts": {
-      "mtime": 1773528867202.0442,
+      "mtime": 1773532544250.906,
       "size": 2076,
       "hash": "a906c44004a1",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\cartography\\methods\\+server.ts": {
-      "mtime": 1773528868696.9285,
+      "mtime": 1773532544250.906,
       "size": 1313,
       "hash": "31ce2b484724",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\cartography\\refresh\\+server.ts": {
-      "mtime": 1773528870601.1985,
+      "mtime": 1773532544250.906,
       "size": 703,
       "hash": "aac751dbcec6",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\cartography\\run\\+server.ts": {
-      "mtime": 1773528872118.3828,
+      "mtime": 1773532544251.906,
       "size": 2338,
       "hash": "01503bd501dd",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\cartography\\snippet\\+server.ts": {
-      "mtime": 1773528873630.296,
+      "mtime": 1773532544251.906,
       "size": 3720,
       "hash": "31354747fed7",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\routes\\api\\cartography\\stats\\+server.ts": {
-      "mtime": 1773528875184.3105,
+      "mtime": 1773532544252.906,
       "size": 2354,
       "hash": "510d51c035df",
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\clusters\\+server.ts": {
+      "mtime": 1773598062037.7988,
+      "size": 11035,
+      "hash": "2789f97eda2e",
+      "classCount": 0,
+      "methodCount": 3
+    },
     "src\\routes\\api\\context\\+server.ts": {
-      "mtime": 1773528879571.9832,
+      "mtime": 1773532544252.906,
       "size": 1892,
       "hash": "340622d25f17",
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\git-history\\+server.ts": {
+      "mtime": 1773594701169.481,
+      "size": 976,
+      "hash": "c3a8f0fcbb27",
+      "classCount": 0,
+      "methodCount": 1
+    },
+    "src\\routes\\api\\git-history\\run\\+server.ts": {
+      "mtime": 1773594701169.481,
+      "size": 2830,
+      "hash": "1496441c871c",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\github\\issues\\+server.ts": {
-      "mtime": 1773528881375.0269,
+      "mtime": 1773532544253.9065,
       "size": 741,
       "hash": "178cf619226e",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\issue\\+server.ts": {
-      "mtime": 1773528883213.0212,
-      "size": 1371,
-      "hash": "705ba7de6adc",
+      "mtime": 1773579165070.9036,
+      "size": 2024,
+      "hash": "0de7f7102f0e",
       "classCount": 0,
-      "methodCount": 2
+      "methodCount": 3
     },
     "src\\routes\\api\\issues\\+server.ts": {
-      "mtime": 1773528885155.9658,
+      "mtime": 1773532544254.906,
       "size": 2127,
       "hash": "a963e74cd186",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\issues\\analysis\\+server.ts": {
-      "mtime": 1773528886702.3196,
+      "mtime": 1773532544254.906,
       "size": 711,
       "hash": "b5bc2ff7a2d2",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\issues\\analyze\\+server.ts": {
-      "mtime": 1773528888981.361,
+      "mtime": 1773532544254.906,
       "size": 3334,
       "hash": "0e0e30792b82",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\routes\\api\\issues\\analyze\\update\\+server.ts": {
-      "mtime": 1773528890560.7925,
+      "mtime": 1773532544255.9065,
       "size": 3768,
       "hash": "e6b30d266c02",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\issues\\roadmap\\chat\\+server.ts": {
-      "mtime": 1773528892852.4895,
+      "mtime": 1773532544255.9065,
       "size": 1847,
       "hash": "dadd12931153",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\issues\\roadmaps\\+server.ts": {
-      "mtime": 1773528894454.4343,
+      "mtime": 1773532544257.0266,
       "size": 1109,
       "hash": "d5bdc76cefac",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\issues\\snapshot\\+server.ts": {
-      "mtime": 1773528895624.8994,
+      "mtime": 1773532544257.0266,
       "size": 826,
       "hash": "8d14d0854e67",
       "classCount": 0,
@@ -339,147 +374,154 @@
       "methodCount": 1
     },
     "src\\routes\\api\\logs\\+server.ts": {
-      "mtime": 1773528899070.8025,
+      "mtime": 1773532544257.0266,
       "size": 1073,
       "hash": "ee04995253e2",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\plan\\+server.ts": {
-      "mtime": 1773528900580.4924,
+      "mtime": 1773532544258.0266,
       "size": 609,
       "hash": "32433b052dd6",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\project-config\\+server.ts": {
-      "mtime": 1773528902535.9836,
+      "mtime": 1773532544258.0266,
       "size": 738,
       "hash": "2f45991615de",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\projects\\+server.ts": {
-      "mtime": 1773528904113.4268,
+      "mtime": 1773532544258.0266,
       "size": 798,
       "hash": "88f6bc14d253",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\projects\\current\\+server.ts": {
-      "mtime": 1773528906083.0442,
+      "mtime": 1773532544259.0308,
       "size": 696,
       "hash": "5163233f0788",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\projects\\github\\+server.ts": {
-      "mtime": 1773528907981.417,
+      "mtime": 1773532544259.0308,
       "size": 832,
       "hash": "af9a24f12dff",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\repo-file\\+server.ts": {
-      "mtime": 1773528910361.7095,
+      "mtime": 1773532544260.0308,
       "size": 767,
       "hash": "c73e249370a2",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\repo-info\\+server.ts": {
-      "mtime": 1773528911497.0234,
+      "mtime": 1773532544260.0308,
       "size": 391,
       "hash": "a11a11b79ad6",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\skills\\+server.ts": {
-      "mtime": 1773528915632.412,
+      "mtime": 1773532544260.0308,
       "size": 292,
       "hash": "0bfe93bd66d9",
       "classCount": 0,
       "methodCount": 1
     },
+    "src\\routes\\api\\symbol\\+server.ts": {
+      "mtime": 1773581737214.756,
+      "size": 517,
+      "hash": "9ad34b9296b1",
+      "classCount": 0,
+      "methodCount": 1
+    },
     "src\\routes\\api\\tasks\\+server.ts": {
-      "mtime": 1773528832318.125,
+      "mtime": 1773532544261.031,
       "size": 960,
       "hash": "1ce0e5284f2c",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\tasks\\[id]\\+server.ts": {
-      "mtime": 1773528832585.7722,
+      "mtime": 1773532544262.031,
       "size": 934,
       "hash": "002fd290d8d5",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts": {
-      "mtime": 1773528834855.9258,
+      "mtime": 1773532544262.031,
       "size": 1172,
       "hash": "507ddb9337dd",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts": {
-      "mtime": 1773528836479.5232,
+      "mtime": 1773532544263.0315,
       "size": 811,
       "hash": "4c0311c40f43",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts": {
-      "mtime": 1773528838344.2703,
+      "mtime": 1773532544263.0315,
       "size": 2933,
       "hash": "923eadeaa155",
       "classCount": 0,
       "methodCount": 2
     },
     "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts": {
-      "mtime": 1773528839832.7683,
+      "mtime": 1773532544263.0315,
       "size": 2257,
       "hash": "d55e692b9c3c",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts": {
-      "mtime": 1773528841316.4153,
+      "mtime": 1773532544263.0315,
       "size": 4855,
       "hash": "7fa6b88bafbd",
       "classCount": 0,
       "methodCount": 3
     },
     "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts": {
-      "mtime": 1773528842831.8828,
+      "mtime": 1773532544264.5356,
       "size": 678,
       "hash": "5959b046a67b",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\push\\+server.ts": {
-      "mtime": 1773528844386.0305,
+      "mtime": 1773532544264.5356,
       "size": 928,
       "hash": "84e544a9b6e1",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts": {
-      "mtime": 1773528845880.3381,
+      "mtime": 1773532544264.5356,
       "size": 885,
       "hash": "15c142ebfdbf",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts": {
-      "mtime": 1773528847591.5825,
+      "mtime": 1773532544266.147,
       "size": 1074,
       "hash": "37746451bc66",
       "classCount": 0,
       "methodCount": 1
     },
     "src\\routes\\api\\usage\\+server.ts": {
-      "mtime": 1773528912576.649,
+      "mtime": 1773532544266.147,
       "size": 366,
       "hash": "c598a97caa06",
       "classCount": 0,
@@ -549,6 +591,27 @@
       "bodyHash": "68d1d42849bd",
       "line": 22,
       "endLine": 24
+    },
+    "walkSrc": {
+      "file": "src\\routes\\api\\cartography\\+server.ts",
+      "class": null,
+      "name": "walkSrc",
+      "signature": "walkSrc(dir, out: string[] = [])",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Parcourt src/ récursivement et retourne tous les fichiers source",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b44df8c95aac",
+      "line": 26,
+      "endLine": 37
     },
     "resetStaleTasks": {
       "file": "src\\hooks.server.ts",
@@ -1072,8 +1135,8 @@
         "provides": []
       },
       "bodyHash": "63d300c1b119",
-      "line": 14,
-      "endLine": 20
+      "line": 25,
+      "endLine": 31
     },
     "selectSkill": {
       "file": "src\\lib\\server\\agent\\skills.ts",
@@ -1242,27 +1305,6 @@
       "bodyHash": "d31162d5020d",
       "line": 179,
       "endLine": 214
-    },
-    "walkSrc": {
-      "file": "src\\routes\\api\\atlas\\+server.ts",
-      "class": null,
-      "name": "walkSrc",
-      "signature": "walkSrc(dir, out: string[] = [])",
-      "isStatic": false,
-      "isPrivate": false,
-      "isAsync": false,
-      "isExported": false,
-      "role": "internal",
-      "description": null,
-      "effects": {},
-      "consumers": [],
-      "context": {
-        "requires": [],
-        "provides": []
-      },
-      "bodyHash": "0f96b35eb5ab",
-      "line": 9,
-      "endLine": 18
     },
     "buildAtlasDeps": {
       "file": "src\\lib\\server\\services\\cartography.ts",
@@ -1495,6 +1537,300 @@
       "line": 5,
       "endLine": 14
     },
+    "historyDir": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "historyDir",
+      "signature": "historyDir()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "89243396c246",
+      "line": 37,
+      "endLine": 37
+    },
+    "commitsDir": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "commitsDir",
+      "signature": "commitsDir()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f8c5a47e2cb3",
+      "line": 38,
+      "endLine": 38
+    },
+    "statePath": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "statePath",
+      "signature": "statePath()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c08dd6a979ed",
+      "line": 39,
+      "endLine": 39
+    },
+    "ensureHistoryDir": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "ensureHistoryDir",
+      "signature": "ensureHistoryDir()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "1f7f6f23ece5",
+      "line": 41,
+      "endLine": 43
+    },
+    "getHistoryState": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "getHistoryState",
+      "signature": "getHistoryState()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6ebe9148d0de",
+      "line": 47,
+      "endLine": 53
+    },
+    "saveHistoryState": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "saveHistoryState",
+      "signature": "saveHistoryState(state)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "f8dc62451d1f",
+      "line": 55,
+      "endLine": 57
+    },
+    "isCommitProcessed": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "isCommitProcessed",
+      "signature": "isCommitProcessed(sha)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a051bcdca5f5",
+      "line": 61,
+      "endLine": 63
+    },
+    "saveCommitRecord": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "saveCommitRecord",
+      "signature": "saveCommitRecord(record)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "fa61fee2b25e",
+      "line": 65,
+      "endLine": 70
+    },
+    "loadAllCommitRecords": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "loadAllCommitRecords",
+      "signature": "loadAllCommitRecords()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "0612fedc2589",
+      "line": 72,
+      "endLine": 77
+    },
+    "getHistoryStats": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "getHistoryStats",
+      "signature": "getHistoryStats()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6a8c699c4a2f",
+      "line": 89,
+      "endLine": 128
+    },
+    "parseIssueRefs": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "parseIssueRefs",
+      "signature": "parseIssueRefs(message)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "2a2517680a82",
+      "line": 131,
+      "endLine": 135
+    },
+    "getIssueSlots": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "getIssueSlots",
+      "signature": "getIssueSlots()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ed33b3a18633",
+      "line": 141,
+      "endLine": 159
+    },
+    "findSymbolsForFiles": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "findSymbolsForFiles",
+      "signature": "findSymbolsForFiles(files, root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b2943b3a20a9",
+      "line": 169,
+      "endLine": 186
+    },
+    "buildHistoricalCoal": {
+      "file": "src\\lib\\server\\services\\git-history.ts",
+      "class": null,
+      "name": "buildHistoricalCoal",
+      "signature": "buildHistoricalCoal(records)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "3a5cbb32bb2b",
+      "line": 195,
+      "endLine": 238
+    },
     "createBranch": {
       "file": "src\\lib\\server\\services\\git.ts",
       "class": null,
@@ -1726,6 +2062,69 @@
       "line": 85,
       "endLine": 90
     },
+    "getHeadCommit": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getHeadCommit",
+      "signature": "getHeadCommit(root)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "19947acb7912",
+      "line": 93,
+      "endLine": 97
+    },
+    "getCommitLog": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getCommitLog",
+      "signature": "getCommitLog(root, limit: number = 200)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6b6effd3a4ce",
+      "line": 100,
+      "endLine": 112
+    },
+    "getCommitFiles": {
+      "file": "src\\lib\\server\\services\\git.ts",
+      "class": null,
+      "name": "getCommitFiles",
+      "signature": "getCommitFiles(root, sha)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "c1a2359b470a",
+      "line": 115,
+      "endLine": 119
+    },
     "getPrivateKey": {
       "file": "src\\lib\\server\\services\\github.ts",
       "class": null,
@@ -1873,6 +2272,27 @@
       "line": 84,
       "endLine": 88
     },
+    "updateIssue": {
+      "file": "src\\lib\\server\\services\\github.ts",
+      "class": null,
+      "name": "updateIssue",
+      "signature": "updateIssue(owner, repo, number, changes)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "45f2ab4696a1",
+      "line": 91,
+      "endLine": 100
+    },
     "getSubIssues": {
       "file": "src\\lib\\server\\services\\github.ts",
       "class": null,
@@ -1891,8 +2311,8 @@
         "provides": []
       },
       "bodyHash": "ccdd3320f79c",
-      "line": 91,
-      "endLine": 103
+      "line": 103,
+      "endLine": 115
     },
     "listAccessibleRepos": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1912,8 +2332,8 @@
         "provides": []
       },
       "bodyHash": "14c23deb0946",
-      "line": 106,
-      "endLine": 115
+      "line": 118,
+      "endLine": 127
     },
     "findOpenPullRequest": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1933,8 +2353,8 @@
         "provides": []
       },
       "bodyHash": "1a33371d7ef5",
-      "line": 118,
-      "endLine": 122
+      "line": 130,
+      "endLine": 134
     },
     "createPullRequest": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1954,8 +2374,8 @@
         "provides": []
       },
       "bodyHash": "d90699e12faa",
-      "line": 125,
-      "endLine": 133
+      "line": 137,
+      "endLine": 145
     },
     "mergePullRequest": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1975,8 +2395,8 @@
         "provides": []
       },
       "bodyHash": "dd8af44b3138",
-      "line": 136,
-      "endLine": 140
+      "line": 148,
+      "endLine": 152
     },
     "closeIssue": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -1996,8 +2416,8 @@
         "provides": []
       },
       "bodyHash": "61e3175f8e26",
-      "line": 143,
-      "endLine": 146
+      "line": 155,
+      "endLine": 158
     },
     "createIssueComment": {
       "file": "src\\lib\\server\\services\\github.ts",
@@ -2017,8 +2437,8 @@
         "provides": []
       },
       "bodyHash": "7b622118ca92",
-      "line": 149,
-      "endLine": 159
+      "line": 161,
+      "endLine": 171
     },
     "register": {
       "file": "src\\lib\\server\\services\\processes.ts",
@@ -2629,6 +3049,69 @@
       "line": 28,
       "endLine": 39
     },
+    "startConsoleStream": {
+      "file": "src\\lib\\stores\\agent.ts",
+      "class": null,
+      "name": "startConsoleStream",
+      "signature": "startConsoleStream(res, opts)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ee4439e82748",
+      "line": 47,
+      "endLine": 85
+    },
+    "stopConsoleStream": {
+      "file": "src\\lib\\stores\\agent.ts",
+      "class": null,
+      "name": "stopConsoleStream",
+      "signature": "stopConsoleStream()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "9219b56c41a6",
+      "line": 88,
+      "endLine": 94
+    },
+    "toggleConsoleMinimized": {
+      "file": "src\\lib\\stores\\agent.ts",
+      "class": null,
+      "name": "toggleConsoleMinimized",
+      "signature": "toggleConsoleMinimized()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b1ce6bdfc87d",
+      "line": 97,
+      "endLine": 99
+    },
     "notifyTaskCreated": {
       "file": "src\\lib\\stores\\agent.ts",
       "class": null,
@@ -2647,8 +3130,8 @@
         "provides": []
       },
       "bodyHash": "e58093c32fda",
-      "line": 40,
-      "endLine": 43
+      "line": 104,
+      "endLine": 107
     },
     "parseGroups": {
       "file": "src\\lib\\stores\\agent.ts",
@@ -2668,8 +3151,8 @@
         "provides": []
       },
       "bodyHash": "ab320a0ffc59",
-      "line": 78,
-      "endLine": 92
+      "line": 146,
+      "endLine": 160
     },
     "api.agent.input.POST": {
       "file": "src\\routes\\api\\agent\\input\\+server.ts",
@@ -2818,6 +3301,48 @@
       "line": 25,
       "endLine": 52
     },
+    "extractKeywords": {
+      "file": "src\\routes\\api\\cartography\\+server.ts",
+      "class": null,
+      "name": "extractKeywords",
+      "signature": "extractKeywords(query)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Extrait les mots-clés significatifs d'une query (longueur > 3, pas stopwords)",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "205e14bbe902",
+      "line": 18,
+      "endLine": 23
+    },
+    "fileNameSearch": {
+      "file": "src\\routes\\api\\cartography\\+server.ts",
+      "class": null,
+      "name": "fileNameSearch",
+      "signature": "fileNameSearch(query, projectPath, existingFiles)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Recherche des fichiers source dont le nom correspond à des mots-clés de la query.\nRetourne des résultats complémentaires pour les fichiers non couverts par l'index.",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "6843afdeb40d",
+      "line": 43,
+      "endLine": 71
+    },
     "api.cartography.POST": {
       "file": "src\\routes\\api\\cartography\\+server.ts",
       "class": null,
@@ -2835,9 +3360,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "655a3407f244",
-      "line": 9,
-      "endLine": 53
+      "bodyHash": "7aab9d38a12e",
+      "line": 74,
+      "endLine": 127
     },
     "readIndex": {
       "file": "src\\routes\\api\\cartography\\comment\\+server.ts",
@@ -3067,8 +3592,8 @@
         "provides": []
       },
       "bodyHash": "93d19940e161",
-      "line": 28,
-      "endLine": 41
+      "line": 59,
+      "endLine": 72
     },
     "extractExtends": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -3080,7 +3605,7 @@
       "isAsync": false,
       "isExported": false,
       "role": "internal",
-      "description": "Extrait la classe parente via regex",
+      "description": null,
       "effects": {},
       "consumers": [],
       "context": {
@@ -3088,8 +3613,8 @@
         "provides": []
       },
       "bodyHash": "249ff66f5fa2",
-      "line": 44,
-      "endLine": 46
+      "line": 74,
+      "endLine": 76
     },
     "capitalize": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -3101,7 +3626,7 @@
       "isAsync": false,
       "isExported": false,
       "role": "internal",
-      "description": "Met en majuscule la première lettre",
+      "description": null,
       "effects": {},
       "consumers": [],
       "context": {
@@ -3109,8 +3634,50 @@
         "provides": []
       },
       "bodyHash": "4bda8c2eda94",
-      "line": 49,
-      "endLine": 49
+      "line": 78,
+      "endLine": 78
+    },
+    "makeFileNode": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "makeFileNode",
+      "signature": "makeFileNode(filePath, group)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "06bb3692c091",
+      "line": 80,
+      "endLine": 83
+    },
+    "buildFolderTree": {
+      "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
+      "class": null,
+      "name": "buildFolderTree",
+      "signature": "buildFolderTree(fileMap)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": "Construit une arborescence de dossiers à partir d'une map filePath → group",
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "8864290f1b49",
+      "line": 88,
+      "endLine": 164
     },
     "api.cartography.diagram.GET": {
       "file": "src\\routes\\api\\cartography\\diagram\\+server.ts",
@@ -3129,9 +3696,9 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "5ec94c4c98c1",
-      "line": 52,
-      "endLine": 208
+      "bodyHash": "638423b2e8af",
+      "line": 166,
+      "endLine": 318
     },
     "api.cartography.enrich.POST": {
       "file": "src\\routes\\api\\cartography\\enrich\\+server.ts",
@@ -3259,6 +3826,69 @@
       "line": 8,
       "endLine": 63
     },
+    "parentDir": {
+      "file": "src\\routes\\api\\clusters\\+server.ts",
+      "class": null,
+      "name": "parentDir",
+      "signature": "parentDir(filePath)",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "cc9dc9030315",
+      "line": 58,
+      "endLine": 61
+    },
+    "makeUF": {
+      "file": "src\\routes\\api\\clusters\\+server.ts",
+      "class": null,
+      "name": "makeUF",
+      "signature": "makeUF()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": false,
+      "isExported": false,
+      "role": "internal",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "ae93fdc177a8",
+      "line": 63,
+      "endLine": 76
+    },
+    "api.clusters.GET": {
+      "file": "src\\routes\\api\\clusters\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "572b80653266",
+      "line": 78,
+      "endLine": 262
+    },
     "api.context.POST": {
       "file": "src\\routes\\api\\context\\+server.ts",
       "class": null,
@@ -3279,6 +3909,48 @@
       "bodyHash": "d49de8a651df",
       "line": 9,
       "endLine": 48
+    },
+    "api.git-history.GET": {
+      "file": "src\\routes\\api\\git-history\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "a55e79cdbd34",
+      "line": 7,
+      "endLine": 20
+    },
+    "api.git-history.run.POST": {
+      "file": "src\\routes\\api\\git-history\\run\\+server.ts",
+      "class": null,
+      "name": "POST",
+      "signature": "POST()",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "2d6a46814593",
+      "line": 16,
+      "endLine": 77
     },
     "api.github.issues.POST": {
       "file": "src\\routes\\api\\github\\issues\\+server.ts",
@@ -3318,9 +3990,30 @@
         "requires": [],
         "provides": []
       },
-      "bodyHash": "eedf6c500588",
+      "bodyHash": "36e276ec1717",
       "line": 10,
-      "endLine": 37
+      "endLine": 38
+    },
+    "api.issue.PATCH": {
+      "file": "src\\routes\\api\\issue\\+server.ts",
+      "class": null,
+      "name": "PATCH",
+      "signature": "PATCH({ request })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "b215c5e6d79e",
+      "line": 41,
+      "endLine": 53
     },
     "api.issue.POST": {
       "file": "src\\routes\\api\\issue\\+server.ts",
@@ -3340,8 +4033,8 @@
         "provides": []
       },
       "bodyHash": "607079e13e6e",
-      "line": 40,
-      "endLine": 44
+      "line": 56,
+      "endLine": 60
     },
     "api.issues.GET": {
       "file": "src\\routes\\api\\issues\\+server.ts",
@@ -3825,6 +4518,27 @@
       "bodyHash": "d587fc0ca6ab",
       "line": 6,
       "endLine": 8
+    },
+    "api.symbol.GET": {
+      "file": "src\\routes\\api\\symbol\\+server.ts",
+      "class": null,
+      "name": "GET",
+      "signature": "GET({ url })",
+      "isStatic": false,
+      "isPrivate": false,
+      "isAsync": true,
+      "isExported": true,
+      "role": "helper",
+      "description": null,
+      "effects": {},
+      "consumers": [],
+      "context": {
+        "requires": [],
+        "provides": []
+      },
+      "bodyHash": "bd909695f6de",
+      "line": 5,
+      "endLine": 12
     },
     "api.tasks.GET": {
       "file": "src\\routes\\api\\tasks\\+server.ts",

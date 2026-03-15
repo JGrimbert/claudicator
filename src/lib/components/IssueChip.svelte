@@ -2,6 +2,8 @@
     import { agentState } from "$lib/stores/agent";
 
     export let number: number;
+    export let strikethrough = false;
+    export let variant: "default" | "hist" = "default";
 
     async function select() {
         agentState.update(s => ({ ...s, status: "loading", plan: null }));
@@ -16,7 +18,9 @@
     }
 </script>
 
-<button class="chip" onclick={select}>#{number}</button>
+<button class="chip" class:chip--struck={strikethrough} class:chip--hist={variant === "hist"} onclick={select}>
+    {#if strikethrough}<s>#{number}</s>{:else}#{number}{/if}
+</button>
 
 <style>
 .chip {
@@ -34,5 +38,21 @@
 }
 .chip:hover {
     color: cornsilk;
+}
+.chip--struck {
+    opacity: 0.55;
+    color: #7a5a9a;
+    border-color: #3a2a5a;
+}
+.chip--struck s {
+    text-decoration-color: #5a3a7a;
+}
+.chip--hist {
+    color: #b070b0;
+    background: #160a1a;
+    border-color: #4a2a5a;
+}
+.chip--hist:hover {
+    color: #e0b0e0;
 }
 </style>

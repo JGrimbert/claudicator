@@ -7,7 +7,7 @@
     type MixedSymbol  = { name: string; dir: string; issues: number[] };
     type MixedCluster = { dirs: string[]; symbols: MixedSymbol[]; issues: number[]; count: number };
     type CoalSymbol   = { key: string; dir: string };
-    type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number };
+    type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number; histMatch?: { symbols: string[]; count: number; issues: number[] } };
     type HistCoalNode = { symbols: string[]; count: number; score: number };
 
     let activeTab: "clusters" | "étape" | "étapes" | "history" = "clusters";
@@ -134,6 +134,11 @@
 
     $: if ((activeTab === "clusters" || activeTab === "étape") && !clustersLoaded) loadClusters();
 
+    // ─── Nœuds historiques matchés (pour filtrer la section HISTORIQUE) ────────
+    $: matchedHistSymbolSets = new Set(
+        coal.filter(n => n.histMatch).map(n => (n.histMatch!.symbols ?? []).slice().sort().join(","))
+    );
+
     // ─── Dérivations pour l'onglet étape ──────────────────────────────────────
     $: stepIssues = new Set(activeGroup?.issues ?? []);
     $: stepDirs   = dirs.filter(c => c.issues.some(n => stepIssues.has(n)));
@@ -188,12 +193,12 @@
                 <p class="hint">{clustersLoaded ? "Aucun cluster détecté" : "Chargement…"}</p>
             {:else}
                 <!-- ── Historique git (en tête) ── -->
-                {#if histCoal.length > 0}
+                {#if histCoal.filter(n => !matchedHistSymbolSets.has(n.symbols.slice().sort().join(","))).length > 0}
                     <div class="section-label section-label--hist">
                         HISTORIQUE
                         {#if histUpToDate}<span class="hist-badge hist-badge--ok">à jour</span>{:else}<span class="hist-badge hist-badge--stale">périmé</span>{/if}
                     </div>
-                    {#each histCoal as node, i}
+                    {#each histCoal.filter(n => !matchedHistSymbolSets.has(n.symbols.slice().sort().join(","))) as node, i}
                         {@const open = histExpanded.has(i)}
                         <div class="dir-row hist-row">
                             <button class="dir-head" onclick={() => toggleHist(i)}>
@@ -238,11 +243,24 @@
                                     {#if node.symbols.length > 4}<span class="coal-more">+{node.symbols.length - 4}</span>{/if}
                                 </span>
                                 <span class="coal-score">{node.score}</span>
+                                {#if node.histMatch}
+                                    <span class="hist-score hist-score--inline">{node.histMatch.count}×</span>
+                                {/if}
                             </button>
                             <div class="dir-issues">
                                 {#each node.issues as num}
                                     <IssueChip number={num} />
                                 {/each}
+                                {#if node.histMatch}
+                                    {@const histExtra = (node.histMatch.issues ?? []).filter(n => !node.issues.includes(n))}
+                                    {#if histExtra.length <= 2}
+                                        {#each histExtra as num}
+                                            <IssueChip number={num} variant="hist" />
+                                        {/each}
+                                    {:else}
+                                        <span class="hist-issues-more">+{histExtra.length}</span>
+                                    {/if}
+                                {/if}
                             </div>
                             {#if open}
                                 <div class="dir-symbols">
@@ -250,6 +268,7 @@
                                         <div class="sym-line">
                                             <button
                                                 class="sym-name"
+                                                class:sym-name--hist={node.histMatch?.symbols.includes(sym.key)}
                                                 class:sym-active={$clusterFocusedSymbol?.name === sym.key}
                                                 onclick={() => clusterFocusedSymbol.set({ name: sym.key, dir: sym.dir })}
                                             >{sym.key.split(".").at(-1)}</button>
@@ -666,6 +685,8 @@
 .coal-row .sym-name         { color: #50a0b0; }
 .coal-row .sym-name:hover,
 .coal-row .sym-name.sym-active { color: cornsilk; }
+.coal-row .sym-name.sym-name--hist { color: #c090c0; }
+.coal-row .sym-name.sym-name--hist:hover { color: #e0b0e0; }
 /* mixed rows override */
 .mixed-row .sym-name         { color: #b08840; }
 .mixed-row .sym-name:hover,
@@ -866,6 +887,22 @@
     color: #7a4a7a;
     flex-shrink: 0;
     margin-right: 0.3rem;
+}
+.hist-score--inline {
+    font-size: 0.6rem;
+    color: #c090c0;
+    margin-left: 0.3rem;
+    opacity: 0.8;
+}
+.hist-issues-more {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #c090c0;
+    opacity: 0.8;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid #4a2a5a;
+    border-radius: 3px;
+    background: #160a1a;
 }
 .hist-row .sym-name         { color: #b070b0; }
 .hist-row .sym-name:hover,

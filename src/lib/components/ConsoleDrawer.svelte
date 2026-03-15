@@ -100,6 +100,7 @@
     }
 
     async function continuer() {
+        if (!$agentRunState.sessionAlive) return;  // guard : pas de session → rien à faire
         const text   = userInput.trim();
         const taskId = $agentRunState.taskId;
         if (!text || !taskId || sendingInput) return;
@@ -123,7 +124,7 @@
     function onInputKey(e: KeyboardEvent) {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if ($agentRunState.running)      sendInput();
+            if ($agentRunState.running)           sendInput();
             else if ($agentRunState.sessionAlive) continuer();
         }
     }
@@ -173,15 +174,15 @@
             <input
                 class="bar-input"
                 type="text"
-                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : "Nouveau prompt… (Entrée)"}
+                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : "Session inactive"}
                 bind:value={userInput}
                 onkeydown={onInputKey}
-                disabled={sendingInput}
+                disabled={sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
             />
             <button
                 class="bar-send"
                 onclick={$agentRunState.running ? sendInput : continuer}
-                disabled={!userInput.trim() || sendingInput}
+                disabled={!userInput.trim() || sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
             >↵</button>
         {:else}
             <span class="bar-line" class:sys={lastLine?.type === 'system'}>

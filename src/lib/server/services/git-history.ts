@@ -21,6 +21,7 @@ export type HistoricalCoalNode = {
     symbols: string[];
     count:   number;    // nombre de commits où ces symboles co-apparaissent
     score:   number;    // symbols.length × count
+    issues:  number[];  // issues référencées dans les commits communs
 };
 
 export type GitHistoryState = {
@@ -207,7 +208,7 @@ export function buildHistoricalCoal(records: CommitRecord[]): HistoricalCoalNode
         .map(([k]) => k);
 
     // Extension maximale — identique à clusters/+server.ts
-    const coalByKey = new Map<string, { symbols: string[]; count: number }>();
+    const coalByKey = new Map<string, { symbols: string[]; count: number; issues: number[] }>();
     for (let i = 0; i < freqSyms.length; i++) {
         for (let j = i + 1; j < freqSyms.length; j++) {
             const ca = symToCommits.get(freqSyms[i])!;
@@ -223,11 +224,15 @@ export function buildHistoricalCoal(records: CommitRecord[]): HistoricalCoalNode
                 .sort();
             if (extSyms.length < 2) continue;
 
-            coalByKey.set(key, { symbols: extSyms, count: common.length });
+            const issueSet = new Set<number>();
+            for (const idx of common) {
+                for (const ref of records[idx].issueRefs) issueSet.add(ref);
+            }
+            coalByKey.set(key, { symbols: extSyms, count: common.length, issues: [...issueSet].sort((a, b) => a - b) });
         }
     }
 
     return [...coalByKey.values()]
-        .map(({ symbols, count }) => ({ symbols, count, score: symbols.length * count }))
+        .map(({ symbols, count, issues }) => ({ symbols, count, score: symbols.length * count, issues }))
         .sort((a, b) => b.score - a.score || b.count - a.count);
 }
