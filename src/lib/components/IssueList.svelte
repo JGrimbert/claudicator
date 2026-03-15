@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, type Issue } from "$lib/stores/agent";
+    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import Fuse from 'fuse.js';
 
@@ -82,6 +82,8 @@
         await loadSnapshot();
         if (hasResult) await openAnalysis();
     });
+
+    $: if ($issueListRefreshTick > 0) { loadIssues(); }
 
     async function openAnalysis() {
         if ($issueAnalysis.dismissed) return;

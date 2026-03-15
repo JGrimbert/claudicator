@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated, taskIssueNumbers } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
@@ -253,6 +253,7 @@
                 },
                 status: "idle"
             }));
+            issueListRefreshTick.update(n => n + 1);
         } catch (e: any) {
             createError = e.message;
         } finally {
