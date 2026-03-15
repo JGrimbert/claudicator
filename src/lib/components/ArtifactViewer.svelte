@@ -353,7 +353,7 @@
                                 <span class="sym-label">Symboles</span>
                                 <span class="sym-state">{symbolsLoading ? '…' : symbols.length}</span>
                             </div>
-                            {#each symbols as s (s.file || s.key)}
+                            {#each symbols as s ((s.file || '') + '|' + s.key)}
                                 <div class="sym-row">
                                     <span class="sym-bullet">*</span>
                                     <span class="sym-key">{s.key}</span>

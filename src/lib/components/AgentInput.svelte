@@ -252,6 +252,19 @@
                 {/if}
             </div>
 
+            <!-- Toggle PLAN — entre input et arbo plan -->
+            {#if planSections.length > 0}
+                <div class="doc-sec sec-plan-toggle">
+                    <label class="plan-toggle-row">
+                        <span class="plan-toggle-label">plan</span>
+                        <span class="plan-toggle-track" class:on={planMode}>
+                            <span class="plan-toggle-thumb"></span>
+                        </span>
+                        <input type="checkbox" bind:checked={planMode} hidden />
+                    </label>
+                </div>
+            {/if}
+
             <!-- Section PLAN — toggleable -->
             {#if planMode && planSections.length > 0}
                 <div class="doc-sec">
@@ -318,13 +331,6 @@
         </div><!-- /doc-scroll -->
 
         <div class="ai-footer">
-            <label class="plan-toggle-row">
-                <span class="plan-toggle-label">plan</span>
-                <span class="plan-toggle-track" class:on={planMode}>
-                    <span class="plan-toggle-thumb"></span>
-                </span>
-                <input type="checkbox" bind:checked={planMode} hidden />
-            </label>
             {#if docSections.length > 0}
                 <label class="plan-toggle-row">
                     <span class="plan-toggle-label">docs</span>
@@ -438,6 +444,7 @@
     flex-shrink: 0;
 }
 .sec-input { padding-top: 0.5rem; }
+.sec-plan-toggle { padding-top: 0.3rem; padding-bottom: 0; }
 
 .sec-toggle {
     background: none;
@@ -518,11 +525,7 @@
     white-space: pre-wrap;
     word-break: break-word;
     margin: 0;
-    max-height: 72px;
-    overflow-y: auto;
 }
-.ro-pre::-webkit-scrollbar { width: 2px; }
-.ro-pre::-webkit-scrollbar-thumb { background: var(--border); }
 
 /* ── Atlas grid ── */
 .atlas-grid {
