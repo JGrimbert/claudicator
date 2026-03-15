@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { agentState, notifyTaskCreated } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
 
@@ -90,20 +91,34 @@
         finally { symbolsLoading = false; }
     }
 
-    function groupByFile(syms: SymbolEntry[]): [string, SymbolEntry[]][] {
-        const map = new Map<string, SymRow[]>();
-        for (const s of syms) {
-            const arr = map.get(s.file) ?? [];
-            arr.push(s);
-            map.set(s.file, arr);
-        }
-        return [...map.entries()];
+    // ─── Clusters ─────────────────────────────────────────────────────────────
+    type CoalSym = { key: string; dir: string };
+    type ClusterDirItem  = { dir: string; symbols: { name: string; issues: number[] }[]; issues: number[]; count: number };
+    type ClusterMixedItem = { dirs: string[]; symbols: { name: string; dir: string; issues: number[] }[]; issues: number[]; count: number };
+    type ClusterCoalItem = { symbols: CoalSym[]; issues: number[]; score: number; count: number };
+    type ClustersData    = { dirs: ClusterDirItem[]; mixed: ClusterMixedItem[]; coal: ClusterCoalItem[] };
+
+    let clusterData: ClustersData | null = null;
+
+    onMount(() => { loadClusters(); });
+
+    async function loadClusters() {
+        try {
+            const res = await fetch('/api/clusters');
+            if (res.ok) clusterData = await res.json();
+        } catch {}
     }
 
-    function shortPath(file: string): string {
-        const parts = file.replace(/\\/g, '/').split('/');
-        return parts.slice(-2).join('/');
-    }
+    $: issueNum   = $agentState.issue?.number ?? 0;
+    $: issueCoal  = (clusterData?.coal ?? [])
+        .filter(c => c.issues.includes(issueNum))
+        .map(c => [...new Set(c.symbols.map((s: CoalSym) => s.dir))].join(' / ') || '?');
+    $: issueDirs  = (clusterData?.dirs ?? [])
+        .filter(c => c.issues.includes(issueNum))
+        .map(c => c.dir);
+    $: issueMixed = (clusterData?.mixed ?? [])
+        .filter(c => c.issues.includes(issueNum))
+        .map(c => c.dirs.join(' + '));
 
     async function loadPlan(num: number) {
         const res  = await fetch(`/api/plan?issue=${num}`);
@@ -329,6 +344,64 @@
                         </div>
                     {/if}
                 </div>
+
+                {#if symbolsLoading || symbols.length > 0 || issueCoal.length > 0 || issueDirs.length > 0 || issueMixed.length > 0}
+                    <div class="sym-tree">
+                        <!-- SYMBOLES -->
+                        <div class="sym-group-hd">
+                            <span class="sym-label">Symboles</span>
+                            <span class="sym-state">{symbolsLoading ? '…' : symbols.length}</span>
+                        </div>
+                        {#each symbols as s (s.key)}
+                            <div class="sym-row">
+                                <span class="sym-bullet">*</span>
+                                <span class="sym-key">{s.key}</span>
+                            </div>
+                        {/each}
+
+                        <!-- COALESCENCE -->
+                        {#if issueCoal.length > 0}
+                            <div class="sym-group-hd">
+                                <span class="sym-label coal-label">Coalescence</span>
+                                <span class="sym-state">{issueCoal.length}</span>
+                            </div>
+                            {#each issueCoal as name}
+                                <div class="sym-row">
+                                    <span class="sym-bullet">*</span>
+                                    <span class="sym-key coal-key">{name}</span>
+                                </div>
+                            {/each}
+                        {/if}
+
+                        <!-- DIR -->
+                        {#if issueDirs.length > 0}
+                            <div class="sym-group-hd">
+                                <span class="sym-label dir-label">Dir</span>
+                                <span class="sym-state">{issueDirs.length}</span>
+                            </div>
+                            {#each issueDirs as dir}
+                                <div class="sym-row">
+                                    <span class="sym-bullet">*</span>
+                                    <span class="sym-key dir-key">{dir}</span>
+                                </div>
+                            {/each}
+                        {/if}
+
+                        <!-- MIXTE -->
+                        {#if issueMixed.length > 0}
+                            <div class="sym-group-hd">
+                                <span class="sym-label mixte-label">Mixte</span>
+                                <span class="sym-state">{issueMixed.length}</span>
+                            </div>
+                            {#each issueMixed as pattern}
+                                <div class="sym-row">
+                                    <span class="sym-bullet">*</span>
+                                    <span class="sym-key mixte-key">{pattern}</span>
+                                </div>
+                            {/each}
+                        {/if}
+                    </div>
+                {/if}
             {/if}
         {:else}
             <div class="create-row">
@@ -338,33 +411,6 @@
             </div>
         {/if}
     </div>
-
-    {#if $agentState.issue && (symbolsLoading || symbols.length > 0)}
-        <div class="sym-section">
-            <div class="sym-header">
-                <span class="sym-label">Symboles</span>
-                {#if symbolsLoading}
-                    <span class="sym-state">…</span>
-                {:else}
-                    <span class="sym-state">{symbols.length}</span>
-                {/if}
-            </div>
-            {#if !symbolsLoading && symbols.length > 0}
-                <div class="sym-scroll">
-                    {#each groupByFile(symbols) as [file, items] (file)}
-                        <div class="sym-file">{shortPath(file)}</div>
-                        {#each items as s (s.key)}
-                            <div class="sym-row" title={s.summary ?? ''}>
-                                <span class="sym-key">{s.key}</span>
-                                {#if s.role}<span class="sym-role">{s.role}</span>{/if}
-                                {#if s.summary}<span class="sym-desc">{s.summary}</span>{/if}
-                            </div>
-                        {/each}
-                    {/each}
-                </div>
-            {/if}
-        </div>
-    {/if}
 
     {#if $agentState.issue}
         <div class="plan-section">
@@ -599,84 +645,52 @@ ul { list-style: none; padding: 0; margin: 0; }
     50% { opacity: 0.3; }
 }
 
-/* ── Symboles ── */
-.sym-section {
-    flex-shrink: 0;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    max-height: 35%;
-    min-height: 2rem;
-    background: #04040c;
+/* ── Symboles + Clusters ── */
+.sym-tree {
+    margin-top: 1.25rem;
 }
-.sym-header {
+.sym-group-hd {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.28rem 1rem;
-    border-bottom: 1px solid #111;
-    flex-shrink: 0;
+    padding: 0.3rem 0 0.1rem;
 }
 .sym-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #303050;
-}
-.sym-state {
-    font-size: 0.58rem;
-    color: #252535;
-    font-family: 'JetBrains Mono', monospace;
-}
-.sym-scroll {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-}
-.sym-scroll::-webkit-scrollbar { width: 3px; }
-.sym-scroll::-webkit-scrollbar-thumb { background: #1a1a2a; border-radius: 2px; }
-.sym-file {
-    padding: 0.18rem 1rem;
-    background: #0a0a14;
-    border-bottom: 1px solid #141420;
     font-size: 0.55rem;
-    color: #2a2a3e;
-    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+}
+.coal-label { opacity: 0.7; }
+.dir-label  { opacity: 0.6; }
+.mixte-label { opacity: 0.5; }
+.sym-state {
+    font-size: 0.55rem;
+    color: var(--text-muted);
     font-family: 'JetBrains Mono', monospace;
-    position: sticky;
-    top: 0;
-    z-index: 1;
 }
 .sym-row {
     display: flex;
     align-items: baseline;
-    gap: 0.4rem;
-    padding: 0.15rem 1rem;
-    border-bottom: 1px solid #0e0e18;
+    gap: 0.35rem;
+    padding: 0.1rem 0;
     font-family: 'JetBrains Mono', monospace;
     min-width: 0;
 }
+.sym-bullet {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    opacity: 0.4;
+}
 .sym-key {
     font-size: 0.6rem;
-    color: #4a4a80;
-    flex-shrink: 0;
-    max-width: 45%;
+    color: var(--accent);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.sym-role {
-    font-size: 0.5rem;
-    color: #252538;
-    font-style: italic;
-    flex-shrink: 0;
-}
-.sym-desc {
-    font-size: 0.57rem;
-    color: #2e2e3e;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.coal-key  { color: var(--text-secondary); }
+.dir-key   { color: var(--text-secondary); opacity: 0.7; }
+.mixte-key { color: var(--text-secondary); opacity: 0.6; }
 </style>
