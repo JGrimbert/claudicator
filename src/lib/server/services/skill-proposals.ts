@@ -7,6 +7,12 @@ import { getProjectRoot } from "./projects";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+/** Type minimal requis par deduplicateSubsets (compatible avec CoalNode local). */
+export type SubsetNode = {
+    symbols: { key: string }[];
+    issues:  number[];
+};
+
 export type SkillProposal = {
     id:             string;         // hash déterministe des symboles
     skill:          string;         // titre généré par haiku
@@ -74,6 +80,48 @@ export function parseHaikuResponse(raw: string): { skill: string; description: s
         skill:       skillMatch?.[1]?.trim() ?? "unknown",
         description: descMatch?.[1]?.trim()  ?? "",
     };
+}
+
+// ── Déduplication ────────────────────────────────────────────────────────────
+
+/**
+ * Supprime les nœuds dont les symboles ET les issues sont un sous-ensemble
+ * strict d'un nœud déjà retenu (tri décroissant par score supposé en entrée).
+ */
+export function deduplicateSubsets<T extends SubsetNode>(nodes: T[]): T[] {
+    const retained: T[] = [];
+    for (const node of nodes) {
+        const symSet = new Set(node.symbols.map(s => s.key));
+        const issSet = new Set(node.issues);
+        const dominated = retained.some(keeper => {
+            const kSym = new Set(keeper.symbols.map(s => s.key));
+            const kIss = new Set(keeper.issues);
+            return [...symSet].every(s => kSym.has(s))
+                && [...issSet].every(i => kIss.has(i));
+        });
+        if (!dominated) retained.push(node);
+    }
+    return retained;
+}
+
+/**
+ * Supprime les nœuds dont la similarité Jaccard sur les symboles dépasse
+ * `threshold` avec un nœud déjà retenu (score plus élevé = prioritaire).
+ * Tri décroissant par score supposé en entrée.
+ */
+export function deduplicateByJaccard<T extends SubsetNode>(nodes: T[], threshold = 0.6): T[] {
+    const retained: T[] = [];
+    for (const node of nodes) {
+        const symSet = new Set(node.symbols.map(s => s.key));
+        const similar = retained.some(keeper => {
+            const kSym  = new Set(keeper.symbols.map(s => s.key));
+            const inter = [...symSet].filter(s => kSym.has(s)).length;
+            const union = new Set([...symSet, ...kSym]).size;
+            return union > 0 && inter / union >= threshold;
+        });
+        if (!similar) retained.push(node);
+    }
+    return retained;
 }
 
 // ── Invocation Claude Haiku ───────────────────────────────────────────────────
