@@ -286,23 +286,62 @@
         }
     }
 
-    // ── Candidats skills (coal sémantique + histCoal + commit clusters) ────────
+    // ── Candidats skills (filtrage + déduplication + cap) ─────────────────────
     type SkillCandidate = { symbols: string[]; count: number; score: number; source: "coal" | "hist" | "commit" };
-    $: histSymSets = new Set(histCoal.map(n => [...n.symbols].sort().join(",")));
+
+    function candDeduplicateSubsets(nodes: SkillCandidate[]): SkillCandidate[] {
+        const retained: SkillCandidate[] = [];
+        for (const node of nodes) {
+            const symSet = new Set(node.symbols);
+            const dominated = retained.some(k => {
+                const kSym = new Set(k.symbols);
+                return [...symSet].every(s => kSym.has(s));
+            });
+            if (!dominated) retained.push(node);
+        }
+        return retained;
+    }
+
+    function candDeduplicateByJaccard(nodes: SkillCandidate[], threshold: number): SkillCandidate[] {
+        const retained: SkillCandidate[] = [];
+        for (const node of nodes) {
+            const symSet = new Set(node.symbols);
+            const similar = retained.some(k => {
+                const kSym  = new Set(k.symbols);
+                const inter = [...symSet].filter(s => kSym.has(s)).length;
+                const union = new Set([...symSet, ...kSym]).size;
+                return union > 0 && inter / union >= threshold;
+            });
+            if (!similar) retained.push(node);
+        }
+        return retained;
+    }
+
     $: skillCandidates = ((): SkillCandidate[] => {
-        const result: SkillCandidate[] = [];
-        for (const n of coal) {
-            result.push({ symbols: n.symbols.map(s => s.key), count: n.count, score: n.score, source: "coal" });
-        }
-        for (const n of histCoal) {
-            result.push({ symbols: n.symbols, count: n.count, score: n.score, source: "hist" });
-        }
-        for (const n of commitClusters) {
-            if (!histSymSets.has([...n.symbols].sort().join(","))) {
-                result.push({ symbols: n.symbols, count: n.count, score: n.score, source: "commit" });
-            }
-        }
-        return result.sort((a, b) => b.score - a.score);
+        // 1. coal — score ≥ 6 et count ≥ 3, dédup subsets puis Jaccard
+        const coalRaw: SkillCandidate[] = coal
+            .filter(n => n.score >= 6 && n.count >= 3)
+            .map(n => ({ symbols: n.symbols.map(s => s.key), count: n.count, score: n.score, source: "coal" as const }));
+        const coalDedup = candDeduplicateByJaccard(candDeduplicateSubsets(coalRaw), 0.6);
+
+        // 2. hist — score ≥ 9 et count ≥ 3, exclure les nœuds déjà couverts par histMatch sémantique
+        const coalMatchedSyms = new Set(
+            coal.filter(n => n.histMatch).map(n => (n.histMatch!.symbols ?? []).slice().sort().join(","))
+        );
+        const histRaw: SkillCandidate[] = histCoal
+            .filter(n => n.score >= 9 && n.count >= 3)
+            .filter(n => !coalMatchedSyms.has([...n.symbols].sort().join(",")))
+            .map(n => ({ symbols: n.symbols, count: n.count, score: n.score, source: "hist" as const }));
+
+        // 3. commitClusters — count ≥ 3, exclure doublons hist
+        const histSymSets = new Set(histCoal.map(n => [...n.symbols].sort().join(",")));
+        const commitRaw: SkillCandidate[] = commitClusters
+            .filter(n => n.count >= 3 && !histSymSets.has([...n.symbols].sort().join(",")))
+            .map(n => ({ symbols: n.symbols, count: n.count, score: n.score, source: "commit" as const }));
+
+        // 4. Merge, tri score desc, dédup Jaccard cross-source, cap 12
+        const merged = [...coalDedup, ...histRaw, ...commitRaw].sort((a, b) => b.score - a.score);
+        return candDeduplicateByJaccard(merged, 0.6).slice(0, 12);
     })();
 </script>
 
@@ -667,11 +706,12 @@
             {:else if skillCandidates.length === 0}
                 <p class="hint">Aucun candidat détecté</p>
             {:else}
-                <div class="section-label section-label--coal">CANDIDATS ({skillCandidates.length})</div>
+                <div class="section-label section-label--coal">TOP {skillCandidates.length} CANDIDATS</div>
                 {#each skillCandidates as cand, i}
                     {@const open = skillCandExpanded.has(i)}
                     <div class="dir-row" class:coal-row={cand.source === "coal"} class:hist-row={cand.source !== "coal"}>
                         <button class="dir-head" onclick={() => toggleSkillCand(i)}>
+                            <span class="cand-rank">#{i + 1}</span>
                             <span class="dir-toggle">{open ? "▾" : "▸"}</span>
                             <span class="coal-preview">
                                 {#each cand.symbols.slice(0, 4) as s, si}
@@ -680,7 +720,7 @@
                                 {#if cand.symbols.length > 4}<span class="coal-more">+{cand.symbols.length - 4}</span>{/if}
                             </span>
                             <span class="skill-badge skill-badge--{cand.source === 'coal' ? 'coal' : cand.source === 'hist' ? 'historical' : 'commit'}">{cand.source === "coal" ? "sém" : cand.source === "hist" ? "hist" : "commit"}</span>
-                            <span class:coal-score={cand.source === "coal"} class:hist-score={cand.source !== "coal"}>{cand.count}×</span>
+                            <span class:coal-score={cand.source === "coal"} class:hist-score={cand.source !== "coal"}>{cand.count}× <span class="cand-score">s{cand.score}</span></span>
                         </button>
                         {#if open}
                             <div class="dir-symbols">
@@ -1190,6 +1230,19 @@
     font-family: 'JetBrains Mono', monospace;
     color: #7abf9f;
     flex-shrink: 0;
+}
+.cand-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.52rem;
+    color: #3a3a3a;
+    flex-shrink: 0;
+    min-width: 1.6rem;
+    text-align: right;
+}
+.cand-score {
+    font-size: 0.48rem;
+    opacity: 0.5;
+    font-family: 'JetBrains Mono', monospace;
 }
 .skill-badge {
     font-size: 0.45rem;

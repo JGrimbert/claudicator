@@ -8,6 +8,8 @@ import {
     buildPrompt,
     parseHaikuResponse,
     invokeHaiku,
+    deduplicateSubsets,
+    deduplicateByJaccard,
 } from "$lib/server/services/skill-proposals";
 import type { SkillProposal } from "$lib/server/services/skill-proposals";
 
@@ -34,8 +36,11 @@ export async function POST({ fetch }: { fetch: typeof globalThis.fetch }) {
     const hist = getHistoryState();
     const historicalCoal: HistCoalNode[] = hist.coal ?? [];
 
-    // 3. Filtrage par seuil
-    const filteredCoal = coal.filter(n => n.score >= 6);
+    // 3. Filtrage par seuil + déduplication (sous-ensembles puis Jaccard) + cap
+    const TOP_N = 12;
+    const beforeDedup  = coal.filter(n => n.score >= 6 && n.count >= 3);
+    const afterSubset  = deduplicateSubsets(beforeDedup);
+    const filteredCoal = deduplicateByJaccard(afterSubset, 0.6).slice(0, TOP_N);
     const filteredHist = historicalCoal.filter(n => n.score >= 9 && n.count >= 3);
 
     // 4. Déduplication : exclure les nœuds historiques déjà couverts par un histMatch
@@ -112,5 +117,11 @@ export async function POST({ fetch }: { fetch: typeof globalThis.fetch }) {
     }
 
     saveProposals(proposals);
-    return json({ proposals, generated: proposals.length });
+    return json({
+        proposals,
+        generated:       proposals.length,
+        dropped_threshold: coal.length - beforeDedup.length,
+        dropped_subset:    beforeDedup.length - afterSubset.length,
+        dropped_jaccard:   afterSubset.length - Math.min(afterSubset.length, TOP_N),
+    });
 }
