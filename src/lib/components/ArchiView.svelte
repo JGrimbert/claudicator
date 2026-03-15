@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import FileTree from './FileTree.svelte';
 
     type SemanticRegion = 'ui' | 'domain' | 'api' | 'infra' | 'store' | 'tests' | 'config';
 
@@ -87,14 +88,9 @@
                     {/if}
 
                     {#if active && data}
-                        <ul class="file-list">
-                            {#each data.files.slice(0, 20) as f}
-                                <li class="file-item">{f.replace(/^src\//, '')}</li>
-                            {/each}
-                            {#if data.files.length > 20}
-                                <li class="file-more">+{data.files.length - 20} fichiers…</li>
-                            {/if}
-                        </ul>
+                        <div class="file-tree-wrap">
+                            <FileTree paths={data.files.map(f => f.replace(/^src\//, ''))} />
+                        </div>
                     {/if}
                 </div>
             {/each}
@@ -205,29 +201,11 @@
     font-size: 0.56rem;
     font-style: italic;
 }
-.file-list {
-    list-style: none;
-    margin: 0;
-    padding: 0.25rem 0.5rem 0.3rem 1.5rem;
+.file-tree-wrap {
+    padding: 0.2rem 0.4rem 0.3rem 0.5rem;
     border-top: 1px solid #111;
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    max-height: 180px;
+    max-height: 220px;
     overflow-y: auto;
-}
-.file-item {
-    color: #2a2a3a;
     font-size: 0.56rem;
-    line-height: 1.5;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.file-item:hover { color: #555; }
-.file-more {
-    color: #222;
-    font-style: italic;
-    font-size: 0.55rem;
 }
 </style>

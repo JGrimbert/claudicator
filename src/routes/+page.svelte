@@ -16,6 +16,12 @@ import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     $: if ($issueAnalysis.running) activeMiddleTab = "roadmap";
 
     /**
+     *  TODO: floralwhite, moccasin, peachpuff
+     *  dimgrey
+     */
+
+
+    /**
      * DONE: Prompt contextuel de l'agent
      * Voir plan détaillé : plans/todo-prompt-context.md
      *

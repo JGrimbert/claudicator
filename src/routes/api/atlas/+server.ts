@@ -12,7 +12,7 @@ function walkSrc(dir: string, out: string[] = []): string[] {
         if (e.name.startsWith(".") || e.name === "node_modules") continue;
         const full = path.join(dir, e.name);
         if (e.isDirectory()) walkSrc(full, out);
-        else if (e.name.endsWith(".ts") || e.name.endsWith(".svelte")) out.push(full);
+        else if (/\.(ts|tsx|js|jsx|svelte|vue)$/.test(e.name)) out.push(full);
     }
     return out;
 }

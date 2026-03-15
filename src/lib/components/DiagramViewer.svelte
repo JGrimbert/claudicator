@@ -3,7 +3,8 @@
 
     type M = { sig: string; role: string | null; described: boolean; description: string | null; isPrivate: boolean };
     type Node = {
-        name: string;
+        name: string;         // clé unique (chemin complet pour arbres de dossiers)
+        label?: string;       // nom affiché (si différent de name)
         extendsClass: string | null;
         depth: number;
         prefix: string;
@@ -13,6 +14,7 @@
         description: string | null;
         methods: M[];
     };
+    type Section = { region: string; label: string; icon: string; tree: Node[] };
 
     interface MethodSnippet {
         key: string;
@@ -26,10 +28,11 @@
     }
 
     let summary: { total: number; described: number } | null = null;
-    let tree:    Node[] = [];
+    let sections: Section[] = [];
     let error    = "";
     let loading  = true;
-    let expanded = new Set<string>();
+    let expandedSections = new Set<string>(); // régions ouvertes
+    let expanded = new Set<string>();          // nœuds ouverts dans l'arbre
 
     // Monaco state
     let selectedMethod: { nodeName: string; sig: string; key: string } | null = null;
@@ -57,10 +60,10 @@
     function getLanguage(file: string): string {
         if (file.endsWith(".ts") || file.endsWith(".tsx")) return "typescript";
         if (file.endsWith(".js") || file.endsWith(".jsx")) return "javascript";
-        if (file.endsWith(".py")) return "python";
+        if (file.endsWith(".vue"))  return "html";
+        if (file.endsWith(".py"))   return "python";
         if (file.endsWith(".java")) return "java";
-        if (file.endsWith(".go")) return "go";
-        if (file.endsWith(".cs")) return "csharp";
+        if (file.endsWith(".go"))   return "go";
         return "javascript";
     }
 
@@ -195,7 +198,7 @@
             }
             commentDone = true;
             await loadUndescribedCount();
-            await load(); // recharger le diagramme avec les nouvelles descriptions
+            await load();
         } finally {
             commentRunning = false;
         }
@@ -209,16 +212,21 @@
             const res  = await fetch("/api/cartography/diagram");
             const body = await res.json();
             if (body.error) { error = body.error; return; }
-            summary = body.summary;
-            tree    = body.tree;
-            // Start with inheritance roots expanded, leaves collapsed
-            expanded = new Set(tree.filter(n => n.depth === 0 && hasChildren(n)).map(n => n.name));
+            summary  = body.summary;
+            sections = body.sections ?? [];
+            // Toutes les sections ouvertes par défaut
+            expandedSections = new Set(sections.map((s: Section) => s.region));
+            // Nœuds racine ayant des enfants ouverts par défaut
+            expanded = new Set(
+                sections.flatMap((s: Section) =>
+                    s.tree.filter((n, i) => n.depth === 0 && hasChildren(n, i, s.tree)).map(n => n.name)
+                )
+            );
         } catch (e: any) { error = e.message; }
         finally { loading = false; }
     }
 
-    function hasChildren(node: Node) {
-        const idx = tree.indexOf(node);
+    function hasChildren(node: Node, idx: number, tree: Node[]) {
         return idx < tree.length - 1 && tree[idx + 1].depth > node.depth;
     }
 
@@ -228,10 +236,14 @@
         expanded = n;
     }
 
-    // A node is visible if all its ancestors are expanded
-    function isVisible(node: Node, idx: number): boolean {
+    function toggleSection(region: string) {
+        const n = new Set(expandedSections);
+        n.has(region) ? n.delete(region) : n.add(region);
+        expandedSections = n;
+    }
+
+    function isVisible(node: Node, idx: number, tree: Node[]): boolean {
         if (node.depth === 0) return true;
-        // Walk backwards to find ancestors
         let ancestorDepth = node.depth - 1;
         for (let i = idx - 1; i >= 0; i--) {
             if (tree[i].depth === ancestorDepth) {
@@ -242,7 +254,6 @@
         }
         return true;
     }
-
 </script>
 
 <div class="dv">
@@ -252,91 +263,99 @@
         <div class="dv-hint err">{error}</div>
     {:else if summary}
 
-
-        <!-- ── Tree ────────────────────────────────────────────────────── -->
+        <!-- ── Tree par régions ────────────────────────────────────────── -->
         <div class="dv-tree">
-            {#each tree as node, idx}
-                {#if isVisible(node, idx)}
-                    {@const hasMethods = node.methods.length > 0}
-                    {@const hasKids    = hasChildren(node)}
-                    {@const isOpen     = expanded.has(node.name)}
-                    {@const color      = rc(node.role)}
-                    {@const covPct     = node.methods.length > 0 ? pct(node.methods.filter(m => m.described).length, node.methods.length) : null}
+            {#each sections as section}
+                {@const sectionOpen = expandedSections.has(section.region)}
+                {@const methodCount = section.tree.reduce((acc, n) => acc + n.methods.length, 0)}
 
-                    <!-- Class row -->
-                    <div class="dv-row" class:has-methods={hasMethods} class:has-kids={hasKids}>
-                        <!-- Tree prefix (connectors) -->
-                        <span class="dv-prefix">{node.prefix}</span>
+                <!-- En-tête de région -->
+                <button class="dv-section" onclick={() => toggleSection(section.region)}>
+                    <span class="dv-sec-icon">{section.icon}</span>
+                    <span class="dv-sec-label">{section.label}</span>
+                    <span class="dv-sec-count">{section.tree.length} fichiers · {methodCount} méthodes</span>
+                    <span class="dv-sec-chevron">{sectionOpen ? '▾' : '▶'}</span>
+                </button>
 
-                        <!-- Expand toggle -->
-                        {#if hasKids || hasMethods}
-                            <button class="dv-toggle" onclick={() => toggle(node.name)} title={isOpen ? "Réduire" : "Développer"}>
-                                {isOpen ? "▾" : "▸"}
-                            </button>
-                        {:else}
-                            <span class="dv-toggle-ph"></span>
-                        {/if}
+                {#if sectionOpen}
+                    {#each section.tree as node, idx}
+                        {#if isVisible(node, idx, section.tree)}
+                            {@const hasMethods = node.methods.length > 0}
+                            {@const hasKids    = hasChildren(node, idx, section.tree)}
+                            {@const isOpen     = expanded.has(node.name)}
+                            {@const color      = rc(node.role)}
+                            {@const covPct     = node.methods.length > 0 ? pct(node.methods.filter(m => m.described).length, node.methods.length) : null}
 
-                        <!-- Class name (colored by role) -->
-                        <span class="dv-cls-name" style="color:{color}">{node.name}</span>
+                            <!-- Ligne classe/fichier -->
+                            <div class="dv-row" class:has-methods={hasMethods} class:has-kids={hasKids}>
+                                <span class="dv-prefix">{node.prefix}</span>
 
-                        <!-- extends badge -->
-                        {#if node.extendsClass}
-                            <span class="dv-extends">extends {node.extendsClass}</span>
-                        {/if}
+                                {#if hasKids || hasMethods}
+                                    <button class="dv-toggle" onclick={() => toggle(node.name)} title={isOpen ? "Réduire" : "Développer"}>
+                                        {isOpen ? "▾" : "▸"}
+                                    </button>
+                                {:else}
+                                    <span class="dv-toggle-ph"></span>
+                                {/if}
 
-                        <!-- Role pill -->
-                        {#if node.role && node.role !== 'internal'}
-                            <span class="dv-role" style="--c:{color}">{node.role}</span>
-                        {/if}
+                                <span class="dv-cls-name" style="color:{color}">{node.label ?? node.name}</span>
 
-                        <!-- Coverage dots -->
-                        {#if covPct !== null}
-                            <span class="dv-cov">
-                                {#each node.methods.slice(0, 8) as m}
-                                    <span class="dv-dot" style="background:{m.described ? rc(m.role) : 'transparent'}; border-color:{rc(m.role)}"></span>
-                                {/each}
-                                {#if node.methods.length > 8}<span class="dv-more">+{node.methods.length - 8}</span>{/if}
-                            </span>
-                        {/if}
+                                {#if node.extendsClass}
+                                    <span class="dv-extends">extends {node.extendsClass}</span>
+                                {/if}
 
-                        <!-- Description if any -->
-                        {#if node.description}
-                            <span class="dv-desc">{node.description}</span>
-                        {/if}
-                    </div>
+                                {#if node.role && node.role !== 'internal'}
+                                    <span class="dv-role" style="--c:{color}">{node.role}</span>
+                                {/if}
 
-                    <!-- Methods list (when expanded) -->
-                    {#if isOpen && hasMethods}
-                        {@const methodIndent = node.prefix + (node.isLast ? "    " : "│   ")}
-                        <div class="dv-methods-block">
-                            {#each node.methods as m}
-                                {@const isActive = selectedMethod?.nodeName === node.name && selectedMethod?.sig === m.sig}
-                                <div
-                                    class="dv-mrow"
-                                    class:priv={m.isPrivate}
-                                    class:active={isActive}
-                                    title={m.description ?? ""}
-                                    role="button"
-                                    tabindex="0"
-                                    onclick={() => selectMethodSnippet(node.name, m)}
-                                    onkeydown={(e) => e.key === "Enter" && selectMethodSnippet(node.name, m)}
-                                >
-                                    <span class="dv-mpfx">{methodIndent}</span>
-                                    <span class="dv-mdot" style="background:{m.described ? rc(m.role) : 'transparent'}; border-color:{rc(m.role)}"></span>
-                                    <span class="dv-msig" class:described={m.described}>{m.sig}</span>
-                                    {#if m.role && m.role !== 'internal' && m.role !== 'helper'}
-                                        <span class="dv-mrole" style="color:{rc(m.role)}">{m.role}</span>
-                                    {/if}
+                                {#if covPct !== null}
+                                    <span class="dv-cov">
+                                        {#each node.methods.slice(0, 8) as m}
+                                            <span class="dv-dot" style="background:{m.described ? rc(m.role) : 'transparent'}; border-color:{rc(m.role)}"></span>
+                                        {/each}
+                                        {#if node.methods.length > 8}<span class="dv-more">+{node.methods.length - 8}</span>{/if}
+                                    </span>
+                                {/if}
+
+                                {#if node.description}
+                                    <span class="dv-desc">{node.description}</span>
+                                {/if}
+                            </div>
+
+                            <!-- Méthodes (quand ouvert) -->
+                            {#if isOpen && hasMethods}
+                                {@const methodIndent = node.prefix + (node.isLast ? "    " : "│   ")}
+                                <div class="dv-methods-block">
+                                    {#each node.methods as m}
+                                        {@const nodeLabel = node.label ?? node.name}
+                                        {@const isActive = selectedMethod?.nodeName === nodeLabel && selectedMethod?.sig === m.sig}
+                                        <div
+                                            class="dv-mrow"
+                                            class:priv={m.isPrivate}
+                                            class:active={isActive}
+                                            title={m.description ?? ""}
+                                            role="button"
+                                            tabindex="0"
+                                            onclick={() => selectMethodSnippet(nodeLabel, m)}
+                                            onkeydown={(e) => e.key === "Enter" && selectMethodSnippet(nodeLabel, m)}
+                                        >
+                                            <span class="dv-mpfx">{methodIndent}</span>
+                                            <span class="dv-mdot" style="background:{m.described ? rc(m.role) : 'transparent'}; border-color:{rc(m.role)}"></span>
+                                            <span class="dv-msig" class:described={m.described}>{m.sig}</span>
+                                            {#if m.role && m.role !== 'internal' && m.role !== 'helper'}
+                                                <span class="dv-mrole" style="color:{rc(m.role)}">{m.role}</span>
+                                            {/if}
+                                        </div>
+                                    {/each}
                                 </div>
-                            {/each}
-                        </div>
-                    {/if}
+                            {/if}
+                        {/if}
+                    {/each}
                 {/if}
             {/each}
         </div>
 
-        <!-- ── Agent commentaire ────────────────────────────────── -->
+        <!-- ── Agent commentaire ─────────────────────────────────────── -->
         {#if commentRunning || undescribedCount > 0 || commentDone}
             <div class="dv-comment-bar" class:dv-comment-bar--expanded={commentRunning || commentDone}>
                 {#if commentRunning}
@@ -372,7 +391,7 @@
             </div>
         {/if}
 
-        <!-- ── Role legend ───────────────────────────────────────── -->
+        <!-- ── Légende des rôles ──────────────────────────────────────── -->
         <div class="dv-legend">
             {#each Object.entries(RC).filter(([r]) => r !== 'internal') as [role, color]}
                 <span class="dv-leg-item" style="--c:{color}">
@@ -381,7 +400,7 @@
             {/each}
         </div>
 
-        <!-- ── Monaco snippet panel ──────────────────────────────── -->
+        <!-- ── Panneau snippet Monaco ─────────────────────────────────── -->
         {#if selectedMethod}
             <div class="dv-snippet">
                 <div class="dv-snippet-header">
@@ -416,6 +435,47 @@
     color: #777;
 }
 
+/* ── En-tête de région ── */
+.dv-section {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.28rem 0.75rem;
+    cursor: pointer;
+    background: #07070f;
+    border-bottom: 1px solid #111;
+    border-top: 1px solid #0e0e1a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    transition: background 0.1s;
+    margin-bottom: 0.6em;
+}
+.dv-section:hover { background: #0c0c1c; }
+.dv-sec-icon {
+    font-size: 0.55rem;
+    color: #2a2a4a;
+    flex-shrink: 0;
+}
+.dv-sec-label {
+    color: #3a3a6a;
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+.dv-sec-count {
+    font-size: 0.52rem;
+    color: #202030;
+    flex: 1;
+    padding-left: 0.4rem;
+}
+.dv-sec-chevron {
+    font-size: 0.5rem;
+    color: #252535;
+    flex-shrink: 0;
+}
 
 /* ── Agent commentaire ── */
 .dv-comment-bar {
@@ -465,9 +525,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.dv-clog-error {
-    color: #f97316;
-}
+.dv-clog-error { color: #f97316; }
 .dv-comment-btn {
     background: #1a1040;
     border: 1px solid #4a3a8a;
@@ -483,7 +541,7 @@
 }
 .dv-comment-btn:hover { background: #251850; }
 
-/* Role legend (footer) */
+/* ── Légende ── */
 .dv-legend {
     flex-shrink: 0;
     display: flex;
@@ -508,17 +566,17 @@
     background: var(--c, #555);
 }
 
-/* ── Tree ────────────────────────────────────────────────── */
+/* ── Tree ── */
 .dv-tree {
     flex: 1;
     overflow-y: auto;
-    padding: 0.3rem 0 1rem;
+    padding-bottom: 1rem;
 }
 .dv-tree::-webkit-scrollbar { width: 3px; }
 .dv-tree::-webkit-scrollbar-track { background: transparent; }
 .dv-tree::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
 
-/* Class row */
+/* Ligne classe/fichier */
 .dv-row {
     display: flex;
     align-items: center;
@@ -574,7 +632,7 @@
     letter-spacing: 0.04em;
 }
 
-/* Coverage dots */
+/* Dots de couverture */
 .dv-cov {
     display: flex;
     align-items: center;
@@ -606,7 +664,7 @@
     padding-left: 0.3rem;
 }
 
-/* Methods block */
+/* Bloc méthodes */
 .dv-methods-block {
     background: var(--bg-deep);
     border-bottom: 1px solid var(--border);
@@ -616,10 +674,13 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.04rem 0.75rem 0.04rem 0;
+    cursor: pointer;
     transition: background 0.06s;
 }
 .dv-mrow:hover { background: var(--bg-panel); }
 .dv-mrow.priv { opacity: 0.35; }
+.dv-mrow.active { background: var(--bg-subtle); }
+.dv-mrow.active .dv-msig { color: var(--accent-hover); }
 .dv-mpfx {
     white-space: pre;
     font-size: 0.62rem;
@@ -655,18 +716,7 @@
 .dv-hint { padding: 1rem; color: #222; font-size: 0.72rem; }
 .dv-hint.err { color: #7a2020; }
 
-/* ── Méthode active ──────────────────────────────────────── */
-.dv-mrow {
-    cursor: pointer;
-}
-.dv-mrow.active {
-    background: var(--bg-subtle);
-}
-.dv-mrow.active .dv-msig {
-    color: var(--accent-hover);
-}
-
-/* ── Panneau snippet Monaco ──────────────────────────────── */
+/* ── Panneau snippet Monaco ── */
 .dv-snippet {
     flex-shrink: 0;
     height: 260px;
