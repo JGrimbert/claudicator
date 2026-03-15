@@ -1,8 +1,9 @@
 /** Clusters de symboles — par dossier, patterns mixtes cross-dir, coalescence (GET) */
 import { json } from "@sveltejs/kit";
 import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
-import { getIssuesWithBodies } from "$lib/server/services/github";
-import { searchMethods } from "$lib/server/services/cartography";
+import { getIssuesWithBodies }               from "$lib/server/services/github";
+import { searchMethods }                     from "$lib/server/services/cartography";
+import { getHistoryState }                   from "$lib/server/services/git-history";
 
 export type SymbolEntry = { name: string; issues: number[] };
 
@@ -36,10 +37,20 @@ export type CoalNode = {
     count:   number;
 };
 
+export type HistoricalCoalNode = {
+    symbols: string[];
+    count:   number;
+    score:   number;
+};
+
 export type ClustersResponse = {
-    dirs:  DirCluster[];
-    mixed: MixedCluster[];
-    coal:  CoalNode[];
+    dirs:      DirCluster[];
+    mixed:     MixedCluster[];
+    coal:      CoalNode[];
+    historical?: {
+        coal:      HistoricalCoalNode[];
+        isUpToDate: boolean;
+    };
 };
 
 function parentDir(filePath: string): string {
@@ -214,5 +225,15 @@ export async function GET() {
     }
     coal.sort((a, b) => b.score - a.score || b.count - a.count);
 
-    return json({ dirs, mixed, coal });
+    // ── 5. Historique git (optionnel) ─────────────────────────────────────────
+    let historical: ClustersResponse["historical"];
+    try {
+        const hist = getHistoryState();
+        if (hist.coal.length > 0) {
+            const isUpToDate = !!hist.headSha && hist.headSha === hist.lastProcessedSha;
+            historical = { coal: hist.coal, isUpToDate };
+        }
+    } catch { /* absent ou corrompu */ }
+
+    return json({ dirs, mixed, coal, ...(historical ? { historical } : {}) });
 }

@@ -8,19 +8,89 @@
     type MixedCluster = { dirs: string[]; symbols: MixedSymbol[]; issues: number[]; count: number };
     type CoalSymbol   = { key: string; dir: string };
     type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number };
+    type HistCoalNode = { symbols: string[]; count: number; score: number };
 
-    let activeTab: "clusters" | "étape" | "étapes" = "clusters";
+    let activeTab: "clusters" | "étape" | "étapes" | "history" = "clusters";
     let dirs:  DirCluster[]   = [];
     let mixed: MixedCluster[] = [];
     let coal:  CoalNode[]     = [];
+    type IssueSlot = { issueNumber: number; commitCount: number; symbols: string[] };
+
+    let histCoal:    HistCoalNode[] = [];
+    let histUpToDate = false;
     let clustersLoading = false;
     let clustersLoaded  = false;
+
+    // ── Onglet history ────────────────────────────────────────────────────────
+    let issueSlots:    IssueSlot[] = [];
+    let historyLoaded  = false;
+
+    async function loadHistory() {
+        try {
+            const res = await fetch("/api/git-history");
+            if (!res.ok) return;
+            const data = await res.json();
+            issueSlots   = data.slots     ?? [];
+            histUpToDate = data.isUpToDate ?? false;
+        } catch {}
+        finally { historyLoaded = true; }
+    }
+
+    $: if (activeTab === "history" && !historyLoaded) loadHistory();
+
+    // ── Git history run ───────────────────────────────────────────────────────
+    let gitRunning  = false;
+    let gitProgress = "";
+
+    async function runGitHistory() {
+        if (gitRunning) return;
+        gitRunning  = true;
+        gitProgress = "démarrage…";
+        try {
+            const res = await fetch("/api/git-history/run", { method: "POST" });
+            if (!res.ok || !res.body) { gitProgress = "erreur"; return; }
+            const reader = res.body.getReader();
+            const dec    = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const lines = buf.split("\n\n");
+                buf = lines.pop() ?? "";
+                for (const line of lines) {
+                    const m = line.match(/^data: (.+)$/m);
+                    if (!m) continue;
+                    const ev = JSON.parse(m[1]);
+                    if (ev.type === "progress") gitProgress = `${ev.processed}/${ev.total}`;
+                    if (ev.type === "done")     gitProgress = `✓ ${ev.processedCount} commits, ${ev.coalCount} concepts`;
+                    if (ev.type === "error")    gitProgress = `✗ ${ev.message}`;
+                }
+            }
+        } catch (e: any) {
+            gitProgress = `✗ ${e.message}`;
+        } finally {
+            gitRunning = false;
+            // Rafraîchir history + clusters
+            historyLoaded  = false;
+            clustersLoaded = false;
+            loadHistory();
+            loadClusters();
+        }
+    }
 
     let coalExpanded = new Set<number>();
     function toggleCoal(i: number) {
         const next = new Set(coalExpanded);
         if (next.has(i)) next.delete(i); else next.add(i);
         coalExpanded = next;
+    }
+
+    let histExpanded = new Set<number>();
+    function toggleHist(i: number) {
+        const next = new Set(histExpanded);
+        if (next.has(i)) next.delete(i); else next.add(i);
+        histExpanded = next;
     }
 
     $: activeGroup = $planGroups[$activePlanGroupIndex] ?? null;
@@ -37,9 +107,11 @@
             const res = await fetch("/api/clusters");
             if (res.ok) {
                 const data = await res.json();
-                dirs  = data.dirs  ?? [];
-                mixed = data.mixed ?? [];
-                coal  = data.coal  ?? [];
+                dirs        = data.dirs  ?? [];
+                mixed       = data.mixed ?? [];
+                coal        = data.coal  ?? [];
+                histCoal    = data.historical?.coal      ?? [];
+                histUpToDate = data.historical?.isUpToDate ?? false;
             }
         } catch { /* silencieux */ }
         finally {
@@ -90,6 +162,7 @@
         <button class="tab" class:tab-active={activeTab === "clusters"} onclick={() => activeTab = "clusters"}>clusters</button>
         <button class="tab" class:tab-active={activeTab === "étape"}    onclick={() => activeTab = "étape"}>étape</button>
         <button class="tab" class:tab-active={activeTab === "étapes"}   onclick={() => activeTab = "étapes"}>étapes</button>
+        <button class="tab" class:tab-active={activeTab === "history"}  onclick={() => activeTab = "history"}>history</button>
         {#if activeTab === "clusters" && clustersLoaded}
             <button class="tab-refresh" onclick={() => { clustersLoaded = false; loadClusters(); }} title="Recalculer">↻</button>
         {/if}
@@ -102,6 +175,42 @@
             {:else if dirs.length === 0 && mixed.length === 0 && coal.length === 0}
                 <p class="hint">{clustersLoaded ? "Aucun cluster détecté" : "Chargement…"}</p>
             {:else}
+                <!-- ── Historique git (en tête) ── -->
+                {#if histCoal.length > 0}
+                    <div class="section-label section-label--hist">
+                        HISTORIQUE
+                        {#if histUpToDate}<span class="hist-badge hist-badge--ok">à jour</span>{:else}<span class="hist-badge hist-badge--stale">périmé</span>{/if}
+                    </div>
+                    {#each histCoal as node, i}
+                        {@const open = histExpanded.has(i)}
+                        <div class="dir-row hist-row">
+                            <button class="dir-head" onclick={() => toggleHist(i)}>
+                                <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                                <span class="coal-preview">
+                                    {#each node.symbols.slice(0, 4) as s, si}
+                                        <span class="hist-sym-tag">{s.split(".").at(-1)}</span>{#if si < Math.min(node.symbols.length, 4) - 1}<span class="coal-dot"> · </span>{/if}
+                                    {/each}
+                                    {#if node.symbols.length > 4}<span class="coal-more">+{node.symbols.length - 4}</span>{/if}
+                                </span>
+                                <span class="hist-score">{node.count}×</span>
+                            </button>
+                            {#if open}
+                                <div class="dir-symbols">
+                                    {#each node.symbols as sym}
+                                        <div class="sym-line">
+                                            <button
+                                                class="sym-name"
+                                                class:sym-active={$clusterFocusedSymbol?.name === sym}
+                                                onclick={() => clusterFocusedSymbol.set({ name: sym, dir: "" })}
+                                            >{sym.split(".").at(-1)}</button>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                {/if}
+
                 <!-- ── Clusters par dossier ── -->
                 {#if dirs.length > 0}
                     <div class="section-label">PAR DOSSIER</div>
@@ -300,6 +409,36 @@
                 <p class="hint">Sélectionner une étape</p>
             {/if}
 
+        {:else if activeTab === "history"}
+            <!-- ── Header bouton + progress ── -->
+            <div class="hist-toolbar">
+                <button
+                    class="hist-run-btn"
+                    class:hist-run-btn--running={gitRunning}
+                    onclick={runGitHistory}
+                    disabled={gitRunning}
+                >{gitRunning ? "analyse…" : "↯ analyser git"}</button>
+                {#if gitProgress}
+                    <span class="hist-progress">{gitProgress}</span>
+                {:else if historyLoaded}
+                    <span class="hist-progress">{histUpToDate ? "à jour" : issueSlots.length > 0 ? "périmé" : "non analysé"}</span>
+                {/if}
+            </div>
+            <!-- ── Liste des issues ── -->
+            {#if issueSlots.length > 0}
+                {#each issueSlots as slot}
+                    <div class="hist-slot">
+                        <IssueChip number={slot.issueNumber} />
+                        <span class="hist-slot-meta">{slot.commitCount} commit{slot.commitCount > 1 ? "s" : ""}</span>
+                        {#if slot.symbols.length > 0}
+                            <span class="hist-slot-sym">{slot.symbols.length} sym</span>
+                        {/if}
+                    </div>
+                {/each}
+            {:else if historyLoaded}
+                <p class="hint">Aucune issue référencée dans les commits.<br>Lancez l'analyse pour indexer l'historique.</p>
+            {/if}
+
         {:else}
             {#if $planGroups.length === 0}
                 <p class="hint">Aucune roadmap disponible</p>
@@ -397,6 +536,7 @@
 .section-label:first-child { border-top: none; margin-top: 0; }
 .section-label--coal  { color: #3a7f8f; }
 .section-label--mixed { color: #7a5e1e; }
+.section-label--hist  { color: #7a4a7a; display: flex; align-items: center; gap: 0.5rem; }
 /* ── Clusters / arbo ── */
 .dir-row {
     border-bottom: 1px solid #111;
@@ -572,6 +712,86 @@
     flex-wrap: wrap;
     gap: 0.35rem;
 }
+/* ── History tab ── */
+.hist-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #111;
+    flex-shrink: 0;
+}
+.hist-run-btn {
+    background: none;
+    border: 1px solid #7a4a7a;
+    border-radius: 3px;
+    color: #b070b0;
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s;
+}
+.hist-run-btn:hover:not(:disabled) { color: cornsilk; border-color: cornsilk; }
+.hist-run-btn:disabled { opacity: 0.5; cursor: default; }
+.hist-run-btn--running { animation: blink-git 0.8s step-start infinite; }
+.hist-progress {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #7a4a7a;
+}
+.hist-slot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.22rem 0.75rem;
+    border-bottom: 1px solid #111;
+}
+.hist-slot-meta {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #7a4a7a;
+}
+.hist-slot-sym {
+    font-size: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #444;
+    margin-left: auto;
+}
+
+@keyframes blink-git { 50% { opacity: 0.3; } }
+.hist-badge {
+    font-size: 0.48rem;
+    border-radius: 2px;
+    padding: 0.05rem 0.3rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+.hist-badge--ok    { color: #3a7a48; background: #0a160c; }
+.hist-badge--stale { color: #7a5e1e; background: #140e04; }
+.hist-row .dir-head:hover { background: #100a14; }
+.hist-row .dir-toggle { color: #7a4a7a; opacity: 0.5; }
+.hist-sym-tag {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #c090c0;
+}
+.hist-score {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #7a4a7a;
+    flex-shrink: 0;
+    margin-right: 0.3rem;
+}
+.hist-row .sym-name         { color: #b070b0; }
+.hist-row .sym-name:hover,
+.hist-row .sym-name.sym-active { color: cornsilk; }
+.git-progress {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #7a4a7a;
+}
+
 /* ── Étape arbo ── */
 .step-arbo { padding: 0.25rem 0.75rem 1rem; }
 .sa-sec { margin-bottom: 0.15rem; }
