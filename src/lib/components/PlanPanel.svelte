@@ -122,7 +122,7 @@
         } catch { /* silencieux */ }
     }
 
-    onMount(loadTaskStatuses);
+    onMount(() => { loadTaskStatuses(); loadSkills(); });
 
     // ── Créer les tasks pour un groupe ────────────────────────────────────
     let groupFeedback: Record<string, string> = {};
@@ -238,6 +238,40 @@
         if (next.has(dir)) next.delete(dir); else next.add(dir);
         expanded = next;
     }
+
+    // ── Skills générés ────────────────────────────────────────────────────────
+    type SkillProposal = {
+        id: string; skill: string; source: "coal" | "historical";
+        description: string; clusterSymbols: string[]; clusterIssues: number[];
+        score: number; generatedAt: string;
+    };
+
+    let skillProposals: SkillProposal[] = [];
+    let skillsGenerating = false;
+    let skillsError = "";
+
+    async function loadSkills() {
+        try {
+            const res = await fetch("/api/skills/proposals");
+            if (res.ok) skillProposals = await res.json();
+        } catch { /* silencieux */ }
+    }
+
+    async function generateSkills() {
+        if (skillsGenerating) return;
+        skillsGenerating = true;
+        skillsError = "";
+        try {
+            const res = await fetch("/api/skills/generate", { method: "POST" });
+            if (!res.ok) { skillsError = `Erreur ${res.status}`; return; }
+            const data = await res.json();
+            skillProposals = data.proposals ?? [];
+        } catch (e: any) {
+            skillsError = e.message ?? "Erreur inconnue";
+        } finally {
+            skillsGenerating = false;
+        }
+    }
 </script>
 
 <div class="panel">
@@ -345,6 +379,24 @@
                             {/if}
                         </div>
                     {/each}
+                    <!-- ── Skills générés ── -->
+                    <div class="skills-bar">
+                        <button class="skills-gen-btn" onclick={generateSkills} disabled={skillsGenerating}>
+                            {skillsGenerating ? "Génération…" : "Générer les skills"}
+                        </button>
+                        {#if skillsError}<span class="skills-error">{skillsError}</span>{/if}
+                    </div>
+                    {#if skillProposals.length > 0}
+                        <div class="skills-list">
+                            {#each skillProposals as p}
+                                <div class="skill-row">
+                                    <span class="skill-title">{p.skill}</span>
+                                    <span class="skill-badge skill-badge--{p.source}">{p.source === "coal" ? "sém" : "git"}</span>
+                                    {#if p.description}<span class="skill-desc">{p.description}</span>{/if}
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
                 {/if}
 
                 <!-- ── Mixed clusters ── -->
@@ -1022,6 +1074,67 @@
     font-size: 0.6rem;
     font-family: 'JetBrains Mono', monospace;
     color: #7a4a7a;
+}
+/* ── Skills générés ── */
+.skills-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem 0.3rem;
+    border-top: 1px solid #111;
+}
+.skills-gen-btn {
+    background: none;
+    border: 1px solid #3a7f8f;
+    border-radius: 3px;
+    color: #5ab0c0;
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s;
+}
+.skills-gen-btn:hover:not(:disabled) { color: cornsilk; border-color: cornsilk; }
+.skills-gen-btn:disabled { opacity: 0.5; cursor: default; }
+.skills-error {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #c05050;
+}
+.skills-list {
+    padding: 0.15rem 0;
+}
+.skill-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.22rem 0.6rem;
+    border-bottom: 1px solid #0a1418;
+}
+.skill-title {
+    font-size: 0.62rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #7abf9f;
+    flex-shrink: 0;
+}
+.skill-badge {
+    font-size: 0.45rem;
+    font-family: 'JetBrains Mono', monospace;
+    border-radius: 2px;
+    padding: 0.05rem 0.28rem;
+    flex-shrink: 0;
+}
+.skill-badge--coal       { color: #3a7f8f; background: #040e10; }
+.skill-badge--historical { color: #7a4a7a; background: #100a14; }
+.skill-desc {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #555;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ── Étape arbo ── */
