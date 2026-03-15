@@ -2,7 +2,7 @@
 import { json } from "@sveltejs/kit";
 import { getCurrentProject } from "$lib/server/services/projects";
 import { createIssuePlan } from "$lib/server/agent/issue";
-import { getIssue, getSubIssues } from "$lib/server/services/github";
+import { getIssue, getSubIssues, updateIssue } from "$lib/server/services/github";
 
 
 
@@ -34,6 +34,21 @@ export async function GET({ url }) {
             state: s.state
         }))
     });
+}
+
+/** Met à jour titre et/ou corps d'une issue */
+export async function PATCH({ request }) {
+    const { number, title, body } = await request.json();
+    if (!number) return json({ error: "number manquant" }, { status: 400 });
+
+    const owner = getCurrentProject()?.owner ?? "";
+    const repo  = getCurrentProject()?.repo  ?? "";
+
+    const issue = await updateIssue(owner, repo, number, {
+        ...(title !== undefined ? { title } : {}),
+        ...(body  !== undefined ? { body  } : {}),
+    });
+    return json({ number: issue.number, title: issue.title, body: issue.body ?? "" });
 }
 
 /** Génère un plan pour une issue donnée */
