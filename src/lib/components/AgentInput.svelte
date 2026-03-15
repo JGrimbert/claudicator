@@ -34,13 +34,14 @@
     let loadedId       = $state("");
     let preLaunching   = $state(false);
 
-    let taskText  = $state("");
-    let planMode  = $state(true);
-    let docMode   = $state(true);
-    let atlasMode = $state(true);
-    let hasPlan   = $state(false);
-    let sections  = $state<Section[]>([]);
-    let collapsed = $state(new Set<string>());
+    let taskText    = $state("");
+    let refineText  = $state("");
+    let planMode    = $state(true);
+    let docMode     = $state(true);
+    let atlasMode   = $state(true);
+    let hasPlan     = $state(false);
+    let sections    = $state<Section[]>([]);
+    let collapsed   = $state(new Set<string>());
 
     function toggleSec(name: string) {
         const next = new Set(collapsed);
@@ -103,8 +104,18 @@
                 parts.push(`\n${s.key}\n${s.content}\n`);
             }
         }
+        if (refineText.trim()) {
+            parts.push(`\nRAFFINEMENT\n${refineText.trim()}\n`);
+        }
         return parts.join('');
     }
+
+    // ── Reset refineText à chaque nouvelle task ────────────────────────────────
+    $effect(() => {
+        const id = task?.id ?? "";
+        if (!id || id === loadedId) return;
+        refineText = "";
+    });
 
     // ── Chargement du contexte ─────────────────────────────────────────────────
     $effect(() => {
@@ -223,6 +234,13 @@
             <div class="doc-sec sec-input">
                 {#if hasPlan}
                     <pre class="plan-md">{taskText}</pre>
+                    <textarea
+                        class="field-ta refine-ta"
+                        bind:value={refineText}
+                        placeholder="Refinement… (Entrée pour lancer)"
+                        rows="3"
+                        onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); launch(); } }}
+                    ></textarea>
                 {:else}
                     <textarea
                         class="field-ta"
@@ -334,7 +352,7 @@
                 {#if $agentRunState.running || preLaunching}
                     <span class="ai-spin">{FRAMES[spinFrame]}</span>
                 {/if}
-                <span class="ai-launch-label">Lancer l'agent</span><span class="ai-launch-arrow"> →</span>
+                <span class="ai-launch-label">{hasPlan ? "Affiner" : "Lancer l'agent"}</span><span class="ai-launch-arrow"> →</span>
             </button>
         </div>
 
@@ -473,6 +491,15 @@
 .field-ta:focus { color: #ccc; border-color: var(--border-strong); }
 .field-ta:disabled { opacity: 0.45; cursor: wait; }
 .field-ta::placeholder { color: var(--border-strong); }
+
+/* ── Textarea refinement ── */
+.refine-ta {
+    margin-top: 0.4rem;
+    border-color: #2a2a4a;
+    rows: 3;
+}
+.refine-ta:focus { border-color: var(--accent); color: #ccc; }
+.refine-ta::placeholder { color: #2a2a3a; font-style: italic; }
 
 /* ── Blocs read-only ── */
 .ro-block { display: flex; flex-direction: column; gap: 0.1rem; }

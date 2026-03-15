@@ -31,16 +31,18 @@ export type CoalSymbol = { key: string; dir: string };
  * score = symbols.length × issues.length (densité de la coalescence)
  */
 export type CoalNode = {
-    symbols: CoalSymbol[];
-    issues:  number[];
-    score:   number;
-    count:   number;
+    symbols:    CoalSymbol[];
+    issues:     number[];
+    score:      number;
+    count:      number;
+    histMatch?: { symbols: string[]; count: number; issues: number[] };
 };
 
 export type HistoricalCoalNode = {
     symbols: string[];
     count:   number;
     score:   number;
+    issues:  number[];
 };
 
 export type ClustersResponse = {
@@ -234,6 +236,27 @@ export async function GET() {
             historical = { coal: hist.coal, isUpToDate };
         }
     } catch { /* absent ou corrompu */ }
+
+    // ── 6. Annotation histMatch sur les nœuds de coalescence ─────────────────
+    if (historical) {
+        for (const node of coal) {
+            const coalKeys = new Set(node.symbols.map(s => s.key));
+            let bestNode: HistoricalCoalNode | null = null;
+            let bestRatio = 0;
+
+            for (const hNode of historical.coal) {
+                const inter = hNode.symbols.filter(s => coalKeys.has(s));
+                if (inter.length < 2) continue;
+                const ratio = inter.length / hNode.symbols.length;
+                if (ratio > bestRatio) { bestNode = hNode; bestRatio = ratio; }
+            }
+
+            if (bestNode && bestRatio >= 0.5) {
+                const inter = bestNode.symbols.filter(s => coalKeys.has(s));
+                node.histMatch = { symbols: inter, count: bestNode.count, issues: bestNode.issues ?? [] };
+            }
+        }
+    }
 
     return json({ dirs, mixed, coal, ...(historical ? { historical } : {}) });
 }

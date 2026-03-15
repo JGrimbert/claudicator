@@ -246,10 +246,12 @@
                 const toSelect = tasks.find(t => t.id === pendingId);
                 if (toSelect) { await selectTask(toSelect); return; }
             }
-            if (selected && selected.status === "implementation" && !planContent && !planLoading) {
-                await loadPlan(selected.id);
-                if (planContent && selectedPanel === "plan") selectedPanel = "implement";
-            }
+            // Recharger le plan si le fichier existe mais que le contenu est absent de l'UI
+        const terminalStatus = selected?.status === "merged" || selected?.status === "failed";
+        if (selected?.hasPlan && !planContent && !planLoading && !terminalStatus) {
+            await loadPlan(selected.id);
+            if (planContent && selectedPanel === "plan") selectedPanel = "implement";
+        }
         })();
     }
 
@@ -368,10 +370,10 @@
         linkedIssueState = null;
         const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
-        // Ne bascule le centre que sur sélection explicite, et seulement pour tasks actives
-        if (!silent && initialTask.status !== "merged" && initialTask.status !== "failed") {
+        // Toujours activer la scène plan pour une task active (même au démarrage)
+        if (initialTask.status !== "merged" && initialTask.status !== "failed") {
             planModeTask.set({ id: initialTask.id, title: initialTask.title, issueNumber: initialTask.issueNumber });
-            consoleTab.set("symbols");
+            if (!silent) consoleTab.set("symbols");
         }
 
         let task = initialTask;
