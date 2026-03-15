@@ -1,6 +1,6 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
-    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick } from "$lib/stores/agent";
+    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick, issueStates, hasInvalidatedSlots } from "$lib/stores/agent";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
@@ -165,6 +165,7 @@
         loadResult();
         loadTaskStatuses();
         loadRoadmaps();
+        loadSnapshot();
     });
     onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
@@ -180,6 +181,19 @@
         if (!logArea) return;
         const atBottom = logArea.scrollHeight - logArea.scrollTop - logArea.clientHeight < 40;
         autoScroll = atBottom;
+    }
+
+    // Charger le snapshot pour alimenter issueStates (détection issues fermées)
+    async function loadSnapshot() {
+        try {
+            const r = await fetch("/api/issues/snapshot");
+            if (!r.ok) return;
+            const { snapshot } = await r.json();
+            if (!snapshot?.length) return;
+            const map = new Map<number, string>();
+            for (const s of snapshot) map.set(s.number, s.state ?? "open");
+            issueStates.set(map);
+        } catch { /* silencieux */ }
     }
 
     // Charger le résultat existant depuis le serveur au montage
@@ -440,6 +454,50 @@
         chatMessage = "";
     }
 
+    async function triggerRegenerate() {
+        const roadmapId = $issueAnalysis.roadmapId;
+        issueAnalysis.update(s => ({ ...s, running: true, result: null, logs: [], dismissed: false }));
+        mermaidRendered = false;
+        try {
+            const res = await fetch("/api/issues/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ roadmapId })
+            });
+            if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, running: false })); return; }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+                    try {
+                        const entry = JSON.parse(part.slice(5).trim());
+                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
+                    } catch { /* ignore */ }
+                }
+            }
+        } finally {
+            const url = roadmapId ? `/api/issues/analysis?id=${roadmapId}` : "/api/issues/analysis";
+            try {
+                const r = await fetch(url);
+                if (r.ok) {
+                    const text = await r.text();
+                    if (text.trim()) issueAnalysis.update(s => ({ ...s, running: false, result: text }));
+                    // Recharger le snapshot pour détecter les nouvelles clôtures
+                    await loadSnapshot();
+                    return;
+                }
+            } catch { /* silencieux */ }
+            issueAnalysis.update(s => ({ ...s, running: false }));
+        }
+    }
+
     // ── Parser les groupes depuis le texte Markdown de l'analyse ──────────
     type Group = { name: string; issues: number[]; dependsOn: string[]; summary: string };
 
@@ -661,6 +719,13 @@
 
     {:else if $issueAnalysis.result}
         <div class="result-area">
+            {#if $hasInvalidatedSlots}
+                <div class="invalidation-banner">
+                    <span class="inv-icon">⚠</span>
+                    Cette roadmap contient des issues fermées.
+                    <button class="btn-regen" onclick={triggerRegenerate}>Régénérer la roadmap</button>
+                </div>
+            {/if}
             <div class="roadmap-inline">
             <!-- Diagramme Mermaid -->
             {#if extractMermaid($issueAnalysis.result)}
@@ -1140,4 +1205,30 @@
 }
 .chat-send:hover:not(:disabled) { background: #251850; }
 .chat-send:disabled { opacity: 0.4; cursor: default; }
+.invalidation-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6rem;
+    color: #c87a20;
+    background: #120a00;
+    border: 1px solid #3a1e00;
+    border-radius: 3px;
+    padding: 0.35rem 0.6rem;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+}
+.inv-icon { font-size: 0.75rem; }
+.btn-regen {
+    margin-left: auto;
+    font-size: 0.58rem;
+    color: #c87a20;
+    background: none;
+    border: 1px solid #4a2a00;
+    border-radius: 3px;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+}
+.btn-regen:hover { color: cornsilk; border-color: #8a5a00; }
 </style>

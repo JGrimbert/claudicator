@@ -20,10 +20,19 @@ function saveAnalysis(content: string, roadmapId?: string | null) {
     }
 }
 
-/** Persiste un snapshot JSON des issues */
-function saveSnapshot(issues: Array<{ number: number; title: string; updatedAt: string }>) {
+/** Persiste un snapshot JSON des issues, en conservant les états closed du snapshot précédent */
+function saveSnapshot(issues: Array<{ number: number; title: string; updatedAt: string; state?: string }>) {
     fs.mkdirSync(".agent", { recursive: true });
-    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(issues, null, 2), "utf-8");
+    let merged = issues;
+    if (fs.existsSync(SNAPSHOT_FILE)) {
+        try {
+            const old: typeof issues = JSON.parse(fs.readFileSync(SNAPSHOT_FILE, "utf-8"));
+            const openNumbers = new Set(issues.map(i => i.number));
+            const closedEntries = old.filter(s => !openNumbers.has(s.number)).map(s => ({ ...s, state: "closed" }));
+            merged = [...issues, ...closedEntries];
+        } catch { /* ignore */ }
+    }
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(merged, null, 2), "utf-8");
 }
 
 /** Endpoint POST : déclenche une analyse GitHub */
@@ -42,7 +51,7 @@ export async function POST({ request }: { request: Request }) {
     }
 
     let prompt: string;
-    let snapshotData: Array<{ number: number; title: string; updatedAt: string }>;
+    let snapshotData: Array<{ number: number; title: string; updatedAt: string; state?: string }>;
     try {
         const raw = await getIssuesWithBodies(owner, repo);
         // Enrichir avec les sub-issues
@@ -57,7 +66,7 @@ export async function POST({ request }: { request: Request }) {
         const prepared = await prepareIssues(enriched);
         const diagram = loadProjectDiagram(project?.path ?? process.cwd());
         prompt = buildAnalysisPrompt(prepared, diagram);
-        snapshotData = raw.map(i => ({ number: i.number, title: i.title, updatedAt: i.updatedAt }));
+        snapshotData = raw.map(i => ({ number: i.number, title: i.title, updatedAt: i.updatedAt, state: (i as any).state ?? "open" }));
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message ?? String(err) }), {
             status: 500, headers: { "Content-Type": "application/json" }

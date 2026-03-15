@@ -32,7 +32,9 @@
       "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|warning|✓|✗\\)\" | head -20)",
       "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|Error|warning|✓|✗\\)\" | head -20)",
       "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|Error|✓|✗\\)\" | head -10)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cat:*)",
+      "Bash(python:*)"
     ]
   }
 }
