@@ -87,6 +87,18 @@ export async function createIssue(owner: string, repo: string, title: string, bo
     return data;
 }
 
+/** Met à jour le titre et/ou le corps d'une issue */
+export async function updateIssue(
+    owner: string, repo: string, number: number,
+    changes: { title?: string; body?: string }
+) {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.update({
+        owner, repo, issue_number: number, ...changes
+    });
+    return data;
+}
+
 /** Récupère les sous-issues d'une issue */
 export async function getSubIssues(owner: string, repo: string, number: number) {
     const octokit = getOctokit();

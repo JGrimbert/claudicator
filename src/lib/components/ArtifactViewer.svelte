@@ -3,9 +3,106 @@
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
     let prevIssue = 0;
-    $: if ($agentState.issue?.number && $agentState.issue.number !== prevIssue) {
-        prevIssue = $agentState.issue.number;
-        loadPlan($agentState.issue.number);
+    let prevBodyLoaded = false;
+
+    $: {
+        const _issue = $agentState.issue;
+        if (_issue?.number) {
+            const bodyLoaded = !!(_issue.body);
+            if (_issue.number !== prevIssue) {
+                prevIssue = _issue.number;
+                prevBodyLoaded = bodyLoaded;
+                loadPlan(_issue.number);
+                loadSymbols(_issue.title, _issue.body ?? '');
+            } else if (bodyLoaded && !prevBodyLoaded) {
+                prevBodyLoaded = true;
+                loadSymbols(_issue.title, _issue.body ?? '');
+            }
+        }
+    }
+
+    // ─── Symboles ─────────────────────────────────────────────────────────────
+    type SymRow = { key: string; file: string; role: string | null; summary: string | null };
+
+    let symbols: SymRow[] = [];
+    let symbolsLoading = false;
+
+    /** Mots significatifs (≥ 3 chars, hors stopwords) */
+    function keywords(text: string): string[] {
+        const stop = new Set(['les', 'des', 'une', 'avec', 'dans', 'pour', 'par', 'sur', 'son',
+            'ses', 'leur', 'leurs', 'est', 'sont', 'the', 'and', 'with', 'from',
+            'that', 'this', 'they', 'have', 'selon', 'projet', 'chemin']);
+        return text.toLowerCase()
+            .split(/[\s\n\r\\\/.,;:!?()\[\]{}#*`|]+/)
+            .filter(w => w.length >= 3 && !stop.has(w));
+    }
+
+    async function loadSymbols(title: string, body: string) {
+        symbolsLoading = true;
+        symbols = [];
+
+        const queryText = [title, body].filter(Boolean).join('\n').slice(0, 500);
+        const kws = keywords(queryText);
+
+        try {
+            // ── 1. Recherche sémantique (méthodes indexées) ──────────────────
+            const cartoP = fetch('/api/cartography', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: queryText }),
+            }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+
+            // ── 2. Recherche par nom de fichier via atlas ─────────────────────
+            const atlasP = fetch('/api/atlas')
+                .then(r => r.ok ? r.json() : null).catch(() => null);
+
+            const [carto, atlas] = await Promise.all([cartoP, atlasP]);
+
+            const result: SymRow[] = [];
+            const seenKeys  = new Set<string>();
+            const seenFiles = new Set<string>();
+
+            // Résultats cartography
+            for (const s of [...(carto.results ?? []), ...(carto.grepMethods ?? [])]) {
+                if (seenKeys.has(s.key)) continue;
+                seenKeys.add(s.key);
+                seenFiles.add(s.file ?? '');
+                result.push({ key: s.key, file: s.file ?? '', role: s.role ?? null, summary: s.summary ?? null });
+            }
+
+            // Résultats atlas — fichiers dont le nom correspond aux mots-clés
+            if (atlas?.regions && kws.length > 0) {
+                for (const [region, rd] of Object.entries(atlas.regions) as [string, { files: string[] }][]) {
+                    for (const filePath of (rd.files ?? [])) {
+                        if (seenFiles.has(filePath)) continue;
+                        const base = (filePath.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase();
+                        if (!kws.some(kw => base.includes(kw) || kw.includes(base))) continue;
+                        const key = (filePath.split('/').pop() ?? filePath).replace(/\.[^.]+$/, '');
+                        seenKeys.add(key);
+                        seenFiles.add(filePath);
+                        result.push({ key, file: filePath, role: region, summary: null });
+                    }
+                }
+            }
+
+            symbols = result;
+        } catch { /* silencieux */ }
+        finally { symbolsLoading = false; }
+    }
+
+    function groupByFile(syms: SymRow[]): [string, SymRow[]][] {
+        const map = new Map<string, SymRow[]>();
+        for (const s of syms) {
+            const arr = map.get(s.file) ?? [];
+            arr.push(s);
+            map.set(s.file, arr);
+        }
+        return [...map.entries()];
+    }
+
+    function shortPath(file: string): string {
+        const parts = file.replace(/\\/g, '/').split('/');
+        return parts.slice(-2).join('/');
     }
 
     async function loadPlan(num: number) {
@@ -51,6 +148,103 @@
         });
     }
 
+    // ─── Édition inline ───────────────────────────────────────────────────────
+    let editingTitle  = false;
+    let editingBody   = false;
+    let editTitle     = "";
+    let editBody      = "";
+    let saveError     = "";
+    let saving        = false;
+
+    // Réinitialiser l'édition au changement d'issue
+    $: if ($agentState.issue?.number) {
+        editingTitle = false;
+        editingBody  = false;
+        saveError    = "";
+    }
+
+    function startEditTitle() {
+        editTitle    = $agentState.issue?.title ?? "";
+        editingTitle = true;
+        editingBody  = false;
+    }
+    function startEditBody() {
+        editBody     = $agentState.issue?.body ?? "";
+        editingBody  = true;
+        editingTitle = false;
+    }
+    function cancelEdit() {
+        editingTitle = false;
+        editingBody  = false;
+        saveError    = "";
+    }
+    async function save() {
+        if (!$agentState.issue || saving) return;
+        saving    = true;
+        saveError = "";
+        try {
+            const res = await fetch("/api/issue", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    number: $agentState.issue.number,
+                    ...(editingTitle ? { title: editTitle } : {}),
+                    ...(editingBody  ? { body:  editBody  } : {}),
+                })
+            });
+            const data = await res.json();
+            if (data.error) { saveError = data.error; return; }
+            agentState.update(s => ({
+                ...s,
+                issue: s.issue ? { ...s.issue, title: data.title, body: data.body } : s.issue
+            }));
+            editingTitle = false;
+            editingBody  = false;
+        } finally {
+            saving = false;
+        }
+    }
+
+    // ─── Création d'issue ─────────────────────────────────────────────────────
+    let newTitle      = "";
+    let newBody       = "";
+    let createError   = "";
+    let createLoading = false;
+
+    async function submitCreate() {
+        if (!newTitle.trim() || createLoading) return;
+        createLoading = true;
+        createError   = "";
+        try {
+            const res = await fetch("/api/issues", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: newTitle, body: newBody })
+            });
+            const data = await res.json();
+            if (data.error) { createError = data.error; return; }
+            newTitle = "";
+            newBody  = "";
+            agentState.update(s => ({
+                ...s,
+                issue: {
+                    number: data.number,
+                    title: data.title,
+                    body: data.body ?? "",
+                    state: "open",
+                    subIssues: [],
+                    created: new Date().toISOString(),
+                    labels: []
+                },
+                status: "idle"
+            }));
+        } catch (e: any) {
+            createError = e.message;
+        } finally {
+            createLoading = false;
+        }
+    }
+
     // ─── Créer une task ───────────────────────────────────────────────────────
     let taskCreated = false;
 
@@ -77,36 +271,96 @@
             </button>
         {/if}
         <span>Artefact</span>
+        {#if editingTitle || editingBody}
+            <div class="edit-actions">
+                <button class="edit-btn edit-btn--confirm" onclick={save} disabled={saving} title="Valider">✓</button>
+                <button class="edit-btn edit-btn--cancel"  onclick={cancelEdit} title="Annuler">✕</button>
+            </div>
+        {:else if !$agentState.issue && newTitle.trim()}
+            <div class="edit-actions">
+                <button class="edit-btn edit-btn--confirm" onclick={submitCreate} disabled={createLoading} title="Créer">✓</button>
+                <button class="edit-btn edit-btn--cancel"  onclick={() => { newTitle = ""; newBody = ""; createError = ""; }} title="Vider">✕</button>
+            </div>
+        {/if}
     </div>
 
     <div class="content">
-        {#if $agentState.issue?.body}
-            <div class="issue-body">
-                <h2 class="issue-title">#{$agentState.issue.number} — {$agentState.issue.title}</h2>
-                <pre class="body-text">{$agentState.issue.body}</pre>
-                {#if $agentState.issue.subIssues?.length}
-                    <div class="sub-issues">
-                        <p class="sub-label">Sub-issues ({$agentState.issue.subIssues.length})</p>
-                        <ul>
-                            {#each $agentState.issue.subIssues as sub}
-                                <li class="sub-item" class:closed={sub.state === "closed"}>
-                                    <span class="sub-check">{sub.state === "closed" ? "✓" : "○"}</span>
-                                    <button class="sub-btn" onclick={() => navigateToSubIssue(sub.number)}>
-                                        <span class="sub-num">#{sub.number}</span>
-                                        <span class="sub-title">{sub.title}</span>
-                                    </button>
-                                </li>
-                            {/each}
-                        </ul>
-                    </div>
-                {/if}
-            </div>
-        {:else if $agentState.status === "loading"}
-            <p class="hint blink">Chargement...</p>
+        {#if $agentState.issue !== null}
+            {#if $agentState.status === "loading" && !$agentState.issue.body}
+                <p class="hint blink">Chargement...</p>
+            {:else}
+                <div class="issue-body">
+                    <!-- Titre -->
+                    {#if editingTitle}
+                        <input class="edit-inline" bind:value={editTitle} />
+                    {:else}
+                        <h2 class="issue-title" onclick={startEditTitle}>
+                            #{$agentState.issue.number} — {$agentState.issue.title}
+                        </h2>
+                    {/if}
+
+                    <!-- Corps -->
+                    {#if editingBody}
+                        <textarea class="edit-inline edit-inline--body" bind:value={editBody}></textarea>
+                    {:else}
+                        <pre class="body-text" onclick={startEditBody}>{$agentState.issue.body}</pre>
+                    {/if}
+
+                    {#if saveError}<span class="save-error">{saveError}</span>{/if}
+
+                    {#if $agentState.issue.subIssues?.length}
+                        <div class="sub-issues">
+                            <p class="sub-label">Sub-issues ({$agentState.issue.subIssues.length})</p>
+                            <ul>
+                                {#each $agentState.issue.subIssues as sub}
+                                    <li class="sub-item" class:closed={sub.state === "closed"}>
+                                        <span class="sub-check">{sub.state === "closed" ? "✓" : "○"}</span>
+                                        <button class="sub-btn" onclick={() => navigateToSubIssue(sub.number)}>
+                                            <span class="sub-num">#{sub.number}</span>
+                                            <span class="sub-title">{sub.title}</span>
+                                        </button>
+                                    </li>
+                                {/each}
+                            </ul>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         {:else}
-            <p class="hint">Sélectionnez une issue pour commencer.</p>
+            <div class="create-row">
+                <input class="edit-inline" placeholder="Titre de l'issue…" bind:value={newTitle} disabled={createLoading} />
+                <textarea class="edit-inline edit-inline--body" placeholder="Description…" bind:value={newBody} rows="4" disabled={createLoading}></textarea>
+                {#if createError}<span class="save-error">{createError}</span>{/if}
+            </div>
         {/if}
     </div>
+
+    {#if $agentState.issue && (symbolsLoading || symbols.length > 0)}
+        <div class="sym-section">
+            <div class="sym-header">
+                <span class="sym-label">Symboles</span>
+                {#if symbolsLoading}
+                    <span class="sym-state">…</span>
+                {:else}
+                    <span class="sym-state">{symbols.length}</span>
+                {/if}
+            </div>
+            {#if !symbolsLoading && symbols.length > 0}
+                <div class="sym-scroll">
+                    {#each groupByFile(symbols) as [file, items] (file)}
+                        <div class="sym-file">{shortPath(file)}</div>
+                        {#each items as s (s.key)}
+                            <div class="sym-row" title={s.summary ?? ''}>
+                                <span class="sym-key">{s.key}</span>
+                                {#if s.role}<span class="sym-role">{s.role}</span>{/if}
+                                {#if s.summary}<span class="sym-desc">{s.summary}</span>{/if}
+                            </div>
+                        {/each}
+                    {/each}
+                </div>
+            {/if}
+        </div>
+    {/if}
 
     {#if $agentState.issue}
         <div class="plan-section">
@@ -278,11 +532,147 @@ ul { list-style: none; padding: 0; margin: 0; }
     font-size: 0.8rem;
     font-family: 'JetBrains Mono', monospace;
 }
+.edit-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+}
+.edit-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.edit-btn:hover:not(:disabled) { opacity: 1; }
+.edit-btn:disabled { opacity: 0.3; cursor: default; }
+.edit-btn--cancel { border-color: #555; color: #555; }
+.edit-inline {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+    width: 100%;
+    resize: none;
+    padding: 0;
+}
+.edit-inline--body {
+    font-size: 0.78rem;
+    font-weight: normal;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    min-height: 4rem;
+}
+.issue-title, .body-text { cursor: text; }
+.issue-title:hover, .body-text:hover {
+    background: rgba(255,255,255,0.02);
+    border-radius: 3px;
+}
+.save-error {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: #f44336;
+}
+.create-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
 .blink {
     color: #555;
     animation: blink 1.2s step-start infinite;
 }
 @keyframes blink {
     50% { opacity: 0.3; }
+}
+
+/* ── Symboles ── */
+.sym-section {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    max-height: 35%;
+    min-height: 2rem;
+    background: #04040c;
+}
+.sym-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.28rem 1rem;
+    border-bottom: 1px solid #111;
+    flex-shrink: 0;
+}
+.sym-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #303050;
+}
+.sym-state {
+    font-size: 0.58rem;
+    color: #252535;
+    font-family: 'JetBrains Mono', monospace;
+}
+.sym-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+.sym-scroll::-webkit-scrollbar { width: 3px; }
+.sym-scroll::-webkit-scrollbar-thumb { background: #1a1a2a; border-radius: 2px; }
+.sym-file {
+    padding: 0.18rem 1rem;
+    background: #0a0a14;
+    border-bottom: 1px solid #141420;
+    font-size: 0.55rem;
+    color: #2a2a3e;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.sym-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.15rem 1rem;
+    border-bottom: 1px solid #0e0e18;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 0;
+}
+.sym-key {
+    font-size: 0.6rem;
+    color: #4a4a80;
+    flex-shrink: 0;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sym-role {
+    font-size: 0.5rem;
+    color: #252538;
+    font-style: italic;
+    flex-shrink: 0;
+}
+.sym-desc {
+    font-size: 0.57rem;
+    color: #2e2e3e;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>
