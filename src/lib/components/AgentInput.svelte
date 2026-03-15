@@ -29,6 +29,8 @@
 
     let taskText  = $state("");
     let planMode  = $state(true);
+    let docMode   = $state(true);
+    let atlasMode = $state(true);
     let hasPlan   = $state(false);
     let sections  = $state<Section[]>([]);
     let collapsed = $state(new Set<string>());
@@ -83,7 +85,12 @@
     function buildFullPrompt(): string {
         const parts: string[] = [];
         parts.push(`TASK\n${taskText.trim()}\n`);
-        const skipKeys = new Set(['TASK', 'DESCRIPTION', ...(planMode ? [] : ['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN'])]);
+        const skipKeys = new Set([
+            'TASK', 'DESCRIPTION',
+            ...(planMode  ? [] : ['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN']),
+            ...(docMode   ? [] : ['DOCUMENTATION', 'CONCEPTS']),
+            ...(atlasMode ? [] : ['ATLAS']),
+        ]);
         for (const s of sections) {
             if (!skipKeys.has(s.key)) {
                 parts.push(`\n${s.key}\n${s.content}\n`);
@@ -240,7 +247,7 @@
             {/if}
 
             <!-- Section DOCUMENTATION — toggleable -->
-            {#if docSections.length > 0}
+            {#if docMode && docSections.length > 0}
                 <div class="doc-sec">
                     <button class="sec-toggle" onclick={() => toggleSec('doc')}>
                         documentation {collapsed.has('doc') ? '▸' : '▾'}
@@ -259,7 +266,7 @@
             {/if}
 
             <!-- Section ATLAS — toggleable -->
-            {#if hasAtlas}
+            {#if atlasMode && hasAtlas}
                 <div class="doc-sec">
                     <button class="sec-toggle" onclick={() => toggleSec('atlas')}>
                         atlas {collapsed.has('atlas') ? '▸' : '▾'}
@@ -293,6 +300,24 @@
                 </span>
                 <input type="checkbox" bind:checked={planMode} hidden />
             </label>
+            {#if docSections.length > 0}
+                <label class="plan-toggle-row">
+                    <span class="plan-toggle-label">docs</span>
+                    <span class="plan-toggle-track" class:on={docMode}>
+                        <span class="plan-toggle-thumb"></span>
+                    </span>
+                    <input type="checkbox" bind:checked={docMode} hidden />
+                </label>
+            {/if}
+            {#if hasAtlas}
+                <label class="plan-toggle-row">
+                    <span class="plan-toggle-label">atlas</span>
+                    <span class="plan-toggle-track" class:on={atlasMode}>
+                        <span class="plan-toggle-thumb"></span>
+                    </span>
+                    <input type="checkbox" bind:checked={atlasMode} hidden />
+                </label>
+            {/if}
             {@render footerExtra?.()}
             <button
                 class="ai-launch"
