@@ -188,6 +188,33 @@ export function findSymbolsForFiles(files: string[], root: string): string[] {
 // ── Coalescence historique ────────────────────────────────────────────────────
 
 /**
+ * Retourne les clusters bruts par commit : chaque ensemble exact de symboles
+ * co-modifiés dans un commit forme un nœud candidat (count = nb de commits
+ * ayant exactement cet ensemble). Inclut les groupes absents de histCoal
+ * (apparus dans un seul commit, donc non traités par buildHistoricalCoal).
+ */
+export function getCommitClusters(): HistoricalCoalNode[] {
+    const records = loadAllCommitRecords();
+    const groups = new Map<string, { count: number; issues: Set<number> }>();
+    for (const rec of records) {
+        if (rec.symbols.length < 2) continue;
+        const key = [...rec.symbols].sort().join(",");
+        if (!groups.has(key)) groups.set(key, { count: 0, issues: new Set() });
+        const g = groups.get(key)!;
+        g.count++;
+        for (const n of rec.issueRefs ?? []) g.issues.add(n);
+    }
+    return [...groups.entries()]
+        .map(([key, { count, issues }]) => ({
+            symbols: key.split(","),
+            count,
+            issues: [...issues].sort((a, b) => a - b),
+            score:   key.split(",").length * count,
+        }))
+        .sort((a, b) => b.score - a.score || b.count - a.count);
+}
+
+/**
  * Reconstruit la coalescence historique à partir des enregistrements de commits.
  * Réutilise le même algorithme que la coalescence sémantique, alimenté par
  * les co-modifications git plutôt que par les co-occurrences dans les issues.

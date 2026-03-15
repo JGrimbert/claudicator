@@ -12,7 +12,7 @@
     type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number; histMatch?: { symbols: string[]; count: number; issues: number[] } };
     type HistCoalNode = { symbols: string[]; count: number; score: number };
 
-    let activeTab: "clusters" | "étape" | "étapes" | "history" = "clusters";
+    let activeTab: "clusters" | "étape" | "étapes" | "history" | "skills" = "clusters";
     let dirs:  DirCluster[]   = [];
     let mixed: MixedCluster[] = [];
     let coal:  CoalNode[]     = [];
@@ -34,7 +34,8 @@
     // ── Onglet history ────────────────────────────────────────────────────────
     let issueSlots:    IssueSlot[] = [];
     let histStats:     HistoryStats | null = null;
-    let histConcepts:  HistCoalNode[] = [];
+    let histConcepts:   HistCoalNode[] = [];
+    let commitClusters: HistCoalNode[] = [];
     let historyLoaded  = false;
 
     async function loadHistory() {
@@ -45,12 +46,17 @@
             issueSlots   = data.slots     ?? [];
             histUpToDate = data.isUpToDate ?? false;
             histStats    = data.stats      ?? null;
-            histConcepts = data.coal       ?? [];
+            histConcepts    = data.coal            ?? [];
+            commitClusters  = data.commitClusters  ?? [];
         } catch {}
         finally { historyLoaded = true; }
     }
 
     $: if (activeTab === "history" && !historyLoaded) loadHistory();
+    $: if (activeTab === "skills") {
+        if (!historyLoaded)  loadHistory();
+        if (!clustersLoaded) loadClusters();
+    }
 
     // ── Git history run ───────────────────────────────────────────────────────
     let gitRunning  = false;
@@ -105,6 +111,13 @@
         const next = new Set(histExpanded);
         if (next.has(i)) next.delete(i); else next.add(i);
         histExpanded = next;
+    }
+
+    let skillCandExpanded = new Set<number>();
+    function toggleSkillCand(i: number) {
+        const next = new Set(skillCandExpanded);
+        if (next.has(i)) next.delete(i); else next.add(i);
+        skillCandExpanded = next;
     }
 
     // ── Task statuses pour coloriser les chips ────────────────────────────
@@ -272,6 +285,25 @@
             skillsGenerating = false;
         }
     }
+
+    // ── Candidats skills (coal sémantique + histCoal + commit clusters) ────────
+    type SkillCandidate = { symbols: string[]; count: number; score: number; source: "coal" | "hist" | "commit" };
+    $: histSymSets = new Set(histCoal.map(n => [...n.symbols].sort().join(",")));
+    $: skillCandidates = ((): SkillCandidate[] => {
+        const result: SkillCandidate[] = [];
+        for (const n of coal) {
+            result.push({ symbols: n.symbols.map(s => s.key), count: n.count, score: n.score, source: "coal" });
+        }
+        for (const n of histCoal) {
+            result.push({ symbols: n.symbols, count: n.count, score: n.score, source: "hist" });
+        }
+        for (const n of commitClusters) {
+            if (!histSymSets.has([...n.symbols].sort().join(","))) {
+                result.push({ symbols: n.symbols, count: n.count, score: n.score, source: "commit" });
+            }
+        }
+        return result.sort((a, b) => b.score - a.score);
+    })();
 </script>
 
 <div class="panel">
@@ -280,6 +312,7 @@
         <button class="tab" class:tab-active={activeTab === "étape"}    onclick={() => activeTab = "étape"}>étape</button>
         <button class="tab" class:tab-active={activeTab === "étapes"}   onclick={() => activeTab = "étapes"}>étapes</button>
         <button class="tab" class:tab-active={activeTab === "history"}  onclick={() => activeTab = "history"}>history</button>
+        <button class="tab" class:tab-active={activeTab === "skills"}   onclick={() => activeTab = "skills"}>skills</button>
         {#if activeTab === "clusters" && clustersLoaded}
             <button class="tab-refresh" onclick={() => { clustersLoaded = false; loadClusters(); }} title="Recalculer">↻</button>
         {/if}
@@ -379,24 +412,6 @@
                             {/if}
                         </div>
                     {/each}
-                    <!-- ── Skills générés ── -->
-                    <div class="skills-bar">
-                        <button class="skills-gen-btn" onclick={generateSkills} disabled={skillsGenerating}>
-                            {skillsGenerating ? "Génération…" : "Générer les skills"}
-                        </button>
-                        {#if skillsError}<span class="skills-error">{skillsError}</span>{/if}
-                    </div>
-                    {#if skillProposals.length > 0}
-                        <div class="skills-list">
-                            {#each skillProposals as p}
-                                <div class="skill-row">
-                                    <span class="skill-title">{p.skill}</span>
-                                    <span class="skill-badge skill-badge--{p.source}">{p.source === "coal" ? "sém" : "git"}</span>
-                                    {#if p.description}<span class="skill-desc">{p.description}</span>{/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
                 {/if}
 
                 <!-- ── Mixed clusters ── -->
@@ -643,6 +658,65 @@
                 {/each}
             {:else if historyLoaded && (!histStats || histStats.totalCommits === 0)}
                 <p class="hint">Aucune issue référencée dans les commits.<br>Lancez l'analyse pour indexer l'historique.</p>
+            {/if}
+
+        {:else if activeTab === "skills"}
+            <!-- ── Candidats ── -->
+            {#if !clustersLoaded && !historyLoaded}
+                <p class="hint">Chargement…</p>
+            {:else if skillCandidates.length === 0}
+                <p class="hint">Aucun candidat détecté</p>
+            {:else}
+                <div class="section-label section-label--coal">CANDIDATS ({skillCandidates.length})</div>
+                {#each skillCandidates as cand, i}
+                    {@const open = skillCandExpanded.has(i)}
+                    <div class="dir-row" class:coal-row={cand.source === "coal"} class:hist-row={cand.source !== "coal"}>
+                        <button class="dir-head" onclick={() => toggleSkillCand(i)}>
+                            <span class="dir-toggle">{open ? "▾" : "▸"}</span>
+                            <span class="coal-preview">
+                                {#each cand.symbols.slice(0, 4) as s, si}
+                                    <span class:coal-sym-tag={cand.source === "coal"} class:hist-sym-tag={cand.source !== "coal"}>{s.split(".").at(-1)}</span>{#if si < Math.min(cand.symbols.length, 4) - 1}<span class="coal-dot"> · </span>{/if}
+                                {/each}
+                                {#if cand.symbols.length > 4}<span class="coal-more">+{cand.symbols.length - 4}</span>{/if}
+                            </span>
+                            <span class="skill-badge skill-badge--{cand.source === 'coal' ? 'coal' : cand.source === 'hist' ? 'historical' : 'commit'}">{cand.source === "coal" ? "sém" : cand.source === "hist" ? "hist" : "commit"}</span>
+                            <span class:coal-score={cand.source === "coal"} class:hist-score={cand.source !== "coal"}>{cand.count}×</span>
+                        </button>
+                        {#if open}
+                            <div class="dir-symbols">
+                                {#each cand.symbols as sym}
+                                    <div class="sym-line">
+                                        <button
+                                            class="sym-name"
+                                            class:sym-active={$clusterFocusedSymbol?.name === sym}
+                                            onclick={() => clusterFocusedSymbol.set({ name: sym, dir: "" })}
+                                        >{sym.split(".").at(-1)}</button>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            {/if}
+            <!-- ── Générer ── -->
+            <div class="skills-bar">
+                <button class="skills-gen-btn" onclick={generateSkills} disabled={skillsGenerating || skillCandidates.length === 0}>
+                    {skillsGenerating ? "Génération…" : "Générer les skills"}
+                </button>
+                {#if skillsError}<span class="skills-error">{skillsError}</span>{/if}
+            </div>
+            <!-- ── Skills générés ── -->
+            {#if skillProposals.length > 0}
+                <div class="section-label">SKILLS GÉNÉRÉS ({skillProposals.length})</div>
+                <div class="skills-list">
+                    {#each skillProposals as p}
+                        <div class="skill-row">
+                            <span class="skill-title">{p.skill}</span>
+                            <span class="skill-badge skill-badge--{p.source}">{p.source === "coal" ? "sém" : "git"}</span>
+                            {#if p.description}<span class="skill-desc">{p.description}</span>{/if}
+                        </div>
+                    {/each}
+                </div>
             {/if}
 
         {:else}
@@ -1126,6 +1200,7 @@
 }
 .skill-badge--coal       { color: #3a7f8f; background: #040e10; }
 .skill-badge--historical { color: #7a4a7a; background: #100a14; }
+.skill-badge--commit     { color: #8f7a3a; background: #14100a; }
 .skill-desc {
     font-size: 0.52rem;
     font-family: 'JetBrains Mono', monospace;
