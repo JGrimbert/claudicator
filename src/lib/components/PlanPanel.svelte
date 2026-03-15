@@ -55,7 +55,34 @@
         }
     }
 
-    $: if (activeTab === "clusters" && !clustersLoaded) loadClusters();
+    $: if ((activeTab === "clusters" || activeTab === "étape") && !clustersLoaded) loadClusters();
+
+    // ─── Dérivations pour l'onglet étape ──────────────────────────────────────
+    $: stepIssues = new Set(activeGroup?.issues ?? []);
+    $: stepDirs   = dirs.filter(c => c.issues.some(n => stepIssues.has(n)));
+    $: stepCoal   = coal.filter(c => c.issues.some(n => stepIssues.has(n)));
+    $: stepMixed  = mixed.filter(c => c.issues.some(n => stepIssues.has(n)));
+    $: stepSymbols = (() => {
+        const seen   = new Set<string>();
+        const result: { name: string; dir: string }[] = [];
+        for (const c of stepDirs) {
+            for (const s of c.symbols) {
+                if (s.issues.some(n => stepIssues.has(n)) && !seen.has(s.name)) {
+                    seen.add(s.name);
+                    result.push({ name: s.name, dir: c.dir });
+                }
+            }
+        }
+        for (const c of stepCoal) {
+            for (const s of c.symbols) {
+                if (!seen.has(s.key)) {
+                    seen.add(s.key);
+                    result.push({ name: s.key, dir: s.dir });
+                }
+            }
+        }
+        return result;
+    })();
 
     let expanded = new Set<string>();
     function toggleExpand(dir: string) {
@@ -211,6 +238,78 @@
                         <IssueChip number={num} />
                     {/each}
                 </div>
+
+                {#if clustersLoading}
+                    <p class="hint">Calcul…</p>
+                {:else if clustersLoaded}
+                    <div class="step-arbo">
+
+                        {#if stepSymbols.length > 0}
+                            <div class="sa-sec sa-sec--sym">
+                                <div class="sa-hd">
+                                    <span class="sa-label">Symboles</span>
+                                    <span class="sa-count">{stepSymbols.length}</span>
+                                </div>
+                                {#each stepSymbols as s}
+                                    <div class="sa-row">
+                                        <span class="sa-bullet">*</span>
+                                        <button
+                                            class="sa-key"
+                                            class:sa-key--active={$clusterFocusedSymbol?.name === s.name}
+                                            onclick={() => clusterFocusedSymbol.set({ name: s.name, dir: s.dir })}
+                                        >{s.name.split('.').at(-1)}</button>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+
+                        {#if stepCoal.length > 0}
+                            <div class="sa-sec sa-sec--coal">
+                                <div class="sa-hd">
+                                    <span class="sa-label">Coalescence</span>
+                                    <span class="sa-count">{stepCoal.length}</span>
+                                </div>
+                                {#each stepCoal as node}
+                                    <div class="sa-row">
+                                        <span class="sa-bullet">*</span>
+                                        <span class="sa-key">{[...new Set(node.symbols.map(s => s.dir))].join(' / ') || node.symbols[0]?.key}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+
+                        {#if stepDirs.length > 0}
+                            <div class="sa-sec sa-sec--dir">
+                                <div class="sa-hd">
+                                    <span class="sa-label">Dir</span>
+                                    <span class="sa-count">{stepDirs.length}</span>
+                                </div>
+                                {#each stepDirs as c}
+                                    <div class="sa-row">
+                                        <span class="sa-bullet">*</span>
+                                        <span class="sa-key">{c.dir}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+
+                        {#if stepMixed.length > 0}
+                            <div class="sa-sec sa-sec--mixte">
+                                <div class="sa-hd">
+                                    <span class="sa-label">Mixte</span>
+                                    <span class="sa-count">{stepMixed.length}</span>
+                                </div>
+                                {#each stepMixed as mx}
+                                    <div class="sa-row">
+                                        <span class="sa-bullet">*</span>
+                                        <span class="sa-key">{mx.dirs.join(' + ')}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+
+                    </div>
+                {/if}
             {:else if $planGroups.length === 0}
                 <p class="hint">Aucune roadmap disponible</p>
             {:else}
@@ -467,6 +566,61 @@
     flex-wrap: wrap;
     gap: 0.35rem;
 }
+/* ── Étape arbo ── */
+.step-arbo { padding: 0.25rem 0.75rem 1rem; }
+.sa-sec { margin-bottom: 0.15rem; }
+.sa-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0 0.06rem;
+}
+.sa-label {
+    font-size: 0.52rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'JetBrains Mono', monospace;
+}
+.sa-count {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+.sa-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.07rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 0;
+}
+.sa-bullet { font-size: 0.52rem; flex-shrink: 0; }
+.sa-key {
+    all: unset;
+    font-size: 0.58rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.1s;
+}
+/* Pastel prisme — mêmes teintes qu'ArtifactViewer */
+.sa-sec--sym   .sa-label, .sa-sec--sym   .sa-count  { color: #6655aa; }
+.sa-sec--sym   .sa-bullet                            { color: #6655aa; opacity: 0.45; }
+.sa-sec--sym   .sa-key                               { color: #a090e0; }
+.sa-sec--sym   .sa-key:hover, .sa-sec--sym .sa-key--active { color: cornsilk; }
+
+.sa-sec--coal  .sa-label, .sa-sec--coal  .sa-count  { color: #3a7f8f; }
+.sa-sec--coal  .sa-bullet                            { color: #3a7f8f; opacity: 0.45; }
+.sa-sec--coal  .sa-key                               { color: #68c0cc; }
+
+.sa-sec--dir   .sa-label, .sa-sec--dir   .sa-count  { color: #3a7a48; }
+.sa-sec--dir   .sa-bullet                            { color: #3a7a48; opacity: 0.45; }
+.sa-sec--dir   .sa-key                               { color: #7abf82; }
+
+.sa-sec--mixte .sa-label, .sa-sec--mixte .sa-count  { color: #7a5e1e; }
+.sa-sec--mixte .sa-bullet                            { color: #7a5e1e; opacity: 0.45; }
+.sa-sec--mixte .sa-key                               { color: #c8a454; }
+
 /* ── Étapes ── */
 .step-row {
     all: unset;
