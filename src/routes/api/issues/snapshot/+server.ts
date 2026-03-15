@@ -5,7 +5,7 @@ import { json } from "@sveltejs/kit";
 const SNAPSHOT_FILE = ".agent/analysis-snapshot.json";
 const ANALYSIS_FILE = ".agent/analysis.md";
 
-export type IssueSnapshot = { number: number; title: string; updatedAt: string };
+export type IssueSnapshot = { number: number; title: string; updatedAt: string; state?: string };
 
 /** Lit le snapshot d'issues et vérifie l'analyse */
 export async function GET() {

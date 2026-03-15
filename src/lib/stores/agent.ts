@@ -172,6 +172,23 @@ function parseGroups(text: string): PlanGroup[] {
 
 export const planGroups = derived(issueAnalysis, $a => $a.result ? parseGroups($a.result) : []);
 
+export const issueStates = writable<Map<number, string>>(new Map());
+
+export type PlanGroupWithInvalidations = PlanGroup & { invalidatedIssues: number[] };
+
+export const planGroupsWithInvalidations = derived(
+    [planGroups, issueStates],
+    ([$groups, $states]) => $groups.map(g => ({
+        ...g,
+        invalidatedIssues: g.issues.filter(n => $states.get(n) === "closed")
+    })) as PlanGroupWithInvalidations[]
+);
+
+export const hasInvalidatedSlots = derived(
+    planGroupsWithInvalidations,
+    $groups => $groups.some(g => g.invalidatedIssues.length > 0)
+);
+
 export const clusterFocusedSymbol = writable<{ name: string; dir: string } | null>(null);
 
 export type Log = {

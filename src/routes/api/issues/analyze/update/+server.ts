@@ -33,22 +33,38 @@ export async function POST({ request }: { request: Request }) {
     }
     const existingAnalysis = fs.readFileSync(analysisPath, "utf-8");
 
-    let snapshot: Array<{ number: number; title: string; updatedAt: string }> = [];
+    let snapshot: Array<{ number: number; title: string; updatedAt: string; state?: string }> = [];
     if (fs.existsSync(SNAPSHOT_FILE)) {
         try { snapshot = JSON.parse(fs.readFileSync(SNAPSHOT_FILE, "utf-8")); } catch { /* ignore */ }
     }
 
     let prompt: string;
-    let newSnapshotData: Array<{ number: number; title: string; updatedAt: string }>;
+    let newSnapshotData: Array<{ number: number; title: string; updatedAt: string; state?: string }>;
     try {
         const raw = await getIssuesWithBodies(owner, repo);
-        const snapshotMap = new Map(snapshot.map(s => [s.number, s.updatedAt]));
+
+        // Détecter les issues fermées : présentes dans le snapshot mais absentes de la liste open
+        const openNumbers = new Set(raw.map(i => i.number));
+        const hasNewClosures = snapshot.some(s => !openNumbers.has(s.number) && s.state !== "closed");
+        if (hasNewClosures) {
+            const stateMap = new Map(snapshot.map(s => [s.number, { ...s }]));
+            for (const s of snapshot) {
+                if (!openNumbers.has(s.number)) stateMap.set(s.number, { ...s, state: "closed" });
+            }
+            for (const i of raw) stateMap.set(i.number, { number: i.number, title: i.title, updatedAt: i.updatedAt, state: "open" });
+            fs.mkdirSync(".agent", { recursive: true });
+            fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify([...stateMap.values()], null, 2), "utf-8");
+            // Relire le snapshot mis à jour pour l'upsert final
+            snapshot = [...stateMap.values()];
+        }
+
+        const updatedAtMap = new Map(snapshot.map(s => [s.number, s.updatedAt]));
         const toIntegrate = raw.filter(i =>
-            !snapshotMap.has(i.number) || i.updatedAt > (snapshotMap.get(i.number) ?? "")
+            !updatedAtMap.has(i.number) || i.updatedAt > (updatedAtMap.get(i.number) ?? "")
         );
 
         if (toIntegrate.length === 0) {
-            return new Response(JSON.stringify({ message: "Aucune issue à intégrer" }), {
+            return new Response(JSON.stringify({ message: hasNewClosures ? "États des issues mis à jour" : "Aucune issue à intégrer" }), {
                 status: 200, headers: { "Content-Type": "application/json" }
             });
         }
@@ -56,7 +72,7 @@ export async function POST({ request }: { request: Request }) {
         const prepared = await prepareIssues(toIntegrate);
         const diagram = loadProjectDiagram(project?.path ?? process.cwd());
         prompt = buildUpdatePrompt(existingAnalysis, prepared, diagram);
-        newSnapshotData = raw.map(i => ({ number: i.number, title: i.title, updatedAt: i.updatedAt }));
+        newSnapshotData = raw.map(i => ({ number: i.number, title: i.title, updatedAt: i.updatedAt, state: "open" }));
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message ?? String(err) }), {
             status: 500, headers: { "Content-Type": "application/json" }
@@ -68,7 +84,7 @@ export async function POST({ request }: { request: Request }) {
             const dir = roadmapId ? ".agent/roadmaps" : ".agent";
             fs.mkdirSync(dir, { recursive: true });
             fs.writeFileSync(analysisPath, lines.join("\n"), "utf-8");
-            // Upsert du snapshot
+            // Upsert du snapshot en conservant les états closed
             const snapshotMap = new Map(snapshot.map(s => [s.number, s]));
             for (const entry of newSnapshotData) snapshotMap.set(entry.number, entry);
             fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify([...snapshotMap.values()], null, 2), "utf-8");

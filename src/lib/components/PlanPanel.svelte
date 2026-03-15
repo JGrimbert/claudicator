@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { planGroups, activePlanGroupIndex, clusterFocusedSymbol, agentState } from "$lib/stores/agent";
-    import type { PlanGroup } from "$lib/stores/agent";
+    import { get } from "svelte/store";
+    import { planGroups, planGroupsWithInvalidations, activePlanGroupIndex, clusterFocusedSymbol, agentState, issueAnalysis, issueStates } from "$lib/stores/agent";
+    import type { PlanGroup, PlanGroupWithInvalidations } from "$lib/stores/agent";
     import IssueChip from "$lib/components/IssueChip.svelte";
 
     type SymbolEntry  = { name: string; issues: number[] };
@@ -133,9 +134,31 @@
                 issueTaskStatus = m;
             }
         } catch { /* silencieux */ }
+        await autoReprocessDoneGroups();
     }
 
-    onMount(() => { loadTaskStatuses(); loadSkills(); });
+    // ── Auto-suppression des étapes entièrement terminées ─────────────────
+    let autoRemovedGroups = new Set<number>();
+
+    async function autoReprocessDoneGroups() {
+        if (reprocessingGroup !== null) return;
+        const groups = get(planGroupsWithInvalidations);
+        for (const group of groups) {
+            if (autoRemovedGroups.has(group.index)) continue;
+            const allDone = group.issues.length > 0 &&
+                group.issues.every(n => issueTaskStatus.get(n) === "merged" || group.invalidatedIssues.includes(n));
+            if (allDone) {
+                autoRemovedGroups = new Set([...autoRemovedGroups, group.index]);
+                await reprocessGroup(group, true);
+            }
+        }
+    }
+
+    onMount(() => {
+        loadTaskStatuses();
+        loadSkills();
+        return issueStates.subscribe(() => autoReprocessDoneGroups());
+    });
 
     // ── Créer les tasks pour un groupe ────────────────────────────────────
     let groupFeedback: Record<string, string> = {};
@@ -184,7 +207,37 @@
         }
     }
 
-    $: activeGroup = $planGroups[$activePlanGroupIndex] ?? null;
+    let reprocessingGroup: number | null = null;
+    let reprocessFeedback: Record<number, string> = {};
+
+    async function reprocessGroup(group: PlanGroupWithInvalidations, forceAll = false) {
+        if (reprocessingGroup !== null) return;
+        reprocessingGroup = group.index;
+        try {
+            const res = await fetch("/api/issues/roadmap/reprocess-group", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    roadmapId: $issueAnalysis.roadmapId,
+                    groupIndex: group.index,
+                    closedIssues: forceAll ? group.issues : group.invalidatedIssues
+                })
+            });
+            if (!res.ok) { reprocessFeedback = { ...reprocessFeedback, [group.index]: "erreur" }; return; }
+            const data = await res.json();
+            if (data.content) {
+                issueAnalysis.update(s => ({ ...s, result: data.content }));
+            }
+            reprocessFeedback = { ...reprocessFeedback, [group.index]: "✓" };
+            setTimeout(() => { reprocessFeedback = { ...reprocessFeedback, [group.index]: "" }; }, 2000);
+        } catch {
+            reprocessFeedback = { ...reprocessFeedback, [group.index]: "erreur" };
+        } finally {
+            reprocessingGroup = null;
+        }
+    }
+
+    $: activeGroup = $planGroupsWithInvalidations[$activePlanGroupIndex] ?? null;
 
     function selectGroup(idx: number) {
         activePlanGroupIndex.set(idx);
@@ -538,9 +591,25 @@
                 {#if activeGroup.dependsOn.length > 0}
                     <div class="step-dep">après {activeGroup.dependsOn.join(", ")}</div>
                 {/if}
+                {@const allDone = activeGroup.issues.length > 0 && activeGroup.issues.every(n => issueTaskStatus.get(n) === "merged" || activeGroup.invalidatedIssues.includes(n))}
+                {#if allDone || activeGroup.invalidatedIssues.length > 0}
+                    <div class="invalid-banner" class:all-done-banner={allDone}>
+                        <span class="invalid-icon">{allDone ? "✓" : "⚠"}</span>
+                        {#if allDone}
+                            Toutes les issues sont terminées — étape à supprimer
+                        {:else}
+                            {activeGroup.invalidatedIssues.length} issue{activeGroup.invalidatedIssues.length > 1 ? "s" : ""} fermée{activeGroup.invalidatedIssues.length > 1 ? "s" : ""}
+                        {/if}
+                        <button
+                            class="btn-reprocess" class:btn-remove-step={allDone}
+                            onclick={() => reprocessGroup(activeGroup!, allDone)}
+                            disabled={reprocessingGroup === activeGroup.index}
+                        >{reprocessFeedback[activeGroup.index] || (reprocessingGroup === activeGroup.index ? "…" : allDone ? "Supprimer l'étape" : "Reprocesser")}</button>
+                    </div>
+                {/if}
                 <div class="group-issues">
                     {#each activeGroup.issues as num}
-                        <IssueChip number={num} />
+                        <IssueChip number={num} strikethrough={activeGroup.invalidatedIssues.includes(num)} />
                     {/each}
                 </div>
 
@@ -760,16 +829,32 @@
             {/if}
 
         {:else}
-            {#if $planGroups.length === 0}
+            {#if $planGroupsWithInvalidations.length === 0}
                 <p class="hint">Aucune roadmap disponible</p>
             {:else}
-                {#each $planGroups as group}
-                    <div class="step-card" class:step-active={$activePlanGroupIndex === group.index - 1}>
+                {#each $planGroupsWithInvalidations as group}
+                    {@const allDone = group.issues.length > 0 && group.issues.every(n => issueTaskStatus.get(n) === "merged" || group.invalidatedIssues.includes(n))}
+                    <div class="step-card" class:step-active={$activePlanGroupIndex === group.index - 1} class:step-card--invalid={group.invalidatedIssues.length > 0} class:step-card--all-done={allDone}>
                         <div class="step-head">
                             <button class="step-title-btn" onclick={() => selectGroup(group.index - 1)}>
                                 <span class="step-index">{group.index}</span>
                                 <span class="step-name">{group.name}</span>
                             </button>
+                            {#if allDone}
+                                <span class="invalid-badge all-done-badge" title="Toutes les issues sont terminées">✓ tout terminé</span>
+                                <button
+                                    class="btn-reprocess btn-remove-step"
+                                    onclick={() => reprocessGroup(group, true)}
+                                    disabled={reprocessingGroup === group.index}
+                                >{reprocessFeedback[group.index] || (reprocessingGroup === group.index ? "…" : "Supprimer l'étape")}</button>
+                            {:else if group.invalidatedIssues.length > 0}
+                                <span class="invalid-badge" title="Issues fermées dans ce groupe">⚠ {group.invalidatedIssues.length}</span>
+                                <button
+                                    class="btn-reprocess"
+                                    onclick={() => reprocessGroup(group)}
+                                    disabled={reprocessingGroup === group.index}
+                                >{reprocessFeedback[group.index] || (reprocessingGroup === group.index ? "…" : "Reprocesser")}</button>
+                            {/if}
                             <button
                                 class="btn-create-task"
                                 onclick={() => createGroupTasks(group)}
@@ -783,19 +868,22 @@
                         {#if group.dependsOn.length > 0}
                             <div class="step-dep">après {group.dependsOn.join(", ")}</div>
                         {/if}
-                        <div class="step-issues">
+                        <div class="step-issues" class:step-issues--all-done={allDone}>
                             {#each group.issues as n}
                                 {@const status = issueTaskStatus.get(n)}
+                                {@const isClosed = group.invalidatedIssues.includes(n)}
                                 <button
                                     class="step-chip"
-                                    class:chip-impl={status === "implementation" || status === "documentation"}
-                                    class:chip-plan={status === "planification"}
-                                    class:chip-merged={status === "merged"}
-                                    class:chip-failed={status === "failed"}
-                                    class:chip-spec={status === "specification"}
+                                    class:chip-closed={isClosed && !allDone}
+                                    class:chip-all-done={allDone}
+                                    class:chip-impl={!allDone && (status === "implementation" || status === "documentation")}
+                                    class:chip-plan={!allDone && status === "planification"}
+                                    class:chip-merged={!allDone && status === "merged"}
+                                    class:chip-failed={!allDone && status === "failed"}
+                                    class:chip-spec={!allDone && status === "specification"}
                                     onclick={() => openIssue(n)}
-                                    title="#{n}{status ? ` · ${status}` : ''}"
-                                >#{n}</button>
+                                    title="#{n}{isClosed ? ' · fermée' : ''}{status ? ` · ${status}` : ''}"
+                                >{#if isClosed}<s>#{n}</s>{:else}#{n}{/if}</button>
                             {/each}
                         </div>
                     </div>
@@ -1414,4 +1502,51 @@
 .step-chip.chip-merged:hover { border-color: #2a5a2a; }
 .step-chip.chip-failed { color: #f44336; background: #1a0a0a; border-color: #3a1a1a; }
 .step-chip.chip-spec  { color: #666; border-color: #2a2a2a; }
+.step-chip.chip-closed { opacity: 0.5; color: #7a5a9a; border-color: #3a2a5a; text-decoration: none; }
+.step-chip.chip-closed s { text-decoration-color: #5a3a7a; }
+.step-chip.chip-all-done { color: #b07ee0; background: #0e0818; border-color: #3a1a6a; opacity: 0.75; }
+.step-chip.chip-all-done:hover { color: #d4aaff; border-color: #6a3aaa; opacity: 1; }
+.step-issues--all-done { opacity: 0.85; }
+.step-card--invalid { border-left: 2px solid #7a4a1a; }
+.invalid-badge {
+    font-size: 0.55rem;
+    color: #c87a20;
+    background: #1a0e00;
+    border: 1px solid #4a2a00;
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    white-space: nowrap;
+}
+.invalid-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.58rem;
+    color: #c87a20;
+    background: #120a00;
+    border: 1px solid #3a1e00;
+    border-radius: 3px;
+    padding: 0.3rem 0.5rem;
+    margin-bottom: 0.35rem;
+}
+.invalid-icon { font-size: 0.7rem; }
+.btn-reprocess {
+    font-size: 0.55rem;
+    color: #c87a20;
+    background: none;
+    border: 1px solid #4a2a00;
+    border-radius: 3px;
+    padding: 0.1rem 0.4rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.12s, border-color 0.12s;
+}
+.btn-reprocess:hover:not(:disabled) { color: cornsilk; border-color: #8a5a00; }
+.btn-reprocess:disabled { opacity: 0.4; cursor: default; }
+.btn-remove-step { color: #b07ee0; border-color: #3a1a6a; }
+.btn-remove-step:hover:not(:disabled) { color: #d4aaff; border-color: #7a4aaa; }
+.all-done-banner { background: #0e0818; border-color: #3a1a6a; }
+.all-done-banner .invalid-icon { color: #b07ee0; }
+.all-done-badge { color: #b07ee0 !important; border-color: #3a1a6a !important; }
+.step-card--all-done { border-left: 2px solid #5a2a9a; }
 </style>

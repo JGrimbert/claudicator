@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, type Issue } from "$lib/stores/agent";
+    import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, issueStates, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import Fuse from 'fuse.js';
 
@@ -74,6 +74,14 @@
                 .map(i => i.number);
 
             issueAnalysis.update(s => ({ ...s, snapshotDiff: { added, removed, modified } }));
+
+            // Mettre à jour issueStates : les issues du snapshot absentes de la liste open sont fermées
+            if (removed.length > 0) {
+                const closedSet = new Set(removed);
+                const stateMap = new Map<number, string>();
+                for (const s of snapshot) stateMap.set(s.number, closedSet.has(s.number) ? "closed" : "open");
+                issueStates.set(stateMap);
+            }
         } catch { /* silencieux */ }
     }
 
@@ -125,8 +133,14 @@
             try {
                 const r = await fetch("/api/issues/snapshot");
                 if (r.ok) {
-                    const { hasResult: hr } = await r.json();
+                    const { hasResult: hr, snapshot: snap } = await r.json();
                     hasResult = hr;
+                    // Mettre à jour issueStates pour refléter les issues fermées
+                    if (snap?.length) {
+                        const map = new Map<number, string>();
+                        for (const s of snap) map.set(s.number, s.state ?? "open");
+                        issueStates.set(map);
+                    }
                 }
                 if (hasResult) {
                     const r2 = await fetch("/api/issues/analysis");
@@ -237,7 +251,7 @@
     {#if diffBadge}
         <div class="diff-badge">
             <span>⚠ {diffBadge}</span>
-            {#if hasResult && !$issueAnalysis.running && !$issueAnalysis.updating && ($issueAnalysis.snapshotDiff?.added.length || $issueAnalysis.snapshotDiff?.modified.length)}
+            {#if hasResult && !$issueAnalysis.running && !$issueAnalysis.updating && ($issueAnalysis.snapshotDiff?.added.length || $issueAnalysis.snapshotDiff?.modified.length || $issueAnalysis.snapshotDiff?.removed.length)}
                 <button class="integrate-btn" onclick={startUpdate} title="Intégrer les nouvelles issues dans l'analyse">
                     ⊕ Intégrer
                 </button>
