@@ -1,7 +1,12 @@
 <script lang="ts">
-    import { planGroups, planModeTask, activePlanGroupIndex } from "$lib/stores/agent";
+    import { planGroups, activePlanGroupIndex } from "$lib/stores/agent";
 
-    let activeTab: "task" | "étape" | "étapes" = "task";
+    type Cluster = { symbol: string; file: string; issues: number[]; count: number };
+
+    let activeTab: "clusters" | "étape" | "étapes" = "clusters";
+    let clusters: Cluster[] = [];
+    let clustersLoading = false;
+    let clustersLoaded = false;
 
     $: activeGroup = $planGroups[$activePlanGroupIndex] ?? null;
 
@@ -9,24 +14,59 @@
         activePlanGroupIndex.set(idx);
         activeTab = "étape";
     }
+
+    async function loadClusters() {
+        if (clustersLoading) return;
+        clustersLoading = true;
+        try {
+            const res = await fetch("/api/clusters");
+            if (res.ok) clusters = await res.json();
+        } catch { /* silencieux */ }
+        finally {
+            clustersLoading = false;
+            clustersLoaded = true;
+        }
+    }
+
+    $: if (activeTab === "clusters" && !clustersLoaded) loadClusters();
+
+    function shortFile(path: string): string {
+        const parts = path.replace(/\\/g, "/").split("/");
+        return parts.slice(-2).join("/");
+    }
 </script>
 
 <div class="panel">
     <div class="panel-tabs">
-        <button class="tab" class:tab-active={activeTab === "task"} onclick={() => activeTab = "task"}>task</button>
-        <button class="tab" class:tab-active={activeTab === "étape"} onclick={() => activeTab = "étape"}>étape</button>
-        <button class="tab" class:tab-active={activeTab === "étapes"} onclick={() => activeTab = "étapes"}>étapes</button>
+        <button class="tab" class:tab-active={activeTab === "clusters"} onclick={() => activeTab = "clusters"}>clusters</button>
+        <button class="tab" class:tab-active={activeTab === "étape"}    onclick={() => activeTab = "étape"}>étape</button>
+        <button class="tab" class:tab-active={activeTab === "étapes"}   onclick={() => activeTab = "étapes"}>étapes</button>
+        {#if activeTab === "clusters" && clustersLoaded}
+            <button class="tab-refresh" onclick={() => { clustersLoaded = false; loadClusters(); }} title="Recalculer">↻</button>
+        {/if}
     </div>
 
     <div class="content">
-        {#if activeTab === "task"}
-            {#if $planModeTask}
-                <div class="task-card">
-                    <div class="task-num">{#if $planModeTask.issueNumber}#{$planModeTask.issueNumber}{/if}</div>
-                    <div class="task-title">{$planModeTask.title}</div>
-                </div>
+        {#if activeTab === "clusters"}
+            {#if clustersLoading}
+                <p class="hint">Calcul en cours…</p>
+            {:else if clusters.length === 0}
+                <p class="hint">{clustersLoaded ? "Aucun cluster détecté" : "Chargement…"}</p>
             {:else}
-                <p class="hint">Aucune task sélectionnée</p>
+                {#each clusters as c}
+                    <div class="cluster-row">
+                        <div class="cluster-head">
+                            <span class="cluster-sym">{c.symbol}</span>
+                            <span class="cluster-count">{c.count}</span>
+                        </div>
+                        <div class="cluster-file">{shortFile(c.file)}</div>
+                        <div class="cluster-issues">
+                            {#each c.issues as num}
+                                <span class="issue-chip">#{num}</span>
+                            {/each}
+                        </div>
+                    </div>
+                {/each}
             {/if}
 
         {:else if activeTab === "étape"}
@@ -96,6 +136,20 @@
 }
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
+.tab-refresh {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #333;
+    padding: 0 0.45rem;
+    height: 100%;
+    margin-left: auto;
+    border-left: 1px solid var(--border);
+    transition: color 0.1s;
+    font-family: 'JetBrains Mono', monospace;
+}
+.tab-refresh:hover { color: #666; }
 .content {
     flex: 1;
     min-height: 0;
@@ -112,21 +166,49 @@
     font-style: italic;
     font-family: 'JetBrains Mono', monospace;
 }
-.task-card {
-    padding: 0.75rem;
+/* ── Clusters ── */
+.cluster-row {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #111;
 }
-.task-num {
-    font-size: 0.58rem;
-    color: #555;
+.cluster-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.cluster-sym {
+    font-size: 0.63rem;
     font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 0.25rem;
+    color: #8a9aaa;
+    word-break: break-all;
+    flex: 1;
 }
-.task-title {
-    font-size: 0.72rem;
-    color: #aaa;
+.cluster-count {
+    font-size: 0.55rem;
     font-family: 'JetBrains Mono', monospace;
-    line-height: 1.4;
+    color: #444;
+    flex-shrink: 0;
+    background: #111;
+    border-radius: 3px;
+    padding: 0 0.3rem;
 }
+.cluster-file {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #3a3a3a;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cluster-issues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+}
+/* ── Étape ── */
 .group-header {
     padding: 0.5rem 0.75rem 0.25rem;
     font-size: 0.6rem;
@@ -150,6 +232,7 @@
     border-radius: 3px;
     padding: 0.1rem 0.4rem;
 }
+/* ── Étapes ── */
 .step-row {
     all: unset;
     display: flex;
