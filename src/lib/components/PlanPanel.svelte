@@ -1,5 +1,6 @@
 <script lang="ts">
     import { planGroups, activePlanGroupIndex, clusterFocusedSymbol } from "$lib/stores/agent";
+    import IssueChip from "$lib/components/IssueChip.svelte";
 
     type SymbolEntry  = { name: string; issues: number[] };
     type DirCluster   = { dir: string; symbols: SymbolEntry[]; issues: number[]; count: number };
@@ -94,7 +95,7 @@
                             </button>
                             <div class="dir-issues">
                                 {#each c.issues as num}
-                                    <span class="issue-chip">#{num}</span>
+                                    <IssueChip number={num} />
                                 {/each}
                             </div>
                             {#if open}
@@ -108,7 +109,7 @@
                                             >{sym.name.split(".").at(-1)}</button>
                                             <span class="sym-issues">
                                                 {#each sym.issues as n}
-                                                    <span class="sym-issue-id">#{n}</span>
+                                                    <IssueChip number={n} />
                                                 {/each}
                                             </span>
                                         </div>
@@ -137,7 +138,7 @@
                             </button>
                             <div class="dir-issues">
                                 {#each node.issues as num}
-                                    <span class="issue-chip issue-chip--coal">#{num}</span>
+                                    <IssueChip number={num} />
                                 {/each}
                             </div>
                             {#if open}
@@ -175,7 +176,7 @@
                             </button>
                             <div class="dir-issues">
                                 {#each mx.issues as num}
-                                    <span class="issue-chip issue-chip--mixed">#{num}</span>
+                                    <IssueChip number={num} />
                                 {/each}
                             </div>
                             {#if open}
@@ -190,7 +191,7 @@
                                             <span class="sym-dir-tag">{sym.dir}</span>
                                             <span class="sym-issues">
                                                 {#each sym.issues as n}
-                                                    <span class="sym-issue-id">#{n}</span>
+                                                    <IssueChip number={n} />
                                                 {/each}
                                             </span>
                                         </div>
@@ -207,7 +208,7 @@
                 <div class="group-header">{activeGroup.name}</div>
                 <div class="group-issues">
                     {#each activeGroup.issues as num}
-                        <div class="issue-chip">#{num}</div>
+                        <IssueChip number={num} />
                     {/each}
                 </div>
             {:else if $planGroups.length === 0}
@@ -430,11 +431,6 @@
     flex-shrink: 0;
     margin-right: 0.3rem;
 }
-.issue-chip--coal {
-    color: #4a7a5a;
-    background: #121a14;
-    border: 1px solid #1a4a2a;
-}
 /* ── Mixed clusters ── */
 .mixed-row .dir-head { background: transparent; }
 .mixed-row .dir-head:hover { background: #0d0d1a; }
@@ -456,11 +452,6 @@
     font-size: 0.5rem;
     color: #2a2a3a;
 }
-.issue-chip--mixed {
-    color: #6a5a8a;
-    background: #1a1228;
-    border: 1px solid #2a1a4a;
-}
 /* ── Étape ── */
 .group-header {
     padding: 0.5rem 0.75rem 0.25rem;
@@ -475,15 +466,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
-}
-.issue-chip {
-    font-size: 0.6rem;
-    font-family: 'JetBrains Mono', monospace;
-    color: #5a7a9a;
-    background: #0d1e2e;
-    border: 1px solid #1a3a5a;
-    border-radius: 3px;
-    padding: 0.1rem 0.4rem;
 }
 /* ── Étapes ── */
 .step-row {

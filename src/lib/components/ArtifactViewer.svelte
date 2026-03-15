@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, taskIssueNumbers } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
@@ -296,7 +296,7 @@
                 <button class="edit-btn edit-btn--confirm" onclick={submitCreate} disabled={createLoading} title="Créer">✓</button>
                 <button class="edit-btn edit-btn--cancel"  onclick={() => { newTitle = ""; newBody = ""; createError = ""; }} title="Vider">✕</button>
             </div>
-        {:else if $agentState.issue}
+        {:else if $agentState.issue && !$taskIssueNumbers.has($agentState.issue.number)}
             <button class="task-btn-top" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
                 {taskCreated ? "✓ créée" : "Task →"}
             </button>
@@ -348,57 +348,65 @@
                 {#if symbolsLoading || symbols.length > 0 || issueCoal.length > 0 || issueDirs.length > 0 || issueMixed.length > 0}
                     <div class="sym-tree">
                         <!-- SYMBOLES -->
-                        <div class="sym-group-hd">
-                            <span class="sym-label">Symboles</span>
-                            <span class="sym-state">{symbolsLoading ? '…' : symbols.length}</span>
-                        </div>
-                        {#each symbols as s (s.key)}
-                            <div class="sym-row">
-                                <span class="sym-bullet">*</span>
-                                <span class="sym-key">{s.key}</span>
+                        <div class="sym-sec sym-sec--sym">
+                            <div class="sym-group-hd">
+                                <span class="sym-label">Symboles</span>
+                                <span class="sym-state">{symbolsLoading ? '…' : symbols.length}</span>
                             </div>
-                        {/each}
+                            {#each symbols as s (s.key)}
+                                <div class="sym-row">
+                                    <span class="sym-bullet">*</span>
+                                    <span class="sym-key">{s.key}</span>
+                                </div>
+                            {/each}
+                        </div>
 
                         <!-- COALESCENCE -->
                         {#if issueCoal.length > 0}
-                            <div class="sym-group-hd">
-                                <span class="sym-label coal-label">Coalescence</span>
-                                <span class="sym-state">{issueCoal.length}</span>
-                            </div>
-                            {#each issueCoal as name}
-                                <div class="sym-row">
-                                    <span class="sym-bullet">*</span>
-                                    <span class="sym-key coal-key">{name}</span>
+                            <div class="sym-sec sym-sec--coal">
+                                <div class="sym-group-hd">
+                                    <span class="sym-label">Coalescence</span>
+                                    <span class="sym-state">{issueCoal.length}</span>
                                 </div>
-                            {/each}
+                                {#each issueCoal as name}
+                                    <div class="sym-row">
+                                        <span class="sym-bullet">*</span>
+                                        <span class="sym-key">{name}</span>
+                                    </div>
+                                {/each}
+                            </div>
                         {/if}
 
                         <!-- DIR -->
                         {#if issueDirs.length > 0}
-                            <div class="sym-group-hd">
-                                <span class="sym-label dir-label">Dir</span>
-                                <span class="sym-state">{issueDirs.length}</span>
-                            </div>
-                            {#each issueDirs as dir}
-                                <div class="sym-row">
-                                    <span class="sym-bullet">*</span>
-                                    <span class="sym-key dir-key">{dir}</span>
+                            <div class="sym-sec sym-sec--dir">
+                                <div class="sym-group-hd">
+                                    <span class="sym-label">Dir</span>
+                                    <span class="sym-state">{issueDirs.length}</span>
                                 </div>
-                            {/each}
+                                {#each issueDirs as dir}
+                                    <div class="sym-row">
+                                        <span class="sym-bullet">*</span>
+                                        <span class="sym-key">{dir}</span>
+                                    </div>
+                                {/each}
+                            </div>
                         {/if}
 
                         <!-- MIXTE -->
                         {#if issueMixed.length > 0}
-                            <div class="sym-group-hd">
-                                <span class="sym-label mixte-label">Mixte</span>
-                                <span class="sym-state">{issueMixed.length}</span>
-                            </div>
-                            {#each issueMixed as pattern}
-                                <div class="sym-row">
-                                    <span class="sym-bullet">*</span>
-                                    <span class="sym-key mixte-key">{pattern}</span>
+                            <div class="sym-sec sym-sec--mixte">
+                                <div class="sym-group-hd">
+                                    <span class="sym-label">Mixte</span>
+                                    <span class="sym-state">{issueMixed.length}</span>
                                 </div>
-                            {/each}
+                                {#each issueMixed as pattern}
+                                    <div class="sym-row">
+                                        <span class="sym-bullet">*</span>
+                                        <span class="sym-key">{pattern}</span>
+                                    </div>
+                                {/each}
+                            </div>
                         {/if}
                     </div>
                 {/if}
@@ -646,9 +654,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 
 /* ── Symboles + Clusters ── */
-.sym-tree {
-    margin-top: 1.25rem;
-}
+.sym-tree { margin-top: 1.25rem; }
+
+.sym-sec { margin-bottom: 0.25rem; }
+
 .sym-group-hd {
     display: flex;
     align-items: center;
@@ -659,14 +668,9 @@ ul { list-style: none; padding: 0; margin: 0; }
     font-size: 0.55rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--text-muted);
 }
-.coal-label { opacity: 0.7; }
-.dir-label  { opacity: 0.6; }
-.mixte-label { opacity: 0.5; }
 .sym-state {
     font-size: 0.55rem;
-    color: var(--text-muted);
     font-family: 'JetBrains Mono', monospace;
 }
 .sym-row {
@@ -679,18 +683,36 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 .sym-bullet {
     font-size: 0.55rem;
-    color: var(--text-muted);
     flex-shrink: 0;
-    opacity: 0.4;
 }
 .sym-key {
     font-size: 0.6rem;
-    color: var(--accent);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.coal-key  { color: var(--text-secondary); }
-.dir-key   { color: var(--text-secondary); opacity: 0.7; }
-.mixte-key { color: var(--text-secondary); opacity: 0.6; }
+
+/* Pourpre/violet — SYMBOLES */
+.sym-sec--sym .sym-label,
+.sym-sec--sym .sym-state  { color: #6655aa; }
+.sym-sec--sym .sym-bullet { color: #6655aa; opacity: 0.45; }
+.sym-sec--sym .sym-key    { color: #a090e0; }
+
+/* Cyan/bleu — COALESCENCE */
+.sym-sec--coal .sym-label,
+.sym-sec--coal .sym-state  { color: #3a7f8f; }
+.sym-sec--coal .sym-bullet { color: #3a7f8f; opacity: 0.45; }
+.sym-sec--coal .sym-key    { color: #68c0cc; }
+
+/* Vert sauge — DIR */
+.sym-sec--dir .sym-label,
+.sym-sec--dir .sym-state  { color: #3a7a48; }
+.sym-sec--dir .sym-bullet { color: #3a7a48; opacity: 0.45; }
+.sym-sec--dir .sym-key    { color: #7abf82; }
+
+/* Ambre/doré — MIXTE */
+.sym-sec--mixte .sym-label,
+.sym-sec--mixte .sym-state  { color: #7a5e1e; }
+.sym-sec--mixte .sym-bullet { color: #7a5e1e; opacity: 0.45; }
+.sym-sec--mixte .sym-key    { color: #c8a454; }
 </style>

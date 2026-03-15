@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
     import ItemRow from "$lib/components/ItemRow.svelte";
     import PromptUsage from "$lib/components/PromptUsage.svelte";
 
@@ -258,6 +258,7 @@
         try {
             const res = await fetch("/api/tasks");
             tasks = await res.json();
+            taskIssueNumbers.set(new Set(tasks.filter(t => t.issueNumber).map(t => t.issueNumber!)));
             if (selected) {
                 const prev = selected.status;
                 selected = tasks.find(t => t.id === selected!.id) ?? null;
@@ -278,6 +279,7 @@
             const fresh = await res.json();
             if (!Array.isArray(fresh)) return;
             tasks = fresh;
+            taskIssueNumbers.set(new Set(tasks.filter(t => t.issueNumber).map(t => t.issueNumber!)));
             if (selected) {
                 const prev = selected.status;
                 selected = tasks.find(t => t.id === selected!.id) ?? null;

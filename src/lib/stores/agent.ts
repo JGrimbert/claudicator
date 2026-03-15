@@ -107,6 +107,7 @@ export function notifyTaskCreated(taskId?: string) {
 }
 
 export const hoveredIssueNumber = writable<number | null>(null);
+export const taskIssueNumbers  = writable<Set<number>>(new Set());
 
 export const issueAnalysis = writable<{
     running: boolean;
