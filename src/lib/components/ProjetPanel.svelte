@@ -2,9 +2,7 @@
     import IssueList from "./IssueList.svelte";
     import TodoList from "./TodoList.svelte";
     import TaskList from "./TaskList.svelte";
-    import { agentState } from "$lib/stores/agent";
-
-    let activeTab: "todos" | "issues" | "tasks" = "issues";
+    import { agentState, projetPanelTab } from "$lib/stores/agent";
 
     function openCreate() {
         agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
@@ -13,16 +11,16 @@
 
 <div class="panel">
     <div class="panel-tabs">
-        <button class="tab" class:tab-active={activeTab === "todos"} onclick={() => activeTab = "todos"}>todo</button>
-        <button class="tab" class:tab-active={activeTab === "issues"} onclick={() => activeTab = "issues"}>issues</button>
-        <button class="tab" class:tab-active={activeTab === "tasks"} onclick={() => activeTab = "tasks"}>tasks</button>
-        {#if activeTab === "issues"}
+        <button class="tab" class:tab-active={$projetPanelTab === "todos"} onclick={() => projetPanelTab.set("todos")}>todo</button>
+        <button class="tab" class:tab-active={$projetPanelTab === "issues"} onclick={() => projetPanelTab.set("issues")}>issues</button>
+        <button class="tab" class:tab-active={$projetPanelTab === "tasks"} onclick={() => projetPanelTab.set("tasks")}>tasks</button>
+        {#if $projetPanelTab === "issues"}
             <button class="tab-action" onclick={openCreate} title="Nouvelle issue">+</button>
         {/if}
     </div>
-    {#if activeTab === "todos"}
+    {#if $projetPanelTab === "todos"}
         <TodoList hideHeader={true} />
-    {:else if activeTab === "issues"}
+    {:else if $projetPanelTab === "issues"}
         <IssueList hideHeader={true} />
     {:else}
         <TaskList />
