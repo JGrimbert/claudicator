@@ -4,6 +4,7 @@
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import SymbolsView from "$lib/components/SymbolsView.svelte";
     import ArchiView from "$lib/components/ArchiView.svelte";
+    import { JgrBtn } from 'jgr-ui';
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
     type FileCard = { name: string; content: string; loading: boolean; error: string };
@@ -211,7 +212,7 @@
 {#if expandedFile}
     <div class="section fill">
         <div class="section-header">
-            <button class="back-btn" onclick={() => expandedFile = null}>← Retour</button>
+            <JgrBtn variant="back" onclick={() => expandedFile = null}>← Retour</JgrBtn>
             <span>{expandedFile.name}</span>
         </div>
         <pre class="exp-content">{expandedFile.content}</pre>
@@ -222,15 +223,15 @@
             ATLAS
             <div class="header-actions">
                 {#each CMD_BUTTONS as btn}
-                    <button
-                        class="cmd-btn"
-                        class:active={runningCmd === btn.id}
+                    <JgrBtn
+                        variant="cmd"
+                        active={runningCmd === btn.id}
                         onclick={() => runCmd(btn.id)}
                         disabled={!!runningCmd}
                         title={btn.id}
                     >
                         {runningCmd === btn.id ? "…" : btn.label}
-                    </button>
+                    </JgrBtn>
                 {/each}
             </div>
         </div>
@@ -335,13 +336,13 @@
         {:else if activeTab === "documentation"}
             <div class="doc-files-tab">
                 {#each files as file}
-                    <button
-                        class="doc-file-btn"
+                    <JgrBtn
+                        variant="file"
                         onclick={() => expandedFile = file}
                         disabled={file.loading || !!file.error}
                     >
                         {file.name}
-                    </button>
+                    </JgrBtn>
                 {/each}
             </div>
         {:else if activeTab === "files"}
@@ -519,22 +520,6 @@
     gap: 0.4rem;
 }
 
-/* ── Boutons commandes ────────────────────────────────────────────── */
-.cmd-btn {
-    padding: 0.2rem 0.55rem;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-strong);
-    color: #666;
-    font-size: 0.65rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    white-space: nowrap;
-}
-.cmd-btn:hover:not(:disabled) { background: var(--bg-subtle); color: #aaa; }
-.cmd-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.cmd-btn.active:hover:not(:disabled) { background: var(--accent-hover); }
-.cmd-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Logs commande ────────────────────────────────────────────────── */
 .cmd-logs {
@@ -556,19 +541,6 @@
     gap: 0.3rem;
     padding: 0.5rem 0.75rem;
 }
-.doc-file-btn {
-    background: none;
-    border: 1px solid #222;
-    color: #555;
-    font-size: 0.62rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: color 0.15s, border-color 0.15s;
-}
-.doc-file-btn:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent-hover); }
-.doc-file-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Expanded file ────────────────────────────────────────────────── */
 .exp-content {
@@ -698,12 +670,6 @@
 
 
 /* ── Utilitaires ──────────────────────────────────────────────────── */
-.back-btn {
-    background: none; border: 1px solid var(--border-strong);
-    color: var(--accent); font-size: 0.68rem;
-    padding: 0.15rem 0.5rem; border-radius: 3px; cursor: pointer;
-}
-.back-btn:hover { background: var(--border); }
 .mono { font-family: 'JetBrains Mono', monospace; }
 .purple { color: #9181f9; }
 .dim { color: #444; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
