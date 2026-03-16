@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
+    import { JgrBtn } from 'jgr-ui';
 
     // ─── Plan ─────────────────────────────────────────────────────────────────
     let prevIssue = 0;
@@ -290,9 +291,9 @@
 <div class="panel">
     <div class="panel-header">
         {#if $agentState.navigationStack.length > 0}
-            <button class="back-btn" onclick={navigateBack}>
+            <JgrBtn variant="back" onclick={navigateBack}>
                 ← #{$agentState.navigationStack.at(-1)?.number}
-            </button>
+            </JgrBtn>
         {/if}
         <span>Artefact</span>
         {#if editingTitle || editingBody}
@@ -471,19 +472,7 @@
     position: relative;
     z-index: 1;
 }
-.back-btn {
-    background: none;
-    border: 1px solid var(--border-strong);
-    color: var(--accent);
-    font-size: 0.7rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
-    text-transform: none;
-    letter-spacing: normal;
-    flex-shrink: 0;
-}
-.back-btn:hover { background: var(--border); }
+
 .content {
     flex: 1;
     min-height: 0;
