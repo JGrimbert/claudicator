@@ -1,25 +1,14 @@
 <script lang="ts">
     import IssueList from "./IssueList.svelte";
     import TodoList from "./TodoList.svelte";
-    import CtaButton from "./CtaButton.svelte";
-    import { agentState } from "$lib/stores/agent";
 
     let activeTab: "issues" | "todos" = "issues";
-
-    function openCreate() {
-        agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
-    }
 </script>
 
 <div class="panel">
     <div class="panel-tabs">
         <button class="tab" class:tab-active={activeTab === "issues"} onclick={() => activeTab = "issues"}>issues</button>
         <button class="tab" class:tab-active={activeTab === "todos"} onclick={() => activeTab = "todos"}>todos</button>
-        {#if activeTab === "issues"}
-            <div class="tab-cta">
-                <CtaButton label="Nouvelle issue" useCase="create-issue" onclick={openCreate} />
-            </div>
-        {/if}
     </div>
     {#if activeTab === "issues"}
         <IssueList hideHeader={true} />
@@ -61,10 +50,4 @@
 }
 .tab:hover { color: #555; }
 .tab-active { color: #777; }
-.tab-cta {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    padding-right: 0.4rem;
-}
 </style>
