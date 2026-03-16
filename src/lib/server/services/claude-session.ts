@@ -13,7 +13,9 @@ type SessionStatus = "idle" | "busy" | "destroyed";
 interface Session {
     proc: ChildProcess;
     status: SessionStatus;
-    currentCallback: ((e: TurnEvent) => void) | null;
+    turnCallback: ((e: TurnEvent) => void) | null;   // callback du tour en cours (sendTurn)
+    streamClients: Set<(e: TurnEvent) => void>;       // clients reconnectés (fan-out)
+    replayLog: TurnEvent[];                            // max 200 événements récents
     stdoutBuf: string;
     stderrBuf: string;
 }
@@ -25,10 +27,17 @@ function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").trim();
 }
 
-/** Parse une ligne JSON stdout et émet les événements au callback. */
+/** Dispatche un événement à tous les listeners et l'ajoute au replayLog. */
+function broadcast(session: Session, event: TurnEvent): void {
+    session.replayLog.push(event);
+    if (session.replayLog.length > 200) session.replayLog.shift();
+    session.turnCallback?.(event);
+    for (const cb of session.streamClients) cb(event);
+}
+
+/** Parse une ligne JSON stdout et émet les événements. */
 function processStdoutLine(rawLine: string, session: Session): void {
-    const cb = session.currentCallback;
-    if (!cb) return;
+    if (!session.turnCallback && session.streamClients.size === 0) return;
     if (!rawLine.trim()) return;
     try {
         const obj = JSON.parse(rawLine);
@@ -36,19 +45,19 @@ function processStdoutLine(rawLine: string, session: Session): void {
             const content = obj.message?.content ?? [];
             for (const block of content) {
                 if (block.type === "text" && block.text) {
-                    cb({ type: "agent_text", payload: block.text });
+                    broadcast(session, { type: "agent_text", payload: block.text });
                 } else if (block.type === "tool_use" && block.name) {
                     const inp = block.input as Record<string, unknown> | undefined;
                     const hint = inp
                         ? (Object.values(inp).find(v => typeof v === "string") as string | undefined)
                         : undefined;
-                    cb({ type: "tool_use", payload: `⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}` });
+                    broadcast(session, { type: "tool_use", payload: `⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}` });
                 }
             }
         } else if (obj.type === "result") {
             const u = obj.usage;
             if (u && (u.input_tokens !== undefined || u.inputTokens !== undefined)) {
-                cb({
+                broadcast(session, {
                     type: "usage",
                     payload: {
                         inputTokens: u.input_tokens ?? u.inputTokens ?? 0,
@@ -56,15 +65,20 @@ function processStdoutLine(rawLine: string, session: Session): void {
                     },
                 });
             }
-            // Fin de tour — vider le callback AVANT d'émettre turn_end
-            session.currentCallback = null;
+            // Sauvegarder le turnCallback et le vider AVANT turn_end
+            const tc = session.turnCallback;
+            session.turnCallback = null;
             session.status = "idle";
-            cb({ type: "turn_end", payload: obj.subtype ?? null });
+            const endEvent: TurnEvent = { type: "turn_end", payload: obj.subtype ?? null };
+            session.replayLog.push(endEvent);
+            if (session.replayLog.length > 200) session.replayLog.shift();
+            tc?.(endEvent);
+            for (const cb of session.streamClients) cb(endEvent);
         }
         // Autres types (system, user/tool_result…) → ignorés
     } catch {
         // Ligne non-JSON → émettre telle quelle
-        cb({ type: "agent_text", payload: rawLine });
+        broadcast(session, { type: "agent_text", payload: rawLine });
     }
 }
 
@@ -84,7 +98,9 @@ export function createSession(sessionId: string, cwd: string, addDir: string): v
     const session: Session = {
         proc,
         status: "idle",
-        currentCallback: null,
+        turnCallback: null,
+        streamClients: new Set(),
+        replayLog: [],
         stdoutBuf: "",
         stderrBuf: "",
     };
@@ -105,27 +121,33 @@ export function createSession(sessionId: string, cwd: string, addDir: string): v
             const line = stripAnsi(l);
             // Filtrer les prompts interactifs courts (">", "?", etc.)
             if (!line || line.length < 2) continue;
-            session.currentCallback?.({ type: "stderr", payload: line });
+            broadcast(session, { type: "stderr", payload: line });
         }
     });
 
     proc.on("error", (err: Error) => {
-        const cb = session.currentCallback;
-        session.currentCallback = null;
+        const tc = session.turnCallback;
+        session.turnCallback = null;
         session.status = "destroyed";
         sessions.delete(sessionId);
-        cb?.({ type: "error", payload: err.message });
+        const event: TurnEvent = { type: "error", payload: err.message };
+        tc?.(event);
+        for (const cb of session.streamClients) cb(event);
+        session.streamClients.clear();
     });
 
     proc.on("close", () => {
-        const cb = session.currentCallback;
-        session.currentCallback = null;
+        const tc = session.turnCallback;
+        session.turnCallback = null;
         session.status = "destroyed";
         sessions.delete(sessionId);
-        // Signaler l'erreur seulement si un tour était en cours
-        if (cb) {
-            cb({ type: "error", payload: "Session fermée de manière inattendue" });
+        // Signaler l'erreur seulement si un tour était en cours ou des clients connectés
+        if (tc || session.streamClients.size > 0) {
+            const event: TurnEvent = { type: "error", payload: "Session fermée de manière inattendue" };
+            tc?.(event);
+            for (const cb of session.streamClients) cb(event);
         }
+        session.streamClients.clear();
     });
 }
 
@@ -145,7 +167,7 @@ export function sendTurn(
         return;
     }
     session.status = "busy";
-    session.currentCallback = onEvent;
+    session.turnCallback = onEvent;
     session.proc.stdin!.write(message + "\n");
 }
 
@@ -155,6 +177,7 @@ export function destroySession(sessionId: string): void {
     if (!session) return;
     session.status = "destroyed";
     sessions.delete(sessionId);
+    session.streamClients.clear();
     if (process.platform === "win32" && session.proc.pid) {
         spawn("taskkill", ["/F", "/T", "/PID", String(session.proc.pid)], { shell: false });
     } else {
@@ -177,4 +200,22 @@ export function isSessionAlive(sessionId: string): boolean {
 export function isSessionBusy(sessionId: string): boolean {
     const s = sessions.get(sessionId);
     return !!s && s.status === "busy";
+}
+
+/** Enregistre un client SSE persistant sur la session (fan-out). */
+export function registerStreamClient(sessionId: string, cb: (e: TurnEvent) => void): void {
+    const s = sessions.get(sessionId);
+    if (s) s.streamClients.add(cb);
+}
+
+/** Supprime un client SSE de la session. */
+export function unregisterStreamClient(sessionId: string, cb: (e: TurnEvent) => void): void {
+    const s = sessions.get(sessionId);
+    if (s) s.streamClients.delete(cb);
+}
+
+/** Retourne une copie du replayLog de la session (événements depuis le dernier démarrage). */
+export function getReplayLog(sessionId: string): TurnEvent[] {
+    const s = sessions.get(sessionId);
+    return s ? [...s.replayLog] : [];
 }

@@ -1,4 +1,4 @@
-import { writable, derived } from "svelte/store";
+import { writable, derived, get } from "svelte/store";
 
 // Référence module-level à la connexion SSE active (survit aux changements de composants)
 let _streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
@@ -21,7 +21,7 @@ export const contextState = writable<Context>({
     error: "",
 });
 
-export type RunLog = { line: string; type: "agent" | "system" | "usage" | "context" | "session_status" };
+export type RunLog = { line: string; type: "agent" | "system" | "usage" | "context" | "session_status" | "replay" };
 
 export const agentRunState = writable<{
     taskId: string | null;
@@ -57,6 +57,14 @@ export async function startConsoleStream(
         opts?.onDone?.();
         return;
     }
+    // Persister taskId + title pour reconnexion après refresh
+    const state = get(agentRunState);
+    if (state.taskId) {
+        try {
+            sessionStorage.setItem("activeTaskId", state.taskId);
+            sessionStorage.setItem("activeTaskTitle", state.taskTitle);
+        } catch { /* SSR ou mode privé */ }
+    }
     const reader = res.body.getReader();
     _streamReader = reader;
     const dec = new TextDecoder();
@@ -80,17 +88,22 @@ export async function startConsoleStream(
     finally {
         _streamReader = null;
         agentRunState.update(s => ({ ...s, running: false }));
+        // Ne pas supprimer activeTaskId — la session reste vivante après turn_end
         opts?.onDone?.();
     }
 }
 
-/** Annule le stream SSE actif et passe running à false. */
+/** Annule le stream SSE actif et passe running à false. Efface la persistance de session. */
 export function stopConsoleStream(): void {
     if (_streamReader) {
         _streamReader.cancel().catch(() => {});
         _streamReader = null;
     }
     agentRunState.update(s => ({ ...s, running: false }));
+    try {
+        sessionStorage.removeItem("activeTaskId");
+        sessionStorage.removeItem("activeTaskTitle");
+    } catch { /* SSR ou mode privé */ }
 }
 
 /** Bascule l'état minimisé/développé du ConsoleDrawer. */
