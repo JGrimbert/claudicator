@@ -18,6 +18,21 @@
     let error = "";
     let hasResult = false;
     let filterQuery = "";
+    let closingNumbers = new Set<number>();
+    let closedNumbers = new Set<number>();
+
+    async function closeIssue(issueNumber: number) {
+        closingNumbers = new Set([...closingNumbers, issueNumber]);
+        try {
+            const res = await fetch(`/api/issues/${issueNumber}/close`, { method: "POST" });
+            if (res.ok) {
+                closedNumbers = new Set([...closedNumbers, issueNumber]);
+                setTimeout(() => loadIssues(), 800);
+            }
+        } finally {
+            closingNumbers = new Set([...closingNumbers].filter(n => n !== issueNumber));
+        }
+    }
 
     $: filteredIssues = issues.filter(i =>
         i.state === "open" && !$agentState.knownSubIssueNumbers.includes(i.number)
@@ -305,6 +320,12 @@
                     state={issue.state}
                     active={$agentState.issue?.number === issue.number}
                     onclick={() => select(issue)}
+                    action={{
+                        label: "Fermer",
+                        loading: closingNumbers.has(issue.number),
+                        done: closedNumbers.has(issue.number),
+                        onclick: () => closeIssue(issue.number)
+                    }}
                 />
             {/each}
         {/if}
