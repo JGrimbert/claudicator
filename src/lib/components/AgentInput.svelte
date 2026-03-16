@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
-    import CtaButton from "$lib/components/CtaButton.svelte";
+    import { JgrCta } from 'jgr-ui';
 
     type Task = { id: string; title: string; issueNumber?: number };
     type Section = { key: string; content: string };
@@ -165,6 +165,11 @@
         const text = mode === "impl" ? taskText.trim() : buildFullPrompt().trim();
         if (!text || $agentRunState.running || preLaunching) return;
 
+        if ($agentRunState.sessionAlive) {
+            const ok = confirm("Une session est active dans la console. L'interrompre pour lancer ce prompt ?");
+            if (!ok) return;
+        }
+
         if (onBeforeLaunch) {
             preLaunching = true;
             try {
@@ -175,7 +180,7 @@
             }
         }
 
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false });
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
         try {
             const body = mode === "impl"
                 ? { plan: text, taskId: task.id }
@@ -187,6 +192,9 @@
             });
             await startConsoleStream(res);
         } finally {
+            if (mode !== "impl") {
+                agentRunState.update(s => ({ ...s, completionLabel: "Plan enregistré · initiez le commit dans Tâches" }));
+            }
             agentRunState.update(s => ({ ...s, running: false }));
             taskRefreshTick.update(n => n + 1);
             onLaunchComplete?.();
@@ -344,11 +352,10 @@
                 </label>
             {/if}
             {@render footerExtra?.()}
-            <CtaButton
+            <JgrCta
                 label={hasPlan ? "Affiner" : "Lancer l'agent"}
-                loading={$agentRunState.running || preLaunching}
+                pending={$agentRunState.running || preLaunching}
                 disabled={!taskText.trim() || loadingContext}
-                useCase={hasPlan ? "refine" : "launch-agent"}
                 onclick={launch}
             />
         </div>

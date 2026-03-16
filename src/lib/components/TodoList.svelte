@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { notifyTaskCreated } from "$lib/stores/agent";
-    import ItemRow from "$lib/components/ItemRow.svelte";
+    import { JgrItem } from 'jgr-ui';
     import Fuse from 'fuse.js';
 
     type GrepResult = { file: string; line: number; content: string; };
@@ -107,15 +107,13 @@
         {:else}
             {#each displayedTodos as g}
                 {@const key = `${g.file}:${g.line}`}
-                <ItemRow
+                <JgrItem
                     prefix="{shortFile(g.file)}:{g.line}"
                     title={todoTitle(g.content)}
-                    action={{
-                        label: "→ Task",
-                        loading: creating[key],
-                        done: created[key],
-                        onclick: () => createTask(g)
-                    }}
+                    actionLabel="→ Task"
+                    actionLoading={creating[key]}
+                    actionDone={created[key]}
+                    onaction={() => createTask(g)}
                 />
             {/each}
         {/if}

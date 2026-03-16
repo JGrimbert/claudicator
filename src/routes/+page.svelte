@@ -9,6 +9,7 @@
     import PlanPanel from "$lib/components/PlanPanel.svelte";
     import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
     import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
+    import { JgrLayout, JgrTabs } from 'jgr-ui';
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol } from "$lib/stores/agent";
 
     let activeMiddleTab: "roadmap" | "plan" | "cluster" = "roadmap";
@@ -302,31 +303,12 @@
 
         // TODO: add support for multiple agents and switching between them
 
-    // ─── Colonnes redimensionnables ───────────────────────────────────────────
-    const STORAGE_KEY = "claudicator:panel-widths";
+    // ─── Splits verticaux ─────────────────────────────────────────────────────
     const ASIDE_SPLIT_KEY = "claudicator:aside-split";
     const MAIN_SPLIT_KEY  = "claudicator:main-split";
-    const LIMITS = { aside: [180, 600], section: [200, 600] } as const;
     const ASIDE_LIMITS = [20, 80] as const;
     const MAIN_LIMITS  = [10, 85] as const;
-    const COLLAPSED_KEY = 'claudicator:panel-collapsed';
 
-    function loadWidths() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const p = JSON.parse(raw);
-                return {
-                    aside:   Math.max(LIMITS.aside[0],   Math.min(LIMITS.aside[1],   p.aside   ?? 300)),
-                    section: Math.max(LIMITS.section[0], Math.min(LIMITS.section[1], p.section ?? 340)),
-                };
-            }
-        } catch { /* ignore */ }
-        return { aside: 300, section: 340 };
-    }
-
-    let widths = { aside: 300, section: 340 };
-    let collapsed = { aside: false, section: false };
     let asideTopPct = 60;
     let mainTopPct  = 80;
 
@@ -339,7 +321,6 @@
 
     onMount(() => {
         loadProjectUsage();
-        widths = loadWidths();
         try {
             const raw = localStorage.getItem(ASIDE_SPLIT_KEY);
             if (raw) {
@@ -354,32 +335,7 @@
                 if (!isNaN(v)) mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], v));
             }
         } catch { /* ignore */ }
-        try {
-            const raw = localStorage.getItem(COLLAPSED_KEY);
-            if (raw) collapsed = JSON.parse(raw);
-        } catch { /* ignore */ }
     });
-
-    function saveWidths() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(widths)); } catch { /* ignore */ }
-    }
-
-    function toggleCollapse(panel: 'aside' | 'section') {
-        collapsed = { ...collapsed, [panel]: !collapsed[panel] };
-        try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); } catch { /* ignore */ }
-    }
-
-    let dragging: "aside" | "section" | null = null;
-    let dragStartX = 0;
-    let dragStartW = 0;
-
-    function startDrag(e: MouseEvent, panel: "aside" | "section") {
-        if (collapsed[panel]) return;
-        dragging = panel;
-        dragStartX = e.clientX;
-        dragStartW = widths[panel];
-        e.preventDefault();
-    }
 
     // Handle vertical aside split
     let draggingV = false;
@@ -418,15 +374,7 @@
             const h = mainEl.offsetHeight;
             const deltaPct = ((e.clientY - dragMainStartY) / h) * 100;
             mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], dragMainStartPct + deltaPct));
-            return;
         }
-        if (!dragging) return;
-        const delta = e.clientX - dragStartX;
-        const [min, max] = LIMITS[dragging];
-        const next = dragging === "aside"
-            ? Math.max(min, Math.min(max, dragStartW + delta))
-            : Math.max(min, Math.min(max, dragStartW - delta));
-        widths = { ...widths, [dragging]: next };
     }
 
     function onUp() {
@@ -438,28 +386,35 @@
             draggingMain = false;
             try { localStorage.setItem(MAIN_SPLIT_KEY, String(mainTopPct)); } catch { /* ignore */ }
         }
-        if (dragging) { saveWidths(); dragging = null; }
     }
+
+    // ─── Tabs centre ──────────────────────────────────────────────────────────
+    $: midTabs = [
+        { id: 'roadmap', label: 'roadmap' },
+        { id: 'plan',    label: 'plan'    },
+        ...($clusterFocusedSymbol ? [{ id: 'cluster', label: 'cluster' }] : []),
+    ];
 </script>
 
 <svelte:window onmousemove={onMove} onmouseup={onUp} />
 
-<div class="app" class:dragging class:dragging-v={draggingV} class:dragging-main={draggingMain}>
-    <TopBar />
-    <div class="panels">
-        <!-- Bande gauche -->
-        <div class="panel-strip panel-strip--left">
-            <button
-                class:active={!collapsed.aside}
-                onclick={() => toggleCollapse('aside')}
-                title="Projet"
-            >
-                <span class="strip-label">PROJET</span>
-            </button>
-        </div>
+<JgrLayout
+    storageKey="claudicator:panel-widths"
+    leftWidth={300}
+    rightWidth={340}
+    leftLabel="PROJET"
+    rightLabel="PLAN"
+>
+    {#snippet topbar()}
+        <TopBar />
+    {/snippet}
 
-        {#if !collapsed.aside}
-        <aside style="width: {widths.aside}px" bind:this={asideEl}>
+    {#snippet left()}
+        <div
+            class="aside-inner"
+            class:dragging-v={draggingV}
+            bind:this={asideEl}
+        >
             <div class="aside-top" style="height: {asideTopPct}%">
                 <ArtifactViewer />
             </div>
@@ -471,49 +426,46 @@
                 class:active={draggingV}
             ></div>
             <ProjetPanel />
-        </aside>
-        <div
-            class="handle"
-            role="separator"
-            aria-label="Redimensionner le panneau gauche"
-            onmousedown={e => startDrag(e, "aside")}
-            class:active={dragging === "aside"}
-        ></div>
-        {/if}
+        </div>
+    {/snippet}
 
-        <main bind:this={mainEl}>
+    {#snippet center()}
+        <div
+            class="main-inner"
+            class:dragging-main={draggingMain}
+            bind:this={mainEl}
+        >
             <!-- ── PLAN (haut) ── -->
             <div class="main-top" style="height: {mainTopPct}%">
-                <div class="mid-tab-bar">
-                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "roadmap"} onclick={() => activeMiddleTab = "roadmap"}>roadmap</button>
-                    <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "plan"} onclick={() => activeMiddleTab = "plan"}>plan</button>
-                    {#if $clusterFocusedSymbol}
-                        <button class="mid-tab" class:mid-tab-active={activeMiddleTab === "cluster"} onclick={() => activeMiddleTab = "cluster"}>cluster</button>
-                    {/if}
-                </div>
-                <div class="mid-tab-content">
-                    {#if activeMiddleTab === "roadmap"}
-                        {#if $issueAnalysis.running || $issueAnalysis.result}
-                            <IssueAnalysis />
-                        {:else}
-                            <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
+                <JgrTabs
+                    tabs={midTabs}
+                    activeTab={activeMiddleTab}
+                    onchange={id => activeMiddleTab = id}
+                >
+                    {#snippet children(tab)}
+                        {#if tab === 'roadmap'}
+                            {#if $issueAnalysis.running || $issueAnalysis.result}
+                                <IssueAnalysis />
+                            {:else}
+                                <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
+                            {/if}
+                        {:else if tab === 'plan'}
+                            {#if $globalPlanPrompt}
+                                <GlobalPlanView />
+                            {:else if $planModeTask}
+                                <AgentInput task={$planModeTask} />
+                            {:else}
+                                <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
+                            {/if}
+                        {:else if tab === 'cluster'}
+                            {#if $clusterFocusedSymbol}
+                                <ClusterCodeView symbol={$clusterFocusedSymbol} />
+                            {:else}
+                                <div class="plan-placeholder"><span>Cliquer sur un symbole dans CLUSTERS</span></div>
+                            {/if}
                         {/if}
-                    {:else if activeMiddleTab === "plan"}
-                        {#if $globalPlanPrompt}
-                            <GlobalPlanView />
-                        {:else if $planModeTask}
-                            <AgentInput task={$planModeTask} />
-                        {:else}
-                            <div class="plan-placeholder"><span>Sélectionner une task → Plan</span></div>
-                        {/if}
-                    {:else if activeMiddleTab === "cluster"}
-                        {#if $clusterFocusedSymbol}
-                            <ClusterCodeView symbol={$clusterFocusedSymbol} />
-                        {:else}
-                            <div class="plan-placeholder"><span>Cliquer sur un symbole dans CLUSTERS</span></div>
-                        {/if}
-                    {/if}
-                </div>
+                    {/snippet}
+                </JgrTabs>
             </div>
             <!-- ── Séparateur ── -->
             <div
@@ -527,76 +479,26 @@
             <div class="main-carto">
                 <AgentConsole />
             </div>
-        </main>
-
-        {#if !collapsed.section}
-        <div
-            class="handle"
-            role="separator"
-            aria-label="Redimensionner le panneau droit"
-            onmousedown={e => startDrag(e, "section")}
-            class:active={dragging === "section"}
-        ></div>
-        <section style="width: {widths.section}px">
-            <PlanPanel />
-        </section>
-        {/if}
-
-        <!-- Bande droite -->
-        <div class="panel-strip panel-strip--right">
-            <button
-                class:active={!collapsed.section}
-                onclick={() => toggleCollapse('section')}
-                title="Plan"
-            >
-                <span class="strip-label">PLAN</span>
-            </button>
         </div>
-    </div>
-</div>
+    {/snippet}
+
+    {#snippet right()}
+        <PlanPanel />
+    {/snippet}
+</JgrLayout>
 
 <style>
-.app {
+/* ── Wrappers internes (contenu des snippets JgrLayout) ── */
+.aside-inner, .main-inner {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-}
-.app.dragging { user-select: none; cursor: col-resize; }
-.panels {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-}
-aside {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
+    height: 100%;
     overflow: hidden;
-    min-height: 0;
 }
-main {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-section {
-    flex-shrink: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-.handle {
-    flex-shrink: 0;
-    width: 6px;
-    cursor: col-resize;
-    border-left: 1px solid #1e1e1e;
-    border-right: 1px solid #1e1e1e;
-    background: transparent;
-    transition: border-color 0.15s;
-}
-.handle:hover, .handle.active { border-color: #3a3a3a; }
+.aside-inner.dragging-v  { user-select: none; cursor: row-resize; }
+.main-inner.dragging-main { user-select: none; cursor: row-resize; }
+
+/* ── Handle vertical (double bordure) ── */
 .vhandle {
     flex-shrink: 0;
     height: 6px;
@@ -607,6 +509,8 @@ section {
     transition: border-color 0.15s;
 }
 .vhandle:hover, .vhandle.active { border-color: #3a3a3a; }
+
+/* ── Split aside ── */
 .aside-top {
     flex-shrink: 0;
     min-height: 0;
@@ -614,39 +518,10 @@ section {
     display: flex;
     flex-direction: column;
 }
-.app.dragging-v    { user-select: none; cursor: row-resize; }
-.app.dragging-main { user-select: none; cursor: row-resize; }
+
+/* ── Split main ── */
 .main-top {
     flex-shrink: 0;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-.mid-tab-bar {
-    display: flex;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-panel);
-}
-.mid-tab {
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: #444;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.58rem;
-    letter-spacing: 0.06em;
-    padding: 0.35rem 0.9rem;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-bottom: -1px;
-    transition: color 0.1s, border-color 0.1s;
-}
-.mid-tab:hover { color: #666; }
-.mid-tab-active { color: var(--accent-hover); border-bottom-color: var(--accent); }
-.mid-tab-content {
-    flex: 1;
     min-height: 0;
     overflow: hidden;
     display: flex;
@@ -659,6 +534,8 @@ section {
     display: flex;
     flex-direction: column;
 }
+
+/* ── Placeholder centre ── */
 .plan-placeholder {
     flex: 1;
     display: flex;
@@ -669,48 +546,4 @@ section {
     font-style: italic;
     font-family: 'JetBrains Mono', monospace;
 }
-.panel-strip {
-    width: 18px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8px 0;
-    gap: 4px;
-    background: #111;
-    z-index: 10;
-}
-.panel-strip button {
-    all: unset;
-    cursor: pointer;
-    padding: 4px 0;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.panel-strip button:hover {
-    background: #1e1e1e;
-}
-.strip-label {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    font-size: 9px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    color: #555;
-    font-family: 'JetBrains Mono', monospace;
-}
-.panel-strip button.active .strip-label {
-    color: #e1cfbd;
-    font-weight: 400;
-}
-.panel-strip--left {
-    border-right: 1px solid #1e1e1e;
-}
-.panel-strip--right {
-    border-left: 1px solid #1e1e1e;
-}
-
 </style>

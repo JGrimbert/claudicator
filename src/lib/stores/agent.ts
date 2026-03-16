@@ -30,6 +30,7 @@ export const agentRunState = writable<{
     running: boolean;
     sessionAlive: boolean;
     consoleMinimized: boolean;
+    completionLabel: string | null;
 }>({
     taskId: null,
     taskTitle: "",
@@ -37,6 +38,7 @@ export const agentRunState = writable<{
     running: false,
     sessionAlive: false,
     consoleMinimized: false,
+    completionLabel: null,
 });
 
 /**

@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentState, agentRunState, issueAnalysis, globalPlanPrompt, issueListRefreshTick, issueStates, planGroups, type Issue } from "$lib/stores/agent";
-    import ItemRow from "$lib/components/ItemRow.svelte";
-    import CtaButton from "$lib/components/CtaButton.svelte";
+    import { JgrItem, JgrCta } from 'jgr-ui';
     import Fuse from 'fuse.js';
 
     export let hideHeader = false;
@@ -275,7 +274,7 @@
                     ⊟ Roadmap
                 </button>
             {/if}
-            <CtaButton label="Nouvelle issue" useCase="create-issue" onclick={openCreate} />
+            <JgrCta label="Nouvelle issue" onclick={openCreate} />
         </div>
     </div>
     {/if}
@@ -313,19 +312,16 @@
             <p class="hint">{filterQuery ? 'Aucun résultat' : 'Aucune issue ouverte'}</p>
         {:else}
             {#each displayedIssues as issue}
-                <ItemRow
+                <JgrItem
                     prefix="#{issue.number}"
                     title={issue.title}
                     labels={issue.labels ?? []}
-                    state={issue.state}
-                    active={$agentState.issue?.number === issue.number}
-                    onclick={() => select(issue)}
-                    action={{
-                        label: "Fermer",
-                        loading: closingNumbers.has(issue.number),
-                        done: closedNumbers.has(issue.number),
-                        onclick: () => closeIssue(issue.number)
-                    }}
+                    state={$agentState.issue?.number === issue.number ? 'selected' : 'default'}
+                    onselect={() => select(issue)}
+                    actionLabel="Fermer"
+                    actionLoading={closingNumbers.has(issue.number)}
+                    actionDone={closedNumbers.has(issue.number)}
+                    onaction={() => closeIssue(issue.number)}
                 />
             {/each}
         {/if}
