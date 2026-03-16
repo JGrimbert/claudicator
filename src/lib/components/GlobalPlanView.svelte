@@ -1,6 +1,6 @@
 <script lang="ts">
     import { globalPlanPrompt, agentRunState, startConsoleStream, planModeTask } from "$lib/stores/agent";
-    import CtaButton from "$lib/components/CtaButton.svelte";
+    import { JgrCta } from 'jgr-ui';
 
     let launching = false;
 
@@ -10,10 +10,14 @@
 
     async function launch() {
         if (launching || $agentRunState.running) return;
+        if ($agentRunState.sessionAlive) {
+            const ok = confirm("Une session est active dans la console. L'interrompre pour lancer le plan global ?");
+            if (!ok) return;
+        }
         const prompt = $globalPlanPrompt;
         if (!prompt) return;
         launching = true;
-        agentRunState.update(s => ({ ...s, running: true, logs: [], taskId: null, taskTitle: "Plan global" }));
+        agentRunState.update(s => ({ ...s, running: true, logs: [], taskId: null, taskTitle: "Plan global", completionLabel: null }));
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
@@ -22,6 +26,7 @@
             });
             await startConsoleStream(res);
         } finally {
+            agentRunState.update(s => ({ ...s, completionLabel: "Plan global généré · consultez les groupes d'issues" }));
             launching = false;
         }
     }
@@ -36,10 +41,9 @@
         <pre class="prompt-text">{$globalPlanPrompt ?? ""}</pre>
     </div>
     <div class="footer">
-        <CtaButton
+        <JgrCta
             label="Lancer l'agent"
-            loading={launching || $agentRunState.running}
-            useCase="launch-global-plan"
+            pending={launching || $agentRunState.running}
             onclick={launch}
         />
     </div>

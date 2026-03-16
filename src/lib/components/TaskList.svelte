@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
-    import ItemRow from "$lib/components/ItemRow.svelte";
+    import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
 
@@ -506,16 +506,16 @@
             {#each filtered as task}
                 <div
                     class="task-row-wrap"
+                    class:task-closed={task.status === "failed" || task.status === "merged"}
                     onmouseenter={() => task.issueNumber && hoveredIssueNumber.set(task.issueNumber)}
                     onmouseleave={() => hoveredIssueNumber.set(null)}
                 >
-                    <ItemRow
+                    <JgrItem
                         prefix={taskPrefix(task)}
                         title={task.title}
                         labels={rowLabels(task, selected?.id === task.id)}
-                        state={(task.status === "failed" || task.status === "merged") ? "closed" : "open"}
-                        active={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id)}
-                        onclick={() => selectTask(task)}
+                        state={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id) ? 'selected' : 'default'}
+                        onselect={() => selectTask(task)}
                     />
                     <button
                         class="task-delete-btn"
@@ -801,6 +801,8 @@
 .list::-webkit-scrollbar-track { background: transparent; }
 .list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .task-row-wrap { position: relative; }
+.task-closed :global(.item-row) { opacity: 0.55; }
+.task-closed :global(.item-title) { text-decoration: line-through; }
 .task-delete-btn {
     position: absolute;
     right: 0.5rem;

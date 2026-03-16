@@ -564,6 +564,10 @@
 
     async function planTasks() {
         if (planLoading || createLoading) return;
+        if ($agentRunState.running || $agentRunState.sessionAlive) {
+            const ok = confirm("La console est active. L'interrompre pour lancer le plan en masse ?");
+            if (!ok) return;
+        }
         planLoading = true;
         planFeedback = "";
         planDone = 0;
@@ -607,7 +611,7 @@
                     }
                 } catch { /* fallback titre */ }
 
-                agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true });
+                agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
                 try {
                     const runRes = await fetch("/api/agent/run", {
                         method: "POST",

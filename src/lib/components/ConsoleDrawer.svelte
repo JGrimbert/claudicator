@@ -90,7 +90,7 @@
         const tid = reconnectTaskId;
         reconnecting = true;
         reconnectTaskId = null;
-        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
+        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false, completionLabel: null }));
         try {
             const res = await fetch("/api/agent/reconnect", {
                 method: "POST",
@@ -164,7 +164,7 @@
         if (!text || !taskId || sendingInput) return;
         sendingInput = true;
         userInput    = "";
-        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
+        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false, completionLabel: null }));
         try {
             const res = await fetch("/api/agent/run", {
                 method: "POST",
@@ -244,7 +244,7 @@
             <input
                 class="bar-input"
                 type="text"
-                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : "Session inactive"}
+                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : $agentRunState.completionLabel ?? "Session inactive"}
                 bind:value={userInput}
                 onkeydown={onInputKey}
                 disabled={sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
