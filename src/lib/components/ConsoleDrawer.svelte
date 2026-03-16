@@ -48,10 +48,68 @@
         try { localStorage.setItem(PANEL_HEIGHT_KEY, String(panelHeight)); } catch { /* ignore */ }
     }
 
+    // ── Reconnexion après refresh ───────────────────────────────────────────────
+    let reconnectTaskId: string | null = null;
+    let reconnecting = false;
+
+    async function checkReconnect() {
+        let storedId: string | null = null;
+        let storedTitle: string | null = null;
+        try {
+            storedId    = sessionStorage.getItem("activeTaskId");
+            storedTitle = sessionStorage.getItem("activeTaskTitle");
+        } catch { return; }
+        if (!storedId) return;
+
+        try {
+            const res = await fetch(`/api/agent/session?taskId=${encodeURIComponent(storedId)}`);
+            if (!res.ok) { clearStoredSession(); return; }
+            const data = await res.json() as { alive: boolean; busy: boolean };
+            if (!data.alive) { clearStoredSession(); return; }
+            // Session toujours vivante — proposer la reconnexion
+            reconnectTaskId = storedId;
+            // Pré-remplir le store pour que la barre de statut s'affiche
+            agentRunState.update(s => ({
+                ...s,
+                taskId: storedId,
+                taskTitle: storedTitle ?? storedId ?? "",
+                sessionAlive: true,
+            }));
+        } catch { /* ignore */ }
+    }
+
+    function clearStoredSession() {
+        try {
+            sessionStorage.removeItem("activeTaskId");
+            sessionStorage.removeItem("activeTaskTitle");
+        } catch { /* ignore */ }
+    }
+
+    async function reconnect() {
+        if (!reconnectTaskId || reconnecting) return;
+        const tid = reconnectTaskId;
+        reconnecting = true;
+        reconnectTaskId = null;
+        agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false }));
+        try {
+            const res = await fetch("/api/agent/reconnect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId: tid })
+            });
+            await startConsoleStream(res);
+        } finally {
+            reconnecting = false;
+            agentRunState.update(s => ({ ...s, running: false }));
+            taskRefreshTick.update(n => n + 1);
+        }
+    }
+
     onMount(() => {
         panelHeight = loadHeight();
         window.addEventListener("beforeunload", stopConsoleStream);
         spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80);
+        checkReconnect();
         return () => {
             window.removeEventListener("beforeunload", stopConsoleStream);
             if (spinnerInterval) clearInterval(spinnerInterval);
@@ -152,6 +210,18 @@
         </div>
     {/if}
 
+    <!-- ── Badge de reconnexion ── -->
+    {#if reconnectTaskId}
+        <div class="reconnect-bar">
+            <span class="reconnect-dot"></span>
+            <span class="reconnect-label">Session en cours</span>
+            <button class="reconnect-btn" onclick={reconnect} disabled={reconnecting}>
+                {reconnecting ? "…" : "Reprendre"}
+            </button>
+            <button class="reconnect-dismiss" onclick={() => { reconnectTaskId = null; clearStoredSession(); }} title="Ignorer">✕</button>
+        </div>
+    {/if}
+
     <!-- ── Barre de statut (toujours visible) ── -->
     <div class="console-bar">
         <span
@@ -235,6 +305,54 @@
     transition: border-color 0.15s;
 }
 .vhandle:hover, .vhandle.active { border-color: #3a3a3a; }
+
+/* ── Badge reconnexion ── */
+.reconnect-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 1rem;
+    background: #0e1a12;
+    border-top: 1px solid #1a3020;
+    flex-shrink: 0;
+}
+.reconnect-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #3a7a4a;
+    animation: pulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+.reconnect-label {
+    font-size: 0.6rem;
+    color: #3a7a4a;
+    flex: 1;
+}
+.reconnect-btn {
+    background: none;
+    border: 1px solid #3a7a4a;
+    color: #3a7a4a;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+}
+.reconnect-btn:hover:not(:disabled) { border-color: #5aaa6a; color: #5aaa6a; }
+.reconnect-btn:disabled { opacity: 0.5; cursor: default; }
+.reconnect-dismiss {
+    background: none;
+    border: none;
+    color: #2a4a2a;
+    font-size: 0.6rem;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.reconnect-dismiss:hover { color: #4a6a4a; }
 
 /* ── Barre de statut ── */
 .console-bar {

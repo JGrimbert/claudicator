@@ -1,6 +1,22 @@
-/** Agent — détruit la session Claude active (DELETE) */
-import { destroySession } from "$lib/server/services/claude-session";
+/** Agent — lit ou détruit la session Claude active (GET / DELETE) */
+import { destroySession, isSessionAlive, isSessionBusy } from "$lib/server/services/claude-session";
 import { getTask, updateTask } from "$lib/server/services/tasks";
+
+/** Retourne l'état d'une session : { alive, busy, taskId } */
+export async function GET({ url }) {
+    const taskId = url.searchParams.get("taskId");
+    if (!taskId) {
+        return new Response(JSON.stringify({ error: "taskId manquant" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
+    return new Response(JSON.stringify({
+        alive: isSessionAlive(taskId),
+        busy: isSessionBusy(taskId),
+        taskId,
+    }), { headers: { "Content-Type": "application/json" } });
+}
 
 /** Supprime une session de tâche en cours */
 export async function DELETE({ request }) {
