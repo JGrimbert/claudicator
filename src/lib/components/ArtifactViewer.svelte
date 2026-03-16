@@ -261,6 +261,14 @@
         }
     }
 
+    // ─── Nouvelle issue ───────────────────────────────────────────────────────
+    function openCreate() {
+        newTitle = "";
+        newBody = "";
+        createError = "";
+        agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
+    }
+
     // ─── Créer une task ───────────────────────────────────────────────────────
     let taskCreated = false;
 
@@ -297,10 +305,15 @@
                 <button class="edit-btn edit-btn--confirm" onclick={submitCreate} disabled={createLoading} title="Créer">✓</button>
                 <button class="edit-btn edit-btn--cancel"  onclick={() => { newTitle = ""; newBody = ""; createError = ""; }} title="Vider">✕</button>
             </div>
-        {:else if $agentState.issue && !$taskIssueNumbers.has($agentState.issue.number)}
-            <button class="task-btn-top" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
-                {taskCreated ? "✓ créée" : "Task →"}
-            </button>
+        {:else}
+            <div class="header-right">
+                {#if $agentState.issue && !$taskIssueNumbers.has($agentState.issue.number)}
+                    <button class="task-btn-top" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
+                        {taskCreated ? "✓ créée" : "Task →"}
+                    </button>
+                {/if}
+                <button class="new-issue-btn" onclick={openCreate} title="Créer une nouvelle issue">+ Issue</button>
+            </div>
         {/if}
     </div>
 
@@ -454,6 +467,9 @@
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    background: var(--bg-panel);
+    position: relative;
+    z-index: 1;
 }
 .back-btn {
     background: none;
@@ -499,6 +515,13 @@
     letter-spacing: 0.1em;
     color: #444;
 }
+.header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
 .task-btn-top {
     background: #1e1540;
     border: 1px solid #3a2e70;
@@ -509,11 +532,24 @@
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     letter-spacing: 0.03em;
-    margin-left: auto;
     flex-shrink: 0;
 }
 .task-btn-top:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
 .task-btn-top:disabled { opacity: 0.4; cursor: default; }
+.new-issue-btn {
+    background: none;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+    text-transform: none;
+    flex-shrink: 0;
+}
+.new-issue-btn:hover { color: var(--text-primary); border-color: var(--accent); }
 .plan-content {
     flex: 1;
     overflow-y: auto;
