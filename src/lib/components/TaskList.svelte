@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
+    import { get } from "svelte/store";
     import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
@@ -215,7 +216,14 @@
     const SELECTED_KEY = "claudicator:selected-task";
 
     onMount(async () => {
+        // Si une sélection est en attente (task créée depuis une issue),
+        // onRefreshTick (déclenché par $taskRefreshTick) s'en charge — ne pas interférer.
+        const hasPending = !!get(pendingSelectTaskId);
         await loadTasks();
+        if (hasPending) {
+            tasksReady.set(true);
+            return;
+        }
         const savedId = localStorage.getItem(SELECTED_KEY);
         const savedTask = savedId ? tasks.find(t => t.id === savedId) : null;
         const validSaved = savedTask && savedTask.status !== "merged" && savedTask.status !== "failed" ? savedTask : null;
