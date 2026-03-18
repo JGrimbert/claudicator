@@ -170,17 +170,21 @@ function parseGroups(text: string): PlanGroup[] {
         const nameMatch = block.match(/### Groupe \d+ — (.+)/);
         if (!nameMatch) continue;
         const issueMatch = block.match(/Issues\s*:\s*((?:#\d+(?:,\s*)?)+)/);
-        const issues = issueMatch
+        let issues = issueMatch
             ? [...issueMatch[1].matchAll(/#(\d+)/g)].map(m => parseInt(m[1]))
             : [];
+        // Fallback : si pas de ligne Issues formelle, chercher les #NNN dans tout le bloc
+        if (issues.length === 0) {
+            issues = [...new Set([...block.matchAll(/#(\d+)/g)].map(m => parseInt(m[1])))];
+        }
         const depMatch = block.match(/Dépend de\s*:\s*(.+)/);
         const dependsOn = depMatch
             ? depMatch[1].split(/[,;]/).map(s => s.trim()).filter(Boolean)
             : [];
         const summaryMatch = block.match(/Résumé\s*:\s*(.+)/);
         const summary = summaryMatch ? summaryMatch[1].trim() : "";
-        if (issues.length > 0)
-            groups.push({ index: groups.length + 1, name: nameMatch[1].trim(), issues, summary, dependsOn });
+        // Inclure tous les groupes, même sans issues (jalons structurels)
+        groups.push({ index: groups.length + 1, name: nameMatch[1].trim(), issues, summary, dependsOn });
     }
     return groups;
 }
@@ -202,6 +206,26 @@ export const planGroupsWithInvalidations = derived(
 export const hasInvalidatedSlots = derived(
     planGroupsWithInvalidations,
     $groups => $groups.some(g => g.invalidatedIssues.length > 0)
+);
+
+export type PlanGroupDeduped = PlanGroupWithInvalidations & {
+    displayIssues: number[];
+    hiddenIssues: Array<{ n: number; firstStep: number }>;
+};
+
+export const planGroupsDeduped = derived(
+    planGroupsWithInvalidations,
+    ($groups) => {
+        const firstSeenStep = new Map<number, number>();
+        return $groups.map(g => {
+            const displayIssues = g.issues.filter(n => !firstSeenStep.has(n));
+            displayIssues.forEach(n => firstSeenStep.set(n, g.index));
+            const hiddenIssues = g.issues
+                .filter(n => !displayIssues.includes(n))
+                .map(n => ({ n, firstStep: firstSeenStep.get(n)! }));
+            return { ...g, displayIssues, hiddenIssues } as PlanGroupDeduped;
+        });
+    }
 );
 
 export const clusterFocusedSymbol = writable<{ name: string; dir: string } | null>(null);
