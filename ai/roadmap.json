@@ -1,0 +1,6808 @@
+{
+  "generated": "2026-03-17T20:30:23.299Z",
+  "stats": {
+    "nodes": 207,
+    "edges": 304,
+    "levels": 8,
+    "steps": 126,
+    "cycles": 0
+  },
+  "steps": [
+    {
+      "id": 1,
+      "label": "Core: cartography",
+      "skill": "domain",
+      "nodes": [
+        "adaptiveCap",
+        "buildAtlasText"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\cartography.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 2,
+      "label": "Service: comment",
+      "skill": "api",
+      "nodes": [
+        "buildFileGraph",
+        "computeDepths",
+        "extractCode",
+        "generateDescriptions",
+        "insertJsDoc"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\comment\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "comment",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 3,
+      "label": "Service: comment",
+      "skill": "api",
+      "nodes": [
+        "readIndex",
+        "topoSort"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\comment\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "comment",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 4,
+      "label": "Service: diagram",
+      "skill": "api",
+      "nodes": [
+        "buildFolderTree",
+        "capitalize",
+        "extractExtends",
+        "makeFileNode",
+        "scanJs"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\diagram\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "diagram",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 5,
+      "label": "Flow: context",
+      "skill": "flow",
+      "nodes": [
+        "buildQuery",
+        "truncateSnippet"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\context.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "context",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 6,
+      "label": "Service: cartography",
+      "skill": "api",
+      "nodes": [
+        "extractKeywords",
+        "walkSrc"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 7,
+      "label": "Service: methods",
+      "skill": "api",
+      "nodes": [
+        "extractSnippet",
+        "getVueScriptOffset"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "methods",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 8,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "getPrivateKey"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 9,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "historyDir"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 10,
+      "label": "Flow: issue-analysis",
+      "skill": "flow",
+      "nodes": [
+        "injectDiagram",
+        "jaccardWords"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\issue-analysis.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "issue-analysis",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 11,
+      "label": "Core: usage",
+      "skill": "domain",
+      "nodes": [
+        "loadUsage"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\usage.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "usage",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-1"
+    },
+    {
+      "id": 12,
+      "label": "Service: clusters",
+      "skill": "api",
+      "nodes": [
+        "makeUF",
+        "parentDir"
+      ],
+      "files": [
+        "src\\routes\\api\\clusters\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "clusters",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 13,
+      "label": "Core: tasks",
+      "skill": "domain",
+      "nodes": [
+        "migrateTaskStatus"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\tasks.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "tasks",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-0"
+    },
+    {
+      "id": 14,
+      "label": "adapter: agent",
+      "skill": "adapter",
+      "nodes": [
+        "parseGroups"
+      ],
+      "files": [
+        "src\\lib\\stores\\agent.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "agent",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 15,
+      "label": "Core: claude-session",
+      "skill": "domain",
+      "nodes": [
+        "processStdoutLine"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\claude-session.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "claude-session",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 16,
+      "label": "Core: projects",
+      "skill": "domain",
+      "nodes": [
+        "save"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\projects.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": true,
+      "concept": "projects",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 17,
+      "label": "Service: analyze",
+      "skill": "api",
+      "nodes": [
+        "saveAnalysis",
+        "saveSnapshot"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\analyze\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "analyze",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 18,
+      "label": "Flow: orchestrator",
+      "skill": "flow",
+      "nodes": [
+        "spawnClaudeOneShot"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\orchestrator.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "orchestrator",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 19,
+      "label": "Service: run",
+      "skill": "api",
+      "nodes": [
+        "stripAnsi"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\run\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "run",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 20,
+      "label": "Service: initial-commit",
+      "skill": "api",
+      "nodes": [
+        "toBranchName"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "initial-commit",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 21,
+      "label": "Service: analysis",
+      "skill": "api",
+      "nodes": [
+        "api.issues.analysis.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\analysis\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "analysis",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 22,
+      "label": "Service: roadmaps",
+      "skill": "api",
+      "nodes": [
+        "api.issues.roadmaps.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\roadmaps\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "roadmaps",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 23,
+      "label": "Service: snapshot",
+      "skill": "api",
+      "nodes": [
+        "api.issues.snapshot.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\snapshot\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "snapshot",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 24,
+      "label": "Service: logs",
+      "skill": "api",
+      "nodes": [
+        "api.logs.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\logs\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "logs",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 25,
+      "label": "Service: plan",
+      "skill": "api",
+      "nodes": [
+        "api.plan.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\plan\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "plan",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 26,
+      "label": "Service: skills",
+      "skill": "api",
+      "nodes": [
+        "api.skills.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\skills\\+server.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "skills",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 27,
+      "label": "Core: claude",
+      "skill": "domain",
+      "nodes": [
+        "askClaude"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\claude.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "claude",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-3"
+    },
+    {
+      "id": 28,
+      "label": "Flow: issue-analysis",
+      "skill": "flow",
+      "nodes": [
+        "buildChatPrompt",
+        "buildFocusedPrompt",
+        "summarizeIssueBody"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\issue-analysis.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "issue-analysis",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 29,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "buildHistoricalCoal",
+        "parseIssueRefs"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 30,
+      "label": "Flow: segments",
+      "skill": "flow",
+      "nodes": [
+        "classifyFile"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\segments.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "segments",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 31,
+      "label": "Core: git",
+      "skill": "domain",
+      "nodes": [
+        "commit",
+        "createBranch",
+        "getCommitFiles",
+        "getCommitLog",
+        "getDiff"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "git",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 32,
+      "label": "Core: git",
+      "skill": "domain",
+      "nodes": [
+        "getHeadCommit",
+        "getMainBranch",
+        "getRemoteRepo",
+        "mergeBranch",
+        "pushBranch"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "git",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 33,
+      "label": "Core: git",
+      "skill": "domain",
+      "nodes": [
+        "revertAll"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "git",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 34,
+      "label": "Core: claude-session",
+      "skill": "domain",
+      "nodes": [
+        "destroySession",
+        "isSessionAlive",
+        "isSessionBusy",
+        "sendTurn"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\claude-session.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "claude-session",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 35,
+      "label": "Utility: logs",
+      "skill": "utility",
+      "nodes": [
+        "emitLog"
+      ],
+      "files": [
+        "src\\lib\\server\\logs.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "logs",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 36,
+      "label": "Flow: prompt",
+      "skill": "flow",
+      "nodes": [
+        "formatImplementationPrompt",
+        "formatPrompt",
+        "loadConceptMap",
+        "loadProjectDiagram",
+        "loadProjectDocs"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\prompt.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "prompt",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 37,
+      "label": "Core: processes",
+      "skill": "domain",
+      "nodes": [
+        "getProcess",
+        "isRunning",
+        "killProcess",
+        "register",
+        "unregister"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\processes.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "processes",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 38,
+      "label": "Core: processes",
+      "skill": "domain",
+      "nodes": [
+        "writeInput"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\processes.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        40
+      ],
+      "isSpine": false,
+      "concept": "processes",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 39,
+      "label": "adapter: agent",
+      "skill": "adapter",
+      "nodes": [
+        "notifyTaskCreated",
+        "startConsoleStream",
+        "stopConsoleStream",
+        "toggleConsoleMinimized"
+      ],
+      "files": [
+        "src\\lib\\stores\\agent.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        40
+      ],
+      "isSpine": false,
+      "concept": "agent",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 40,
+      "label": "Flow: skills",
+      "skill": "flow",
+      "nodes": [
+        "selectSkill"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\skills.ts"
+      ],
+      "rationale": "Foundational — no dependencies",
+      "dependsOnSteps": [],
+      "canParallelWith": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "isSpine": false,
+      "concept": "skills",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 41,
+      "label": "Core: usage",
+      "skill": "domain",
+      "nodes": [
+        "addProjectUsage",
+        "getProjectUsage"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\usage.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        11
+      ],
+      "canParallelWith": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "usage",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-1"
+    },
+    {
+      "id": 42,
+      "label": "Service: input",
+      "skill": "api",
+      "nodes": [
+        "api.agent.input.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\input\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        37,
+        38
+      ],
+      "canParallelWith": [
+        41,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "input",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 43,
+      "label": "Flow: issue-analysis",
+      "skill": "flow",
+      "nodes": [
+        "buildAnalysisPrompt",
+        "buildUpdatePrompt",
+        "detectPotentialDuplicates"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\issue-analysis.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        10
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "issue-analysis",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 44,
+      "label": "Core: git",
+      "skill": "domain",
+      "nodes": [
+        "checkoutMain",
+        "commitAll",
+        "getBranchState"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        31,
+        32
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "git",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 45,
+      "label": "Core: claude-session",
+      "skill": "domain",
+      "nodes": [
+        "createSession",
+        "destroyAllSessions"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\claude-session.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        15,
+        19,
+        34
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "claude-session",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 46,
+      "label": "Flow: claude-stream",
+      "skill": "flow",
+      "nodes": [
+        "spawnClaudeStream"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\claude-stream.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        19
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "claude-stream",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 47,
+      "label": "Core: cartography",
+      "skill": "domain",
+      "nodes": [
+        "buildAtlasDeps"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\cartography.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        6
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 48,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "commitsDir",
+        "statePath"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        9
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 49,
+      "label": "Service: cartography",
+      "skill": "api",
+      "nodes": [
+        "fileNameSearch"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        6
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        50,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 50,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "getOctokit"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        8
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 51,
+      "label": "Service: comment",
+      "skill": "api",
+      "nodes": [
+        "getUndescribedByFile"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\comment\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        3
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52
+      ],
+      "isSpine": false,
+      "concept": "comment",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 52,
+      "label": "Core: projects",
+      "skill": "domain",
+      "nodes": [
+        "load"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\projects.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        16
+      ],
+      "canParallelWith": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
+      ],
+      "isSpine": true,
+      "concept": "projects",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 53,
+      "label": "Core: projects",
+      "skill": "domain",
+      "nodes": [
+        "addProject",
+        "getCurrentProject",
+        "listProjects",
+        "removeProject",
+        "setCurrentProject"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\projects.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        16,
+        52
+      ],
+      "canParallelWith": [
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60
+      ],
+      "isSpine": true,
+      "concept": "projects",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-2"
+    },
+    {
+      "id": 54,
+      "label": "Service: usage",
+      "skill": "api",
+      "nodes": [
+        "api.usage.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\usage\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        41
+      ],
+      "canParallelWith": [
+        53,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60
+      ],
+      "isSpine": false,
+      "concept": "usage",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 55,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "closeIssue",
+        "createIssue",
+        "createPullRequest",
+        "findOpenPullRequest",
+        "getIssue"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        50
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        56,
+        57,
+        58,
+        59,
+        60
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 56,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "getIssues",
+        "getIssuesWithBodies",
+        "getRepoFile",
+        "getSubIssues",
+        "listAccessibleRepos"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        50
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        55,
+        57,
+        58,
+        59,
+        60
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 57,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "mergePullRequest",
+        "updateIssue"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        50
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        60
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 58,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "ensureHistoryDir",
+        "isCommitProcessed",
+        "saveCommitRecord",
+        "saveHistoryState"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        48
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        55,
+        56,
+        57,
+        59,
+        60
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 59,
+      "label": "Flow: issue-analysis",
+      "skill": "flow",
+      "nodes": [
+        "prepareIssues"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\issue-analysis.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        28,
+        43
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        60
+      ],
+      "isSpine": false,
+      "concept": "issue-analysis",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 60,
+      "label": "Core: cartography",
+      "skill": "domain",
+      "nodes": [
+        "ensureLoaded"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\cartography.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        52
+      ],
+      "canParallelWith": [
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-4"
+    },
+    {
+      "id": 61,
+      "label": "Service: issues",
+      "skill": "api",
+      "nodes": [
+        "api.github.issues.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\github\\issues\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        53,
+        55
+      ],
+      "canParallelWith": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "issues",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 62,
+      "label": "Service: issue",
+      "skill": "api",
+      "nodes": [
+        "api.issue.GET",
+        "api.issue.PATCH"
+      ],
+      "files": [
+        "src\\routes\\api\\issue\\+server.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        53,
+        55,
+        56,
+        57
+      ],
+      "canParallelWith": [
+        61,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "issue",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 63,
+      "label": "Service: issues",
+      "skill": "api",
+      "nodes": [
+        "api.issues.GET",
+        "api.issues.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        53,
+        55,
+        56
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "issues",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 64,
+      "label": "Service: close",
+      "skill": "api",
+      "nodes": [
+        "api.issues.[number].close.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\[number]\\close\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        53,
+        55
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "close",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 65,
+      "label": "Service: analyze",
+      "skill": "api",
+      "nodes": [
+        "api.issues.analyze.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\analyze\\+server.ts"
+      ],
+      "rationale": "Depends on 7 prior steps",
+      "dependsOnSteps": [
+        17,
+        36,
+        43,
+        46,
+        53,
+        56,
+        59
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "analyze",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 66,
+      "label": "Service: update",
+      "skill": "api",
+      "nodes": [
+        "api.issues.analyze.update.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\analyze\\update\\+server.ts"
+      ],
+      "rationale": "Depends on 6 prior steps",
+      "dependsOnSteps": [
+        36,
+        43,
+        46,
+        53,
+        56,
+        59
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "update",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 67,
+      "label": "Service: chat",
+      "skill": "api",
+      "nodes": [
+        "api.issues.roadmap.chat.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issues\\roadmap\\chat\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        28,
+        46,
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "chat",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 68,
+      "label": "Service: projects",
+      "skill": "api",
+      "nodes": [
+        "api.projects.GET",
+        "api.projects.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\projects\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "projects",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 69,
+      "label": "Service: current",
+      "skill": "api",
+      "nodes": [
+        "api.projects.current.DELETE",
+        "api.projects.current.PATCH"
+      ],
+      "files": [
+        "src\\routes\\api\\projects\\current\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "current",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 70,
+      "label": "Service: github",
+      "skill": "api",
+      "nodes": [
+        "api.projects.github.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\projects\\github\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        53,
+        56
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 71,
+      "label": "Service: repo-file",
+      "skill": "api",
+      "nodes": [
+        "api.repo-file.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\repo-file\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        53,
+        56
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "repo-file",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 72,
+      "label": "Service: repo-info",
+      "skill": "api",
+      "nodes": [
+        "api.repo-info.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\repo-info\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "repo-info",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 73,
+      "label": "Core: github",
+      "skill": "domain",
+      "nodes": [
+        "createIssueComment"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\github.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        50,
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "github",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 74,
+      "label": "Flow: issue",
+      "skill": "flow",
+      "nodes": [
+        "createIssuePlan"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\issue.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        27,
+        32,
+        35,
+        55
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "issue",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-3"
+    },
+    {
+      "id": 75,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "getHistoryState",
+        "loadAllCommitRecords"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        48,
+        58
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        76,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 76,
+      "label": "Core: projects",
+      "skill": "domain",
+      "nodes": [
+        "getProjectRoot"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\projects.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        77,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "projects",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 77,
+      "label": "Core: cartography",
+      "skill": "domain",
+      "nodes": [
+        "getSessionWithCode",
+        "getSnippet",
+        "refreshIndex",
+        "searchMethods"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\cartography.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        1,
+        52,
+        60
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        78,
+        79
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 78,
+      "label": "Core: tasks",
+      "skill": "domain",
+      "nodes": [
+        "getTasksDir"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\tasks.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        79
+      ],
+      "isSpine": true,
+      "concept": "tasks",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-0"
+    },
+    {
+      "id": 79,
+      "label": "Core: project-config",
+      "skill": "domain",
+      "nodes": [
+        "configFilePath"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\project-config.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        53
+      ],
+      "canParallelWith": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78
+      ],
+      "isSpine": false,
+      "concept": "project-config",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 80,
+      "label": "Service: atlas",
+      "skill": "api",
+      "nodes": [
+        "api.atlas.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\atlas\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        6,
+        30,
+        76
+      ],
+      "canParallelWith": [
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "atlas",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 81,
+      "label": "Service: comment",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.comment.GET",
+        "api.cartography.comment.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\comment\\+server.ts"
+      ],
+      "rationale": "Depends on 5 prior steps",
+      "dependsOnSteps": [
+        2,
+        3,
+        51,
+        76,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "comment",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 82,
+      "label": "Service: diagram",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.diagram.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\diagram\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        4,
+        30,
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "diagram",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 83,
+      "label": "Service: enrich",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.enrich.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\enrich\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "enrich",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 84,
+      "label": "Service: methods",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.methods.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\methods\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "methods",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 85,
+      "label": "Service: refresh",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.refresh.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\refresh\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        76,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "refresh",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 86,
+      "label": "Service: run",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.run.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\run\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "run",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 87,
+      "label": "Service: snippet",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.snippet.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\snippet\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        7,
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "snippet",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 88,
+      "label": "Service: stats",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.stats.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\stats\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        76
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "stats",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 89,
+      "label": "Service: clusters",
+      "skill": "api",
+      "nodes": [
+        "api.clusters.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\clusters\\+server.ts"
+      ],
+      "rationale": "Depends on 6 prior steps",
+      "dependsOnSteps": [
+        12,
+        53,
+        56,
+        75,
+        76,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "clusters",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 90,
+      "label": "Service: issue",
+      "skill": "api",
+      "nodes": [
+        "api.issue.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\issue\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        74
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "issue",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 91,
+      "label": "Service: symbol",
+      "skill": "api",
+      "nodes": [
+        "api.symbol.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\symbol\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        76,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "symbol",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 92,
+      "label": "Core: git-history",
+      "skill": "domain",
+      "nodes": [
+        "findSymbolsForFiles",
+        "getHistoryStats",
+        "getIssueSlots"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\git-history.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        75,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 93,
+      "label": "Core: cartography",
+      "skill": "domain",
+      "nodes": [
+        "generateAtlasStrings"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\cartography.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        1,
+        47,
+        60,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        94,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 94,
+      "label": "Core: project-config",
+      "skill": "domain",
+      "nodes": [
+        "getProjectConfig"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\project-config.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        79
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        95,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "project-config",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 95,
+      "label": "Flow: context",
+      "skill": "flow",
+      "nodes": [
+        "loadMethodSnippets",
+        "loadSymbolMap"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\context.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        5,
+        77
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        96,
+        97
+      ],
+      "isSpine": false,
+      "concept": "context",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 96,
+      "label": "Core: tasks",
+      "skill": "domain",
+      "nodes": [
+        "ensureDir",
+        "taskPath"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\tasks.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        78
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        97
+      ],
+      "isSpine": true,
+      "concept": "tasks",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": "coal-0"
+    },
+    {
+      "id": 97,
+      "label": "Service: run",
+      "skill": "api",
+      "nodes": [
+        "savePlan"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\run\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        78
+      ],
+      "canParallelWith": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96
+      ],
+      "isSpine": false,
+      "concept": "run",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 98,
+      "label": "Service: cartography",
+      "skill": "api",
+      "nodes": [
+        "api.cartography.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\cartography\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        49,
+        76,
+        94
+      ],
+      "canParallelWith": [
+        99,
+        100,
+        101,
+        102,
+        103,
+        104
+      ],
+      "isSpine": false,
+      "concept": "cartography",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 99,
+      "label": "Service: git-history",
+      "skill": "api",
+      "nodes": [
+        "api.git-history.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\git-history\\+server.ts"
+      ],
+      "rationale": "Depends on 5 prior steps",
+      "dependsOnSteps": [
+        32,
+        58,
+        75,
+        76,
+        92
+      ],
+      "canParallelWith": [
+        98,
+        100,
+        101,
+        102,
+        103,
+        104
+      ],
+      "isSpine": false,
+      "concept": "git-history",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 100,
+      "label": "Service: run",
+      "skill": "api",
+      "nodes": [
+        "api.git-history.run.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\git-history\\run\\+server.ts"
+      ],
+      "rationale": "Depends on 6 prior steps",
+      "dependsOnSteps": [
+        29,
+        31,
+        58,
+        75,
+        76,
+        92
+      ],
+      "canParallelWith": [
+        98,
+        99,
+        101,
+        102,
+        103,
+        104
+      ],
+      "isSpine": false,
+      "concept": "run",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 101,
+      "label": "Service: project-config",
+      "skill": "api",
+      "nodes": [
+        "api.project-config.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\project-config\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        94
+      ],
+      "canParallelWith": [
+        98,
+        99,
+        100,
+        102,
+        103,
+        104
+      ],
+      "isSpine": false,
+      "concept": "project-config",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 102,
+      "label": "Flow: context",
+      "skill": "flow",
+      "nodes": [
+        "buildContext"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\context.ts"
+      ],
+      "rationale": "Depends on 6 prior steps",
+      "dependsOnSteps": [
+        5,
+        30,
+        36,
+        40,
+        93,
+        95
+      ],
+      "canParallelWith": [
+        98,
+        99,
+        100,
+        101,
+        103,
+        104
+      ],
+      "isSpine": false,
+      "concept": "context",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": "coal-2"
+    },
+    {
+      "id": 103,
+      "label": "Core: tasks",
+      "skill": "domain",
+      "nodes": [
+        "deleteTask",
+        "getTask",
+        "listTasks"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\tasks.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        13,
+        78,
+        96
+      ],
+      "canParallelWith": [
+        98,
+        99,
+        100,
+        101,
+        102,
+        104
+      ],
+      "isSpine": true,
+      "concept": "tasks",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": "coal-0"
+    },
+    {
+      "id": 104,
+      "label": "Core: project-config",
+      "skill": "domain",
+      "nodes": [
+        "setProjectConfig"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\project-config.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        79,
+        94
+      ],
+      "canParallelWith": [
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "isSpine": false,
+      "concept": "project-config",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 105,
+      "label": "Service: preview-prompt",
+      "skill": "api",
+      "nodes": [
+        "api.agent.preview-prompt.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\preview-prompt\\+server.ts"
+      ],
+      "rationale": "Depends on 5 prior steps",
+      "dependsOnSteps": [
+        36,
+        76,
+        93,
+        95,
+        103
+      ],
+      "canParallelWith": [
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "preview-prompt",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 106,
+      "label": "Service: context",
+      "skill": "api",
+      "nodes": [
+        "api.context.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\context\\+server.ts"
+      ],
+      "rationale": "Depends on 5 prior steps",
+      "dependsOnSteps": [
+        53,
+        55,
+        76,
+        102,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "context",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 107,
+      "label": "Service: project-config",
+      "skill": "api",
+      "nodes": [
+        "api.project-config.PATCH"
+      ],
+      "files": [
+        "src\\routes\\api\\project-config\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        104
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "project-config",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 108,
+      "label": "Service: tasks",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "tasks",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 109,
+      "label": "Service: id",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].DELETE",
+        "api.tasks.[id].GET"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "id",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 110,
+      "label": "Service: diff",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].diff.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\diff\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        31,
+        76,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "diff",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 111,
+      "label": "Service: methods",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].methods.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\methods\\+server.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        7,
+        76,
+        95,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        112,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "methods",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 112,
+      "label": "Service: plan",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].plan.GET"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\plan\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        78,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        113,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "plan",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 113,
+      "label": "Service: revert",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].revert.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\revert\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        33,
+        76,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        114,
+        115
+      ],
+      "isSpine": false,
+      "concept": "revert",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 114,
+      "label": "Core: tasks",
+      "skill": "domain",
+      "nodes": [
+        "createTask",
+        "updateTask"
+      ],
+      "files": [
+        "src\\lib\\server\\services\\tasks.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        96,
+        103
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        115
+      ],
+      "isSpine": true,
+      "concept": "tasks",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 115,
+      "label": "Flow: orchestrator",
+      "skill": "flow",
+      "nodes": [
+        "orchestrate"
+      ],
+      "files": [
+        "src\\lib\\server\\agent\\orchestrator.ts"
+      ],
+      "rationale": "Depends on 7 prior steps",
+      "dependsOnSteps": [
+        18,
+        30,
+        36,
+        40,
+        77,
+        93,
+        102
+      ],
+      "canParallelWith": [
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114
+      ],
+      "isSpine": false,
+      "concept": "orchestrator",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 116,
+      "label": "Service: kill",
+      "skill": "api",
+      "nodes": [
+        "api.agent.kill.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\kill\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        37,
+        114
+      ],
+      "canParallelWith": [
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": true,
+      "concept": "kill",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 117,
+      "label": "Service: run",
+      "skill": "api",
+      "nodes": [
+        "api.agent.run.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\run\\+server.ts"
+      ],
+      "rationale": "Depends on 13 prior steps",
+      "dependsOnSteps": [
+        19,
+        34,
+        36,
+        37,
+        41,
+        45,
+        76,
+        93,
+        95,
+        97,
+        103,
+        114,
+        115
+      ],
+      "canParallelWith": [
+        116,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "run",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 118,
+      "label": "Service: session",
+      "skill": "api",
+      "nodes": [
+        "api.agent.session.DELETE"
+      ],
+      "files": [
+        "src\\routes\\api\\agent\\session\\+server.ts"
+      ],
+      "rationale": "Depends on 3 prior steps",
+      "dependsOnSteps": [
+        34,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "session",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 119,
+      "label": "Service: tasks",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\+server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "tasks",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 120,
+      "label": "Service: id",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].PATCH"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\+server.ts"
+      ],
+      "rationale": "Depends on 1 prior step",
+      "dependsOnSteps": [
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "id",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 121,
+      "label": "Service: commit",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].commit.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\commit\\+server.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        44,
+        76,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        122,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "commit",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 122,
+      "label": "Service: initial-commit",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].initial-commit.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\initial-commit\\+server.ts"
+      ],
+      "rationale": "Depends on 7 prior steps",
+      "dependsOnSteps": [
+        20,
+        31,
+        73,
+        76,
+        78,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        123,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "initial-commit",
+      "pattern": "adapter",
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 123,
+      "label": "Service: merge",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].merge.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\merge\\+server.ts"
+      ],
+      "rationale": "Depends on 8 prior steps",
+      "dependsOnSteps": [
+        32,
+        44,
+        53,
+        55,
+        57,
+        76,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        124,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "merge",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 124,
+      "label": "Service: push",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].push.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\push\\+server.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        32,
+        76,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        125,
+        126
+      ],
+      "isSpine": false,
+      "concept": "push",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 125,
+      "label": "Service: sync",
+      "skill": "api",
+      "nodes": [
+        "api.tasks.[id].sync.POST"
+      ],
+      "files": [
+        "src\\routes\\api\\tasks\\[id]\\sync\\+server.ts"
+      ],
+      "rationale": "Depends on 4 prior steps",
+      "dependsOnSteps": [
+        44,
+        76,
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        126
+      ],
+      "isSpine": false,
+      "concept": "sync",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    },
+    {
+      "id": 126,
+      "label": "Internal: hooks.server",
+      "skill": "internal",
+      "nodes": [
+        "resetStaleTasks"
+      ],
+      "files": [
+        "src\\hooks.server.ts"
+      ],
+      "rationale": "Depends on 2 prior steps",
+      "dependsOnSteps": [
+        103,
+        114
+      ],
+      "canParallelWith": [
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125
+      ],
+      "isSpine": false,
+      "concept": "hooks-server",
+      "pattern": null,
+      "issues": [],
+      "coalNodeId": null
+    }
+  ],
+  "spine": [
+    "save",
+    "load",
+    "getCurrentProject",
+    "getTasksDir",
+    "taskPath",
+    "getTask",
+    "updateTask",
+    "api.agent.kill.POST"
+  ],
+  "concepts": [
+    {
+      "id": "github",
+      "name": "github",
+      "skill": "utility",
+      "nodes": [
+        "closeIssue",
+        "createIssue",
+        "createIssueComment",
+        "createPullRequest",
+        "findOpenPullRequest",
+        "getIssue",
+        "getIssues",
+        "getIssuesWithBodies",
+        "getOctokit",
+        "getPrivateKey",
+        "getRepoFile",
+        "getSubIssues",
+        "listAccessibleRepos",
+        "mergePullRequest",
+        "updateIssue"
+      ],
+      "files": [
+        "src/lib/server/services/github.ts"
+      ],
+      "cohesion": 0.93
+    },
+    {
+      "id": "git-history",
+      "name": "git-history",
+      "skill": "utility",
+      "nodes": [
+        "buildHistoricalCoal",
+        "commitsDir",
+        "ensureHistoryDir",
+        "findSymbolsForFiles",
+        "getHistoryState",
+        "getHistoryStats",
+        "getIssueSlots",
+        "historyDir",
+        "isCommitProcessed",
+        "loadAllCommitRecords",
+        "parseIssueRefs",
+        "saveCommitRecord",
+        "saveHistoryState",
+        "statePath"
+      ],
+      "files": [
+        "src/lib/server/services/git-history.ts"
+      ],
+      "cohesion": 0.93
+    },
+    {
+      "id": "git",
+      "name": "git",
+      "skill": "utility",
+      "nodes": [
+        "checkoutMain",
+        "commit",
+        "commitAll",
+        "createBranch",
+        "getBranchState",
+        "getCommitFiles",
+        "getCommitLog",
+        "getDiff",
+        "getHeadCommit",
+        "getMainBranch",
+        "getRemoteRepo",
+        "mergeBranch",
+        "pushBranch",
+        "revertAll"
+      ],
+      "files": [
+        "src/lib/server/services/git.ts"
+      ],
+      "cohesion": 1
+    },
+    {
+      "id": "comment",
+      "name": "comment",
+      "skill": "internal",
+      "nodes": [
+        "api.cartography.comment.GET",
+        "api.cartography.comment.POST",
+        "buildFileGraph",
+        "computeDepths",
+        "extractCode",
+        "generateDescriptions",
+        "getUndescribedByFile",
+        "insertJsDoc",
+        "readIndex",
+        "topoSort"
+      ],
+      "files": [
+        "src/routes/api/cartography/comment/+server.ts"
+      ],
+      "cohesion": 0.77
+    },
+    {
+      "id": "cartography",
+      "name": "cartography",
+      "skill": "utility",
+      "nodes": [
+        "adaptiveCap",
+        "buildAtlasDeps",
+        "buildAtlasText",
+        "ensureLoaded",
+        "generateAtlasStrings",
+        "getSessionWithCode",
+        "getSnippet",
+        "refreshIndex",
+        "searchMethods"
+      ],
+      "files": [
+        "src/lib/server/services/cartography.ts"
+      ],
+      "cohesion": 0.77
+    },
+    {
+      "id": "issue-analysis",
+      "name": "issue-analysis",
+      "skill": "utility",
+      "nodes": [
+        "buildAnalysisPrompt",
+        "buildChatPrompt",
+        "buildFocusedPrompt",
+        "buildUpdatePrompt",
+        "detectPotentialDuplicates",
+        "injectDiagram",
+        "jaccardWords",
+        "prepareIssues",
+        "summarizeIssueBody"
+      ],
+      "files": [
+        "src/lib/server/agent/issue-analysis.ts"
+      ],
+      "cohesion": 1
+    },
+    {
+      "id": "tasks",
+      "name": "tasks",
+      "skill": "utility",
+      "nodes": [
+        "createTask",
+        "deleteTask",
+        "ensureDir",
+        "getTask",
+        "getTasksDir",
+        "listTasks",
+        "migrateTaskStatus",
+        "taskPath",
+        "updateTask"
+      ],
+      "files": [
+        "src/lib/server/services/tasks.ts"
+      ],
+      "cohesion": 0.93
+    },
+    {
+      "id": "projects",
+      "name": "projects",
+      "skill": "utility",
+      "nodes": [
+        "addProject",
+        "getCurrentProject",
+        "getProjectRoot",
+        "listProjects",
+        "load",
+        "removeProject",
+        "save",
+        "setCurrentProject"
+      ],
+      "files": [
+        "src/lib/server/services/projects.ts"
+      ],
+      "cohesion": 1
+    },
+    {
+      "id": "claude-session",
+      "name": "claude-session",
+      "skill": "utility",
+      "nodes": [
+        "createSession",
+        "destroyAllSessions",
+        "destroySession",
+        "isSessionAlive",
+        "isSessionBusy",
+        "processStdoutLine",
+        "sendTurn"
+      ],
+      "files": [
+        "src/lib/server/services/claude-session.ts"
+      ],
+      "cohesion": 0.67
+    },
+    {
+      "id": "diagram",
+      "name": "diagram",
+      "skill": "internal",
+      "nodes": [
+        "api.cartography.diagram.GET",
+        "buildFolderTree",
+        "capitalize",
+        "extractExtends",
+        "makeFileNode",
+        "scanJs"
+      ],
+      "files": [
+        "src/routes/api/cartography/diagram/+server.ts"
+      ],
+      "cohesion": 0.71
+    },
+    {
+      "id": "processes",
+      "name": "processes",
+      "skill": "utility",
+      "nodes": [
+        "getProcess",
+        "isRunning",
+        "killProcess",
+        "register",
+        "unregister",
+        "writeInput"
+      ],
+      "files": [
+        "src/lib/server/services/processes.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "context",
+      "name": "context",
+      "skill": "utility",
+      "nodes": [
+        "buildContext",
+        "buildQuery",
+        "loadMethodSnippets",
+        "loadSymbolMap",
+        "truncateSnippet"
+      ],
+      "files": [
+        "src/lib/server/agent/context.ts"
+      ],
+      "cohesion": 0.27
+    },
+    {
+      "id": "prompt",
+      "name": "prompt",
+      "skill": "utility",
+      "nodes": [
+        "formatImplementationPrompt",
+        "formatPrompt",
+        "loadConceptMap",
+        "loadProjectDiagram",
+        "loadProjectDocs"
+      ],
+      "files": [
+        "src/lib/server/agent/prompt.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "agent",
+      "name": "agent",
+      "skill": "utility",
+      "nodes": [
+        "notifyTaskCreated",
+        "parseGroups",
+        "startConsoleStream",
+        "stopConsoleStream",
+        "toggleConsoleMinimized"
+      ],
+      "files": [
+        "src/lib/stores/agent.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "cartography",
+      "name": "cartography",
+      "skill": "internal",
+      "nodes": [
+        "api.cartography.POST",
+        "extractKeywords",
+        "fileNameSearch",
+        "walkSrc"
+      ],
+      "files": [
+        "src/routes/api/cartography/+server.ts"
+      ],
+      "cohesion": 0.6
+    },
+    {
+      "id": "usage",
+      "name": "usage",
+      "skill": "utility",
+      "nodes": [
+        "addProjectUsage",
+        "getProjectUsage",
+        "loadUsage"
+      ],
+      "files": [
+        "src/lib/server/services/usage.ts"
+      ],
+      "cohesion": 1
+    },
+    {
+      "id": "run",
+      "name": "run",
+      "skill": "internal",
+      "nodes": [
+        "api.agent.run.POST",
+        "savePlan",
+        "stripAnsi"
+      ],
+      "files": [
+        "src/routes/api/agent/run/+server.ts"
+      ],
+      "cohesion": 0.11
+    },
+    {
+      "id": "clusters",
+      "name": "clusters",
+      "skill": "internal",
+      "nodes": [
+        "api.clusters.GET",
+        "makeUF",
+        "parentDir"
+      ],
+      "files": [
+        "src/routes/api/clusters/+server.ts"
+      ],
+      "cohesion": 0.29
+    },
+    {
+      "id": "issue",
+      "name": "issue",
+      "skill": "utility",
+      "nodes": [
+        "api.issue.GET",
+        "api.issue.PATCH",
+        "api.issue.POST"
+      ],
+      "files": [
+        "src/routes/api/issue/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "analyze",
+      "name": "analyze",
+      "skill": "internal",
+      "nodes": [
+        "api.issues.analyze.POST",
+        "saveAnalysis",
+        "saveSnapshot"
+      ],
+      "files": [
+        "src/routes/api/issues/analyze/+server.ts"
+      ],
+      "cohesion": 0.22
+    },
+    {
+      "id": "id",
+      "name": "id",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].DELETE",
+        "api.tasks.[id].GET",
+        "api.tasks.[id].PATCH"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "methods",
+      "name": "methods",
+      "skill": "internal",
+      "nodes": [
+        "api.tasks.[id].methods.GET",
+        "extractSnippet",
+        "getVueScriptOffset"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/methods/+server.ts"
+      ],
+      "cohesion": 0.4
+    },
+    {
+      "id": "project-config",
+      "name": "project-config",
+      "skill": "utility",
+      "nodes": [
+        "configFilePath",
+        "getProjectConfig",
+        "setProjectConfig"
+      ],
+      "files": [
+        "src/lib/server/services/project-config.ts"
+      ],
+      "cohesion": 0.75
+    },
+    {
+      "id": "issues",
+      "name": "issues",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.GET",
+        "api.issues.POST"
+      ],
+      "files": [
+        "src/routes/api/issues/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "project-config",
+      "name": "project-config",
+      "skill": "utility",
+      "nodes": [
+        "api.project-config.GET",
+        "api.project-config.PATCH"
+      ],
+      "files": [
+        "src/routes/api/project-config/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "projects",
+      "name": "projects",
+      "skill": "utility",
+      "nodes": [
+        "api.projects.GET",
+        "api.projects.POST"
+      ],
+      "files": [
+        "src/routes/api/projects/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "current",
+      "name": "current",
+      "skill": "utility",
+      "nodes": [
+        "api.projects.current.DELETE",
+        "api.projects.current.PATCH"
+      ],
+      "files": [
+        "src/routes/api/projects/current/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "tasks",
+      "name": "tasks",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.GET",
+        "api.tasks.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "initial-commit",
+      "name": "initial-commit",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].initial-commit.POST",
+        "toBranchName"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/initial-commit/+server.ts"
+      ],
+      "cohesion": 0.14
+    },
+    {
+      "id": "orchestrator",
+      "name": "orchestrator",
+      "skill": "utility",
+      "nodes": [
+        "orchestrate",
+        "spawnClaudeOneShot"
+      ],
+      "files": [
+        "src/lib/server/agent/orchestrator.ts"
+      ],
+      "cohesion": 0.11
+    },
+    {
+      "id": "input",
+      "name": "input",
+      "skill": "utility",
+      "nodes": [
+        "api.agent.input.POST"
+      ],
+      "files": [
+        "src/routes/api/agent/input/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "kill",
+      "name": "kill",
+      "skill": "utility",
+      "nodes": [
+        "api.agent.kill.POST"
+      ],
+      "files": [
+        "src/routes/api/agent/kill/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "preview-prompt",
+      "name": "preview-prompt",
+      "skill": "utility",
+      "nodes": [
+        "api.agent.preview-prompt.POST"
+      ],
+      "files": [
+        "src/routes/api/agent/preview-prompt/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "session",
+      "name": "session",
+      "skill": "utility",
+      "nodes": [
+        "api.agent.session.DELETE"
+      ],
+      "files": [
+        "src/routes/api/agent/session/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "atlas",
+      "name": "atlas",
+      "skill": "utility",
+      "nodes": [
+        "api.atlas.GET"
+      ],
+      "files": [
+        "src/routes/api/atlas/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "enrich",
+      "name": "enrich",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.enrich.POST"
+      ],
+      "files": [
+        "src/routes/api/cartography/enrich/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "methods",
+      "name": "methods",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.methods.GET"
+      ],
+      "files": [
+        "src/routes/api/cartography/methods/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "refresh",
+      "name": "refresh",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.refresh.POST"
+      ],
+      "files": [
+        "src/routes/api/cartography/refresh/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "run",
+      "name": "run",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.run.POST"
+      ],
+      "files": [
+        "src/routes/api/cartography/run/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "snippet",
+      "name": "snippet",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.snippet.GET"
+      ],
+      "files": [
+        "src/routes/api/cartography/snippet/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "stats",
+      "name": "stats",
+      "skill": "utility",
+      "nodes": [
+        "api.cartography.stats.GET"
+      ],
+      "files": [
+        "src/routes/api/cartography/stats/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "context",
+      "name": "context",
+      "skill": "utility",
+      "nodes": [
+        "api.context.POST"
+      ],
+      "files": [
+        "src/routes/api/context/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "git-history",
+      "name": "git-history",
+      "skill": "utility",
+      "nodes": [
+        "api.git-history.GET"
+      ],
+      "files": [
+        "src/routes/api/git-history/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "run",
+      "name": "run",
+      "skill": "utility",
+      "nodes": [
+        "api.git-history.run.POST"
+      ],
+      "files": [
+        "src/routes/api/git-history/run/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "issues",
+      "name": "issues",
+      "skill": "utility",
+      "nodes": [
+        "api.github.issues.POST"
+      ],
+      "files": [
+        "src/routes/api/github/issues/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "close",
+      "name": "close",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.[number].close.POST"
+      ],
+      "files": [
+        "src/routes/api/issues/[number]/close/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "analysis",
+      "name": "analysis",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.analysis.GET"
+      ],
+      "files": [
+        "src/routes/api/issues/analysis/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "update",
+      "name": "update",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.analyze.update.POST"
+      ],
+      "files": [
+        "src/routes/api/issues/analyze/update/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "chat",
+      "name": "chat",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.roadmap.chat.POST"
+      ],
+      "files": [
+        "src/routes/api/issues/roadmap/chat/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "roadmaps",
+      "name": "roadmaps",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.roadmaps.GET"
+      ],
+      "files": [
+        "src/routes/api/issues/roadmaps/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "snapshot",
+      "name": "snapshot",
+      "skill": "utility",
+      "nodes": [
+        "api.issues.snapshot.GET"
+      ],
+      "files": [
+        "src/routes/api/issues/snapshot/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "logs",
+      "name": "logs",
+      "skill": "utility",
+      "nodes": [
+        "api.logs.GET"
+      ],
+      "files": [
+        "src/routes/api/logs/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "plan",
+      "name": "plan",
+      "skill": "utility",
+      "nodes": [
+        "api.plan.GET"
+      ],
+      "files": [
+        "src/routes/api/plan/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "github",
+      "name": "github",
+      "skill": "utility",
+      "nodes": [
+        "api.projects.github.GET"
+      ],
+      "files": [
+        "src/routes/api/projects/github/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "repo-file",
+      "name": "repo-file",
+      "skill": "utility",
+      "nodes": [
+        "api.repo-file.GET"
+      ],
+      "files": [
+        "src/routes/api/repo-file/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "repo-info",
+      "name": "repo-info",
+      "skill": "utility",
+      "nodes": [
+        "api.repo-info.GET"
+      ],
+      "files": [
+        "src/routes/api/repo-info/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "skills",
+      "name": "skills",
+      "skill": "utility",
+      "nodes": [
+        "api.skills.GET"
+      ],
+      "files": [
+        "src/routes/api/skills/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "symbol",
+      "name": "symbol",
+      "skill": "utility",
+      "nodes": [
+        "api.symbol.GET"
+      ],
+      "files": [
+        "src/routes/api/symbol/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "commit",
+      "name": "commit",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].commit.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/commit/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "diff",
+      "name": "diff",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].diff.GET"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/diff/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "merge",
+      "name": "merge",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].merge.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/merge/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "plan",
+      "name": "plan",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].plan.GET"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/plan/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "push",
+      "name": "push",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].push.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/push/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "revert",
+      "name": "revert",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].revert.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/revert/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "sync",
+      "name": "sync",
+      "skill": "utility",
+      "nodes": [
+        "api.tasks.[id].sync.POST"
+      ],
+      "files": [
+        "src/routes/api/tasks/[id]/sync/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "usage",
+      "name": "usage",
+      "skill": "utility",
+      "nodes": [
+        "api.usage.GET"
+      ],
+      "files": [
+        "src/routes/api/usage/+server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "claude",
+      "name": "claude",
+      "skill": "utility",
+      "nodes": [
+        "askClaude"
+      ],
+      "files": [
+        "src/lib/server/services/claude.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "segments",
+      "name": "segments",
+      "skill": "utility",
+      "nodes": [
+        "classifyFile"
+      ],
+      "files": [
+        "src/lib/server/agent/segments.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "issue",
+      "name": "issue",
+      "skill": "utility",
+      "nodes": [
+        "createIssuePlan"
+      ],
+      "files": [
+        "src/lib/server/agent/issue.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "logs",
+      "name": "logs",
+      "skill": "utility",
+      "nodes": [
+        "emitLog"
+      ],
+      "files": [
+        "src/lib/server/logs.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "hooks-server",
+      "name": "hooks.server",
+      "skill": "internal",
+      "nodes": [
+        "resetStaleTasks"
+      ],
+      "files": [
+        "src/hooks.server.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "skills",
+      "name": "skills",
+      "skill": "utility",
+      "nodes": [
+        "selectSkill"
+      ],
+      "files": [
+        "src/lib/server/agent/skills.ts"
+      ],
+      "cohesion": 0
+    },
+    {
+      "id": "claude-stream",
+      "name": "claude-stream",
+      "skill": "utility",
+      "nodes": [
+        "spawnClaudeStream"
+      ],
+      "files": [
+        "src/lib/server/agent/claude-stream.ts"
+      ],
+      "cohesion": 0
+    }
+  ],
+  "patterns": {
+    "factories": [],
+    "repositories": [],
+    "adapters": [
+      {
+        "name": "loadMethodSnippets",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "buildContext",
+        "fromSkill": "internal",
+        "toSkill": "utility",
+        "confidence": 0.5
+      },
+      {
+        "name": "orchestrate",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "generateAtlasStrings",
+        "fromSkill": "internal",
+        "toSkill": "utility",
+        "confidence": 0.5
+      },
+      {
+        "name": "getHistoryState",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "loadAllCommitRecords",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "createIssueComment",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "setProjectConfig",
+        "fromSkill": "internal",
+        "toSkill": "utility",
+        "confidence": 0.5
+      },
+      {
+        "name": "listTasks",
+        "fromSkill": "internal",
+        "toSkill": "utility",
+        "confidence": 0.5
+      },
+      {
+        "name": "createTask",
+        "fromSkill": "internal",
+        "toSkill": "utility",
+        "confidence": 0.5
+      },
+      {
+        "name": "updateTask",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.agent.run.POST",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.atlas.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.cartography.POST",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.cartography.comment.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.cartography.comment.POST",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.cartography.diagram.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.cartography.snippet.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.clusters.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.issues.analyze.POST",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.tasks.[id].initial-commit.POST",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      },
+      {
+        "name": "api.tasks.[id].methods.GET",
+        "fromSkill": "utility",
+        "toSkill": "internal",
+        "confidence": 0.5
+      }
+    ]
+  },
+  "pipelines": [],
+  "coalNodes": [
+    {
+      "symbols": [
+        "ensureDir",
+        "getTasksDir",
+        "listTasks",
+        "migrateTaskStatus"
+      ],
+      "count": 9,
+      "score": 36
+    },
+    {
+      "symbols": [
+        "addProjectUsage",
+        "ensureDir",
+        "getProjectUsage",
+        "getTasksDir",
+        "listTasks",
+        "loadUsage",
+        "migrateTaskStatus"
+      ],
+      "count": 2,
+      "score": 14
+    },
+    {
+      "symbols": [
+        "buildContext",
+        "ensureDir",
+        "getTasksDir",
+        "listProjects",
+        "listTasks",
+        "migrateTaskStatus"
+      ],
+      "count": 2,
+      "score": 12
+    },
+    {
+      "symbols": [
+        "askClaude",
+        "createIssuePlan",
+        "ensureDir",
+        "getTasksDir",
+        "listTasks",
+        "migrateTaskStatus"
+      ],
+      "count": 2,
+      "score": 12
+    },
+    {
+      "symbols": [
+        "buildContext",
+        "ensureLoaded"
+      ],
+      "count": 3,
+      "score": 6
+    },
+    {
+      "symbols": [
+        "askClaude",
+        "createIssuePlan"
+      ],
+      "count": 3,
+      "score": 6
+    }
+  ],
+  "project": "claudicator",
+  "root": "C:/claudicator"
+}

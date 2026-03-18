@@ -102,8 +102,8 @@ export function searchMethods(
     ensureLoaded(projectRoot);
     const hits = _search.findRelevantMethods(query, {
         maxMethods:   20,
-        minScore:     2,
-        excludeRoles: [],
+        minScore:     3,
+        excludeRoles: ['internal'],
         includePrivate: false,
     });
     return hits.slice(0, adaptiveCap(hits));
@@ -164,6 +164,15 @@ export function getSessionWithCode(
 export function getSnippet(key: string, projectRoot: string): string | null {
     ensureLoaded(projectRoot);
     return (_indexer.extractMethodCode(key) as string | null) ?? null;
+}
+
+/**
+ * Retourne le chemin de fichier (relatif à projectRoot) d'une méthode indexée.
+ */
+export function getMethodFilePath(key: string, projectRoot: string): string | null {
+    ensureLoaded(projectRoot);
+    const meta = (_indexer.index.methods ?? {})[key];
+    return (meta?.file as string | undefined) ?? null;
 }
 
 /**

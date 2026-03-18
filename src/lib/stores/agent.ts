@@ -206,6 +206,12 @@ export const hasInvalidatedSlots = derived(
 
 export const clusterFocusedSymbol = writable<{ name: string; dir: string } | null>(null);
 
+export type CoalCodeFocus = {
+    issueNum: number;
+    symbols: { key: string; dir: string; file?: string }[];
+};
+export const coalCodeFocus = writable<CoalCodeFocus | null>(null);
+
 export type Log = {
     ts: string;
     level: "INFO" | "SUCCESS" | "ERROR";

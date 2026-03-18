@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, coalCodeFocus } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
     import { JgrBtn } from 'jgr-ui';
 
@@ -110,10 +110,46 @@
         } catch {}
     }
 
-    $: issueNum   = $agentState.issue?.number ?? 0;
-    $: issueCoal  = (clusterData?.coal ?? [])
-        .filter(c => c.issues.includes(issueNum))
-        .map(c => [...new Set(c.symbols.map((s: CoalSym) => s.dir))].join(' / ') || '?');
+    $: issueNum       = $agentState.issue?.number ?? 0;
+    $: issueCoalItems = (clusterData?.coal ?? []).filter(c => c.issues.includes(issueNum));
+    $: issueCoal      = issueCoalItems.map(c => [...new Set(c.symbols.map((s: CoalSym) => s.dir))].join(' / ') || '?');
+
+    // Auto-sync : dès que les symboles sont prêts (et à chaque update des coal), on pousse tout dans le store
+    $: if (!symbolsLoading && issueNum > 0) {
+        const seen = new Set<string>();
+        const all: { key: string; dir: string; file?: string }[] = [];
+        for (const c of issueCoalItems) {
+            for (const sym of c.symbols) {
+                if (!seen.has(sym.key)) { seen.add(sym.key); all.push({ key: sym.key, dir: sym.dir }); }
+            }
+        }
+        for (const s of symbols) {
+            if (!seen.has(s.key)) {
+                seen.add(s.key);
+                const dir = (s.file ?? '').replace(/\\/g, '/').split('/').at(-2) ?? '';
+                all.push({ key: s.key, dir, file: s.file || undefined });
+            }
+        }
+        if (all.length > 0) coalCodeFocus.set({ issueNum, symbols: all });
+    }
+
+    function openCoalCode() {
+        const seen = new Set<string>();
+        const all: { key: string; dir: string; file?: string }[] = [];
+        for (const c of issueCoalItems) {
+            for (const sym of c.symbols) {
+                if (!seen.has(sym.key)) { seen.add(sym.key); all.push({ key: sym.key, dir: sym.dir }); }
+            }
+        }
+        for (const s of symbols) {
+            if (!seen.has(s.key)) {
+                seen.add(s.key);
+                const dir = (s.file ?? '').replace(/\\/g, '/').split('/').at(-2) ?? '';
+                all.push({ key: s.key, dir, file: s.file || undefined });
+            }
+        }
+        if (all.length > 0) coalCodeFocus.set({ issueNum, symbols: all });
+    }
     $: issueDirs  = (clusterData?.dirs ?? [])
         .filter(c => c.issues.includes(issueNum))
         .map(c => c.dir);
@@ -382,6 +418,7 @@
                                 <div class="sym-group-hd">
                                     <span class="sym-label">Coalescence</span>
                                     <span class="sym-state">{issueCoal.length}</span>
+                                    <button class="sym-code-btn" onclick={openCoalCode} title="Voir le code des symboles">&#60;/&#62;</button>
                                 </div>
                                 {#each issueCoal as name}
                                     <div class="sym-row">
@@ -727,6 +764,20 @@ ul { list-style: none; padding: 0; margin: 0; }
 /* Cyan/bleu — COALESCENCE */
 .sym-sec--coal .sym-label,
 .sym-sec--coal .sym-state  { color: #3a7f8f; }
+.sym-code-btn {
+    background: none;
+    border: none;
+    color: #3a7f8f;
+    font-size: 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    padding: 0 0.15rem;
+    opacity: 0.5;
+    line-height: 1;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.sym-code-btn:hover { opacity: 1; }
 .sym-sec--coal .sym-bullet { color: #3a7f8f; opacity: 0.45; }
 .sym-sec--coal .sym-key    { color: #68c0cc; }
 

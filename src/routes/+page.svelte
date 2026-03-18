@@ -9,14 +9,23 @@
     import PlanPanel from "$lib/components/PlanPanel.svelte";
     import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
     import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
+    import CoalCodeView from "$lib/components/CoalCodeView.svelte";
+    import RoadmapViz from "$lib/components/RoadmapViz.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus } from "$lib/stores/agent";
 
-    let activeMiddleTab: "roadmap" | "plan" | "cluster" = "roadmap";
+    let activeMiddleTab: "roadmap" | "dag" | "plan" | "cluster" | "coal" = "roadmap";
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($issueAnalysis.running)    activeMiddleTab = "roadmap";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
+
+    // Bascule sur coal uniquement au changement d'issue (pas à chaque update de symboles)
+    let _prevCoalIssueNum = -1;
+    $: if ($coalCodeFocus && $coalCodeFocus.issueNum !== _prevCoalIssueNum) {
+        _prevCoalIssueNum = $coalCodeFocus.issueNum;
+        activeMiddleTab = "coal";
+    }
 
     /**
      *  TODO: floralwhite, moccasin, peachpuff
@@ -391,8 +400,10 @@
     // ─── Tabs centre ──────────────────────────────────────────────────────────
     $: midTabs = [
         { id: 'roadmap', label: 'roadmap' },
+        { id: 'dag',     label: 'dag'     },
         { id: 'plan',    label: 'plan'    },
         ...($clusterFocusedSymbol ? [{ id: 'cluster', label: 'cluster' }] : []),
+        ...($coalCodeFocus ? [{ id: 'coal', label: '#' + $coalCodeFocus.issueNum }] : []),
     ];
 </script>
 
@@ -449,6 +460,8 @@
                             {:else}
                                 <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
                             {/if}
+                        {:else if tab === 'dag'}
+                            <RoadmapViz />
                         {:else if tab === 'plan'}
                             {#if $globalPlanPrompt}
                                 <GlobalPlanView />
@@ -462,6 +475,12 @@
                                 <ClusterCodeView symbol={$clusterFocusedSymbol} />
                             {:else}
                                 <div class="plan-placeholder"><span>Cliquer sur un symbole dans CLUSTERS</span></div>
+                            {/if}
+                        {:else if tab === 'coal'}
+                            {#if $coalCodeFocus}
+                                <CoalCodeView issueNum={$coalCodeFocus.issueNum} symbols={$coalCodeFocus.symbols} />
+                            {:else}
+                                <div class="plan-placeholder"><span>Aucun symbole coalescent sélectionné</span></div>
                             {/if}
                         {/if}
                     {/snippet}

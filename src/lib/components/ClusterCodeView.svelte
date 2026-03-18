@@ -1,7 +1,9 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
+    import { onDestroy, tick } from "svelte";
 
     export let symbol: { name: string; dir: string };
+    /** Si true : le conteneur s'étire à la hauteur du contenu (pas de scroll interne) */
+    export let autoHeight: boolean = false;
 
     let container: HTMLDivElement | null = null;
     let editor: any = null;
@@ -38,6 +40,7 @@
         } catch { notFound = true; loading = false; return; }
 
         loading = false;
+        await tick(); // laisser Svelte binder container avant de l'utiliser
         if (!container || currentName !== sym.name) return;
 
         try {
@@ -60,9 +63,22 @@
                 glyphMargin: false,
                 lineDecorationsWidth: 4,
                 lineNumbersMinChars: 3,
-                scrollbar: { vertical: "auto", horizontal: "hidden" },
+                scrollbar: autoHeight
+                    ? { vertical: "hidden", horizontal: "hidden", alwaysConsumeMouseWheel: false }
+                    : { vertical: "auto", horizontal: "hidden" },
             });
-        } catch { /* Monaco unavailable — fallback pre is shown */ }
+
+            if (autoHeight && container) {
+                const applyHeight = () => {
+                    if (!editor || !container) return;
+                    const h = editor.getContentHeight();
+                    container.style.height = h + "px";
+                    editor.layout({ width: container.clientWidth, height: h });
+                };
+                editor.onDidContentSizeChange(applyHeight);
+                applyHeight();
+            }
+        } catch { /* Monaco unavailable */ }
     }
 
     $: init(symbol);
@@ -70,7 +86,7 @@
     onDestroy(() => { if (editor) editor.dispose(); });
 </script>
 
-<div class="ccv">
+<div class="ccv" class:ccv--auto={autoHeight}>
     <div class="ccv-header">
         <span class="ccv-dir">{symbol.dir}/</span>
         <span class="ccv-sym">{symbol.name.split(".").at(-1)}</span>
@@ -92,6 +108,11 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+}
+/* En mode auto-height : on laisse le contenu dicter la taille */
+.ccv--auto {
+    height: auto;
+    overflow: visible;
 }
 .ccv-header {
     flex-shrink: 0;
@@ -136,5 +157,9 @@
 .ccv-editor {
     flex: 1;
     min-height: 0;
+}
+/* En mode auto-height : le div Monaco prend la taille calculée par JS */
+.ccv--auto .ccv-editor {
+    flex: none;
 }
 </style>
