@@ -39,30 +39,24 @@
 
 <div class="roadmap-viz">
 
-    <!-- ── Toolbar ── -->
-    <div class="toolbar">
-        <span class="label">◉ roadmap</span>
-        <div class="toolbar-right">
-            {#if status === "error"}
-                <span class="err">{errorMsg}</span>
-            {/if}
-            <button
-                class="btn-refresh"
-                onclick={generate}
-                disabled={status === "generating"}
-                title="(Re)générer la roadmap"
-            >
-                {#if status === "generating"}
-                    <span class="spin">···</span>
-                {:else}
-                    ↺
-                {/if}
-            </button>
-        </div>
-    </div>
-
     <!-- ── Contenu ── -->
     <div class="frame-wrap">
+        <!-- ↺ overlay (remplace le ◉ supprimé du header iframe) -->
+        <button
+            class="btn-refresh"
+            onclick={generate}
+            disabled={status === "generating"}
+            title="(Re)générer la roadmap"
+        >
+            {#if status === "generating"}
+                <span class="spin">···</span>
+            {:else}
+                ↺
+            {/if}
+        </button>
+        {#if status === "error"}
+            <span class="err-overlay">{errorMsg}</span>
+        {/if}
         {#if status === "loading"}
             <div class="placeholder"><span>Chargement···</span></div>
 
@@ -98,54 +92,39 @@
     background: #1a1a1a;
 }
 
-/* ── Toolbar ── */
-.toolbar {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    height: 28px;
-    border-bottom: 1px solid #2a2a2a;
-    background: #1e1e1e;
-}
-.label {
-    font-size: 0.65rem;
+/* ── Overlay refresh ── */
+.btn-refresh {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: none;
+    border: none;
     color: #9b8db2;
-    letter-spacing: 0.06em;
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
     font-family: monospace;
 }
-.toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.err {
+.btn-refresh:hover:not(:disabled) { color: #cdb4f3; }
+.btn-refresh:disabled { opacity: 0.4; cursor: default; }
+.spin { letter-spacing: 0.2em; }
+.err-overlay {
+    position: absolute;
+    top: 10px;
+    left: 32px;
+    z-index: 10;
     font-size: 0.6rem;
     color: #e57373;
-    max-width: 200px;
+    font-family: monospace;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    pointer-events: none;
 }
-.btn-refresh {
-    background: none;
-    border: 1px solid #333;
-    color: #cdb4f3;
-    font-size: 0.75rem;
-    padding: 1px 7px;
-    border-radius: 3px;
-    cursor: pointer;
-    line-height: 1.6;
-    transition: border-color 0.15s, color 0.15s;
-    font-family: monospace;
-}
-.btn-refresh:hover:not(:disabled) {
-    border-color: #75518f;
-    color: #d5c2e3;
-}
-.btn-refresh:disabled { opacity: 0.4; cursor: default; }
-.spin { letter-spacing: 0.2em; }
 
 /* ── Frame ── */
 .frame-wrap {

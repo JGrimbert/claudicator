@@ -88,10 +88,16 @@ export async function startConsoleStream(
         }
     } catch { /* stream annulé ou erreur réseau */ }
     finally {
+        // Guard : n'écraser running que si c'est bien notre reader qui est encore actif.
+        // Si stopConsoleStream() a été appelé (ou un autre stream a démarré), on laisse
+        // l'état courant intact pour ne pas interrompre le run suivant.
+        const wasUs = _streamReader === reader;
         _streamReader = null;
-        agentRunState.update(s => ({ ...s, running: false }));
-        // Ne pas supprimer activeTaskId — la session reste vivante après turn_end
-        opts?.onDone?.();
+        if (wasUs) {
+            agentRunState.update(s => ({ ...s, running: false }));
+            // Ne pas supprimer activeTaskId — la session reste vivante après turn_end
+            opts?.onDone?.();
+        }
     }
 }
 

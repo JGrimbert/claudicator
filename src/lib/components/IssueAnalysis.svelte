@@ -1,6 +1,6 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
-    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick, issueStates, hasInvalidatedSlots } from "$lib/stores/agent";
+    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick, issueStates, hasInvalidatedSlots, stopConsoleStream, startConsoleStream } from "$lib/stores/agent";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
@@ -567,6 +567,7 @@
         if ($agentRunState.running || $agentRunState.sessionAlive) {
             const ok = confirm("La console est active. L'interrompre pour lancer le plan en masse ?");
             if (!ok) return;
+            stopConsoleStream(); // Annule le stream actif pour ne pas interférer
         }
         planLoading = true;
         planFeedback = "";
@@ -594,6 +595,12 @@
 
             planAllState.set({ running: true, currentTaskId: null });
 
+            // Initialise la console pour le batch (logs vidés une seule fois au départ)
+            agentRunState.update(s => ({
+                ...s, taskId: null, taskTitle: `Planification 0/${planTotal}`,
+                logs: [], running: false, sessionAlive: false, completionLabel: null
+            }));
+
             for (const task of orderedTasks) {
                 planAllState.update(s => ({ ...s, currentTaskId: task.id }));
                 planFeedback = `${planDone + 1}/${planTotal} · ${task.title.slice(0, 28)}`;
@@ -611,36 +618,39 @@
                     }
                 } catch { /* fallback titre */ }
 
-                agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
+                // update (pas set) : les logs des tasks précédentes sont conservés
+                agentRunState.update(s => ({
+                    ...s,
+                    taskId: task.id,
+                    taskTitle: `${planDone + 1}/${planTotal} — ${task.title.slice(0, 25)}`,
+                    running: true,
+                    completionLabel: null,
+                }));
                 try {
                     const runRes = await fetch("/api/agent/run", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ prompt, taskId: task.id })
                     });
-                    if (runRes.ok && runRes.body) {
-                        const reader = runRes.body.getReader();
-                        const dec = new TextDecoder();
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            for (const raw of dec.decode(value).split("\n")) {
-                                if (raw.startsWith("data: ")) {
-                                    try { agentRunState.update(s => ({ ...s, logs: [...s.logs, JSON.parse(raw.slice(6))] })); }
-                                    catch { }
-                                }
-                            }
-                        }
-                    }
+                    await startConsoleStream(runRes);
                 } finally {
-                    agentRunState.update(s => ({ ...s, running: false }));
                     taskRefreshTick.update(n => n + 1);
                 }
 
                 planDone++;
+                // Label intermédiaire visible entre les tasks
+                agentRunState.update(s => ({
+                    ...s,
+                    completionLabel: `${planDone}/${planTotal} planifiée${planDone > 1 ? "s" : ""}`
+                }));
                 planFeedback = `${planDone}/${planTotal} planifiée${planDone > 1 ? "s" : ""}`;
             }
             planFeedback = `${planDone} task${planDone > 1 ? "s" : ""} planifiée${planDone > 1 ? "s" : ""}`;
+            // Label final après le batch complet
+            agentRunState.update(s => ({
+                ...s,
+                completionLabel: `${planDone} task${planDone > 1 ? "s" : ""} planifiée${planDone > 1 ? "s" : ""} · vérifiez les plans`
+            }));
         } catch (e: any) {
             planFeedback = e.message ?? "Erreur";
         } finally {

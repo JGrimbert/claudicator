@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-18T09:07:53.216Z",
+  "generated": "2026-03-18T10:10:49.764Z",
   "stats": {
     "nodes": 207,
     "edges": 304,
@@ -1937,8 +1937,11 @@
       "isSpine": false,
       "concept": "git",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        90,
+        187
+      ],
+      "coalNodeId": "coal-10"
     },
     {
       "id": 33,
@@ -2970,7 +2973,6 @@
         32,
         74,
         142,
-        170,
         184
       ],
       "coalNodeId": "coal-0"
@@ -3002,8 +3004,11 @@
       "isSpine": false,
       "concept": "github",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        90,
+        187
+      ],
+      "coalNodeId": "coal-10"
     },
     {
       "id": 58,
@@ -3075,7 +3080,6 @@
         136,
         142,
         144,
-        170,
         176,
         184
       ],
@@ -3706,9 +3710,7 @@
         47,
         136,
         144,
-        176,
-        177,
-        180
+        176
       ],
       "coalNodeId": "coal-5"
     },
@@ -3884,9 +3886,10 @@
         132,
         154,
         178,
-        180
+        180,
+        185
       ],
-      "coalNodeId": "coal-3"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 79,
@@ -4463,7 +4466,6 @@
         136,
         142,
         144,
-        170,
         176,
         184
       ],
@@ -4866,9 +4868,10 @@
         132,
         154,
         178,
-        180
+        180,
+        185
       ],
-      "coalNodeId": "coal-3"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 104,
@@ -5240,11 +5243,11 @@
         91,
         132,
         154,
-        177,
         178,
-        180
+        180,
+        185
       ],
-      "coalNodeId": "coal-3"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 115,
@@ -6853,11 +6856,48 @@
         32,
         74,
         142,
-        170,
         184
       ],
-      "score": 36,
-      "count": 9
+      "score": 32,
+      "count": 8
+    },
+    {
+      "symbols": [
+        "getTasksDir",
+        "listTasks",
+        "getTask",
+        "createTask",
+        "updateTask"
+      ],
+      "issues": [
+        18,
+        91,
+        132,
+        154,
+        178,
+        185
+      ],
+      "score": 30,
+      "count": 6
+    },
+    {
+      "symbols": [
+        "getTasksDir",
+        "listTasks",
+        "getTask",
+        "createTask"
+      ],
+      "issues": [
+        18,
+        91,
+        132,
+        154,
+        178,
+        180,
+        185
+      ],
+      "score": 28,
+      "count": 7
     },
     {
       "symbols": [
@@ -6872,11 +6912,10 @@
         21,
         28,
         142,
-        170,
         184
       ],
-      "score": 30,
-      "count": 6
+      "score": 25,
+      "count": 5
     },
     {
       "symbols": [
@@ -6894,54 +6933,17 @@
         136,
         142,
         144,
-        170,
         176,
         184
       ],
-      "score": 26,
-      "count": 13
-    },
-    {
-      "symbols": [
-        "getTasksDir",
-        "listTasks",
-        "getTask",
-        "createTask",
-        "updateTask"
-      ],
-      "issues": [
-        18,
-        91,
-        132,
-        154,
-        178
-      ],
-      "score": 25,
-      "count": 5
-    },
-    {
-      "symbols": [
-        "getTasksDir",
-        "listTasks",
-        "getTask",
-        "createTask"
-      ],
-      "issues": [
-        18,
-        91,
-        132,
-        154,
-        178,
-        180
-      ],
       "score": 24,
-      "count": 6
+      "count": 12
     },
     {
       "symbols": [
+        "createIssuePlan",
         "prepareIssues",
         "getIssueSlots",
-        "createIssuePlan",
         "summarizeIssueBody",
         "parseIssueRefs"
       ],
@@ -6956,9 +6958,9 @@
     },
     {
       "symbols": [
+        "createIssuePlan",
         "prepareIssues",
-        "getIssueSlots",
-        "createIssuePlan"
+        "getIssueSlots"
       ],
       "issues": [
         27,
@@ -6984,18 +6986,19 @@
         132,
         154,
         178,
-        180
+        180,
+        185
       ],
-      "score": 16,
-      "count": 8
+      "score": 18,
+      "count": 9
     },
     {
       "symbols": [
+        "createIssuePlan",
         "prepareIssues",
         "getIssueSlots",
         "getIssues",
-        "getIssuesWithBodies",
-        "createIssuePlan"
+        "getIssuesWithBodies"
       ],
       "issues": [
         27,
@@ -7019,12 +7022,12 @@
     },
     {
       "symbols": [
-        "createIssuePlan",
-        "createTask"
+        "mergeBranch",
+        "mergePullRequest"
       ],
       "issues": [
-        177,
-        180
+        90,
+        187
       ],
       "score": 4,
       "count": 2
