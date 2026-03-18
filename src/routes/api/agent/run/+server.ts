@@ -4,7 +4,7 @@ import path from "path";
 import { spawn } from "child_process";
 import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import type { TokenUsage } from "$lib/server/services/tasks";
-import { register, unregister } from "$lib/server/services/processes";
+import { register, unregister, killProcess, isRunning } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
 import { loadMethodSnippets } from "$lib/server/agent/context";
@@ -44,13 +44,15 @@ export async function POST({ request }) {
     const isImplementationPhase = !!(plan?.trim() && taskId);
     const isSessionPhase = isImplementationPhase || !!(isFollowUp && taskId);
 
-    // Si contextFollowUp : injecter les logs précédents de la task dans le prompt
+    // Si contextFollowUp : injecter les derniers logs de la task dans le prompt (limité à 60 lignes)
     let prompt: string = rawPrompt ?? "";
     if (contextFollowUp && taskId && rawPrompt?.trim()) {
         const prevTask = getTask(taskId);
-        const prevLogs = prevTask?.logs?.filter(l => l.trim() && !l.startsWith('[pid:')).join('\n').trim();
-        if (prevLogs) {
-            prompt = `${prevLogs}\n\n---\n\n${rawPrompt.trim()}`;
+        const prevLines = (prevTask?.logs ?? [])
+            .filter(l => l.trim() && !l.startsWith('[') && !l.startsWith('⚙'))
+            .slice(-20);
+        if (prevLines.length > 0) {
+            prompt = `${prevLines.join('\n')}\n\n---\n\n${rawPrompt.trim()}`;
         }
     }
 
@@ -166,6 +168,11 @@ export async function POST({ request }) {
         }
     }
 
+    // Tuer tout processus one-shot zombie sur la même task avant d'en lancer un nouveau
+    if (taskId && !isFollowUp && isRunning(taskId)) {
+        killProcess(taskId);
+    }
+
     // Créer la session si nécessaire (premier tour d'implémentation)
     if (isImplementationPhase && taskId && !isSessionAlive(taskId)) {
         createSession(taskId, root, root);
@@ -238,12 +245,13 @@ export async function POST({ request }) {
                 });
 
             } else {
-                // ── Mode one-shot (-p) : phase plan ──
+                // ── Mode one-shot (-p) ──
+                const spawnArgs = ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root];
                 const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
                 const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
                 const proc = spawn(
                     claudeCmd,
-                    ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
+                    spawnArgs,
                     { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
                 );
                 if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }

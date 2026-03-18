@@ -161,31 +161,17 @@
         const text   = userInput.trim();
         const taskId = $agentRunState.taskId;
         if (!text || !taskId || sendingInput) return;
-        const isSession = $agentRunState.sessionAlive;
         sendingInput = true;
         userInput    = "";
         agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false, completionLabel: null }));
         try {
-            // Session active → follow-up direct ; sinon → one-shot avec contexte des logs précédents
-            const body = isSession
-                ? { taskId, prompt: text, isFollowUp: true }
-                : { taskId, prompt: text, contextFollowUp: true };
+            // Toujours one-shot avec contexte : les sessions stdin ne sont pas fiables sur Windows
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ taskId, prompt: text, contextFollowUp: true })
             });
             await startConsoleStream(res);
-            // Fallback : si session_status SSE manqué, vérifier côté serveur
-            if (isSession && !$agentRunState.sessionAlive) {
-                try {
-                    const r = await fetch(`/api/agent/session?taskId=${encodeURIComponent(taskId)}`);
-                    if (r.ok) {
-                        const d = await r.json() as { alive: boolean };
-                        if (d.alive) agentRunState.update(s => ({ ...s, sessionAlive: true }));
-                    }
-                } catch { /* silencieux */ }
-            }
         } finally {
             sendingInput = false;
             agentRunState.update(s => ({ ...s, running: false }));

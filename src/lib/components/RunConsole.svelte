@@ -54,23 +54,13 @@
     async function sendFollowUp(text: string) {
         const taskId = $agentRunState.taskId;
         if (!taskId || !text.trim()) return;
-        agentRunState.update(s => ({ ...s, running: true, completionLabel: null }));
+        agentRunState.update(s => ({ ...s, running: true, logs: [], completionLabel: null }));
         const res = await fetch("/api/agent/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: text, taskId, isFollowUp: true })
+            body: JSON.stringify({ prompt: text, taskId, contextFollowUp: true })
         });
         await startConsoleStream(res, { onDone: () => taskRefreshTick.update(n => n + 1) });
-        // Fallback : si session_status SSE manqué, vérifier côté serveur
-        if (!get(agentRunState).sessionAlive) {
-            try {
-                const r = await fetch(`/api/agent/session?taskId=${encodeURIComponent(taskId)}`);
-                if (r.ok) {
-                    const d = await r.json() as { alive: boolean };
-                    if (d.alive) agentRunState.update(s => ({ ...s, sessionAlive: true }));
-                }
-            } catch { /* silencieux */ }
-        }
     }
 </script>
 
@@ -81,7 +71,7 @@
         title={$agentRunState.taskTitle}
         completionLabel={$agentRunState.completionLabel ?? undefined}
         sessionAlive={$agentRunState.sessionAlive}
-        showInput={$agentRunState.sessionAlive && !$agentRunState.running}
+        showInput={!!$agentRunState.taskId && !$agentRunState.running}
         oninterrupt={stop}
         onterminate={terminateSession}
         ondismiss={dismiss}
