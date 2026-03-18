@@ -747,7 +747,7 @@ src\lib\server\services\tasks.ts</title>
   <!-- Header -->
   <div id="header">
     <div class="meta">
-      2026-03-18 11:41
+      2026-03-18 19:18
       
     </div>
   </div>
@@ -763,121 +763,8 @@ src\lib\server\services\tasks.ts</title>
 </div>
 
 <script>
-(function() {
-  // ── Données ─────────────────────────────────────────────
-  const roadmap = {"coalNodes":[{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[15,21,27,28,32,74,142,184],"score":32,"count":8},{"symbols":["getTasksDir","listTasks","getTask","createTask","updateTask"],"issues":[18,91,132,154,178,185],"score":30,"count":6},{"symbols":["getTasksDir","listTasks","getTask","createTask"],"issues":[18,91,132,154,178,180,185],"score":28,"count":7},{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies","getSubIssues"],"issues":[15,21,28,142,184],"score":25,"count":5},{"symbols":["prepareIssues","getIssueSlots"],"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"score":24,"count":12},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","summarizeIssueBody","parseIssueRefs"],"issues":[47,136,144,176],"score":20,"count":4},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots"],"issues":[27,32,47,136,144,176],"score":18,"count":6},{"symbols":["getTasksDir","listTasks"],"issues":[18,36,41,91,132,154,178,180,185],"score":18,"count":9},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[27,32],"score":10,"count":2},{"symbols":["startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"issues":[48,155],"score":6,"count":2},{"symbols":["mergeBranch","mergePullRequest"],"issues":[90,187],"score":4,"count":2},{"symbols":["ensureLoaded","buildFileGraph"],"issues":[94,145],"score":4,"count":2},{"symbols":["buildFileGraph","computeDepths"],"issues":[60,94],"score":4,"count":2},{"symbols":["save","savePlan"],"issues":[75,110],"score":4,"count":2}],"steps":[{"id":2,"skill":"api","label":"Service: comment","nodes":["buildFileGraph","computeDepths","extractCode","generateDescriptions","insertJsDoc"],"files":["src\\routes\\api\\cartography\\comment\\+server.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"comment","pattern":null,"issues":[60,94,145],"coalNodeId":"coal-11"},{"id":16,"skill":"domain","label":"Core: projects","nodes":["save"],"files":["src\\lib\\server\\services\\projects.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":true,"concept":"projects","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":28,"skill":"flow","label":"Flow: issue-analysis","nodes":["buildChatPrompt","buildFocusedPrompt","summarizeIssueBody"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":29,"skill":"domain","label":"Core: git-history","nodes":["buildHistoricalCoal","parseIssueRefs"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":32,"skill":"domain","label":"Core: git","nodes":["getHeadCommit","getMainBranch","getRemoteRepo","mergeBranch","pushBranch"],"files":["src\\lib\\server\\services\\git.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":39,"skill":"adapter","label":"adapter: agent","nodes":["notifyTaskCreated","startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"files":["src\\lib\\stores\\agent.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"agent","pattern":null,"issues":[48,155],"coalNodeId":"coal-9"},{"id":56,"skill":"domain","label":"Core: github","nodes":["getIssues","getIssuesWithBodies","getRepoFile","getSubIssues","listAccessibleRepos"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[15,21,27,28,32,74,142,184],"coalNodeId":"coal-0"},{"id":57,"skill":"domain","label":"Core: github","nodes":["mergePullRequest","updateIssue"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":59,"skill":"flow","label":"Flow: issue-analysis","nodes":["prepareIssues"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[28],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":60,"skill":"domain","label":"Core: cartography","nodes":["ensureLoaded"],"files":["src\\lib\\server\\services\\cartography.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"cartography","pattern":null,"issues":[94,145],"coalNodeId":"coal-11"},{"id":74,"skill":"flow","label":"Flow: issue","nodes":["createIssuePlan"],"files":["src\\lib\\server\\agent\\issue.ts"],"rationale":"Depends on 4 prior steps","dependsOnSteps":[32],"isSpine":false,"concept":"issue","pattern":null,"issues":[27,32,47,136,144,176],"coalNodeId":"coal-5"},{"id":78,"skill":"domain","label":"Core: tasks","nodes":["getTasksDir"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":true,"concept":"tasks","pattern":null,"issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":92,"skill":"domain","label":"Core: git-history","nodes":["findSymbolsForFiles","getHistoryStats","getIssueSlots"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":97,"skill":"api","label":"Service: run","nodes":["savePlan"],"files":["src\\routes\\api\\agent\\run\\+server.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[78],"isSpine":false,"concept":"run","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":103,"skill":"domain","label":"Core: tasks","nodes":["deleteTask","getTask","listTasks"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 3 prior steps","dependsOnSteps":[78],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":114,"skill":"domain","label":"Core: tasks","nodes":["createTask","updateTask"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[103],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,91,132,154,178,180,185],"coalNodeId":"coal-1"}]};
-
-  // ── Pan / Zoom ─────────────────────────────────────────
-  const svg   = document.getElementById('graph-svg');
-  const group = document.getElementById('zoom-group');
-  let scale = 0.85, tx = 40, ty = 20;
-  let dragging = false, lastX = 0, lastY = 0;
-
-  function applyTransform() {
-    group.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`);
-  }
-  applyTransform();
-
-  svg.addEventListener('wheel', e => {
-    e.preventDefault();
-    const delta = -e.deltaY / 600;
-    const rect  = svg.getBoundingClientRect();
-    const mx    = e.clientX - rect.left;
-    const my    = e.clientY - rect.top;
-    const newScale = Math.max(0.2, Math.min(3, scale + delta));
-    tx = mx - (mx - tx) * (newScale / scale);
-    ty = my - (my - ty) * (newScale / scale);
-    scale = newScale;
-    applyTransform();
-  }, { passive: false });
-
-  svg.addEventListener('mousedown', e => {
-    if (e.target.closest('.vertex')) return;
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
-  });
-  window.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    tx += e.clientX - lastX; ty += e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    applyTransform();
-  });
-  window.addEventListener('mouseup', () => { dragging = false; });
-
-  // ── Interaction vertex / sidebar ───────────────────────
-  let activeId = null;
-
-  function activate(id) {
-    if (activeId === id) { deactivate(); return; }
-    deactivate();
-    activeId = id;
-
-    const step = roadmap.steps.find(s => s.id === id);
-    if (!step) return;
-
-    // Highlight vertex
-    document.querySelectorAll(`.vertex[data-id="${id}"]`).forEach(el => el.classList.add('active'));
-
-    // Highlight orb-lines
-    const related = new Set([id, ...step.dependsOnSteps]);
-    const dependents = roadmap.steps.filter(s => s.dependsOnSteps.includes(id)).map(s => s.id);
-    dependents.forEach(d => related.add(d));
-
-    document.querySelectorAll('.orb-line').forEach(el => {
-      const from = Number(el.dataset.from);
-      const to   = Number(el.dataset.to);
-      if (related.has(from) && related.has(to)) {
-        el.classList.add('highlight');
-      } else {
-        el.classList.add('dim');
-      }
-    });
-
-    // Highlight connected vertices
-    related.forEach(rid => {
-      document.querySelectorAll(`.vertex[data-id="${rid}"]`).forEach(el => el.classList.add('active'));
-    });
-
-  }
-
-  function deactivate() {
-    activeId = null;
-    document.querySelectorAll('.vertex.active').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.orb-line').forEach(el => {
-      el.classList.remove('highlight', 'dim');
-    });
-  }
-
-  // Click sur vertex SVG
-  document.querySelectorAll('.vertex').forEach(el => {
-    el.addEventListener('click', e => {
-      e.stopPropagation();
-      activate(Number(el.dataset.id));
-    });
-  });
-
-  // Click sur fond → deselect
-  svg.addEventListener('click', e => {
-    if (!e.target.closest('.vertex')) deactivate();
-  });
-
-  // ── Fit to viewport ────────────────────────────────────
-  const bbox = group.getBBox();
-  if (bbox.width && bbox.height) {
-    const vw = svg.clientWidth, vh = svg.clientHeight;
-    const margin = 40;
-    const s = Math.min(
-      (vw - margin * 2) / bbox.width,
-      (vh - margin * 2) / bbox.height,
-      1
-    );
-    scale = s * 0.9;
-    tx = (vw - bbox.width  * scale) / 2 - bbox.x * scale;
-    ty = (vh - bbox.height * scale) / 2 - bbox.y * scale;
-    applyTransform();
-  }
-
-
-})();
+  window.__roadmapData = {"coalNodes":[{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[15,21,27,28,32,74,142,184],"score":32,"count":8},{"symbols":["getTasksDir","listTasks","getTask","createTask","updateTask"],"issues":[18,91,132,154,178,185],"score":30,"count":6},{"symbols":["getTasksDir","listTasks","getTask","createTask"],"issues":[18,91,132,154,178,180,185],"score":28,"count":7},{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies","getSubIssues"],"issues":[15,21,28,142,184],"score":25,"count":5},{"symbols":["prepareIssues","getIssueSlots"],"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"score":24,"count":12},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","summarizeIssueBody","parseIssueRefs"],"issues":[47,136,144,176],"score":20,"count":4},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots"],"issues":[27,32,47,136,144,176],"score":18,"count":6},{"symbols":["getTasksDir","listTasks"],"issues":[18,36,41,91,132,154,178,180,185],"score":18,"count":9},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[27,32],"score":10,"count":2},{"symbols":["startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"issues":[48,155],"score":6,"count":2},{"symbols":["mergeBranch","mergePullRequest"],"issues":[90,187],"score":4,"count":2},{"symbols":["ensureLoaded","buildFileGraph"],"issues":[94,145],"score":4,"count":2},{"symbols":["buildFileGraph","computeDepths"],"issues":[60,94],"score":4,"count":2},{"symbols":["save","savePlan"],"issues":[75,110],"score":4,"count":2}],"steps":[{"id":2,"skill":"api","label":"Service: comment","nodes":["buildFileGraph","computeDepths","extractCode","generateDescriptions","insertJsDoc"],"files":["src\\routes\\api\\cartography\\comment\\+server.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"comment","pattern":null,"issues":[60,94,145],"coalNodeId":"coal-11"},{"id":16,"skill":"domain","label":"Core: projects","nodes":["save"],"files":["src\\lib\\server\\services\\projects.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":true,"concept":"projects","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":28,"skill":"flow","label":"Flow: issue-analysis","nodes":["buildChatPrompt","buildFocusedPrompt","summarizeIssueBody"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":29,"skill":"domain","label":"Core: git-history","nodes":["buildHistoricalCoal","parseIssueRefs"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":32,"skill":"domain","label":"Core: git","nodes":["getHeadCommit","getMainBranch","getRemoteRepo","mergeBranch","pushBranch"],"files":["src\\lib\\server\\services\\git.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":39,"skill":"adapter","label":"adapter: agent","nodes":["notifyTaskCreated","startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"files":["src\\lib\\stores\\agent.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"agent","pattern":null,"issues":[48,155],"coalNodeId":"coal-9"},{"id":56,"skill":"domain","label":"Core: github","nodes":["getIssues","getIssuesWithBodies","getRepoFile","getSubIssues","listAccessibleRepos"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[15,21,27,28,32,74,142,184],"coalNodeId":"coal-0"},{"id":57,"skill":"domain","label":"Core: github","nodes":["mergePullRequest","updateIssue"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":59,"skill":"flow","label":"Flow: issue-analysis","nodes":["prepareIssues"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[28],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":60,"skill":"domain","label":"Core: cartography","nodes":["ensureLoaded"],"files":["src\\lib\\server\\services\\cartography.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"cartography","pattern":null,"issues":[94,145],"coalNodeId":"coal-11"},{"id":74,"skill":"flow","label":"Flow: issue","nodes":["createIssuePlan"],"files":["src\\lib\\server\\agent\\issue.ts"],"rationale":"Depends on 4 prior steps","dependsOnSteps":[32],"isSpine":false,"concept":"issue","pattern":null,"issues":[27,32,47,136,144,176],"coalNodeId":"coal-5"},{"id":78,"skill":"domain","label":"Core: tasks","nodes":["getTasksDir"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":true,"concept":"tasks","pattern":null,"issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":92,"skill":"domain","label":"Core: git-history","nodes":["findSymbolsForFiles","getHistoryStats","getIssueSlots"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":97,"skill":"api","label":"Service: run","nodes":["savePlan"],"files":["src\\routes\\api\\agent\\run\\+server.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[78],"isSpine":false,"concept":"run","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":103,"skill":"domain","label":"Core: tasks","nodes":["deleteTask","getTask","listTasks"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 3 prior steps","dependsOnSteps":[78],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":114,"skill":"domain","label":"Core: tasks","nodes":["createTask","updateTask"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[103],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,91,132,154,178,180,185],"coalNodeId":"coal-1"}]};
 </script>
+<script src="/api/roadmap-js"></script>
 </body>
 </html>
