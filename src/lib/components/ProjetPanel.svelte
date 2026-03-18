@@ -188,10 +188,11 @@
             label: issue.title,
             prefix: `#${issue.number}`,
             labels: issue.labels ?? [],
-            actionLabel: "Fermer",
-            actionLoading: closingNums.has(issue.number),
-            actionDone: closedNums.has(issue.number),
-            onaction: () => closeIssue(issue.number),
+            onclose: {
+                handler: () => closeIssue(issue.number),
+                loading: closingNums.has(issue.number),
+                done: closedNums.has(issue.number),
+            },
         })
     );
 
