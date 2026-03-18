@@ -36,15 +36,25 @@ function savePlan(taskId: string, lines: string[]) {
 /** Reçoit une requête agent et détermine la phase d'exécution */
 export async function POST({ request }) {
     const body = await request.json();
-    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated } = body;
+    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated, contextFollowUp } = body;
     const root = projectRoot?.trim() || getProjectRoot();
 
     // Phase : plan si aucun plan fourni, implémentation sinon, suivi si isFollowUp
+    // contextFollowUp=true : one-shot avec logs précédents injectés dans le prompt
     const isImplementationPhase = !!(plan?.trim() && taskId);
     const isSessionPhase = isImplementationPhase || !!(isFollowUp && taskId);
 
-    // Si un plan est fourni, construire le prompt enrichi côté serveur
+    // Si contextFollowUp : injecter les logs précédents de la task dans le prompt
     let prompt: string = rawPrompt ?? "";
+    if (contextFollowUp && taskId && rawPrompt?.trim()) {
+        const prevTask = getTask(taskId);
+        const prevLogs = prevTask?.logs?.filter(l => l.trim() && !l.startsWith('[pid:')).join('\n').trim();
+        if (prevLogs) {
+            prompt = `${prevLogs}\n\n---\n\n${rawPrompt.trim()}`;
+        }
+    }
+
+    // Si un plan est fourni, construire le prompt enrichi côté serveur
     let contextStats: { methods: number; hasAtlas: boolean } | null = null;
     if (isImplementationPhase && !isFollowUp) {
         const task = getTask(taskId);

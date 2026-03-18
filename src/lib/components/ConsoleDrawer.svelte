@@ -158,20 +158,34 @@
     }
 
     async function continuer() {
-        if (!$agentRunState.sessionAlive) return;  // guard : pas de session → rien à faire
         const text   = userInput.trim();
         const taskId = $agentRunState.taskId;
         if (!text || !taskId || sendingInput) return;
+        const isSession = $agentRunState.sessionAlive;
         sendingInput = true;
         userInput    = "";
         agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false, completionLabel: null }));
         try {
+            // Session active → follow-up direct ; sinon → one-shot avec contexte des logs précédents
+            const body = isSession
+                ? { taskId, prompt: text, isFollowUp: true }
+                : { taskId, prompt: text, contextFollowUp: true };
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId, prompt: text, isFollowUp: true })
+                body: JSON.stringify(body)
             });
             await startConsoleStream(res);
+            // Fallback : si session_status SSE manqué, vérifier côté serveur
+            if (isSession && !$agentRunState.sessionAlive) {
+                try {
+                    const r = await fetch(`/api/agent/session?taskId=${encodeURIComponent(taskId)}`);
+                    if (r.ok) {
+                        const d = await r.json() as { alive: boolean };
+                        if (d.alive) agentRunState.update(s => ({ ...s, sessionAlive: true }));
+                    }
+                } catch { /* silencieux */ }
+            }
         } finally {
             sendingInput = false;
             agentRunState.update(s => ({ ...s, running: false }));
@@ -182,8 +196,8 @@
     function onInputKey(e: KeyboardEvent) {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if ($agentRunState.running)           sendInput();
-            else if ($agentRunState.sessionAlive) continuer();
+            if ($agentRunState.running) sendInput();
+            else if (canPrompt)         continuer();
         }
     }
 </script>
@@ -244,15 +258,15 @@
             <input
                 class="bar-input"
                 type="text"
-                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : $agentRunState.completionLabel ?? "Session inactive"}
+                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : "Envoyer un suivi… (Entrée)"}
                 bind:value={userInput}
                 onkeydown={onInputKey}
-                disabled={sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
+                disabled={sendingInput || $agentRunState.running}
             />
             <button
                 class="bar-send"
                 onclick={$agentRunState.running ? sendInput : continuer}
-                disabled={!userInput.trim() || sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
+                disabled={!userInput.trim() || sendingInput || $agentRunState.running}
             >↵</button>
         {:else}
             <span class="bar-line" class:sys={lastLine?.type === 'system'}>
