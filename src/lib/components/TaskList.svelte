@@ -103,6 +103,23 @@
     let pushing = false;
     let merging = false;
 
+    // Sauter la planification
+    let skippingPlan = false;
+    async function skipPlan(task: Task) {
+        if (skippingPlan) return;
+        skippingPlan = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/plan`, { method: "POST" });
+            const data = await res.json();
+            if (data.error) { wfError = data.error; return; }
+            await loadTasks();
+            await loadPlan(task.id);
+            selectedPanel = "implement";
+        } catch (e: any) {
+            wfError = e.message;
+        } finally { skippingPlan = false; }
+    }
+
     // Reset task bloquée
     let resetting = false;
     async function resetTask(task: Task) {
@@ -617,6 +634,13 @@
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
                             <div class="plan-scene-hint">↗ Scène principale</div>
+                            {#if !planContent}
+                                <button
+                                    class="impl-skip"
+                                    onclick={() => skipPlan(task)}
+                                    disabled={skippingPlan}
+                                >{skippingPlan ? "…" : "→ Sauter la planification"}</button>
+                            {/if}
                             {#if task.planUsage}
                                 <PromptUsage usage={task.planUsage} totalUsage={task.totalUsage} label="Plan" />
                             {/if}
