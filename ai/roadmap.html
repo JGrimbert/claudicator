@@ -7,20 +7,20 @@
   <style>
     /* ── Variables lolve ───────────────────────────────── */
     :root {
-      --stroke-purple-light:        #cdb4f3;
-      --stroke-purple-light-middle: #9b8db2;
-      --stroke-purple-light-trigger:#75518f;
-      --stroke-purple-darker:       #75518f;
-      --lolve-purple:               #d5c2e3;
-      --lolve-purple-dark:          #75518f;
-      --lolve-blue:                 #d1d6f6;
-      --lolve-bright:               #ffe0b2;
-      --lolve-brighter:             #ff8a65;
+      --stroke-purple-light:        #9181f9;
+      --stroke-purple-light-middle: #7c6af7;
+      --stroke-purple-light-trigger:#4d3fa0;
+      --stroke-purple-darker:       #4d3fa0;
+      --lolve-purple:               #c5b5f0;
+      --lolve-purple-dark:          #4d3fa0;
+      --lolve-blue:                 #a8b4f0;
+      --lolve-bright:               #e8c87a;
+      --lolve-brighter:             #c97844;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #242424;
-      color: rgba(255,255,255,0.87);
+      background: #12121a;
+      color: rgba(255,255,255,0.80);
       font-family: monospace;
       display: flex;
       height: 100vh;
@@ -94,112 +94,6 @@
       font-family: monospace;
     }
 
-    /* ── Sidebar ───────────────────────────────────────── */
-    #sidebar {
-      width: 280px;
-      background: rgba(255,255,255,0.02);
-      border-left: 1px solid rgba(255,255,255,0.06);
-      overflow-y: auto;
-      padding: 16px 0;
-      flex-shrink: 0;
-    }
-    #sidebar-title {
-      font-size: 10px;
-      color: var(--stroke-purple-light-middle);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0 16px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      margin-bottom: 8px;
-    }
-    .step-card {
-      padding: 10px 16px;
-      border-left: 2px solid transparent;
-      transition: background 0.15s, border-color 0.15s;
-      cursor: pointer;
-    }
-    .step-card:hover,
-    .step-card.active {
-      background: rgba(255,255,255,0.04);
-      border-left-color: var(--step-color);
-    }
-    .step-header {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
-    }
-    .step-num-badge {
-      font-size: 9px;
-      color: var(--step-color);
-      background: rgba(255,255,255,0.05);
-      border-radius: 3px;
-      padding: 1px 5px;
-      flex-shrink: 0;
-    }
-    .step-label {
-      font-size: 10px;
-      color: rgba(255,255,255,0.87);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .step-rationale {
-      font-size: 9px;
-      color: rgba(255,255,255,0.35);
-      margin-bottom: 4px;
-    }
-    .dep-list {
-      font-size: 9px;
-      color: var(--stroke-purple-light);
-      margin-bottom: 4px;
-    }
-    .dep-list.no-dep { color: rgba(255,255,255,0.2); }
-    .step-nodes { display: none; }
-    .step-card.active .step-nodes { display: block; }
-    .node-item {
-      font-size: 8px;
-      color: rgba(255,255,255,0.45);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .step-files { margin-top: 4px; }
-    .file-item {
-      font-size: 8px;
-      color: var(--stroke-purple-light-middle);
-      opacity: 0.7;
-    }
-    .step-issue-chips { display: flex; flex-wrap: wrap; gap: 3px; margin: 4px 0 2px; }
-    .issue-chip {
-      font-size: 8px; font-family: monospace;
-      color: var(--lolve-blue); background: rgba(209,214,246,0.07);
-      border: 1px solid rgba(209,214,246,0.2); border-radius: 2px;
-      padding: 0 3px; cursor: default;
-    }
-    .issue-chip--shared {
-      opacity: 0.4; border-style: dashed;
-      color: var(--stroke-purple-light-middle);
-    }
-
-    /* ── Mode bar ───────────────────────────────────── */
-    #mode-bar {
-      position: absolute; top: 16px; right: 16px;
-      display: flex; align-items: center; gap: 8px; z-index: 10;
-    }
-    .mode-btn {
-      background: none; border: none;
-      border-right: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.3); font-size: 9px; font-family: monospace;
-      padding: 2px 10px; cursor: pointer;
-      letter-spacing: 0.06em; transition: color 0.15s;
-    }
-    .mode-btn:last-of-type { border-right: none; }
-    .mode-btn.active { color: #cdb4f3; }
-    .mode-btn:hover:not(.active) { color: rgba(255,255,255,0.6); }
-    #maille-ctrl {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 9px; color: #9b8db2; font-family: monospace;
-    }
-    #maille-slider { width: 80px; accent-color: #cdb4f3; }
-
     /* ── Spine nodes (anneau doré) ─────────────────── */
     .spine-node .spine-ring {
       animation: spine-pulse 2.4s ease-in-out infinite;
@@ -209,80 +103,6 @@
       50%       { opacity: 0.9; }
     }
 
-    /* ── Pattern badge (sidebar) ────────────────────── */
-    .pattern-badge {
-      font-size: 8px;
-      padding: 1px 4px;
-      border-radius: 2px;
-      margin-left: 4px;
-      flex-shrink: 0;
-    }
-    .pattern-badge.factory    { background: rgba(0,210,210,0.15); color: #00d2d2; }
-    .pattern-badge.repository { background: rgba(80,200,80,0.15);  color: #50c850; }
-    .pattern-badge.adapter    { background: rgba(255,150,60,0.15); color: #ff963c; }
-
-    /* ── Plan SVG ───────────────────────────────────── */
-    #plan-svg { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
-    #plan-svg:active { cursor: grabbing; }
-    .stack-node { cursor: pointer; }
-    .stack-circle { transition: stroke-width 0.15s, filter 0.15s; }
-    .stack-node:hover .stack-circle, .stack-node.active .stack-circle { stroke-width: 2.5; filter: url(#glow); }
-    .stack-halo { transition: opacity 0.15s; }
-    .stack-node:hover .stack-halo, .stack-node.active .stack-halo { opacity: 0.18; }
-
-    /* ── Tasks panel ────────────────────────────────── */
-    #tasks-panel {
-      position: absolute; inset: 0;
-      overflow-y: auto;
-      padding: 48px 16px 16px;
-      display: none;
-    }
-    .task-item {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      cursor: pointer;
-      transition: background 0.12s;
-      border-left: 2px solid transparent;
-    }
-    .task-item:hover, .task-item.active {
-      background: rgba(255,255,255,0.04);
-      border-left-color: var(--lolve-purple);
-    }
-    .task-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-    .task-num {
-      font-size: 9px; color: var(--lolve-purple);
-      background: rgba(255,255,255,0.05); border-radius: 3px;
-      padding: 1px 5px; flex-shrink: 0; min-width: 22px; text-align: center;
-    }
-    .task-label {
-      font-size: 10px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .task-rationale {
-      font-size: 9px; color: rgba(255,255,255,0.35); margin-bottom: 3px;
-    }
-    .task-issues { display: flex; flex-wrap: wrap; gap: 3px; }
-
-    /* ── Plan sidebar ───────────────────────────────── */
-    .plan-stack-card {
-      padding: 10px 16px; border-left: 2px solid transparent;
-      cursor: pointer; transition: background 0.15s, border-color 0.15s;
-    }
-    .plan-stack-card:hover, .plan-stack-card.active {
-      background: rgba(255,255,255,0.04); border-left-color: var(--sc);
-    }
-    .psh { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .psid {
-      font-size: 9px; color: var(--sc); background: rgba(255,255,255,0.05);
-      border-radius: 3px; padding: 1px 5px; flex-shrink: 0;
-    }
-    .pslbl { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .psm { font-size: 8px; color: rgba(255,255,255,0.3); margin-bottom: 6px; }
-    .pss { display: none; margin-top: 4px; }
-    .plan-stack-card.active .pss { display: block; }
-    .psi { display: flex; gap: 6px; padding: 1px 0; }
-    .psn { font-size: 8px; color: var(--sc); opacity: 0.7; flex-shrink: 0; min-width: 20px; }
-    .psl { font-size: 8px; color: rgba(255,255,255,0.4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -294,7 +114,7 @@
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10"
             refX="9" refY="5" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#cdb4f3" opacity="0.7"/>
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#9181f9" opacity="0.7"/>
     </marker>
     <filter id="glow">
       <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -308,16 +128,16 @@
 
       <!-- Grille de niveaux -->
       <g class="level-lines"><line x1="0" y1="80" x2="1920" y2="80"
-      stroke="#75518f" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
-    <text x="8" y="74" font-size="9" fill="#9b8db2" opacity="0.5"
+      stroke="#4d3fa0" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
+    <text x="8" y="74" font-size="9" fill="#7c6af7" opacity="0.5"
           font-family="monospace">L0</text>
 <line x1="0" y1="250" x2="1920" y2="250"
-      stroke="#75518f" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
-    <text x="8" y="244" font-size="9" fill="#9b8db2" opacity="0.5"
+      stroke="#4d3fa0" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
+    <text x="8" y="244" font-size="9" fill="#7c6af7" opacity="0.5"
           font-family="monospace">L1</text>
 <line x1="0" y1="420" x2="1920" y2="420"
-      stroke="#75518f" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
-    <text x="8" y="414" font-size="9" fill="#9b8db2" opacity="0.5"
+      stroke="#4d3fa0" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>
+    <text x="8" y="414" font-size="9" fill="#7c6af7" opacity="0.5"
           font-family="monospace">L2</text></g>
 
       <!-- Orb-lines (dépendances) -->
@@ -343,20 +163,20 @@
      transform="translate(160,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d1d6f6" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#a8b4f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d1d6f6"
+    <circle r="22" fill="#12121a" stroke="#a8b4f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d1d6f6" font-weight="600" class="step-num">
+          font-size="11" fill="#a8b4f0" font-weight="600" class="step-num">
       2
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d1d6f6" opacity="0.9"/>
+            fill="#a8b4f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Service: comment
 
@@ -374,20 +194,20 @@ src\routes\api\cartography\comment\+server.ts</title>
      transform="translate(320,80)">
     <circle r="34" fill="none" stroke="#f5c542" stroke-width="1.2" class="spine-ring"/>
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       16
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: projects
 
@@ -402,20 +222,20 @@ src\lib\server\services\projects.ts</title>
      transform="translate(480,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#ffeccf" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#d4a860" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#ffeccf"
+    <circle r="22" fill="#12121a" stroke="#d4a860"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#ffeccf" font-weight="600" class="step-num">
+          font-size="11" fill="#d4a860" font-weight="600" class="step-num">
       28
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#ffeccf" opacity="0.9"/>
+            fill="#d4a860" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Flow: issue-analysis
 
@@ -432,20 +252,20 @@ src\lib\server\agent\issue-analysis.ts</title>
      transform="translate(640,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       29
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: git-history
 
@@ -461,20 +281,20 @@ src\lib\server\services\git-history.ts</title>
      transform="translate(800,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       32
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: git
 
@@ -492,20 +312,20 @@ src\lib\server\services\git.ts</title>
      transform="translate(960,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#9b8db2" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#7c6af7" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#9b8db2"
+    <circle r="22" fill="#12121a" stroke="#7c6af7"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#9b8db2" font-weight="600" class="step-num">
+          font-size="11" fill="#7c6af7" font-weight="600" class="step-num">
       39
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#9b8db2" opacity="0.9"/>
+            fill="#7c6af7" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>adapter: agent
 
@@ -523,20 +343,20 @@ src\lib\stores\agent.ts</title>
      transform="translate(1120,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       56
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: github
 
@@ -554,20 +374,20 @@ src\lib\server\services\github.ts</title>
      transform="translate(1280,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       57
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: github
 
@@ -583,20 +403,20 @@ src\lib\server\services\github.ts</title>
      transform="translate(300,250)">
     
     <!-- Halo -->
-    <circle r="30" fill="#ffeccf" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#d4a860" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#ffeccf"
+    <circle r="22" fill="#12121a" stroke="#d4a860"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#ffeccf" font-weight="600" class="step-num">
+          font-size="11" fill="#d4a860" font-weight="600" class="step-num">
       59
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#ffeccf" opacity="0.9"/>
+            fill="#d4a860" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Flow: issue-analysis
 
@@ -611,20 +431,20 @@ src\lib\server\agent\issue-analysis.ts</title>
      transform="translate(1440,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       60
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: cartography
 
@@ -639,20 +459,20 @@ src\lib\server\services\cartography.ts</title>
      transform="translate(740,250)">
     
     <!-- Halo -->
-    <circle r="30" fill="#ffeccf" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#d4a860" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#ffeccf"
+    <circle r="22" fill="#12121a" stroke="#d4a860"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#ffeccf" font-weight="600" class="step-num">
+          font-size="11" fill="#d4a860" font-weight="600" class="step-num">
       74
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#ffeccf" opacity="0.9"/>
+            fill="#d4a860" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Flow: issue
 
@@ -667,20 +487,20 @@ src\lib\server\agent\issue.ts</title>
      transform="translate(1600,80)">
     <circle r="34" fill="none" stroke="#f5c542" stroke-width="1.2" class="spine-ring"/>
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       78
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: tasks
 
@@ -695,20 +515,20 @@ src\lib\server\services\tasks.ts</title>
      transform="translate(1760,80)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       92
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: git-history
 
@@ -725,20 +545,20 @@ src\lib\server\services\git-history.ts</title>
      transform="translate(1180,250)">
     
     <!-- Halo -->
-    <circle r="30" fill="#d1d6f6" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#a8b4f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d1d6f6"
+    <circle r="22" fill="#12121a" stroke="#a8b4f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d1d6f6" font-weight="600" class="step-num">
+          font-size="11" fill="#a8b4f0" font-weight="600" class="step-num">
       97
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d1d6f6" opacity="0.9"/>
+            fill="#a8b4f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Service: run
 
@@ -753,20 +573,20 @@ src\routes\api\agent\run\+server.ts</title>
      transform="translate(1620,250)">
     <circle r="34" fill="none" stroke="#f5c542" stroke-width="1.2" class="spine-ring"/>
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       103
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: tasks
 
@@ -783,20 +603,20 @@ src\lib\server\services\tasks.ts</title>
      transform="translate(960,420)">
     <circle r="34" fill="none" stroke="#f5c542" stroke-width="1.2" class="spine-ring"/>
     <!-- Halo -->
-    <circle r="30" fill="#d5c2e3" opacity="0.06" class="halo"/>
+    <circle r="30" fill="#c5b5f0" opacity="0.06" class="halo"/>
     <!-- Orb circle (lolve style) -->
-    <circle r="22" fill="#242424" stroke="#d5c2e3"
+    <circle r="22" fill="#12121a" stroke="#c5b5f0"
             stroke-width="1.2" class="vertex-circle"/>
     <!-- Gradient overlay -->
     <circle r="22" fill="url(#vertexGrad)"/>
     <!-- Step number -->
     <text y="1" text-anchor="middle" dominant-baseline="middle"
-          font-size="11" fill="#d5c2e3" font-weight="600" class="step-num">
+          font-size="11" fill="#c5b5f0" font-weight="600" class="step-num">
       114
     </text>
     <!-- Skill dot -->
     <circle cx="16" cy="-16" r="3"
-            fill="#d5c2e3" opacity="0.9"/>
+            fill="#c5b5f0" opacity="0.9"/>
     <!-- Tooltip data (hidden) -->
     <title>Core: tasks
 
@@ -811,144 +631,123 @@ src\lib\server\services\tasks.ts</title>
       <!-- Labels -->
       <g class="labels">
   <g transform="translate(160,118)">
-    <text text-anchor="middle" font-size="9" fill="#d1d6f6" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#a8b4f0" opacity="0.7"
           font-family="monospace">Service</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">comment</text>
   </g>
 
   <g transform="translate(320,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">projects</text>
   </g>
 
   <g transform="translate(480,118)">
-    <text text-anchor="middle" font-size="9" fill="#ffeccf" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#d4a860" opacity="0.7"
           font-family="monospace">Flow</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">issue-analysis</text>
   </g>
 
   <g transform="translate(640,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">git-history</text>
   </g>
 
   <g transform="translate(800,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">git</text>
   </g>
 
   <g transform="translate(960,118)">
-    <text text-anchor="middle" font-size="9" fill="#9b8db2" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#7c6af7" opacity="0.7"
           font-family="monospace">adapter</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">agent</text>
   </g>
 
   <g transform="translate(1120,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">github</text>
   </g>
 
   <g transform="translate(1280,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">github</text>
   </g>
 
   <g transform="translate(300,288)">
-    <text text-anchor="middle" font-size="9" fill="#ffeccf" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#d4a860" opacity="0.7"
           font-family="monospace">Flow</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">issue-analysis</text>
   </g>
 
   <g transform="translate(1440,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">cartography</text>
   </g>
 
   <g transform="translate(740,288)">
-    <text text-anchor="middle" font-size="9" fill="#ffeccf" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#d4a860" opacity="0.7"
           font-family="monospace">Flow</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">issue</text>
   </g>
 
   <g transform="translate(1600,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">tasks</text>
   </g>
 
   <g transform="translate(1760,118)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">git-history</text>
   </g>
 
   <g transform="translate(1180,288)">
-    <text text-anchor="middle" font-size="9" fill="#d1d6f6" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#a8b4f0" opacity="0.7"
           font-family="monospace">Service</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">run</text>
   </g>
 
   <g transform="translate(1620,288)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">tasks</text>
   </g>
 
   <g transform="translate(960,458)">
-    <text text-anchor="middle" font-size="9" fill="#d5c2e3" opacity="0.7"
+    <text text-anchor="middle" font-size="9" fill="#c5b5f0" opacity="0.7"
           font-family="monospace">Core</text>
-    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.87)" opacity="0.5"
+    <text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.80)" opacity="0.5"
           font-family="monospace">tasks</text>
   </g></g>
     </g>
   </svg>
 
-  <!-- Mode bar -->
-  <div id="mode-bar">
-    <button class="mode-btn active" id="btn-tasks" onclick="setMode('tasks')">tasks</button>
-    <button class="mode-btn" id="btn-steps" onclick="setMode('steps')">steps</button>
-    <button class="mode-btn" id="btn-plan" onclick="setMode('plan')">plan</button>
-    <div id="maille-ctrl" style="display:none">
-      <span>maille</span>
-      <input type="range" id="maille-slider" min="2" max="24" value="8"
-             oninput="document.getElementById('maille-val').textContent=this.value; rebuildPlan(+this.value)">
-      <span id="maille-val">8</span>
-    </div>
-  </div>
-
-  <!-- Plan SVG (rendered by JS) -->
-  <svg id="plan-svg" xmlns="http://www.w3.org/2000/svg" style="display:none">
-    <g id="plan-zoom-group"></g>
-  </svg>
-
-  <!-- Tasks panel -->
-  <div id="tasks-panel"></div>
-
   <!-- Header -->
   <div id="header">
     <div class="meta">
-      2026-03-18 10:10
+      2026-03-18 11:41
       
     </div>
   </div>
@@ -963,228 +762,10 @@ src\lib\server\services\tasks.ts</title>
 
 </div>
 
-<!-- Sidebar -->
-<div id="sidebar">
-  <div id="sidebar-title">Steps · 16</div>
-  
-  <div class="step-card" data-id="2" style="--step-color: #d1d6f6">
-    <div class="step-header">
-      <span class="step-num-badge">2</span>
-      <span class="step-label">Service: comment</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip" title="#60">#60</span><span class="issue-chip issue-chip--shared" title="#94 · partagé sur 2 steps">#94</span><span class="issue-chip issue-chip--shared" title="#145 · partagé sur 2 steps">#145</span></div>
-    <div class="step-nodes"><div class="node-item">• buildFileGraph</div><div class="node-item">• computeDepths</div><div class="node-item">• extractCode</div><div class="node-item">• generateDescriptions</div><div class="node-item">• insertJsDoc</div></div>
-    <div class="step-files"><div class="file-item">↳ src\routes\api\cartography\comment\+server.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="16" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">16</span>
-      <span class="step-label">Core: projects</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#75 · partagé sur 2 steps">#75</span><span class="issue-chip issue-chip--shared" title="#110 · partagé sur 2 steps">#110</span></div>
-    <div class="step-nodes"><div class="node-item">• save</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\projects.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="28" style="--step-color: #ffeccf">
-    <div class="step-header">
-      <span class="step-num-badge">28</span>
-      <span class="step-label">Flow: issue-analysis</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#47 · partagé sur 5 steps">#47</span><span class="issue-chip issue-chip--shared" title="#136 · partagé sur 5 steps">#136</span><span class="issue-chip issue-chip--shared" title="#144 · partagé sur 5 steps">#144</span><span class="issue-chip issue-chip--shared" title="#176 · partagé sur 5 steps">#176</span></div>
-    <div class="step-nodes"><div class="node-item">• buildChatPrompt</div><div class="node-item">• buildFocusedPrompt</div><div class="node-item">• summarizeIssueBody</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\agent\issue-analysis.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="29" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">29</span>
-      <span class="step-label">Core: git-history</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#47 · partagé sur 5 steps">#47</span><span class="issue-chip issue-chip--shared" title="#136 · partagé sur 5 steps">#136</span><span class="issue-chip issue-chip--shared" title="#144 · partagé sur 5 steps">#144</span><span class="issue-chip issue-chip--shared" title="#176 · partagé sur 5 steps">#176</span></div>
-    <div class="step-nodes"><div class="node-item">• buildHistoricalCoal</div><div class="node-item">• parseIssueRefs</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\git-history.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="32" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">32</span>
-      <span class="step-label">Core: git</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#90 · partagé sur 2 steps">#90</span><span class="issue-chip issue-chip--shared" title="#187 · partagé sur 2 steps">#187</span></div>
-    <div class="step-nodes"><div class="node-item">• getHeadCommit</div><div class="node-item">• getMainBranch</div><div class="node-item">• getRemoteRepo</div><div class="node-item">• mergeBranch</div><div class="node-item">• pushBranch</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\git.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="39" style="--step-color: #9b8db2">
-    <div class="step-header">
-      <span class="step-num-badge">39</span>
-      <span class="step-label">adapter: agent</span>
-      
-    </div>
-    <div class="step-rationale">Foundational — no dependencies</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip" title="#48">#48</span><span class="issue-chip" title="#155">#155</span></div>
-    <div class="step-nodes"><div class="node-item">• notifyTaskCreated</div><div class="node-item">• startConsoleStream</div><div class="node-item">• stopConsoleStream</div><div class="node-item">• toggleConsoleMinimized</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\stores\agent.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="56" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">56</span>
-      <span class="step-label">Core: github</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 1 prior step</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#15 · partagé sur 3 steps">#15</span><span class="issue-chip issue-chip--shared" title="#21 · partagé sur 3 steps">#21</span><span class="issue-chip issue-chip--shared" title="#27 · partagé sur 4 steps">#27</span><span class="issue-chip issue-chip--shared" title="#28 · partagé sur 3 steps">#28</span><span class="issue-chip issue-chip--shared" title="#32 · partagé sur 4 steps">#32</span><span class="issue-chip issue-chip--shared" title="#74 · partagé sur 3 steps">#74</span><span class="issue-chip issue-chip--shared" title="#142 · partagé sur 3 steps">#142</span><span class="issue-chip issue-chip--shared" title="#184 · partagé sur 3 steps">#184</span></div>
-    <div class="step-nodes"><div class="node-item">• getIssues</div><div class="node-item">• getIssuesWithBodies</div><div class="node-item">• getRepoFile</div><div class="node-item">• getSubIssues</div><div class="node-item">• listAccessibleRepos</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\github.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="57" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">57</span>
-      <span class="step-label">Core: github</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 1 prior step</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#90 · partagé sur 2 steps">#90</span><span class="issue-chip issue-chip--shared" title="#187 · partagé sur 2 steps">#187</span></div>
-    <div class="step-nodes"><div class="node-item">• mergePullRequest</div><div class="node-item">• updateIssue</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\github.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="59" style="--step-color: #ffeccf">
-    <div class="step-header">
-      <span class="step-num-badge">59</span>
-      <span class="step-label">Flow: issue-analysis</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 2 prior steps</div>
-    <div class="dep-list">← #28</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#15 · partagé sur 3 steps">#15</span><span class="issue-chip issue-chip--shared" title="#21 · partagé sur 3 steps">#21</span><span class="issue-chip issue-chip--shared" title="#27 · partagé sur 4 steps">#27</span><span class="issue-chip issue-chip--shared" title="#28 · partagé sur 3 steps">#28</span><span class="issue-chip issue-chip--shared" title="#32 · partagé sur 4 steps">#32</span><span class="issue-chip issue-chip--shared" title="#47 · partagé sur 5 steps">#47</span><span class="issue-chip issue-chip--shared" title="#74 · partagé sur 3 steps">#74</span><span class="issue-chip issue-chip--shared" title="#136 · partagé sur 5 steps">#136</span><span class="issue-chip issue-chip--shared" title="#142 · partagé sur 3 steps">#142</span><span class="issue-chip issue-chip--shared" title="#144 · partagé sur 5 steps">#144</span><span class="issue-chip issue-chip--shared" title="#176 · partagé sur 5 steps">#176</span><span class="issue-chip issue-chip--shared" title="#184 · partagé sur 3 steps">#184</span></div>
-    <div class="step-nodes"><div class="node-item">• prepareIssues</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\agent\issue-analysis.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="60" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">60</span>
-      <span class="step-label">Core: cartography</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 1 prior step</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#94 · partagé sur 2 steps">#94</span><span class="issue-chip issue-chip--shared" title="#145 · partagé sur 2 steps">#145</span></div>
-    <div class="step-nodes"><div class="node-item">• ensureLoaded</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\cartography.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="74" style="--step-color: #ffeccf">
-    <div class="step-header">
-      <span class="step-num-badge">74</span>
-      <span class="step-label">Flow: issue</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 4 prior steps</div>
-    <div class="dep-list">← #32</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#27 · partagé sur 4 steps">#27</span><span class="issue-chip issue-chip--shared" title="#32 · partagé sur 4 steps">#32</span><span class="issue-chip issue-chip--shared" title="#47 · partagé sur 5 steps">#47</span><span class="issue-chip issue-chip--shared" title="#136 · partagé sur 5 steps">#136</span><span class="issue-chip issue-chip--shared" title="#144 · partagé sur 5 steps">#144</span><span class="issue-chip issue-chip--shared" title="#176 · partagé sur 5 steps">#176</span></div>
-    <div class="step-nodes"><div class="node-item">• createIssuePlan</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\agent\issue.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="78" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">78</span>
-      <span class="step-label">Core: tasks</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 1 prior step</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#18 · partagé sur 3 steps">#18</span><span class="issue-chip issue-chip--shared" title="#36 · partagé sur 2 steps">#36</span><span class="issue-chip issue-chip--shared" title="#41 · partagé sur 2 steps">#41</span><span class="issue-chip issue-chip--shared" title="#91 · partagé sur 3 steps">#91</span><span class="issue-chip issue-chip--shared" title="#132 · partagé sur 3 steps">#132</span><span class="issue-chip issue-chip--shared" title="#154 · partagé sur 3 steps">#154</span><span class="issue-chip issue-chip--shared" title="#178 · partagé sur 3 steps">#178</span><span class="issue-chip issue-chip--shared" title="#180 · partagé sur 3 steps">#180</span><span class="issue-chip issue-chip--shared" title="#185 · partagé sur 3 steps">#185</span></div>
-    <div class="step-nodes"><div class="node-item">• getTasksDir</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\tasks.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="92" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">92</span>
-      <span class="step-label">Core: git-history</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 2 prior steps</div>
-    <div class="dep-list no-dep">no dependencies</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#15 · partagé sur 3 steps">#15</span><span class="issue-chip issue-chip--shared" title="#21 · partagé sur 3 steps">#21</span><span class="issue-chip issue-chip--shared" title="#27 · partagé sur 4 steps">#27</span><span class="issue-chip issue-chip--shared" title="#28 · partagé sur 3 steps">#28</span><span class="issue-chip issue-chip--shared" title="#32 · partagé sur 4 steps">#32</span><span class="issue-chip issue-chip--shared" title="#47 · partagé sur 5 steps">#47</span><span class="issue-chip issue-chip--shared" title="#74 · partagé sur 3 steps">#74</span><span class="issue-chip issue-chip--shared" title="#136 · partagé sur 5 steps">#136</span><span class="issue-chip issue-chip--shared" title="#142 · partagé sur 3 steps">#142</span><span class="issue-chip issue-chip--shared" title="#144 · partagé sur 5 steps">#144</span><span class="issue-chip issue-chip--shared" title="#176 · partagé sur 5 steps">#176</span><span class="issue-chip issue-chip--shared" title="#184 · partagé sur 3 steps">#184</span></div>
-    <div class="step-nodes"><div class="node-item">• findSymbolsForFiles</div><div class="node-item">• getHistoryStats</div><div class="node-item">• getIssueSlots</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\git-history.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="97" style="--step-color: #d1d6f6">
-    <div class="step-header">
-      <span class="step-num-badge">97</span>
-      <span class="step-label">Service: run</span>
-      
-    </div>
-    <div class="step-rationale">Depends on 1 prior step</div>
-    <div class="dep-list">← #78</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#75 · partagé sur 2 steps">#75</span><span class="issue-chip issue-chip--shared" title="#110 · partagé sur 2 steps">#110</span></div>
-    <div class="step-nodes"><div class="node-item">• savePlan</div></div>
-    <div class="step-files"><div class="file-item">↳ src\routes\api\agent\run\+server.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="103" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">103</span>
-      <span class="step-label">Core: tasks</span>
-      <span class="pattern-badge adapter">↔ adapter</span>
-    </div>
-    <div class="step-rationale">Depends on 3 prior steps</div>
-    <div class="dep-list">← #78</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#18 · partagé sur 3 steps">#18</span><span class="issue-chip issue-chip--shared" title="#36 · partagé sur 2 steps">#36</span><span class="issue-chip issue-chip--shared" title="#41 · partagé sur 2 steps">#41</span><span class="issue-chip issue-chip--shared" title="#91 · partagé sur 3 steps">#91</span><span class="issue-chip issue-chip--shared" title="#132 · partagé sur 3 steps">#132</span><span class="issue-chip issue-chip--shared" title="#154 · partagé sur 3 steps">#154</span><span class="issue-chip issue-chip--shared" title="#178 · partagé sur 3 steps">#178</span><span class="issue-chip issue-chip--shared" title="#180 · partagé sur 3 steps">#180</span><span class="issue-chip issue-chip--shared" title="#185 · partagé sur 3 steps">#185</span></div>
-    <div class="step-nodes"><div class="node-item">• deleteTask</div><div class="node-item">• getTask</div><div class="node-item">• listTasks</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\tasks.ts</div></div>
-  </div>
-
-  <div class="step-card" data-id="114" style="--step-color: #d5c2e3">
-    <div class="step-header">
-      <span class="step-num-badge">114</span>
-      <span class="step-label">Core: tasks</span>
-      <span class="pattern-badge adapter">↔ adapter</span>
-    </div>
-    <div class="step-rationale">Depends on 2 prior steps</div>
-    <div class="dep-list">← #103</div>
-    <div class="step-issue-chips"><span class="issue-chip issue-chip--shared" title="#18 · partagé sur 3 steps">#18</span><span class="issue-chip issue-chip--shared" title="#91 · partagé sur 3 steps">#91</span><span class="issue-chip issue-chip--shared" title="#132 · partagé sur 3 steps">#132</span><span class="issue-chip issue-chip--shared" title="#154 · partagé sur 3 steps">#154</span><span class="issue-chip issue-chip--shared" title="#178 · partagé sur 3 steps">#178</span><span class="issue-chip issue-chip--shared" title="#180 · partagé sur 3 steps">#180</span><span class="issue-chip issue-chip--shared" title="#185 · partagé sur 3 steps">#185</span></div>
-    <div class="step-nodes"><div class="node-item">• createTask</div><div class="node-item">• updateTask</div></div>
-    <div class="step-files"><div class="file-item">↳ src\lib\server\services\tasks.ts</div></div>
-  </div>
-</div>
-
 <script>
 (function() {
   // ── Données ─────────────────────────────────────────────
   const roadmap = {"coalNodes":[{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[15,21,27,28,32,74,142,184],"score":32,"count":8},{"symbols":["getTasksDir","listTasks","getTask","createTask","updateTask"],"issues":[18,91,132,154,178,185],"score":30,"count":6},{"symbols":["getTasksDir","listTasks","getTask","createTask"],"issues":[18,91,132,154,178,180,185],"score":28,"count":7},{"symbols":["prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies","getSubIssues"],"issues":[15,21,28,142,184],"score":25,"count":5},{"symbols":["prepareIssues","getIssueSlots"],"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"score":24,"count":12},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","summarizeIssueBody","parseIssueRefs"],"issues":[47,136,144,176],"score":20,"count":4},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots"],"issues":[27,32,47,136,144,176],"score":18,"count":6},{"symbols":["getTasksDir","listTasks"],"issues":[18,36,41,91,132,154,178,180,185],"score":18,"count":9},{"symbols":["createIssuePlan","prepareIssues","getIssueSlots","getIssues","getIssuesWithBodies"],"issues":[27,32],"score":10,"count":2},{"symbols":["startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"issues":[48,155],"score":6,"count":2},{"symbols":["mergeBranch","mergePullRequest"],"issues":[90,187],"score":4,"count":2},{"symbols":["ensureLoaded","buildFileGraph"],"issues":[94,145],"score":4,"count":2},{"symbols":["buildFileGraph","computeDepths"],"issues":[60,94],"score":4,"count":2},{"symbols":["save","savePlan"],"issues":[75,110],"score":4,"count":2}],"steps":[{"id":2,"skill":"api","label":"Service: comment","nodes":["buildFileGraph","computeDepths","extractCode","generateDescriptions","insertJsDoc"],"files":["src\\routes\\api\\cartography\\comment\\+server.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"comment","pattern":null,"issues":[60,94,145],"coalNodeId":"coal-11"},{"id":16,"skill":"domain","label":"Core: projects","nodes":["save"],"files":["src\\lib\\server\\services\\projects.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":true,"concept":"projects","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":28,"skill":"flow","label":"Flow: issue-analysis","nodes":["buildChatPrompt","buildFocusedPrompt","summarizeIssueBody"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":29,"skill":"domain","label":"Core: git-history","nodes":["buildHistoricalCoal","parseIssueRefs"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[47,136,144,176],"coalNodeId":"coal-5"},{"id":32,"skill":"domain","label":"Core: git","nodes":["getHeadCommit","getMainBranch","getRemoteRepo","mergeBranch","pushBranch"],"files":["src\\lib\\server\\services\\git.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"git","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":39,"skill":"adapter","label":"adapter: agent","nodes":["notifyTaskCreated","startConsoleStream","stopConsoleStream","toggleConsoleMinimized"],"files":["src\\lib\\stores\\agent.ts"],"rationale":"Foundational — no dependencies","dependsOnSteps":[],"isSpine":false,"concept":"agent","pattern":null,"issues":[48,155],"coalNodeId":"coal-9"},{"id":56,"skill":"domain","label":"Core: github","nodes":["getIssues","getIssuesWithBodies","getRepoFile","getSubIssues","listAccessibleRepos"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[15,21,27,28,32,74,142,184],"coalNodeId":"coal-0"},{"id":57,"skill":"domain","label":"Core: github","nodes":["mergePullRequest","updateIssue"],"files":["src\\lib\\server\\services\\github.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"github","pattern":null,"issues":[90,187],"coalNodeId":"coal-10"},{"id":59,"skill":"flow","label":"Flow: issue-analysis","nodes":["prepareIssues"],"files":["src\\lib\\server\\agent\\issue-analysis.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[28],"isSpine":false,"concept":"issue-analysis","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":60,"skill":"domain","label":"Core: cartography","nodes":["ensureLoaded"],"files":["src\\lib\\server\\services\\cartography.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":false,"concept":"cartography","pattern":null,"issues":[94,145],"coalNodeId":"coal-11"},{"id":74,"skill":"flow","label":"Flow: issue","nodes":["createIssuePlan"],"files":["src\\lib\\server\\agent\\issue.ts"],"rationale":"Depends on 4 prior steps","dependsOnSteps":[32],"isSpine":false,"concept":"issue","pattern":null,"issues":[27,32,47,136,144,176],"coalNodeId":"coal-5"},{"id":78,"skill":"domain","label":"Core: tasks","nodes":["getTasksDir"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[],"isSpine":true,"concept":"tasks","pattern":null,"issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":92,"skill":"domain","label":"Core: git-history","nodes":["findSymbolsForFiles","getHistoryStats","getIssueSlots"],"files":["src\\lib\\server\\services\\git-history.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[],"isSpine":false,"concept":"git-history","pattern":null,"issues":[15,21,27,28,32,47,74,136,142,144,176,184],"coalNodeId":"coal-0"},{"id":97,"skill":"api","label":"Service: run","nodes":["savePlan"],"files":["src\\routes\\api\\agent\\run\\+server.ts"],"rationale":"Depends on 1 prior step","dependsOnSteps":[78],"isSpine":false,"concept":"run","pattern":null,"issues":[75,110],"coalNodeId":"coal-13"},{"id":103,"skill":"domain","label":"Core: tasks","nodes":["deleteTask","getTask","listTasks"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 3 prior steps","dependsOnSteps":[78],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,36,41,91,132,154,178,180,185],"coalNodeId":"coal-1"},{"id":114,"skill":"domain","label":"Core: tasks","nodes":["createTask","updateTask"],"files":["src\\lib\\server\\services\\tasks.ts"],"rationale":"Depends on 2 prior steps","dependsOnSteps":[103],"isSpine":true,"concept":"tasks","pattern":"adapter","issues":[18,91,132,154,178,180,185],"coalNodeId":"coal-1"}]};
-
-  // ── Légende maille dynamique ────────────────────────────
-  const hasCoal = roadmap.coalNodes && roadmap.coalNodes.length > 0;
-  document.getElementById('maille-ctrl').querySelector('span').textContent =
-    hasCoal ? 'issues / dossiers / domaines' : 'maille';
 
   // ── Pan / Zoom ─────────────────────────────────────────
   const svg   = document.getElementById('graph-svg');
@@ -1256,12 +837,6 @@ src\lib\server\services\tasks.ts</title>
       document.querySelectorAll(`.vertex[data-id="${rid}"]`).forEach(el => el.classList.add('active'));
     });
 
-    // Sidebar
-    document.querySelectorAll('.step-card').forEach(el => {
-      el.classList.toggle('active', Number(el.dataset.id) === id);
-    });
-    const card = document.querySelector(`.step-card[data-id="${id}"]`);
-    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function deactivate() {
@@ -1270,7 +845,6 @@ src\lib\server\services\tasks.ts</title>
     document.querySelectorAll('.orb-line').forEach(el => {
       el.classList.remove('highlight', 'dim');
     });
-    document.querySelectorAll('.step-card.active').forEach(el => el.classList.remove('active'));
   }
 
   // Click sur vertex SVG
@@ -1279,11 +853,6 @@ src\lib\server\services\tasks.ts</title>
       e.stopPropagation();
       activate(Number(el.dataset.id));
     });
-  });
-
-  // Click sur sidebar card
-  document.querySelectorAll('.step-card').forEach(el => {
-    el.addEventListener('click', () => activate(Number(el.dataset.id)));
   });
 
   // Click sur fond → deselect
@@ -1307,337 +876,6 @@ src\lib\server\services\tasks.ts</title>
     applyTransform();
   }
 
-  // ── PLAN MODE ──────────────────────────────────────────────────────────────
-
-  const PCOL = {"domain":"#d5c2e3","entrypoint":"#ff8a65","api":"#d1d6f6","integration":"#f48fb1","flow":"#ffeccf","utility":"#9b8db2","internal":"rgba(255,255,255,0.25)"};
-  const PLBL = {"domain":"Core","entrypoint":"Entry","api":"Service","integration":"Integration","flow":"Flow","utility":"Utility","internal":"Internal"};
-
-  function eh(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function dominantSkill(steps) {
-    const c = {};
-    for (const s of steps) c[s.skill] = (c[s.skill]||0)+1;
-    return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||'internal';
-  }
-
-  // maille 2-8   → profondeur 0 = feuille (analyse, context, …)   ~50 stacks
-  // maille 9-16  → profondeur 1 = répertoire parent (issues, agent, …) ~20 stacks
-  // maille 17-24 → profondeur 2 = grand-parent (api, server, …)        ~5 stacks
-  function stepKey(step, depth) {
-    const file = step.files && step.files[0];
-    if (file) {
-      const parts = file.replace(/\\/g,'/').split('/')
-        .filter(p => p && !p.startsWith('+') && !p.includes('.'));
-      const idx = parts.length - 1 - depth;
-      if (idx >= 0) return parts[idx];
-      if (parts.length > 0) return parts[parts.length - 1];
-    }
-    return step.label.split(': ')[1] || step.label || 'misc';
-  }
-
-  function buildStacks(steps, maille) {
-    const depth = maille <= 8 ? 0 : maille <= 16 ? 1 : 2;
-    const groups = new Map();
-    for (const step of steps) {
-      let k;
-      if (depth === 0) {
-        k = step.coalNodeId || step.concept || stepKey(step, 0);
-      } else if (depth === 1) {
-        k = stepKey(step, 1);
-      } else {
-        k = step.skill || 'internal';
-      }
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push(step);
-    }
-    const fg = [];
-    for (const [key, gs] of groups) {
-      let label = key;
-      if (depth === 0 && key.startsWith('coal-')) {
-        const allIssues = [...new Set(gs.flatMap(s => s.issues))].sort((a,b)=>a-b);
-        label = allIssues.length > 0
-          ? '#' + allIssues.slice(0, 3).join(' #') + (allIssues.length > 3 ? '…' : '')
-          : gs[0]?.concept || key;
-      }
-      fg.push({ key, label, steps: gs, skill: dominantSkill(gs) });
-    }
-    fg.sort((a,b) => Math.min(...a.steps.map(s=>s.id)) - Math.min(...b.steps.map(s=>s.id)));
-    const stacks = fg.map((g, i) => ({
-      id: i+1, key: g.key, label: g.label, skill: g.skill,
-      steps: g.steps.sort((a,b)=>a.id-b.id), stepCount: g.steps.length, dependsOn: [],
-    }));
-    const s2s = {};
-    for (const st of stacks) for (const s of st.steps) s2s[s.id] = st.id;
-    for (const st of stacks) {
-      const deps = new Set();
-      for (const s of st.steps) for (const d of s.dependsOnSteps) {
-        const sid = s2s[d]; if (sid && sid !== st.id) deps.add(sid);
-      }
-      st.dependsOn = [...deps].sort((a,b)=>a-b);
-    }
-    return stacks;
-  }
-
-  let planStacks = null, planScale = 0.9, planTx = 40, planTy = 20;
-  let planDragging = false, planLx = 0, planLy = 0;
-  let activePlanId = null;
-
-  // Kahn iteratif — cycle-safe
-  function computeLevels(stacks) {
-    const out = {}, indeg = {};
-    for (const s of stacks) { out[s.id]=[]; indeg[s.id]=0; }
-    for (const s of stacks) for (const d of s.dependsOn) { out[d].push(s.id); indeg[s.id]++; }
-    const lvl = {};
-    const q = [];
-    for (const s of stacks) if (indeg[s.id]===0) { lvl[s.id]=0; q.push(s.id); }
-    while (q.length>0) {
-      const id=q.shift();
-      for (const nxt of out[id]) {
-        lvl[nxt] = Math.max(lvl[nxt]||0, (lvl[id]||0)+1);
-        if (--indeg[nxt]===0) q.push(nxt);
-      }
-    }
-    for (const s of stacks) if (lvl[s.id]===undefined) lvl[s.id]=0;
-    return lvl;
-  }
-
-  function computeSharedIssues(stacks) {
-    const cnt = {};
-    for (const st of stacks) {
-      const issues = [...new Set(st.steps.flatMap(s => s.issues || []))];
-      for (const n of issues) cnt[n] = (cnt[n] || 0) + 1;
-    }
-    return new Set(Object.keys(cnt).filter(k => cnt[k] > 1).map(Number));
-  }
-
-  function renderPlan(stacks) {
-    const sharedIssues = computeSharedIssues(stacks);
-    const psvg = document.getElementById('plan-svg');
-    const grp  = document.getElementById('plan-zoom-group');
-    const memo = computeLevels(stacks);
-    const byLvl = {};
-    for (const s of stacks) { const l=memo[s.id]||0; (byLvl[l]=byLvl[l]||[]).push(s); }
-    for (const l of Object.keys(byLvl)) byLvl[l].sort((a,b)=>a.id-b.id);
-    const maxPL = Math.max(...Object.values(byLvl).map(a=>a.length),1);
-    const CW=200, LH=220, HP=100, VP=100;
-    const TW = HP*2 + maxPL*CW;
-    const pos = {};
-    for (const [l,arr] of Object.entries(byLvl)) {
-      arr.forEach((s,i)=>{
-        pos[s.id]={x:HP+(i+0.5)*((TW-2*HP)/arr.length), y:VP+Number(l)*LH, r:Math.min(28+s.stepCount*1.4,52), level:Number(l)};
-      });
-    }
-    const maxL = Math.max(...Object.keys(byLvl).map(Number),0);
-    let html = '';
-    // level lines
-    for (const l of Object.keys(byLvl).map(Number)) {
-      const y=VP+l*LH;
-      html += '<line x1="0" y1="'+y+'" x2="'+TW+'" y2="'+y+'" stroke="#75518f" stroke-width="0.3" opacity="0.2" stroke-dasharray="4,8"/>';
-      html += '<text x="8" y="'+(y-6)+'" font-size="9" fill="#9b8db2" opacity="0.5" font-family="monospace">L'+l+'</text>';
-    }
-    // edges
-    for (const st of stacks) {
-      const to = pos[st.id]; if (!to) continue;
-      for (const depId of st.dependsOn) {
-        const fr = pos[depId]; if (!fr) continue;
-        const dy = Math.abs(to.y-fr.y)*0.4;
-        const d = 'M '+fr.x+' '+(fr.y+fr.r)+' C '+fr.x+' '+(fr.y+fr.r+dy)+', '+to.x+' '+(to.y-to.r-dy)+', '+to.x+' '+(to.y-to.r);
-        html += '<path class="orb-line" data-pfrom="'+depId+'" data-pto="'+st.id+'" d="'+d+'" marker-end="url(#arrow)"/>';
-      }
-    }
-    // stack nodes
-    for (const st of stacks) {
-      const p = pos[st.id]; if (!p) continue;
-      const col = PCOL[st.skill]||'#9b8db2';
-      const slbl = PLBL[st.skill]||st.skill;
-      const trunc = st.label.length>16 ? st.label.slice(0,15)+'…' : st.label;
-      const allIssues = [...new Set(st.steps.flatMap(s => s.issues || []))].sort((a,b)=>a-b);
-      const issueBadge = allIssues.length > 0
-        ? '<text y="'+(p.r+6)+'" text-anchor="middle" font-size="7" font-family="monospace">'
-          + allIssues.slice(0,3).map(n =>
-              sharedIssues.has(n)
-                ? '<tspan fill="'+col+'" opacity="0.28" text-decoration="line-through">#'+n+'</tspan>'
-                : '<tspan fill="'+col+'" opacity="0.75">#'+n+'</tspan>'
-            ).join('<tspan fill="'+col+'" opacity="0.3"> </tspan>')
-          + (allIssues.length>3 ? '<tspan fill="'+col+'" opacity="0.3">…</tspan>' : '')
-          +'</text>'
-        : '';
-      html +=
-        '<g class="stack-node" data-id="'+st.id+'" transform="translate('+p.x+','+p.y+')">'
-        +'<circle r="'+(p.r+12)+'" fill="'+col+'" opacity="0.05" class="stack-halo"/>'
-        +'<circle r="'+p.r+'" fill="#242424" stroke="'+col+'" stroke-width="1.2" class="stack-circle"/>'
-        +'<circle r="'+p.r+'" fill="url(#vertexGrad)"/>'
-        +'<text y="-4" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="'+col+'" font-weight="600">'+st.stepCount+'</text>'
-        +'<text y="11" text-anchor="middle" dominant-baseline="middle" font-size="8" fill="'+col+'" opacity="0.55" font-family="monospace">steps</text>'
-        +issueBadge
-        +'<circle cx="'+(p.r-7)+'" cy="'+(-(p.r-7))+'" r="3.5" fill="'+col+'" opacity="0.9"/>'
-        +'</g>'
-        +'<g transform="translate('+p.x+','+(p.y+p.r+18)+')">'
-        +'<text text-anchor="middle" font-size="9" fill="'+col+'" opacity="0.7" font-family="monospace">'+eh(slbl)+'</text>'
-        +'<text y="12" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="monospace">'+eh(trunc)+'</text>'
-        +'</g>';
-    }
-    grp.innerHTML = html;
-    // transform initiale visible immédiatement
-    planScale=0.85; planTx=40; planTy=20;
-    grp.setAttribute('transform','translate('+planTx+','+planTy+') scale('+planScale+')');
-    grp.querySelectorAll('.stack-node').forEach(el=>{
-      el.addEventListener('click', e=>{ e.stopPropagation(); activateStack(Number(el.dataset.id)); });
-    });
-    // fit to viewport (raffiné après rendu)
-    requestAnimationFrame(()=>{
-      try {
-        const bb = grp.getBBox();
-        if (bb.width>0 && bb.height>0) {
-          const vw=psvg.clientWidth||800, vh=psvg.clientHeight||600;
-          const m=60, s=Math.min((vw-m*2)/bb.width,(vh-m*2)/bb.height,1);
-          planScale=s*0.88;
-          planTx=(vw-bb.width*planScale)/2-bb.x*planScale;
-          planTy=(vh-bb.height*planScale)/2-bb.y*planScale;
-          grp.setAttribute('transform','translate('+planTx+','+planTy+') scale('+planScale+')');
-        }
-      } catch(e){}
-    });
-    renderPlanSidebar(stacks);
-  }
-
-  function renderPlanSidebar(stacks) {
-    const sharedIssues = computeSharedIssues(stacks);
-    const sidebar = document.getElementById('sidebar');
-    sidebar.querySelectorAll('.plan-stack-card').forEach(el=>el.remove());
-    document.getElementById('sidebar-title').textContent = 'Stacks · '+stacks.length;
-    for (const st of stacks) {
-      const col = PCOL[st.skill]||'#9b8db2';
-      const slbl = PLBL[st.skill]||st.skill;
-      const depsHtml = st.dependsOn.length>0 ? '← '+st.dependsOn.map(d=>'#'+d).join(', ') : 'no deps';
-      const allIssues = [...new Set(st.steps.flatMap(s => s.issues || []))].sort((a,b)=>a-b);
-      const issuesText = allIssues.length > 0
-        ? ' · ' + allIssues.slice(0,4).map(n => sharedIssues.has(n) ? '<s style="opacity:0.35">#'+n+'</s>' : '#'+n).join(' ')
-        : '';
-      const stepsHtml = st.steps.map(s=>
-        '<div class="psi"><span class="psn">'+s.id+'</span><span class="psl">'+eh(s.label)+'</span></div>'
-      ).join('');
-      const card = document.createElement('div');
-      card.className = 'plan-stack-card';
-      card.dataset.id = st.id;
-      card.style.setProperty('--sc', col);
-      card.innerHTML =
-        '<div class="psh"><span class="psid">'+st.id+'</span><span class="pslbl" style="color:'+col+'">'+eh(st.label)+'</span></div>'
-        +'<div class="psm">'+eh(slbl)+' · '+st.stepCount+' steps'+issuesText+' · <span style="color:'+col+';opacity:0.7">'+eh(depsHtml)+'</span></div>'
-        +'<div class="pss">'+stepsHtml+'</div>';
-      card.addEventListener('click', ()=>activateStack(Number(card.dataset.id)));
-      sidebar.appendChild(card);
-    }
-  }
-
-  function activateStack(id) {
-    if (activePlanId===id) { deactivateStack(); return; }
-    deactivateStack();
-    activePlanId = id;
-    const stack = planStacks&&planStacks.find(s=>s.id===id);
-    if (!stack) return;
-    document.querySelectorAll('.stack-node[data-id="'+id+'"]').forEach(el=>el.classList.add('active'));
-    const rel = new Set([id,...stack.dependsOn]);
-    (planStacks||[]).filter(s=>s.dependsOn.includes(id)).forEach(s=>rel.add(s.id));
-    document.querySelectorAll('#plan-zoom-group .orb-line').forEach(el=>{
-      const f=Number(el.dataset.pfrom), t=Number(el.dataset.pto);
-      if(rel.has(f)&&rel.has(t)) el.classList.add('highlight'); else el.classList.add('dim');
-    });
-    rel.forEach(rid=>document.querySelectorAll('.stack-node[data-id="'+rid+'"]').forEach(el=>el.classList.add('active')));
-    document.querySelectorAll('.plan-stack-card').forEach(el=>el.classList.toggle('active',Number(el.dataset.id)===id));
-    const card = document.querySelector('.plan-stack-card[data-id="'+id+'"]');
-    if (card) card.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }
-
-  function deactivateStack() {
-    activePlanId = null;
-    document.querySelectorAll('.stack-node.active').forEach(el=>el.classList.remove('active'));
-    document.querySelectorAll('#plan-zoom-group .orb-line').forEach(el=>el.classList.remove('highlight','dim'));
-    document.querySelectorAll('.plan-stack-card.active').forEach(el=>el.classList.remove('active'));
-  }
-
-  // plan svg pan/zoom
-  const psvgEl = document.getElementById('plan-svg');
-  psvgEl.addEventListener('wheel', e=>{
-    e.preventDefault();
-    const delta=-e.deltaY/600, rect=psvgEl.getBoundingClientRect();
-    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
-    const ns=Math.max(0.2,Math.min(3,planScale+delta));
-    planTx=mx-(mx-planTx)*(ns/planScale); planTy=my-(my-planTy)*(ns/planScale); planScale=ns;
-    document.getElementById('plan-zoom-group').setAttribute('transform','translate('+planTx+','+planTy+') scale('+planScale+')');
-  },{passive:false});
-  psvgEl.addEventListener('mousedown', e=>{ if(!e.target.closest('.stack-node')){planDragging=true;planLx=e.clientX;planLy=e.clientY;} });
-  window.addEventListener('mousemove', e=>{
-    if(!planDragging) return;
-    planTx+=e.clientX-planLx; planTy+=e.clientY-planLy; planLx=e.clientX; planLy=e.clientY;
-    document.getElementById('plan-zoom-group').setAttribute('transform','translate('+planTx+','+planTy+') scale('+planScale+')');
-  });
-  window.addEventListener('mouseup', ()=>{planDragging=false;});
-  psvgEl.addEventListener('click', e=>{ if(!e.target.closest('.stack-node')) deactivateStack(); });
-
-  // ── Tasks mode ──────────────────────────────────────────────────────────────
-  function renderTasks() {
-    const taskSteps = roadmap.steps.filter(s => s.issues && s.issues.length > 0);
-    const panel = document.getElementById('tasks-panel');
-    panel.innerHTML = '';
-    taskSteps.forEach((step, idx) => {
-      const color = PCOL[step.skill] || '#9b8db2';
-      const div = document.createElement('div');
-      div.className = 'task-item';
-      div.dataset.id = step.id;
-      const issueChips = step.issues.map(n =>
-        '<span class="issue-chip">#' + n + '</span>'
-      ).join('');
-      div.innerHTML =
-        '<div class="task-header">'
-        + '<span class="task-num">' + (idx + 1) + '</span>'
-        + '<span class="task-label" style="color:' + color + '">' + eh(step.label) + '</span>'
-        + '</div>'
-        + '<div class="task-rationale">' + eh(step.rationale) + '</div>'
-        + (issueChips ? '<div class="task-issues">' + issueChips + '</div>' : '');
-      panel.appendChild(div);
-    });
-    document.getElementById('sidebar-title').textContent = 'Tasks · ' + taskSteps.length;
-    document.querySelectorAll('.step-card').forEach(el => el.style.display = '');
-  }
-
-  // mode toggle
-  let currentMode = 'tasks';
-  window.setMode = function(mode) {
-    currentMode = mode;
-    const gsv = document.getElementById('graph-svg');
-    const psv = document.getElementById('plan-svg');
-    const tpv = document.getElementById('tasks-panel');
-    const mc  = document.getElementById('maille-ctrl');
-    const sdb = document.getElementById('sidebar');
-    document.getElementById('btn-tasks').classList.toggle('active', mode==='tasks');
-    document.getElementById('btn-steps').classList.toggle('active', mode==='steps');
-    document.getElementById('btn-plan').classList.toggle('active', mode==='plan');
-    if (mode==='tasks') {
-      gsv.style.display='none'; psv.style.display='none'; tpv.style.display=''; mc.style.display='none';
-      sdb.querySelectorAll('.plan-stack-card').forEach(el=>el.remove());
-      renderTasks();
-    } else if (mode==='steps') {
-      gsv.style.display=''; psv.style.display='none'; tpv.style.display='none'; mc.style.display='none';
-      sdb.querySelectorAll('.plan-stack-card').forEach(el=>el.remove());
-      document.getElementById('sidebar-title').textContent='Steps · '+roadmap.steps.length;
-      document.querySelectorAll('.step-card').forEach(el=>el.style.display='');
-    } else {
-      gsv.style.display='none'; psv.style.display='block'; tpv.style.display='none'; mc.style.display='flex';
-      document.querySelectorAll('.step-card').forEach(el=>el.style.display='none');
-      window.rebuildPlan(Number(document.getElementById('maille-slider').value));
-    }
-  };
-
-  window.rebuildPlan = function(maille) {
-    planStacks = buildStacks(roadmap.steps, maille);
-    renderPlan(planStacks);
-  };
-
-  // Initialiser sur l'onglet tasks
-  setMode('tasks');
 
 })();
 </script>

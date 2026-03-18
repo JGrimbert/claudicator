@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import TopBar from "$lib/components/TopBar.svelte";
     import AgentConsole from "$lib/components/AgentConsole.svelte";
-    import IssueAnalysis from "$lib/components/IssueAnalysis.svelte";
     import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
     import AgentInput from "$lib/components/AgentInput.svelte";
     import ProjetPanel from "$lib/components/ProjetPanel.svelte";
@@ -14,10 +13,9 @@
     import { JgrLayout, JgrTabs } from 'jgr-ui';
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus } from "$lib/stores/agent";
 
-    let activeMiddleTab: "roadmap" | "dag" | "plan" | "cluster" | "coal" = "roadmap";
+    let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" = "dag";
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
-    $: if ($issueAnalysis.running)    activeMiddleTab = "roadmap";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
 
     // Bascule sur coal uniquement au changement d'issue (pas à chaque update de symboles)
@@ -399,7 +397,6 @@
 
     // ─── Tabs centre ──────────────────────────────────────────────────────────
     $: midTabs = [
-        { id: 'roadmap', label: 'roadmap' },
         { id: 'dag',     label: 'dag'     },
         { id: 'plan',    label: 'plan'    },
         ...($clusterFocusedSymbol ? [{ id: 'cluster', label: 'cluster' }] : []),
@@ -408,6 +405,10 @@
 </script>
 
 <svelte:window onmousemove={onMove} onmouseup={onUp} />
+
+{#if draggingMain || draggingV}
+    <div class="drag-shield" style="cursor: {draggingMain ? 'row-resize' : 'col-resize'}"></div>
+{/if}
 
 <JgrLayout
     storageKey="claudicator:panel-widths"
@@ -454,13 +455,7 @@
                     onchange={id => activeMiddleTab = id}
                 >
                     {#snippet children(tab)}
-                        {#if tab === 'roadmap'}
-                            {#if $issueAnalysis.running || $issueAnalysis.result}
-                                <IssueAnalysis />
-                            {:else}
-                                <div class="plan-placeholder"><span>Aucune analyse disponible</span></div>
-                            {/if}
-                        {:else if tab === 'dag'}
+                        {#if tab === 'dag'}
                             <RoadmapViz />
                         {:else if tab === 'plan'}
                             {#if $globalPlanPrompt}
@@ -507,6 +502,12 @@
 </JgrLayout>
 
 <style>
+.drag-shield {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+}
+
 /* ── Wrappers internes (contenu des snippets JgrLayout) ── */
 .aside-inner, .main-inner {
     display: flex;
