@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, coalCodeFocus } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, coalCodeFocus, planModeTask } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
     import { JgrBtn } from 'jgr-ui';
 
@@ -307,20 +307,37 @@
     }
 
     // ─── Créer une task ───────────────────────────────────────────────────────
+    let taskCreating = false;
     let taskCreated = false;
+
+    function waitForTaskActive(taskId: string): Promise<void> {
+        return new Promise(resolve => {
+            const unsub = planModeTask.subscribe(task => {
+                if (task?.id === taskId) { unsub(); resolve(); }
+            });
+            setTimeout(() => { unsub(); resolve(); }, 5000);
+        });
+    }
 
     async function createTask() {
         const issue = $agentState.issue;
-        if (!issue) return;
-        const res = await fetch("/api/tasks", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
-        });
-        const created = await res.json();
-        notifyTaskCreated(created?.id);
-        taskCreated = true;
-        setTimeout(() => { taskCreated = false; }, 2000);
+        if (!issue || taskCreating) return;
+        taskCreating = true;
+        taskCreated = false;
+        try {
+            const res = await fetch("/api/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
+            });
+            const created = await res.json();
+            notifyTaskCreated(created?.id);
+            if (created?.id) await waitForTaskActive(created.id);
+            taskCreated = true;
+            setTimeout(() => { taskCreated = false; }, 1500);
+        } finally {
+            taskCreating = false;
+        }
     }
 </script>
 
@@ -345,8 +362,8 @@
         {:else}
             <div class="header-right">
                 {#if $agentState.issue && !$taskIssueNumbers.has($agentState.issue.number)}
-                    <button class="task-btn-top" onclick={createTask} disabled={taskCreated} title="Créer une task liée à cette issue">
-                        {taskCreated ? "✓ créée" : "Task →"}
+                    <button class="task-btn-top" onclick={createTask} disabled={taskCreating || taskCreated} title="Créer une task liée à cette issue">
+                        {taskCreating ? "…" : taskCreated ? "✓" : "Task →"}
                     </button>
                 {/if}
                 <button class="new-issue-btn" onclick={openCreate} title="Créer une nouvelle issue">+ Issue</button>
