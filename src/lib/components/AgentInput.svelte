@@ -176,6 +176,12 @@
         if ($agentRunState.sessionAlive) {
             const ok = confirm("Une session est active dans la console. L'interrompre pour lancer ce prompt ?");
             if (!ok) return;
+            // Tuer la session côté serveur pour éviter le 409
+            await fetch("/api/agent/session", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId: task.id }),
+            });
         }
 
         if (onBeforeLaunch) {
@@ -189,15 +195,32 @@
         }
 
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
+        const body = hasPlan
+            ? { plan: text, taskId: task.id }
+            : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
         try {
-            const body = hasPlan
-                ? { plan: text, taskId: task.id }
-                : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
-            const res = await fetch("/api/agent/run", {
+            let res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
+            // Si 409 : session encore occupée côté serveur (coupure SSE en cours de tour)
+            if (res.status === 409) {
+                agentRunState.update(s => ({ ...s, running: false }));
+                const ok = confirm("Claude est encore actif sur cette tâche. L'interrompre pour relancer ?");
+                if (!ok) return;
+                await fetch("/api/agent/session", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ taskId: task.id }),
+                });
+                agentRunState.update(s => ({ ...s, running: true }));
+                res = await fetch("/api/agent/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+            }
             await startConsoleStream(res);
             // Fallback : si l'event session_status SSE a été manqué (chunk boundary), vérifier côté serveur
             if (hasPlan && !get(agentRunState).sessionAlive) {

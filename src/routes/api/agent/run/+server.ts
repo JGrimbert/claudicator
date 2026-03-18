@@ -14,6 +14,7 @@ import { orchestrate } from "$lib/server/agent/orchestrator";
 import {
     createSession,
     sendTurn,
+    destroySession,
     isSessionAlive,
     isSessionBusy,
 } from "$lib/server/services/claude-session";
@@ -233,9 +234,11 @@ export async function POST({ request }) {
                                 updateTask(taskId, updates);
                             }
                         }
-                        // Signaler que la session reste vivante
-                        emit("true", "session_status");
-                        emit("[✓ tour terminé — session active]", "system");
+                        // Détruire la session : les follow-ups utilisent le mode one-shot
+                        // (évite les conflits de processus Claude CLI sur Windows)
+                        if (taskId) destroySession(taskId);
+                        emit("false", "session_status");
+                        emit("[✓ tour terminé]", "system");
                         try { controller.close(); } catch { /* déjà fermé */ }
                     } else if (event.type === "error") {
                         emit(`[erreur: ${event.payload}]`, "system");
@@ -257,6 +260,7 @@ export async function POST({ request }) {
                 if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
                 if (taskId) register(taskId, proc);
                 if (proc.pid) emit(`[pid:${proc.pid}]`, "system");
+                emit("⚙ Analyse du projet en cours…", "system");
                 if (contextStats) emit(JSON.stringify(contextStats), "context");
 
                 let stdoutBuf = "";
