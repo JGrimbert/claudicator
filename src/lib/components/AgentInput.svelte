@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
+    import { get } from "svelte/store";
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
     import { JgrCta } from 'jgr-ui';
 
@@ -162,12 +163,25 @@
 
     // ── Lancement ──────────────────────────────────────────────────────────────
     async function launch() {
-        const text = mode === "impl" ? taskText.trim() : buildFullPrompt().trim();
+        // hasPlan → session impl ; sinon → one-shot spec (plus fiable sur Windows)
+        let text: string;
+        if (hasPlan) {
+            const base = taskText.trim();
+            text = refineText.trim() ? `${base}\n\nRAFFINEMENT\n${refineText.trim()}` : base;
+        } else {
+            text = buildFullPrompt().trim();
+        }
         if (!text || $agentRunState.running || preLaunching) return;
 
         if ($agentRunState.sessionAlive) {
             const ok = confirm("Une session est active dans la console. L'interrompre pour lancer ce prompt ?");
             if (!ok) return;
+            // Tuer la session côté serveur pour éviter le 409
+            await fetch("/api/agent/session", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId: task.id }),
+            });
         }
 
         if (onBeforeLaunch) {
@@ -181,20 +195,44 @@
         }
 
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
+        const body = hasPlan
+            ? { plan: text, taskId: task.id }
+            : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
         try {
-            const body = mode === "impl"
-                ? { plan: text, taskId: task.id }
-                : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
-            const res = await fetch("/api/agent/run", {
+            let res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-            await startConsoleStream(res);
-        } finally {
-            if (mode !== "impl") {
-                agentRunState.update(s => ({ ...s, completionLabel: "Plan enregistré · initiez le commit dans Tâches" }));
+            // Si 409 : session encore occupée côté serveur (coupure SSE en cours de tour)
+            if (res.status === 409) {
+                agentRunState.update(s => ({ ...s, running: false }));
+                const ok = confirm("Claude est encore actif sur cette tâche. L'interrompre pour relancer ?");
+                if (!ok) return;
+                await fetch("/api/agent/session", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ taskId: task.id }),
+                });
+                agentRunState.update(s => ({ ...s, running: true }));
+                res = await fetch("/api/agent/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
             }
+            await startConsoleStream(res);
+            // Fallback : si l'event session_status SSE a été manqué (chunk boundary), vérifier côté serveur
+            if (hasPlan && !get(agentRunState).sessionAlive) {
+                try {
+                    const r = await fetch(`/api/agent/session?taskId=${encodeURIComponent(task.id)}`);
+                    if (r.ok) {
+                        const d = await r.json() as { alive: boolean };
+                        if (d.alive) agentRunState.update(s => ({ ...s, sessionAlive: true }));
+                    }
+                } catch { /* silencieux */ }
+            }
+        } finally {
             agentRunState.update(s => ({ ...s, running: false }));
             taskRefreshTick.update(n => n + 1);
             onLaunchComplete?.();
@@ -353,7 +391,7 @@
             {/if}
             {@render footerExtra?.()}
             <JgrCta
-                label={hasPlan ? "Affiner" : "Lancer l'agent"}
+                label={hasPlan ? "Implémenter" : "Lancer l'agent"}
                 pending={$agentRunState.running || preLaunching}
                 disabled={!taskText.trim() || loadingContext}
                 onclick={launch}

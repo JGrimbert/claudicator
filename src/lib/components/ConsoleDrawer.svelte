@@ -158,7 +158,6 @@
     }
 
     async function continuer() {
-        if (!$agentRunState.sessionAlive) return;  // guard : pas de session → rien à faire
         const text   = userInput.trim();
         const taskId = $agentRunState.taskId;
         if (!text || !taskId || sendingInput) return;
@@ -166,10 +165,11 @@
         userInput    = "";
         agentRunState.update(s => ({ ...s, running: true, logs: [], consoleMinimized: false, completionLabel: null }));
         try {
+            // Toujours one-shot avec contexte : les sessions stdin ne sont pas fiables sur Windows
             const res = await fetch("/api/agent/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId, prompt: text, isFollowUp: true })
+                body: JSON.stringify({ taskId, prompt: text, contextFollowUp: true })
             });
             await startConsoleStream(res);
         } finally {
@@ -182,8 +182,8 @@
     function onInputKey(e: KeyboardEvent) {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if ($agentRunState.running)           sendInput();
-            else if ($agentRunState.sessionAlive) continuer();
+            if ($agentRunState.running) sendInput();
+            else if (canPrompt)         continuer();
         }
     }
 </script>
@@ -244,15 +244,15 @@
             <input
                 class="bar-input"
                 type="text"
-                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : $agentRunState.sessionAlive ? "Envoyer un suivi… (Entrée)" : $agentRunState.completionLabel ?? "Session inactive"}
+                placeholder={$agentRunState.running ? "Répondre à Claude… (Entrée)" : "Envoyer un suivi… (Entrée)"}
                 bind:value={userInput}
                 onkeydown={onInputKey}
-                disabled={sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
+                disabled={sendingInput || $agentRunState.running}
             />
             <button
                 class="bar-send"
                 onclick={$agentRunState.running ? sendInput : continuer}
-                disabled={!userInput.trim() || sendingInput || (!$agentRunState.running && !$agentRunState.sessionAlive)}
+                disabled={!userInput.trim() || sendingInput || $agentRunState.running}
             >↵</button>
         {:else}
             <span class="bar-line" class:sys={lastLine?.type === 'system'}>

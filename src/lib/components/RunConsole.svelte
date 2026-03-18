@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { agentRunState, taskRefreshTick } from "$lib/stores/agent";
+    import { get } from "svelte/store";
+    import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
     import { JgrConsole } from 'jgr-ui';
     import type { LogEntry } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
@@ -49,6 +50,18 @@
         agentRunState.update(s => ({ ...s, sessionAlive: false }));
         taskRefreshTick.update(n => n + 1);
     }
+
+    async function sendFollowUp(text: string) {
+        const taskId = $agentRunState.taskId;
+        if (!taskId || !text.trim()) return;
+        agentRunState.update(s => ({ ...s, running: true, logs: [], completionLabel: null }));
+        const res = await fetch("/api/agent/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: text, taskId, contextFollowUp: true })
+        });
+        await startConsoleStream(res, { onDone: () => taskRefreshTick.update(n => n + 1) });
+    }
 </script>
 
 <div class="run-console-wrap">
@@ -58,9 +71,11 @@
         title={$agentRunState.taskTitle}
         completionLabel={$agentRunState.completionLabel ?? undefined}
         sessionAlive={$agentRunState.sessionAlive}
+        showInput={!!$agentRunState.taskId && !$agentRunState.running}
         oninterrupt={stop}
         onterminate={terminateSession}
         ondismiss={dismiss}
+        oninput={sendFollowUp}
     />
     {#if !$agentRunState.running && lastUsage}
         <PromptUsage usage={lastUsage} context={lastContext} />

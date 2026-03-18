@@ -67,6 +67,11 @@ export async function startConsoleStream(
             sessionStorage.setItem("activeTaskTitle", state.taskTitle);
         } catch { /* SSR ou mode privé */ }
     }
+    // Annuler l'éventuel stream précédent avant d'en démarrer un nouveau
+    if (_streamReader) {
+        _streamReader.cancel().catch(() => {});
+        _streamReader = null;
+    }
     const reader = res.body.getReader();
     _streamReader = reader;
     const dec = new TextDecoder();

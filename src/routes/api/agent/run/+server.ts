@@ -4,7 +4,7 @@ import path from "path";
 import { spawn } from "child_process";
 import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import type { TokenUsage } from "$lib/server/services/tasks";
-import { register, unregister } from "$lib/server/services/processes";
+import { register, unregister, killProcess, isRunning } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
 import { loadMethodSnippets } from "$lib/server/agent/context";
@@ -14,6 +14,7 @@ import { orchestrate } from "$lib/server/agent/orchestrator";
 import {
     createSession,
     sendTurn,
+    destroySession,
     isSessionAlive,
     isSessionBusy,
 } from "$lib/server/services/claude-session";
@@ -36,15 +37,27 @@ function savePlan(taskId: string, lines: string[]) {
 /** Reçoit une requête agent et détermine la phase d'exécution */
 export async function POST({ request }) {
     const body = await request.json();
-    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated } = body;
+    const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated, contextFollowUp } = body;
     const root = projectRoot?.trim() || getProjectRoot();
 
     // Phase : plan si aucun plan fourni, implémentation sinon, suivi si isFollowUp
+    // contextFollowUp=true : one-shot avec logs précédents injectés dans le prompt
     const isImplementationPhase = !!(plan?.trim() && taskId);
     const isSessionPhase = isImplementationPhase || !!(isFollowUp && taskId);
 
-    // Si un plan est fourni, construire le prompt enrichi côté serveur
+    // Si contextFollowUp : injecter les derniers logs de la task dans le prompt (limité à 60 lignes)
     let prompt: string = rawPrompt ?? "";
+    if (contextFollowUp && taskId && rawPrompt?.trim()) {
+        const prevTask = getTask(taskId);
+        const prevLines = (prevTask?.logs ?? [])
+            .filter(l => l.trim() && !l.startsWith('[') && !l.startsWith('⚙'))
+            .slice(-20);
+        if (prevLines.length > 0) {
+            prompt = `${prevLines.join('\n')}\n\n---\n\n${rawPrompt.trim()}`;
+        }
+    }
+
+    // Si un plan est fourni, construire le prompt enrichi côté serveur
     let contextStats: { methods: number; hasAtlas: boolean } | null = null;
     if (isImplementationPhase && !isFollowUp) {
         const task = getTask(taskId);
@@ -156,6 +169,11 @@ export async function POST({ request }) {
         }
     }
 
+    // Tuer tout processus one-shot zombie sur la même task avant d'en lancer un nouveau
+    if (taskId && !isFollowUp && isRunning(taskId)) {
+        killProcess(taskId);
+    }
+
     // Créer la session si nécessaire (premier tour d'implémentation)
     if (isImplementationPhase && taskId && !isSessionAlive(taskId)) {
         createSession(taskId, root, root);
@@ -216,9 +234,11 @@ export async function POST({ request }) {
                                 updateTask(taskId, updates);
                             }
                         }
-                        // Signaler que la session reste vivante
-                        emit("true", "session_status");
-                        emit("[✓ tour terminé — session active]", "system");
+                        // Détruire la session : les follow-ups utilisent le mode one-shot
+                        // (évite les conflits de processus Claude CLI sur Windows)
+                        if (taskId) destroySession(taskId);
+                        emit("false", "session_status");
+                        emit("[✓ tour terminé]", "system");
                         try { controller.close(); } catch { /* déjà fermé */ }
                     } else if (event.type === "error") {
                         emit(`[erreur: ${event.payload}]`, "system");
@@ -228,17 +248,19 @@ export async function POST({ request }) {
                 });
 
             } else {
-                // ── Mode one-shot (-p) : phase plan ──
+                // ── Mode one-shot (-p) ──
+                const spawnArgs = ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root];
                 const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
                 const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
                 const proc = spawn(
                     claudeCmd,
-                    ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root],
+                    spawnArgs,
                     { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
                 );
                 if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
                 if (taskId) register(taskId, proc);
                 if (proc.pid) emit(`[pid:${proc.pid}]`, "system");
+                emit("⚙ Analyse du projet en cours…", "system");
                 if (contextStats) emit(JSON.stringify(contextStats), "context");
 
                 let stdoutBuf = "";
