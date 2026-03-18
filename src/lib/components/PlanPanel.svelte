@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { planGroups, planGroupsWithInvalidations, activePlanGroupIndex, clusterFocusedSymbol, agentState, issueAnalysis, issueStates } from "$lib/stores/agent";
-    import type { PlanGroup, PlanGroupWithInvalidations } from "$lib/stores/agent";
+    import { planGroups, planGroupsWithInvalidations, planGroupsDeduped, activePlanGroupIndex, clusterFocusedSymbol, agentState, issueAnalysis, issueStates } from "$lib/stores/agent";
+    import type { PlanGroup, PlanGroupWithInvalidations, PlanGroupDeduped } from "$lib/stores/agent";
     import IssueChip from "$lib/components/IssueChip.svelte";
 
     type SymbolEntry  = { name: string; issues: number[] };
@@ -237,7 +237,7 @@
         }
     }
 
-    $: activeGroup = $planGroupsWithInvalidations[$activePlanGroupIndex] ?? null;
+    $: activeGroup = ($planGroupsDeduped[$activePlanGroupIndex] ?? null) as PlanGroupDeduped | null;
 
     function selectGroup(idx: number) {
         activePlanGroupIndex.set(idx);
@@ -608,8 +608,11 @@
                     </div>
                 {/if}
                 <div class="group-issues">
-                    {#each activeGroup.issues as num}
+                    {#each activeGroup.displayIssues as num}
                         <IssueChip number={num} strikethrough={activeGroup.invalidatedIssues.includes(num)} />
+                    {/each}
+                    {#each activeGroup.hiddenIssues as h}
+                        <span class="group-issue-hidden" title="#{h.n} · déjà au step {h.firstStep}">#{h.n}</span>
                     {/each}
                 </div>
 
@@ -829,12 +832,20 @@
             {/if}
 
         {:else}
-            {#if $planGroupsWithInvalidations.length === 0}
+            {#if $planGroupsDeduped.length === 0}
                 <p class="hint">Aucune roadmap disponible</p>
             {:else}
-                {#each $planGroupsWithInvalidations as group}
+                {#each $planGroupsDeduped as group}
                     {@const allDone = group.issues.length > 0 && group.issues.every(n => issueTaskStatus.get(n) === "merged" || group.invalidatedIssues.includes(n))}
-                    <div class="step-card" class:step-active={$activePlanGroupIndex === group.index - 1} class:step-card--invalid={group.invalidatedIssues.length > 0} class:step-card--all-done={allDone}>
+                    {@const isMilestone = group.issues.length === 0}
+                    {@const isDeduped = !isMilestone && group.displayIssues.length === 0}
+                    <div class="step-card"
+                        class:step-active={$activePlanGroupIndex === group.index - 1}
+                        class:step-card--invalid={group.invalidatedIssues.length > 0}
+                        class:step-card--all-done={allDone}
+                        class:step-card--milestone={isMilestone}
+                        class:step-card--deduped={isDeduped}
+                    >
                         <div class="step-head">
                             <button class="step-title-btn" onclick={() => selectGroup(group.index - 1)}>
                                 <span class="step-index">{group.index}</span>
@@ -855,12 +866,14 @@
                                     disabled={reprocessingGroup === group.index}
                                 >{reprocessFeedback[group.index] || (reprocessingGroup === group.index ? "…" : "Reprocesser")}</button>
                             {/if}
-                            <button
-                                class="btn-create-task"
-                                onclick={() => createGroupTasks(group)}
-                                disabled={creatingGroup === group.name}
-                                title="Créer les tasks pour ce groupe"
-                            >{groupFeedback[group.name] ?? "＋ task"}</button>
+                            {#if !isMilestone}
+                                <button
+                                    class="btn-create-task"
+                                    onclick={() => createGroupTasks(group)}
+                                    disabled={creatingGroup === group.name}
+                                    title="Créer les tasks pour ce groupe"
+                                >{groupFeedback[group.name] ?? "＋ task"}</button>
+                            {/if}
                         </div>
                         {#if group.summary}
                             <div class="step-summary">{group.summary}</div>
@@ -868,24 +881,33 @@
                         {#if group.dependsOn.length > 0}
                             <div class="step-dep">après {group.dependsOn.join(", ")}</div>
                         {/if}
-                        <div class="step-issues" class:step-issues--all-done={allDone}>
-                            {#each group.issues as n}
-                                {@const status = issueTaskStatus.get(n)}
-                                {@const isClosed = group.invalidatedIssues.includes(n)}
-                                <button
-                                    class="step-chip"
-                                    class:chip-closed={isClosed && !allDone}
-                                    class:chip-all-done={allDone}
-                                    class:chip-impl={!allDone && (status === "implementation" || status === "documentation")}
-                                    class:chip-plan={!allDone && status === "planification"}
-                                    class:chip-merged={!allDone && status === "merged"}
-                                    class:chip-failed={!allDone && status === "failed"}
-                                    class:chip-spec={!allDone && status === "specification"}
-                                    onclick={() => openIssue(n)}
-                                    title="#{n}{isClosed ? ' · fermée' : ''}{status ? ` · ${status}` : ''}"
-                                >{#if isClosed}<s>#{n}</s>{:else}#{n}{/if}</button>
-                            {/each}
-                        </div>
+                        {#if group.displayIssues.length > 0 || group.hiddenIssues.length > 0}
+                            <div class="step-issues" class:step-issues--all-done={allDone}>
+                                {#each group.displayIssues as n}
+                                    {@const status = issueTaskStatus.get(n)}
+                                    {@const isClosed = group.invalidatedIssues.includes(n)}
+                                    <button
+                                        class="step-chip"
+                                        class:chip-closed={isClosed && !allDone}
+                                        class:chip-all-done={allDone}
+                                        class:chip-impl={!allDone && (status === "implementation" || status === "documentation")}
+                                        class:chip-plan={!allDone && status === "planification"}
+                                        class:chip-merged={!allDone && status === "merged"}
+                                        class:chip-failed={!allDone && status === "failed"}
+                                        class:chip-spec={!allDone && status === "specification"}
+                                        onclick={() => openIssue(n)}
+                                        title="#{n}{isClosed ? ' · fermée' : ''}{status ? ` · ${status}` : ''}"
+                                    >{#if isClosed}<s>#{n}</s>{:else}#{n}{/if}</button>
+                                {/each}
+                                {#each group.hiddenIssues as h}
+                                    <button
+                                        class="step-chip chip-hidden"
+                                        onclick={() => openIssue(h.n)}
+                                        title="#{h.n} · déjà au step {h.firstStep}"
+                                    >#{h.n}</button>
+                                {/each}
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             {/if}
@@ -1508,6 +1530,22 @@
 .step-chip.chip-all-done:hover { color: #d4aaff; border-color: #6a3aaa; opacity: 1; }
 .step-issues--all-done { opacity: 0.85; }
 .step-card--invalid { border-left: 2px solid #7a4a1a; }
+.step-card--milestone { opacity: 0.45; }
+.step-card--milestone:hover { opacity: 0.75; }
+.step-card--deduped { opacity: 0.35; }
+.step-card--deduped:hover { opacity: 0.65; }
+.step-chip.chip-hidden { opacity: 0.3; color: #556; border-color: #222; cursor: pointer; }
+.step-chip.chip-hidden:hover { opacity: 0.7; color: #889; border-color: #444; }
+.group-issue-hidden {
+    font-size: 0.58rem;
+    color: #444;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid #222;
+    border-radius: 3px;
+    padding: 0.04rem 0.32rem;
+    opacity: 0.45;
+    cursor: default;
+}
 .invalid-badge {
     font-size: 0.55rem;
     color: #c87a20;
