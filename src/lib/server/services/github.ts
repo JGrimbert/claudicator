@@ -47,7 +47,7 @@ export async function getIssue(owner: string, repo: string, number: number) {
 /** Liste les issues ouvertes d'un dépôt */
 export async function getIssues(owner: string, repo: string) {
     const octokit = getOctokit();
-    const { data } = await octokit.issues.listForRepo({ owner, repo, state: "open" });
+    const { data } = await octokit.issues.listForRepo({ owner, repo, state: "open", per_page: 100 });
     return data;
 }
 
