@@ -1,0 +1,1 @@
+Oui, ça va bien ! Prêt à travailler sur Claudicator. Qu'est-ce qu'on fait ?
