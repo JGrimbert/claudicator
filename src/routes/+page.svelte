@@ -18,12 +18,6 @@
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
 
-    // Bascule sur coal uniquement au changement d'issue (pas à chaque update de symboles)
-    let _prevCoalIssueNum = -1;
-    $: if ($coalCodeFocus && $coalCodeFocus.issueNum !== _prevCoalIssueNum) {
-        _prevCoalIssueNum = $coalCodeFocus.issueNum;
-        activeMiddleTab = "coal";
-    }
 
     /**
      *  TODO: floralwhite, moccasin, peachpuff
