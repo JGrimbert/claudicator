@@ -14,12 +14,14 @@ export async function commit(files: string[], message: string) {
     await git.commit(message);
 }
 
-/** Extrait owner et repo depuis l'URL remote origin. */
+/** Extrait owner et repo depuis l'URL remote origin (SSH ou HTTPS). */
 export async function getRemoteRepo() {
-    const remote = await git.remote(["get-url", "origin"]);
-
-    const parts = remote.trim().replace(".git", "").split("/");
-
+    const remote = (await git.remote(["get-url", "origin"]) || "").trim().replace(/\.git$/, "");
+    // SSH: git@github.com:owner/repo
+    const ssh = remote.match(/:([^/]+)\/(.+)$/);
+    if (ssh) return { owner: ssh[1], repo: ssh[2] };
+    // HTTPS: https://github.com/owner/repo
+    const parts = remote.split("/");
     return {
         owner: parts[parts.length - 2],
         repo: parts[parts.length - 1]

@@ -74,10 +74,15 @@ export async function addProject(projectPath: string): Promise<Project> {
     let repo: string | undefined;
     try {
         const git = simpleGit(projectPath);
-        const remote = String(await git.remote(["get-url", "origin"]) || "").trim();
-        const parts = remote.replace(/\.git$/, "").split(/[/\\]/);
-        repo  = parts[parts.length - 1] || undefined;
-        owner = parts[parts.length - 2] || undefined;
+        const remote = String(await git.remote(["get-url", "origin"]) || "").trim().replace(/\.git$/, "");
+        // SSH: git@github.com:owner/repo
+        const ssh = remote.match(/:([^/]+)\/(.+)$/);
+        if (ssh) { owner = ssh[1]; repo = ssh[2]; }
+        else {
+            const parts = remote.split(/[/\\]/);
+            repo  = parts[parts.length - 1] || undefined;
+            owner = parts[parts.length - 2] || undefined;
+        }
     } catch { /* pas de remote git */ }
 
     const name = repo || path.basename(projectPath);

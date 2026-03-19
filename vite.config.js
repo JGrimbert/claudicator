@@ -8,5 +8,13 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		exclude: ['jgr-ui']
+	},
+	server: {
+		fs: {
+			allow: ['..']
+		},
+		watch: {
+			ignored: ['!**/node_modules/jgr-ui/**']
+		}
 	}
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, coalCodeFocus, planModeTask } from "$lib/stores/agent";
+    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, issueListPendingNumber, coalCodeFocus, planModeTask } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
     import { JgrBtn } from 'jgr-ui';
 
@@ -290,6 +290,7 @@
                 },
                 status: "idle"
             }));
+            issueListPendingNumber.set(data.number);
             issueListRefreshTick.update(n => n + 1);
         } catch (e: any) {
             createError = e.message;

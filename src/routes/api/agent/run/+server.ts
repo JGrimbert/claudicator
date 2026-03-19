@@ -197,6 +197,7 @@ export async function POST({ request }) {
             if (isSessionPhase && taskId) {
                 // ── Mode session long-lived ──
                 if (contextStats) emit(JSON.stringify(contextStats), "context");
+                emit("⚙ Envoi du message à la session…", "system");
 
                 sendTurn(taskId, prompt, (event) => {
                     if (event.type === "agent_text") {
