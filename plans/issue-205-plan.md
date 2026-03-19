@@ -1,0 +1,2 @@
+Le problème est clair. Dans `+page.svelte`, un bloc réactif bascule automatiquement sur l'onglet "coal" (Monaco) quand `coalCodeFocus` change d'issue — ce qui est déclenché automatiquement par `ArtifactViewer` lors de la sélection d'une issue.
+Fait. Le bloc réactif qui basculait automatiquement sur l'onglet "coal" (Monaco) lors de la sélection d'une issue a été supprimé. L'onglet reste accessible manuellement, mais ne s'ouvre plus automatiquement.
