@@ -34,7 +34,8 @@
       "Bash(cd C:/claudicator && npx vite build 2>&1 | grep -E \"\\(error|Error|✓|✗\\)\" | head -10)",
       "Bash(cd:*)",
       "Bash(cat:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(powershell -command \"\\(Get-Item ''C:/claudicator/ai/roadmap.json''\\).LastWriteTime\")"
     ]
   }
 }

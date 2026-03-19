@@ -139,6 +139,18 @@ export function notifyTaskCreated(taskId?: string) {
 
 export const hoveredIssueNumber = writable<number | null>(null);
 export const taskIssueNumbers  = writable<Set<number>>(new Set());
+export const todoIssueNumbers  = writable<Set<number>>(new Set());
+export const issueListNumbers  = writable<Set<number>>(new Set());
+export const roadmapSelectedIssues = writable<number[]>([]);
+export const roadmapTabIssues = writable<number[]>([]);
+
+export const dagIssueFilter = derived(
+    [roadmapSelectedIssues, roadmapTabIssues],
+    ([$selected, $tab]) => {
+        if ($selected.length > 0) return $selected;
+        return $tab;
+    }
+);
 
 export const issueAnalysis = writable<{
     running: boolean;

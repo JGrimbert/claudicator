@@ -5,6 +5,8 @@
         projetPanelTab,
         notifyTaskCreated,
         issueListRefreshTick,
+        todoIssueNumbers,
+        issueListNumbers,
         type Issue,
     } from "$lib/stores/agent";
     import TaskList from "./TaskList.svelte";
@@ -169,6 +171,16 @@
             i.state === "open" &&
             !$agentState.knownSubIssueNumbers.includes(i.number)
     );
+
+    $: todoIssueNumbers.set(
+        new Set(
+            todos
+                .flatMap((g) => [...g.content.matchAll(/#(\d+)/g)])
+                .map((m) => parseInt(m[1]))
+        )
+    );
+
+    $: issueListNumbers.set(new Set(displayedIssues.map((i) => i.number)));
 
     $: todoItems = todos.map(
         (g): ListItem => ({

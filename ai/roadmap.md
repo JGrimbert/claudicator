@@ -1,14 +1,14 @@
 # Roadmap
 > Project: **claudicator**
 
-*Generated: 2026-03-18T20:33:53.263Z*
+*Generated: 2026-03-19T17:49:10.120Z*
 
 ## Stats
 
 | Metric | Value |
 |--------|-------|
 | Nodes  | 207 |
-| Edges  | 304 |
+| Edges  | 307 |
 | Levels | 8 |
 | Steps  | 126 |
 
@@ -36,7 +36,7 @@
 | agent | utility | 5 | 0.00 |
 | cartography | internal | 4 | 0.60 |
 | usage | utility | 3 | 1.00 |
-| run | internal | 3 | 0.11 |
+| run | internal | 3 | 0.10 |
 | clusters | internal | 3 | 0.29 |
 | issue | utility | 3 | 0.00 |
 | analyze | internal | 3 | 0.22 |
