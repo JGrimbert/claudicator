@@ -5,10 +5,12 @@
         projetPanelTab,
         notifyTaskCreated,
         issueListRefreshTick,
+        issueListPendingNumber,
         todoIssueNumbers,
         issueListNumbers,
         type Issue,
     } from "$lib/stores/agent";
+    import { get } from "svelte/store";
     import TaskList from "./TaskList.svelte";
     import { JgrTabList } from "jgr-ui";
     import type { ListItem, TabDef } from "jgr-ui";
@@ -109,13 +111,26 @@
         }));
     }
 
-    async function loadIssues() {
+    async function loadIssues(retries = 5, retryDelayMs = 1500) {
         if (!issues.length) issuesLoading = true;
         try {
             const res = await fetch("/api/issues");
-            if (res.ok) issues = await res.json();
+            if (res.ok) {
+                issues = await res.json();
+                const pending = get(issueListPendingNumber);
+                if (pending !== null) {
+                    if (issues.some((i: Issue) => i.number === pending)) {
+                        setTimeout(() => issueListPendingNumber.set(null), 800);
+                    } else if (retries > 0) {
+                        // L'issue vient d'être créée mais n'est pas encore dans la liste GitHub — on réessaie
+                        setTimeout(() => loadIssues(retries - 1, retryDelayMs), retryDelayMs);
+                    } else {
+                        issueListPendingNumber.set(null);
+                    }
+                }
+            }
         } catch {
-            /* silencieux */
+            issueListPendingNumber.set(null);
         } finally {
             issuesLoading = false;
         }
@@ -225,6 +240,7 @@
                 ? String($agentState.issue.number)
                 : undefined,
             cta: { label: "+ Issue", onclick: openCreate },
+            pending: $issueListPendingNumber !== null,
             loading: issuesLoading,
             empty: "Aucune issue ouverte",
         },
@@ -252,3 +268,4 @@
         {/if}
     {/snippet}
 </JgrTabList>
+
