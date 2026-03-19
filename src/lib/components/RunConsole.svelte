@@ -51,6 +51,31 @@
         taskRefreshTick.update(n => n + 1);
     }
 
+    function playDone() {
+        try {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.6);
+            osc.onended = () => ctx.close();
+        } catch {}
+    }
+
+    let _wasRunning = false;
+    $: {
+        const now = $agentRunState.running;
+        if (_wasRunning && !now) playDone();
+        _wasRunning = now;
+    }
+
     async function sendFollowUp(text: string) {
         const taskId = $agentRunState.taskId;
         if (!taskId || !text.trim()) return;
