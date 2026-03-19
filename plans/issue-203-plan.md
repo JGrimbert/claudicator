@@ -1,0 +1,2 @@
+Je vais ajouter un son via Web Audio API dans `RunConsole.svelte` — quand `running` passe de `true` à `false`.
+Voilà. Quand `running` passe de `true` à `false` (fin de réflexion), deux notes montantes (880 Hz → 1100 Hz) sont jouées via `AudioContext` — aucun fichier audio externe nécessaire.
