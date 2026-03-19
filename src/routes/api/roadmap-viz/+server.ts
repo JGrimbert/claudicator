@@ -14,41 +14,28 @@ import type { RequestHandler } from "./$types";
 
 type CoalEntry = { symbols: string[]; issues: number[]; score: number; count: number };
 
-/** Calcule le coal avec issues GitHub (même logique que /api/clusters). */
-async function computeIssueCoal(root: string): Promise<CoalEntry[]> {
+/** Assignation directe : pour chaque symbole du projet, liste toutes les issues qui le mentionnent (titre ou body). */
+async function computeDirectIssueMapping(root: string): Promise<CoalEntry[]> {
     const project = getCurrentProject();
     if (!project?.owner || !project?.repo) return [];
     let issues: { number: number; title: string; body: string | null }[] = [];
     try { issues = await getIssuesWithBodies(project.owner, project.repo); } catch { return []; }
 
     const symbolToIssues = new Map<string, Set<number>>();
-    const issueToSymbols = new Map<number, Set<string>>();
     for (const issue of issues) {
-        for (const { key } of searchMethods(issue.title, root)) {
+        const text = `${issue.title} ${issue.body ?? ''}`;
+        for (const { key } of searchMethods(text, root)) {
             if (!symbolToIssues.has(key)) symbolToIssues.set(key, new Set());
             symbolToIssues.get(key)!.add(issue.number);
-            if (!issueToSymbols.has(issue.number)) issueToSymbols.set(issue.number, new Set());
-            issueToSymbols.get(issue.number)!.add(key);
         }
     }
-    const freqSyms = [...symbolToIssues.entries()].filter(([, s]) => s.size >= 2).map(([k]) => k);
-    const seen = new Map<string, { symbols: string[]; issues: number[] }>();
-    for (let i = 0; i < freqSyms.length; i++) {
-        for (let j = i + 1; j < freqSyms.length; j++) {
-            const common = [...symbolToIssues.get(freqSyms[i])!]
-                .filter(n => symbolToIssues.get(freqSyms[j])!.has(n))
-                .sort((a, b) => a - b);
-            if (common.length < 2) continue;
-            const k = common.join(",");
-            if (seen.has(k)) continue;
-            const syms = freqSyms.filter(s => common.every(n => issueToSymbols.get(n)?.has(s)));
-            if (syms.length < 2) continue;
-            seen.set(k, { symbols: syms, issues: common });
-        }
-    }
-    return [...seen.values()]
-        .map(({ symbols, issues }) => ({ symbols, issues, score: symbols.length * issues.length, count: issues.length }))
-        .sort((a, b) => b.score - a.score);
+    return [...symbolToIssues.entries()]
+        .map(([sym, issueSet]) => ({
+            symbols: [sym],
+            issues: [...issueSet].sort((a, b) => a - b),
+            score: issueSet.size,
+            count: issueSet.size,
+        }));
 }
 
 const LC_PATH   = process.env.LC_PATH ?? "C:/lolve-cartography";
@@ -99,9 +86,9 @@ export const POST: RequestHandler = async () => {
             try { delete _require.cache[_require.resolve(mod)]; } catch { /* pas encore chargé */ }
         }
 
-        // 1. Coal avec issues GitHub (source principale)
+        // 1. Assignation directe symbole → issues (titre + body)
         let clusterData: { coal: CoalEntry[] } | null = null;
-        const issueCoal = await computeIssueCoal(projectRoot);
+        const issueCoal = await computeDirectIssueMapping(projectRoot);
         if (issueCoal.length > 0) {
             clusterData = { coal: issueCoal };
         } else {

@@ -1,8 +1,8 @@
 {
-  "generated": "2026-03-18T20:33:53.263Z",
+  "generated": "2026-03-19T17:49:10.120Z",
   "stats": {
     "nodes": 207,
-    "edges": 304,
+    "edges": 307,
     "levels": 8,
     "steps": 126,
     "cycles": 0
@@ -65,8 +65,13 @@
       "isSpine": false,
       "concept": "cartography",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        26,
+        160,
+        189,
+        196
+      ],
+      "coalNodeId": "coal-15"
     },
     {
       "id": 2,
@@ -129,11 +134,12 @@
       "concept": "comment",
       "pattern": null,
       "issues": [
+        26,
         60,
-        94,
-        145
+        96,
+        171
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-43"
     },
     {
       "id": 3,
@@ -192,8 +198,10 @@
       "isSpine": false,
       "concept": "comment",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        26
+      ],
+      "coalNodeId": "coal-67"
     },
     {
       "id": 4,
@@ -315,8 +323,11 @@
       "isSpine": false,
       "concept": "context",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        92,
+        171
+      ],
+      "coalNodeId": "coal-31"
     },
     {
       "id": 6,
@@ -435,8 +446,10 @@
       "isSpine": false,
       "concept": "methods",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        189
+      ],
+      "coalNodeId": "coal-13"
     },
     {
       "id": 8,
@@ -613,8 +626,10 @@
       "isSpine": false,
       "concept": "issue-analysis",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        189
+      ],
+      "coalNodeId": "coal-14"
     },
     {
       "id": 11,
@@ -791,8 +806,10 @@
       "isSpine": false,
       "concept": "tasks",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        196
+      ],
+      "coalNodeId": "coal-10"
     },
     {
       "id": 14,
@@ -968,11 +985,8 @@
       "isSpine": true,
       "concept": "projects",
       "pattern": null,
-      "issues": [
-        75,
-        110
-      ],
-      "coalNodeId": "coal-13"
+      "issues": [],
+      "coalNodeId": null
     },
     {
       "id": 17,
@@ -1149,8 +1163,10 @@
       "isSpine": false,
       "concept": "run",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        92
+      ],
+      "coalNodeId": "coal-49"
     },
     {
       "id": 20,
@@ -1621,8 +1637,16 @@
       "isSpine": false,
       "concept": "claude",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        12,
+        30,
+        42,
+        122,
+        125,
+        162,
+        203
+      ],
+      "coalNodeId": "coal-1"
     },
     {
       "id": 28,
@@ -1683,12 +1707,14 @@
       "concept": "issue-analysis",
       "pattern": null,
       "issues": [
-        47,
-        136,
+        75,
+        119,
+        140,
         144,
+        173,
         176
       ],
-      "coalNodeId": "coal-5"
+      "coalNodeId": "coal-39"
     },
     {
       "id": 29,
@@ -1748,12 +1774,11 @@
       "concept": "git-history",
       "pattern": null,
       "issues": [
-        47,
-        136,
         144,
+        173,
         176
       ],
-      "coalNodeId": "coal-5"
+      "coalNodeId": "coal-29"
     },
     {
       "id": 30,
@@ -1874,8 +1899,12 @@
       "isSpine": false,
       "concept": "git",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        35,
+        86,
+        179
+      ],
+      "coalNodeId": "coal-27"
     },
     {
       "id": 32,
@@ -1939,9 +1968,10 @@
       "pattern": null,
       "issues": [
         90,
+        181,
         187
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-24"
     },
     {
       "id": 33,
@@ -2061,8 +2091,12 @@
       "isSpine": false,
       "concept": "claude-session",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        31,
+        42,
+        48
+      ],
+      "coalNodeId": "coal-57"
     },
     {
       "id": 35,
@@ -2183,8 +2217,12 @@
       "isSpine": false,
       "concept": "prompt",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        75,
+        82,
+        188
+      ],
+      "coalNodeId": "coal-55"
     },
     {
       "id": 37,
@@ -2368,10 +2406,9 @@
       "concept": "agent",
       "pattern": null,
       "issues": [
-        48,
-        155
+        48
       ],
-      "coalNodeId": "coal-9"
+      "coalNodeId": "coal-58"
     },
     {
       "id": 40,
@@ -2429,8 +2466,11 @@
       "isSpine": false,
       "concept": "skills",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        86,
+        95
+      ],
+      "coalNodeId": "coal-46"
     },
     {
       "id": 41,
@@ -2463,8 +2503,10 @@
       "isSpine": false,
       "concept": "usage",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        122
+      ],
+      "coalNodeId": "coal-40"
     },
     {
       "id": 42,
@@ -2532,8 +2574,14 @@
       "isSpine": false,
       "concept": "issue-analysis",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        39,
+        75,
+        119,
+        135,
+        140
+      ],
+      "coalNodeId": "coal-37"
     },
     {
       "id": 44,
@@ -2568,8 +2616,10 @@
       "isSpine": false,
       "concept": "git",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        161
+      ],
+      "coalNodeId": "coal-36"
     },
     {
       "id": 45,
@@ -2637,8 +2687,17 @@
       "isSpine": false,
       "concept": "claude-stream",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        12,
+        30,
+        42,
+        82,
+        122,
+        125,
+        162,
+        203
+      ],
+      "coalNodeId": "coal-0"
     },
     {
       "id": 47,
@@ -2670,8 +2729,10 @@
       "isSpine": false,
       "concept": "cartography",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        96
+      ],
+      "coalNodeId": "coal-44"
     },
     {
       "id": 48,
@@ -2737,8 +2798,13 @@
       "isSpine": false,
       "concept": "cartography",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        40,
+        102,
+        171,
+        189
+      ],
+      "coalNodeId": "coal-11"
     },
     {
       "id": 50,
@@ -2803,8 +2869,10 @@
       "isSpine": false,
       "concept": "comment",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        26
+      ],
+      "coalNodeId": "coal-68"
     },
     {
       "id": 52,
@@ -2932,8 +3000,10 @@
       "isSpine": false,
       "concept": "github",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        95
+      ],
+      "coalNodeId": "coal-48"
     },
     {
       "id": 56,
@@ -2969,13 +3039,18 @@
         15,
         21,
         27,
-        28,
-        32,
         74,
+        110,
+        136,
         142,
-        184
+        148,
+        172,
+        175,
+        181,
+        184,
+        202
       ],
-      "coalNodeId": "coal-0"
+      "coalNodeId": "coal-4"
     },
     {
       "id": 57,
@@ -3005,10 +3080,9 @@
       "concept": "github",
       "pattern": null,
       "issues": [
-        90,
         187
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-19"
     },
     {
       "id": 58,
@@ -3039,8 +3113,11 @@
       "isSpine": false,
       "concept": "git-history",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        35,
+        161
+      ],
+      "coalNodeId": "coal-60"
     },
     {
       "id": 59,
@@ -3073,17 +3150,22 @@
         15,
         21,
         27,
-        28,
         32,
-        47,
         74,
+        110,
         136,
         142,
         144,
+        148,
+        172,
+        173,
+        175,
         176,
-        184
+        179,
+        184,
+        202
       ],
-      "coalNodeId": "coal-0"
+      "coalNodeId": "coal-2"
     },
     {
       "id": 60,
@@ -3112,10 +3194,13 @@
       "concept": "cartography",
       "pattern": null,
       "issues": [
-        94,
-        145
+        40,
+        96,
+        102,
+        106,
+        196
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 61,
@@ -3199,8 +3284,10 @@
       "isSpine": false,
       "concept": "issue",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        29
+      ],
+      "coalNodeId": "coal-65"
     },
     {
       "id": 63,
@@ -3705,14 +3792,22 @@
       "concept": "issue",
       "pattern": null,
       "issues": [
-        27,
+        18,
+        30,
         32,
-        47,
-        136,
+        39,
+        41,
+        125,
+        135,
         144,
-        176
+        154,
+        173,
+        176,
+        179,
+        180,
+        188
       ],
-      "coalNodeId": "coal-5"
+      "coalNodeId": "coal-16"
     },
     {
       "id": 75,
@@ -3753,8 +3848,10 @@
       "isSpine": false,
       "concept": "git-history",
       "pattern": "adapter",
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        161
+      ],
+      "coalNodeId": "coal-34"
     },
     {
       "id": 76,
@@ -3838,8 +3935,14 @@
       "isSpine": false,
       "concept": "cartography",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        24,
+        34,
+        97,
+        162,
+        187
+      ],
+      "coalNodeId": "coal-33"
     },
     {
       "id": 78,
@@ -3879,9 +3982,12 @@
       "concept": "tasks",
       "pattern": null,
       "issues": [
+        12,
         18,
         36,
         41,
+        49,
+        90,
         91,
         132,
         154,
@@ -3889,7 +3995,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-21"
     },
     {
       "id": 79,
@@ -3928,8 +4034,11 @@
       "isSpine": false,
       "concept": "project-config",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        26,
+        96
+      ],
+      "coalNodeId": "coal-45"
     },
     {
       "id": 80,
@@ -4459,17 +4568,25 @@
         15,
         21,
         27,
-        28,
         32,
-        47,
         74,
+        86,
+        110,
         136,
+        137,
         142,
         144,
+        145,
+        148,
+        164,
+        172,
+        173,
+        175,
         176,
-        184
+        184,
+        202
       ],
-      "coalNodeId": "coal-0"
+      "coalNodeId": "coal-52"
     },
     {
       "id": 93,
@@ -4510,8 +4627,14 @@
       "isSpine": false,
       "concept": "cartography",
       "pattern": "adapter",
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        76,
+        94,
+        137,
+        168,
+        169
+      ],
+      "coalNodeId": "coal-32"
     },
     {
       "id": 94,
@@ -4590,8 +4713,13 @@
       "isSpine": false,
       "concept": "context",
       "pattern": "adapter",
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        24,
+        34,
+        39,
+        119
+      ],
+      "coalNodeId": "coal-41"
     },
     {
       "id": 96,
@@ -4630,8 +4758,10 @@
       "isSpine": true,
       "concept": "tasks",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        196
+      ],
+      "coalNodeId": "coal-9"
     },
     {
       "id": 97,
@@ -4669,11 +4799,8 @@
       "isSpine": false,
       "concept": "run",
       "pattern": null,
-      "issues": [
-        75,
-        110
-      ],
-      "coalNodeId": "coal-13"
+      "issues": [],
+      "coalNodeId": null
     },
     {
       "id": 98,
@@ -4861,9 +4988,12 @@
       "concept": "tasks",
       "pattern": "adapter",
       "issues": [
+        12,
         18,
         36,
         41,
+        49,
+        90,
         91,
         132,
         154,
@@ -4871,7 +5001,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-23"
     },
     {
       "id": 104,
@@ -5003,8 +5133,10 @@
       "isSpine": false,
       "concept": "project-config",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        29
+      ],
+      "coalNodeId": "coal-66"
     },
     {
       "id": 108,
@@ -5240,14 +5372,10 @@
       "pattern": "adapter",
       "issues": [
         18,
-        91,
-        132,
-        154,
-        178,
-        180,
-        185
+        49,
+        91
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-50"
     },
     {
       "id": 115,
@@ -5395,8 +5523,10 @@
       "isSpine": false,
       "concept": "session",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        29
+      ],
+      "coalNodeId": "coal-64"
     },
     {
       "id": 119,
@@ -6007,7 +6137,7 @@
       "files": [
         "src/routes/api/agent/run/+server.ts"
       ],
-      "cohesion": 0.11
+      "cohesion": 0.1
     },
     {
       "id": "clusters",
@@ -6843,230 +6973,846 @@
   "coalNodes": [
     {
       "symbols": [
-        "prepareIssues",
-        "getIssueSlots",
-        "getIssues",
-        "getIssuesWithBodies"
+        "spawnClaudeStream"
       ],
       "issues": [
-        15,
-        21,
-        27,
-        28,
-        32,
-        74,
-        142,
-        184
+        12,
+        30,
+        42,
+        82,
+        122,
+        125,
+        162,
+        203
       ],
-      "score": 32,
+      "score": 8,
       "count": 8
     },
     {
       "symbols": [
-        "getTasksDir",
-        "listTasks",
-        "getTask",
-        "createTask",
-        "updateTask"
+        "askClaude"
       ],
       "issues": [
-        18,
-        91,
-        132,
-        154,
-        178,
-        185
+        12,
+        30,
+        42,
+        122,
+        125,
+        162,
+        203
       ],
-      "score": 30,
-      "count": 6
-    },
-    {
-      "symbols": [
-        "getTasksDir",
-        "listTasks",
-        "getTask",
-        "createTask"
-      ],
-      "issues": [
-        18,
-        91,
-        132,
-        154,
-        178,
-        180,
-        185
-      ],
-      "score": 28,
+      "score": 7,
       "count": 7
     },
     {
       "symbols": [
-        "prepareIssues",
-        "getIssueSlots",
-        "getIssues",
-        "getIssuesWithBodies",
-        "getSubIssues"
+        "prepareIssues"
       ],
       "issues": [
         15,
         21,
-        28,
+        27,
+        32,
+        74,
+        110,
+        136,
         142,
-        184
+        144,
+        148,
+        172,
+        173,
+        175,
+        176,
+        179,
+        184,
+        202
       ],
-      "score": 25,
+      "score": 17,
+      "count": 17
+    },
+    {
+      "symbols": [
+        "getIssueSlots"
+      ],
+      "issues": [
+        15,
+        21,
+        27,
+        32,
+        74,
+        110,
+        136,
+        137,
+        142,
+        144,
+        145,
+        148,
+        164,
+        172,
+        173,
+        175,
+        176,
+        184,
+        202
+      ],
+      "score": 19,
+      "count": 19
+    },
+    {
+      "symbols": [
+        "getIssues"
+      ],
+      "issues": [
+        15,
+        21,
+        27,
+        74,
+        136,
+        142,
+        148,
+        172,
+        175,
+        184,
+        202
+      ],
+      "score": 11,
+      "count": 11
+    },
+    {
+      "symbols": [
+        "getIssuesWithBodies"
+      ],
+      "issues": [
+        21,
+        148,
+        172,
+        175,
+        202
+      ],
+      "score": 5,
       "count": 5
     },
     {
       "symbols": [
-        "prepareIssues",
-        "getIssueSlots"
+        "getSubIssues"
       ],
       "issues": [
-        15,
         21,
-        27,
-        28,
-        32,
-        47,
-        74,
-        136,
-        142,
-        144,
-        176,
-        184
+        110,
+        148,
+        172,
+        175,
+        202
       ],
-      "score": 24,
-      "count": 12
-    },
-    {
-      "symbols": [
-        "createIssuePlan",
-        "prepareIssues",
-        "getIssueSlots",
-        "summarizeIssueBody",
-        "parseIssueRefs"
-      ],
-      "issues": [
-        47,
-        136,
-        144,
-        176
-      ],
-      "score": 20,
-      "count": 4
-    },
-    {
-      "symbols": [
-        "createIssuePlan",
-        "prepareIssues",
-        "getIssueSlots"
-      ],
-      "issues": [
-        27,
-        32,
-        47,
-        136,
-        144,
-        176
-      ],
-      "score": 18,
+      "score": 6,
       "count": 6
     },
     {
       "symbols": [
-        "getTasksDir",
-        "listTasks"
+        "buildAtlasText"
+      ],
+      "issues": [
+        196
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "ensureLoaded"
+      ],
+      "issues": [
+        40,
+        96,
+        102,
+        106,
+        196
+      ],
+      "score": 5,
+      "count": 5
+    },
+    {
+      "symbols": [
+        "taskPath"
+      ],
+      "issues": [
+        196
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "migrateTaskStatus"
+      ],
+      "issues": [
+        196
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "fileNameSearch"
+      ],
+      "issues": [
+        40,
+        102,
+        171,
+        189
+      ],
+      "score": 4,
+      "count": 4
+    },
+    {
+      "symbols": [
+        "getVueScriptOffset"
+      ],
+      "issues": [
+        189
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "extractSnippet"
+      ],
+      "issues": [
+        189
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "jaccardWords"
+      ],
+      "issues": [
+        189
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "adaptiveCap"
+      ],
+      "issues": [
+        26,
+        160,
+        189
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "createIssuePlan"
       ],
       "issues": [
         18,
-        36,
+        30,
+        32,
+        39,
         41,
-        91,
-        132,
+        125,
+        135,
+        144,
         154,
-        178,
+        173,
+        176,
+        179,
         180,
-        185
+        188
       ],
-      "score": 18,
-      "count": 9
+      "score": 14,
+      "count": 14
     },
     {
       "symbols": [
-        "createIssuePlan",
-        "prepareIssues",
-        "getIssueSlots",
-        "getIssues",
-        "getIssuesWithBodies"
+        "loadProjectDocs"
       ],
       "issues": [
-        27,
-        32
+        188
       ],
-      "score": 10,
-      "count": 2
+      "score": 1,
+      "count": 1
     },
     {
       "symbols": [
-        "startConsoleStream",
-        "stopConsoleStream",
-        "toggleConsoleMinimized"
-      ],
-      "issues": [
-        48,
-        155
-      ],
-      "score": 6,
-      "count": 2
-    },
-    {
-      "symbols": [
-        "mergeBranch",
-        "mergePullRequest"
+        "mergeBranch"
       ],
       "issues": [
         90,
         187
       ],
-      "score": 4,
+      "score": 2,
       "count": 2
     },
     {
       "symbols": [
-        "ensureLoaded",
-        "buildFileGraph"
+        "mergePullRequest"
       ],
       "issues": [
+        187
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "refreshIndex"
+      ],
+      "issues": [
+        187
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getTasksDir"
+      ],
+      "issues": [
+        12,
+        18,
+        36,
+        41,
+        49,
+        90,
+        91,
+        132,
+        154,
+        178,
+        180,
+        185
+      ],
+      "score": 12,
+      "count": 12
+    },
+    {
+      "symbols": [
+        "listTasks"
+      ],
+      "issues": [
+        12,
+        18,
+        36,
+        41,
+        49,
+        90,
+        91,
+        132,
+        154,
+        178,
+        180,
+        185
+      ],
+      "score": 12,
+      "count": 12
+    },
+    {
+      "symbols": [
+        "getTask"
+      ],
+      "issues": [
+        18,
+        49,
+        91,
+        132,
+        178,
+        185
+      ],
+      "score": 6,
+      "count": 6
+    },
+    {
+      "symbols": [
+        "getRemoteRepo"
+      ],
+      "issues": [
+        181
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getRepoFile"
+      ],
+      "issues": [
+        181
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "listAccessibleRepos"
+      ],
+      "issues": [
+        181
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "commit"
+      ],
+      "issues": [
+        35,
+        179
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "summarizeIssueBody"
+      ],
+      "issues": [
+        144,
+        173,
+        176
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "parseIssueRefs"
+      ],
+      "issues": [
+        144,
+        173,
+        176
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "generateDescriptions"
+      ],
+      "issues": [
+        26,
+        171
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "buildQuery"
+      ],
+      "issues": [
+        92,
+        171
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "generateAtlasStrings"
+      ],
+      "issues": [
+        76,
         94,
-        145
+        137,
+        168,
+        169
       ],
-      "score": 4,
-      "count": 2
+      "score": 5,
+      "count": 5
     },
     {
       "symbols": [
-        "buildFileGraph",
-        "computeDepths"
+        "getSessionWithCode"
       ],
       "issues": [
-        60,
-        94
+        24,
+        34,
+        97,
+        162
       ],
       "score": 4,
-      "count": 2
+      "count": 4
     },
     {
       "symbols": [
-        "save",
-        "savePlan"
+        "getHistoryState"
+      ],
+      "issues": [
+        161
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "saveHistoryState"
+      ],
+      "issues": [
+        161
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getBranchState"
+      ],
+      "issues": [
+        161
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "buildAnalysisPrompt"
+      ],
+      "issues": [
+        39,
+        75,
+        119,
+        135,
+        140
+      ],
+      "score": 5,
+      "count": 5
+    },
+    {
+      "symbols": [
+        "buildUpdatePrompt"
       ],
       "issues": [
         75,
-        110
+        119,
+        135,
+        140
       ],
       "score": 4,
+      "count": 4
+    },
+    {
+      "symbols": [
+        "buildChatPrompt"
+      ],
+      "issues": [
+        75,
+        119,
+        140
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "getProjectUsage"
+      ],
+      "issues": [
+        122
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "loadMethodSnippets"
+      ],
+      "issues": [
+        24,
+        34,
+        39,
+        119
+      ],
+      "score": 4,
+      "count": 4
+    },
+    {
+      "symbols": [
+        "buildFocusedPrompt"
+      ],
+      "issues": [
+        75,
+        119
+      ],
+      "score": 2,
       "count": 2
+    },
+    {
+      "symbols": [
+        "buildFileGraph"
+      ],
+      "issues": [
+        60,
+        96
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "buildAtlasDeps"
+      ],
+      "issues": [
+        96
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "configFilePath"
+      ],
+      "issues": [
+        26,
+        96
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "selectSkill"
+      ],
+      "issues": [
+        86,
+        95
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "findOpenPullRequest"
+      ],
+      "issues": [
+        95
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "createPullRequest"
+      ],
+      "issues": [
+        95
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "stripAnsi"
+      ],
+      "issues": [
+        92
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "createTask"
+      ],
+      "issues": [
+        18,
+        49,
+        91
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "updateTask"
+      ],
+      "issues": [
+        49,
+        91
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "findSymbolsForFiles"
+      ],
+      "issues": [
+        86
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getCommitFiles"
+      ],
+      "issues": [
+        86
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "formatPrompt"
+      ],
+      "issues": [
+        75,
+        82
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "formatImplementationPrompt"
+      ],
+      "issues": [
+        82
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "computeDepths"
+      ],
+      "issues": [
+        60
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "isSessionAlive"
+      ],
+      "issues": [
+        31,
+        42,
+        48
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "startConsoleStream"
+      ],
+      "issues": [
+        48
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "stopConsoleStream"
+      ],
+      "issues": [
+        48
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "isCommitProcessed"
+      ],
+      "issues": [
+        35
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "saveCommitRecord"
+      ],
+      "issues": [
+        35
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getSnippet"
+      ],
+      "issues": [
+        24,
+        34
+      ],
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "isSessionBusy"
+      ],
+      "issues": [
+        31
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "api.agent.session.DELETE"
+      ],
+      "issues": [
+        29
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "api.issue.PATCH"
+      ],
+      "issues": [
+        29
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "api.project-config.PATCH"
+      ],
+      "issues": [
+        29
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "readIndex"
+      ],
+      "issues": [
+        26
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "getUndescribedByFile"
+      ],
+      "issues": [
+        26
+      ],
+      "score": 1,
+      "count": 1
     }
   ],
   "project": "claudicator",
