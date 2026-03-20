@@ -28,6 +28,18 @@
     let symbols: SymbolEntry[] = [];
     let symbolsLoading = false;
 
+    // ─── Debug ────────────────────────────────────────────────────────────────
+    type DbgEntry = { key: string; score: number | null; role: string | null; file: string };
+    type DebugData = {
+        query:    string;
+        elapsed:  number;
+        semantic: DbgEntry[];
+        grep:     DbgEntry[];
+        atlas:    { key: string; file: string; region: string }[];
+    };
+    let debugData: DebugData | null = null;
+    let debugExpanded = false;
+
     /** Mots significatifs (≥ 3 chars) */
     function keywords(text: string): string[] {
         return text.toLowerCase()
@@ -38,9 +50,11 @@
     async function loadSymbols(title: string, body: string) {
         symbolsLoading = true;
         symbols = [];
+        debugData = null;
 
         const queryText = [title, body].filter(Boolean).join('\n').slice(0, 500);
         const kws = keywords(queryText);
+        const t0 = Date.now();
 
         try {
             // ── 1. Recherche sémantique (méthodes indexées) ──────────────────
@@ -55,13 +69,31 @@
                 .then(r => r.ok ? r.json() : null).catch(() => null);
 
             const [carto, atlas] = await Promise.all([cartoP, atlasP]);
+            const elapsed = Date.now() - t0;
 
             const result: SymbolEntry[] = [];
             const seenKeys  = new Set<string>();
             const seenFiles = new Set<string>();
 
-            // Résultats cartography
-            for (const s of [...(carto.results ?? []), ...(carto.grepMethods ?? [])]) {
+            const dbgSemantic: DbgEntry[] = [];
+            const dbgGrep:     DbgEntry[] = [];
+            const dbgAtlas:    { key: string; file: string; region: string }[] = [];
+
+            // Résultats cartography — sémantique
+            for (const s of (carto.results ?? [])) {
+                dbgSemantic.push({ key: s.key, score: s.score ?? null, role: s.role ?? null, file: s.file ?? '' });
+                if (seenKeys.has(s.key)) continue;
+                seenKeys.add(s.key);
+                seenFiles.add(s.file ?? '');
+                result.push({
+                    key: s.key, file: s.file ?? '',
+                    startLine: s.startLine ?? null, score: s.score ?? null,
+                    role: s.role ?? null, summary: s.summary ?? null,
+                });
+            }
+            // Résultats cartography — grep
+            for (const s of (carto.grepMethods ?? [])) {
+                dbgGrep.push({ key: s.key, score: s.score ?? null, role: s.role ?? null, file: s.file ?? '' });
                 if (seenKeys.has(s.key)) continue;
                 seenKeys.add(s.key);
                 seenFiles.add(s.file ?? '');
@@ -80,14 +112,21 @@
                         const base = (filePath.split('/').pop() ?? '').replace(/\.[^.]+$/, '').toLowerCase();
                         if (!kws.some(kw => base.includes(kw) || kw.includes(base))) continue;
                         const key = (filePath.split('/').pop() ?? filePath).replace(/\.[^.]+$/, '');
-                        // Ne pas bloquer via seenKeys — deux fichiers distincts peuvent avoir le même basename
                         seenFiles.add(filePath);
+                        dbgAtlas.push({ key, file: filePath, region });
                         result.push({ key, file: filePath, startLine: null, score: null, role: region, summary: null });
                     }
                 }
             }
 
-            symbols = result;
+            symbols  = result;
+            debugData = {
+                query:    queryText.slice(0, 80).replace(/\n/g, ' '),
+                elapsed,
+                semantic: dbgSemantic,
+                grep:     dbgGrep,
+                atlas:    dbgAtlas,
+            };
         } catch { /* silencieux */ }
         finally { symbolsLoading = false; }
     }
@@ -375,6 +414,57 @@
                         </div>
                     {/if}
                 </div>
+
+                {#if debugData}
+                    <div class="dbg-panel">
+                        <button class="dbg-toggle" onclick={() => debugExpanded = !debugExpanded}>
+                            <span class="dbg-toggle-icon">{debugExpanded ? '▾' : '▸'}</span>
+                            <span class="dbg-toggle-label">debug</span>
+                            <span class="dbg-toggle-meta">{debugData.semantic.length}s {debugData.grep.length}g {debugData.atlas.length}a · {debugData.elapsed}ms</span>
+                        </button>
+                        {#if debugExpanded}
+                            <div class="dbg-query">"{debugData.query}"</div>
+                            <div class="dbg-tree">
+                                <!-- semantic -->
+                                <div class="dbg-branch">
+                                    <span class="dbg-branch-hd dbg-branch-hd--sem">semantic ({debugData.semantic.length})</span>
+                                    {#each debugData.semantic as r}
+                                        <div class="dbg-row">
+                                            <span class="dbg-score dbg-score--sem">{r.score != null ? r.score.toFixed(1) : '—'}</span>
+                                            <span class="dbg-rkey">{r.key}</span>
+                                            {#if r.role}<span class="dbg-role">[{r.role}]</span>{/if}
+                                        </div>
+                                    {/each}
+                                    {#if debugData.semantic.length === 0}<div class="dbg-empty">∅</div>{/if}
+                                </div>
+                                <!-- grep -->
+                                <div class="dbg-branch">
+                                    <span class="dbg-branch-hd dbg-branch-hd--grep">grep ({debugData.grep.length})</span>
+                                    {#each debugData.grep as r}
+                                        <div class="dbg-row">
+                                            <span class="dbg-score dbg-score--grep">{r.score != null ? r.score.toFixed(1) : '—'}</span>
+                                            <span class="dbg-rkey">{r.key}</span>
+                                            {#if r.role}<span class="dbg-role">[{r.role}]</span>{/if}
+                                        </div>
+                                    {/each}
+                                    {#if debugData.grep.length === 0}<div class="dbg-empty">∅</div>{/if}
+                                </div>
+                                <!-- atlas -->
+                                <div class="dbg-branch">
+                                    <span class="dbg-branch-hd dbg-branch-hd--atlas">atlas ({debugData.atlas.length})</span>
+                                    {#each debugData.atlas as r}
+                                        <div class="dbg-row">
+                                            <span class="dbg-score dbg-score--atlas">—</span>
+                                            <span class="dbg-rkey">{r.key}</span>
+                                            <span class="dbg-role">[{r.region}]</span>
+                                        </div>
+                                    {/each}
+                                    {#if debugData.atlas.length === 0}<div class="dbg-empty">∅</div>{/if}
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
 
                 {#if symbolsLoading || symbols.length > 0 || issueCoal.length > 0 || issueDirs.length > 0 || issueMixed.length > 0}
                     <div class="sym-tree">
@@ -758,4 +848,108 @@ ul { list-style: none; padding: 0; margin: 0; }
 .sym-sec--mixte .sym-state  { color: #7a5e1e; }
 .sym-sec--mixte .sym-bullet { color: #7a5e1e; opacity: 0.45; }
 .sym-sec--mixte .sym-key    { color: #c8a454; }
+
+/* ── Debug panel ── */
+.dbg-panel {
+    margin-top: 0.75rem;
+    border: 1px solid #2a2a1a;
+    border-radius: 3px;
+    background: #0e0e08;
+}
+.dbg-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+}
+.dbg-toggle-icon {
+    font-size: 0.55rem;
+    color: #5a5a30;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+}
+.dbg-toggle-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #5a5a30;
+    font-family: 'JetBrains Mono', monospace;
+}
+.dbg-toggle-meta {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #3a3a20;
+    margin-left: auto;
+}
+.dbg-toggle:hover .dbg-toggle-icon,
+.dbg-toggle:hover .dbg-toggle-label { color: #8a8a40; }
+.dbg-query {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #4a4a28;
+    padding: 0 0.5rem 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dbg-tree {
+    padding: 0 0.5rem 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.dbg-branch { display: flex; flex-direction: column; gap: 0.05rem; }
+.dbg-branch-hd {
+    font-size: 0.52rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.1rem 0;
+}
+.dbg-branch-hd--sem  { color: #6655aa; opacity: 0.6; }
+.dbg-branch-hd--grep { color: #3a7a48; opacity: 0.6; }
+.dbg-branch-hd--atlas{ color: #3a7f8f; opacity: 0.6; }
+.dbg-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding-left: 0.6rem;
+}
+.dbg-score {
+    font-size: 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 2.8rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+.dbg-score--sem  { color: #6655aa; opacity: 0.7; }
+.dbg-score--grep { color: #3a7a48; opacity: 0.7; }
+.dbg-score--atlas{ color: #3a7f8f; opacity: 0.7; }
+.dbg-rkey {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #6a6a3a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+.dbg-role {
+    font-size: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #3a3a20;
+    flex-shrink: 0;
+}
+.dbg-empty {
+    font-size: 0.52rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a2a18;
+    padding-left: 0.6rem;
+}
 </style>

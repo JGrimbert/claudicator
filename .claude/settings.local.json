@@ -36,7 +36,9 @@
       "Bash(cat:*)",
       "Bash(python:*)",
       "Bash(powershell -command \"\\(Get-Item ''C:/claudicator/ai/roadmap.json''\\).LastWriteTime\")",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(ls -la C:/lolve-cartography/*.cjs)",
+      "Bash(xargs wc:*)"
     ]
   }
 }
