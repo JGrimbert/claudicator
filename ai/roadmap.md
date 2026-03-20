@@ -1,14 +1,14 @@
 # Roadmap
 > Project: **claudicator**
 
-*Generated: 2026-03-20T00:38:59.097Z*
+*Generated: 2026-03-20T10:37:11.730Z*
 
 ## Stats
 
 | Metric | Value |
 |--------|-------|
 | Nodes  | 207 |
-| Edges  | 307 |
+| Edges  | 306 |
 | Levels | 8 |
 | Steps  | 126 |
 
@@ -1223,10 +1223,10 @@
 
 ### Step 117 · Service: run
 
-*Requires: Steps 19, 34, 36, 37, 41, 45, 76, 93, 95, 97, 103, 114, 115*
+*Requires: Steps 19, 34, 36, 37, 41, 76, 93, 95, 97, 103, 114, 115*
 *Parallelizable with: Steps 116, 118, 119, 120, 121, 122, 123, 124, 125, 126*
 
-> Depends on 13 prior steps
+> Depends on 12 prior steps
 
 - `api.agent.run.POST` → `src\routes\api\agent\run\+server.ts`
 

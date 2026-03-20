@@ -2,12 +2,13 @@
     import { onMount } from "svelte";
     import { get } from "svelte/store";
     import { JgrRoadmap } from "jgr-ui";
-    import type { RoadmapData } from "jgr-ui";
+    import type { RoadmapData, IssueCluster } from "jgr-ui";
     import { agentState, projetPanelTab, pendingSelectTaskId, taskIssueNumbers } from "$lib/stores/agent";
     type Status = "loading" | "ok" | "empty" | "generating" | "error";
 
     let status: Status = $state("loading");
     let roadmap: RoadmapData | undefined = $state(undefined);
+    let clusters: IssueCluster[] = $state([]);
 
     onMount(async () => {
         try {
@@ -20,6 +21,20 @@
         } catch {
             status = "empty";
         }
+
+        try {
+            const r = await fetch("/api/issues/groups?min=3");
+            if (r.ok) {
+                const data = await r.json();
+                clusters = (data.groups ?? []).map((g: any) => ({
+                    keyword: g.keyword,
+                    keywords: g.keywords ?? [g.keyword],
+                    issues: (g.issues ?? []).map((i: any) => typeof i === "number" ? i : i.number),
+                    score: g.score ?? 0,
+                    hasParent: g.hasParent ?? false,
+                }));
+            }
+        } catch { /* ignore */ }
     });
 
     async function fetchRoadmapData() {
@@ -77,6 +92,7 @@
 <div class="roadmap-wrap">
     <JgrRoadmap
         {roadmap}
+        {clusters}
         {status}
         onRegenerate={generate}
         onissueclick={handleIssueClick}
