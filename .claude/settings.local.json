@@ -39,7 +39,8 @@
       "Bash(tasklist)",
       "Bash(ls -la C:/lolve-cartography/*.cjs)",
       "Bash(xargs wc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(find C:/jgr-ui/src -type f \\\\\\(-name *.svelte -o -name *.ts \\\\\\))"
     ]
   }
 }

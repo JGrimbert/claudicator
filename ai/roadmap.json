@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-20T15:16:43.340Z",
+  "generated": "2026-03-20T16:07:48.475Z",
   "stats": {
     "nodes": 207,
     "edges": 306,
@@ -1685,10 +1685,9 @@
       "concept": "issue-analysis",
       "pattern": null,
       "issues": [
-        162,
-        235
+        162
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-32"
     },
     {
       "id": 29,
@@ -1751,7 +1750,7 @@
         144,
         189
       ],
-      "coalNodeId": "coal-9"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 30,
@@ -1878,7 +1877,7 @@
         35,
         185
       ],
-      "coalNodeId": "coal-12"
+      "coalNodeId": "coal-11"
     },
     {
       "id": 32,
@@ -1945,7 +1944,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-21"
+      "coalNodeId": "coal-20"
     },
     {
       "id": 33,
@@ -2070,7 +2069,7 @@
         163,
         171
       ],
-      "coalNodeId": "coal-28"
+      "coalNodeId": "coal-27"
     },
     {
       "id": 35,
@@ -2205,7 +2204,7 @@
         168,
         180
       ],
-      "coalNodeId": "coal-22"
+      "coalNodeId": "coal-21"
     },
     {
       "id": 37,
@@ -2279,7 +2278,7 @@
         196,
         227
       ],
-      "coalNodeId": "coal-4"
+      "coalNodeId": "coal-2"
     },
     {
       "id": 38,
@@ -2407,7 +2406,7 @@
         179,
         225
       ],
-      "coalNodeId": "coal-7"
+      "coalNodeId": "coal-5"
     },
     {
       "id": 40,
@@ -2595,7 +2594,7 @@
         179,
         196,
         227,
-        235
+        238
       ],
       "coalNodeId": "coal-51"
     },
@@ -2712,7 +2711,7 @@
         140,
         162
       ],
-      "coalNodeId": "coal-32"
+      "coalNodeId": "coal-31"
     },
     {
       "id": 47,
@@ -3010,14 +3009,13 @@
       "pattern": null,
       "issues": [
         21,
-        31,
         136,
         144,
         173,
         176,
         184
       ],
-      "coalNodeId": "coal-15"
+      "coalNodeId": "coal-14"
     },
     {
       "id": 56,
@@ -3061,7 +3059,7 @@
         181,
         182
       ],
-      "coalNodeId": "coal-17"
+      "coalNodeId": "coal-16"
     },
     {
       "id": 57,
@@ -3095,7 +3093,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-10"
     },
     {
       "id": 58,
@@ -3167,7 +3165,7 @@
         175,
         182
       ],
-      "coalNodeId": "coal-18"
+      "coalNodeId": "coal-17"
     },
     {
       "id": 60,
@@ -3804,7 +3802,7 @@
         179,
         180
       ],
-      "coalNodeId": "coal-23"
+      "coalNodeId": "coal-22"
     },
     {
       "id": 75,
@@ -3942,9 +3940,10 @@
         137,
         164,
         169,
-        227
+        227,
+        238
       ],
-      "coalNodeId": "coal-3"
+      "coalNodeId": "coal-0"
     },
     {
       "id": 78,
@@ -3988,7 +3987,7 @@
         41,
         178
       ],
-      "coalNodeId": "coal-26"
+      "coalNodeId": "coal-25"
     },
     {
       "id": 79,
@@ -4555,7 +4554,6 @@
       "concept": "git-history",
       "pattern": null,
       "issues": [
-        31,
         49,
         136,
         137,
@@ -4611,7 +4609,7 @@
         168,
         169
       ],
-      "coalNodeId": "coal-29"
+      "coalNodeId": "coal-28"
     },
     {
       "id": 94,
@@ -4940,7 +4938,7 @@
         122,
         189
       ],
-      "coalNodeId": "coal-8"
+      "coalNodeId": "coal-7"
     },
     {
       "id": 103,
@@ -4987,7 +4985,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-13"
+      "coalNodeId": "coal-12"
     },
     {
       "id": 104,
@@ -5404,10 +5402,9 @@
         169,
         176,
         189,
-        196,
-        235
+        196
       ],
-      "coalNodeId": "coal-2"
+      "coalNodeId": "coal-6"
     },
     {
       "id": 116,
@@ -6971,6 +6968,23 @@
   "coalNodes": [
     {
       "symbols": [
+        "getSessionWithCode"
+      ],
+      "issues": [
+        24,
+        34,
+        95,
+        97,
+        106,
+        169,
+        227,
+        238
+      ],
+      "score": 8,
+      "count": 8
+    },
+    {
+      "symbols": [
         "detectPotentialDuplicates"
       ],
       "issues": [
@@ -6997,57 +7011,10 @@
         179,
         196,
         227,
-        235
+        238
       ],
       "score": 24,
       "count": 24
-    },
-    {
-      "symbols": [
-        "buildFocusedPrompt"
-      ],
-      "issues": [
-        162,
-        235
-      ],
-      "score": 2,
-      "count": 2
-    },
-    {
-      "symbols": [
-        "orchestrate"
-      ],
-      "issues": [
-        75,
-        91,
-        92,
-        96,
-        160,
-        163,
-        169,
-        176,
-        189,
-        196,
-        235
-      ],
-      "score": 11,
-      "count": 11
-    },
-    {
-      "symbols": [
-        "getSessionWithCode"
-      ],
-      "issues": [
-        24,
-        34,
-        95,
-        97,
-        106,
-        169,
-        227
-      ],
-      "score": 7,
-      "count": 7
     },
     {
       "symbols": [
@@ -7102,6 +7069,25 @@
       ],
       "score": 2,
       "count": 2
+    },
+    {
+      "symbols": [
+        "orchestrate"
+      ],
+      "issues": [
+        75,
+        91,
+        92,
+        96,
+        160,
+        163,
+        169,
+        176,
+        189,
+        196
+      ],
+      "score": 10,
+      "count": 10
     },
     {
       "symbols": [
@@ -7188,25 +7174,10 @@
         "getIssue"
       ],
       "issues": [
-        31,
         136,
         144,
         173,
         176,
-        184
-      ],
-      "score": 6,
-      "count": 6
-    },
-    {
-      "symbols": [
-        "closeIssue"
-      ],
-      "issues": [
-        31,
-        136,
-        144,
-        173,
         184
       ],
       "score": 5,
@@ -7214,10 +7185,22 @@
     },
     {
       "symbols": [
+        "closeIssue"
+      ],
+      "issues": [
+        136,
+        144,
+        173,
+        184
+      ],
+      "score": 4,
+      "count": 4
+    },
+    {
+      "symbols": [
         "getIssueSlots"
       ],
       "issues": [
-        31,
         136,
         137,
         145,
@@ -7225,8 +7208,8 @@
         162,
         184
       ],
-      "score": 7,
-      "count": 7
+      "score": 6,
+      "count": 6
     },
     {
       "symbols": [
@@ -7440,6 +7423,16 @@
       ],
       "score": 7,
       "count": 7
+    },
+    {
+      "symbols": [
+        "buildFocusedPrompt"
+      ],
+      "issues": [
+        162
+      ],
+      "score": 1,
+      "count": 1
     },
     {
       "symbols": [
