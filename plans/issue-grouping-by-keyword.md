@@ -66,16 +66,16 @@ src/lib/components/IssueGroups.svelte      ← UI : affichage des groupes + bout
 2. Calculer la fréquence de chaque mot sur l'ensemble des titres
 
 3. Sélectionner les mots "saillants" :
-   → présents dans ≥ 3 issues (seuil configurable)
+   → présents dans ≥ 2 issues (seuil configurable)
    → pas trop universels (< 80% des issues)
 
 4. Pour chaque mot saillant :
    → collecter toutes les issues dont le titre contient ce mot
-   → si ≥ 3 issues : créer un groupe candidat
+   → si ≥ 2 issues : créer un groupe candidat
 
-5. Déduplication des groupes :
+5. Proposer déduplication des groupes :
    → si deux groupes partagent exactement les mêmes issues → fusionner les mots-clés
-   → garder seulement les groupes "maximaux" (ensemble d'issues non inclus dans un groupe plus grand)
+   → proposer de ne garder seulement les groupes "maximaux" (ensemble d'issues non inclus dans un groupe plus grand)
 
 6. Score du groupe = nombre d'issues × log(fréquence du mot)
 
