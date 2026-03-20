@@ -17,6 +17,12 @@ export type IssueGroup = {
     issues: { number: number; title: string }[];
     score: number;
     hasParent: boolean;    // true si une issue parente existe déjà (à remplir côté API)
+    twins: number[][];     // groupes d'issues au sujet identique, ex: [[12,34],[56,78]]
+    subdivisions: {
+        keyword: string;
+        keywords: string[];
+        issues: { number: number; title: string }[];
+    }[];
 };
 
 // Stopwords FR + EN courants
@@ -39,6 +45,60 @@ const STOPWORDS = new Set([
     "between", "own", "same", "than", "then", "once", "also", "just",
     "when", "where", "which", "while", "how", "what", "who",
 ]);
+
+/**
+ * Construit des classes d'équivalence parmi les stems.
+ * Deux stems sont fusionnés si :
+ *   - préfixe commun >= 6 chars  (ex : "orchestration" ~ "orchestrateur")
+ *   - l'un commence ou finit par l'autre, longueur min 4 chars
+ *     (ex : "repo" ~ "multirepo", "graph" ~ "skillgraph")
+ * Retourne une map stem → stem canonique (le plus fréquent ; à égalité, le plus court).
+ */
+function mergeEquivalentStems(
+    stems: string[],
+    wordFreq: Map<string, number>,
+): Map<string, string> {
+    const parent = new Map<string, string>(stems.map(s => [s, s]));
+
+    function find(s: string): string {
+        let root = s;
+        while (parent.get(root) !== root) root = parent.get(root)!;
+        let cur = s;
+        while (cur !== root) { const next = parent.get(cur)!; parent.set(cur, root); cur = next; }
+        return root;
+    }
+
+    function union(a: string, b: string) {
+        const ra = find(a), rb = find(b);
+        if (ra === rb) return;
+        const fa = wordFreq.get(ra) ?? 0;
+        const fb = wordFreq.get(rb) ?? 0;
+        if (fa > fb || (fa === fb && ra.length <= rb.length)) parent.set(rb, ra);
+        else parent.set(ra, rb);
+    }
+
+    for (let i = 0; i < stems.length; i++) {
+        for (let j = i + 1; j < stems.length; j++) {
+            const a = stems[i], b = stems[j];
+            const shorter = a.length <= b.length ? a : b;
+            const longer  = a.length <= b.length ? b : a;
+
+            // Préfixe commun >= 6 chars (variantes morphologiques)
+            if (shorter.length >= 6) {
+                let plen = 0;
+                while (plen < shorter.length && a[plen] === b[plen]) plen++;
+                if (plen >= 6) { union(a, b); continue; }
+            }
+
+            // Mot composé : le plus court est un composant en tête ou en queue (min 4 chars)
+            if (shorter.length >= 4 && (longer.startsWith(shorter) || longer.endsWith(shorter))) {
+                union(a, b);
+            }
+        }
+    }
+
+    return new Map(stems.map(s => [s, find(s)]));
+}
 
 /** Normalise un mot vers sa forme racine pour regrouper pluriels/singuliers */
 function stem(word: string): string {
@@ -95,17 +155,39 @@ export function detectIssueGroups(
         }
     }
 
-    // Étape 3 : sélectionner les mots saillants
-    const salientWords = Array.from(wordFreq.entries())
+    // Étape 2b : fusionner les stems morphologiquement équivalents
+    const stemToCanonical = mergeEquivalentStems(Array.from(wordFreq.keys()), wordFreq);
+
+    // Reconstruire les tokens par issue avec stems canoniques
+    const issueCanonicals: Map<number, Map<string, string>> = new Map();
+    for (const [num, tokenMap] of issueTokens) {
+        const cmap = new Map<string, string>();
+        for (const [s, raw] of tokenMap) {
+            const canon = stemToCanonical.get(s) ?? s;
+            if (!cmap.has(canon)) cmap.set(canon, raw);
+        }
+        issueCanonicals.set(num, cmap);
+    }
+
+    // Fréquence par stem canonique
+    const canonicalFreq: Map<string, number> = new Map();
+    for (const cmap of issueCanonicals.values()) {
+        for (const canon of cmap.keys()) {
+            canonicalFreq.set(canon, (canonicalFreq.get(canon) ?? 0) + 1);
+        }
+    }
+
+    // Étape 3 : sélectionner les stems canoniques saillants
+    const salientWords = Array.from(canonicalFreq.entries())
         .filter(([, freq]) => freq >= minIssues && freq / total < maxFreqRatio)
         .map(([word]) => word);
 
     if (salientWords.length === 0) return [];
 
-    // Étape 4 : pour chaque stem saillant, collecter les issues correspondantes
+    // Étape 4 : pour chaque stem canonique saillant, collecter les issues correspondantes
     const candidateGroups: Map<string, { number: number; title: string }[]> = new Map();
     for (const stemWord of salientWords) {
-        const matching = issues.filter(issue => issueTokens.get(issue.number)?.has(stemWord));
+        const matching = issues.filter(issue => issueCanonicals.get(issue.number)?.has(stemWord));
         if (matching.length >= minIssues) {
             candidateGroups.set(stemWord, matching.map(i => ({ number: i.number, title: i.title })));
         }
@@ -142,17 +224,17 @@ export function detectIssueGroups(
 
     // Étape 7 : calculer le score et choisir la forme originale la plus fréquente comme keyword affiché
     const result: IssueGroup[] = maximal.map(g => {
-        const freq = wordFreq.get(g.keywords[0]) ?? g.issues.length;
+        const freq = canonicalFreq.get(g.keywords[0]) ?? g.issues.length;
         const score = g.issues.length * Math.log(freq + 1);
 
-        // Pour chaque stem du groupe, trouver la forme originale la plus fréquente parmi les issues
-        const displayKeywords = g.keywords.map(stemKw => {
+        // Pour chaque stem canonique du groupe, trouver la forme originale la plus fréquente
+        const displayKeywords = g.keywords.map(canonKw => {
             const rawCounts = new Map<string, number>();
             for (const issue of g.issues) {
-                const raw = issueTokens.get(issue.number)?.get(stemKw);
+                const raw = issueCanonicals.get(issue.number)?.get(canonKw);
                 if (raw) rawCounts.set(raw, (rawCounts.get(raw) ?? 0) + 1);
             }
-            return [...rawCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? stemKw;
+            return [...rawCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? canonKw;
         });
 
         return {
@@ -161,8 +243,50 @@ export function detectIssueGroups(
             issues: g.issues,
             score,
             hasParent: false,
+            twins: [],
+            subdivisions: [],
         };
     });
 
-    return result.sort((a, b) => b.score - a.score);
+    const sorted = result.sort((a, b) => b.score - a.score);
+
+    // Calcul des jumeaux : issues dont l'empreinte tokenisée est identique
+    for (const group of sorted) {
+        const fingerprints = new Map<string, number[]>();
+        for (const issue of group.issues) {
+            const tokens = tokenize(issue.title).map(stem).sort();
+            const fp = tokens.join("|");
+            const existing = fingerprints.get(fp);
+            if (existing) existing.push(issue.number);
+            else fingerprints.set(fp, [issue.number]);
+        }
+        group.twins = Array.from(fingerprints.values()).filter(g => g.length >= 2);
+    }
+
+    // Calcul des subdivisions : sous-groupes pour les groupes larges
+    for (const group of sorted) {
+        const twinNums = new Set(group.twins.flat());
+        // Garder un seul représentant par groupe de jumeaux
+        const seenTwinFp = new Set<string>();
+        const uniqueIssues = group.issues.filter(issue => {
+            if (!twinNums.has(issue.number)) return true;
+            const tokens = tokenize(issue.title).map(stem).sort();
+            const fp = tokens.join("|");
+            if (seenTwinFp.has(fp)) return false;
+            seenTwinFp.add(fp);
+            return true;
+        });
+        if (uniqueIssues.length <= 3) continue;
+
+        const subs = detectIssueGroups(uniqueIssues, { minIssues: 2 });
+        const parentNums = new Set(group.issues.map(i => i.number));
+        group.subdivisions = subs
+            .filter(sub =>
+                sub.issues.length < group.issues.length &&
+                sub.issues.every(i => parentNums.has(i.number))
+            )
+            .map(sub => ({ keyword: sub.keyword, keywords: sub.keywords, issues: sub.issues }));
+    }
+
+    return sorted;
 }

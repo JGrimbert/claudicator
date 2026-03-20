@@ -33,13 +33,24 @@ export const GET: RequestHandler = async ({ url }) => {
 
     // Stats globales
     const issueNumbersInGroups = new Set(result.flatMap(g => g.issues.map(i => i.number)));
+    const ungroupedFull = issues.filter(i => !issueNumbersInGroups.has(i.number));
+
+    // Micro-groupes sémantiques parmi les hors-groupes (seuil minIssues=2)
+    const ungroupedClusters = detectIssueGroups(ungroupedFull, { minIssues: 2 });
+    const clusteredNums = new Set(ungroupedClusters.flatMap(g => g.issues.map(i => i.number)));
+
+    const ungroupedIssues = ungroupedFull
+        .filter(i => !clusteredNums.has(i.number))
+        .map(i => ({ number: i.number, title: i.title }));
+
     const stats = {
-        totalIssues:       issues.length,
-        groupCount:        result.length,
-        issuesInGroups:    issueNumbersInGroups.size,
-        issuesOutOfGroups: issues.length - issueNumbersInGroups.size,
-        groupsWithParent:  result.filter(g => g.hasParent).length,
+        totalIssues:           issues.length,
+        groupCount:            result.length,
+        issuesInGroups:        issueNumbersInGroups.size,
+        issuesOutOfGroups:     ungroupedFull.length,
+        ungroupedClusterCount: ungroupedClusters.length,
+        groupsWithParent:      result.filter(g => g.hasParent).length,
     };
 
-    return json({ groups: result, stats });
+    return json({ groups: result, ungroupedClusters, ungroupedIssues, stats });
 };

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-20T12:29:21.976Z",
+  "generated": "2026-03-20T15:16:43.340Z",
   "stats": {
     "nodes": 207,
     "edges": 306,
@@ -1624,7 +1624,7 @@
         132,
         140
       ],
-      "coalNodeId": "coal-35"
+      "coalNodeId": "coal-34"
     },
     {
       "id": 28,
@@ -1685,9 +1685,10 @@
       "concept": "issue-analysis",
       "pattern": null,
       "issues": [
-        162
+        162,
+        235
       ],
-      "coalNodeId": "coal-33"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 29,
@@ -1750,7 +1751,7 @@
         144,
         189
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-9"
     },
     {
       "id": 30,
@@ -1811,7 +1812,7 @@
       "issues": [
         86
       ],
-      "coalNodeId": "coal-43"
+      "coalNodeId": "coal-42"
     },
     {
       "id": 31,
@@ -1877,7 +1878,7 @@
         35,
         185
       ],
-      "coalNodeId": "coal-14"
+      "coalNodeId": "coal-12"
     },
     {
       "id": 32,
@@ -1944,7 +1945,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-23"
+      "coalNodeId": "coal-21"
     },
     {
       "id": 33,
@@ -2202,10 +2203,9 @@
         135,
         140,
         168,
-        180,
-        230
+        180
       ],
-      "coalNodeId": "coal-24"
+      "coalNodeId": "coal-22"
     },
     {
       "id": 37,
@@ -2340,7 +2340,7 @@
       "issues": [
         41
       ],
-      "coalNodeId": "coal-48"
+      "coalNodeId": "coal-47"
     },
     {
       "id": 39,
@@ -2407,7 +2407,7 @@
         179,
         225
       ],
-      "coalNodeId": "coal-8"
+      "coalNodeId": "coal-7"
     },
     {
       "id": 40,
@@ -2469,7 +2469,7 @@
         86,
         95
       ],
-      "coalNodeId": "coal-42"
+      "coalNodeId": "coal-41"
     },
     {
       "id": 41,
@@ -2594,9 +2594,10 @@
         176,
         179,
         196,
-        227
+        227,
+        235
       ],
-      "coalNodeId": "coal-52"
+      "coalNodeId": "coal-51"
     },
     {
       "id": 44,
@@ -2670,7 +2671,7 @@
       "issues": [
         35
       ],
-      "coalNodeId": "coal-49"
+      "coalNodeId": "coal-48"
     },
     {
       "id": 46,
@@ -2946,7 +2947,7 @@
       "issues": [
         26
       ],
-      "coalNodeId": "coal-51"
+      "coalNodeId": "coal-50"
     },
     {
       "id": 54,
@@ -3016,7 +3017,7 @@
         176,
         184
       ],
-      "coalNodeId": "coal-17"
+      "coalNodeId": "coal-15"
     },
     {
       "id": 56,
@@ -3060,7 +3061,7 @@
         181,
         182
       ],
-      "coalNodeId": "coal-19"
+      "coalNodeId": "coal-17"
     },
     {
       "id": 57,
@@ -3094,7 +3095,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-13"
+      "coalNodeId": "coal-11"
     },
     {
       "id": 58,
@@ -3129,7 +3130,7 @@
         106,
         146
       ],
-      "coalNodeId": "coal-34"
+      "coalNodeId": "coal-33"
     },
     {
       "id": 59,
@@ -3166,7 +3167,7 @@
         175,
         182
       ],
-      "coalNodeId": "coal-20"
+      "coalNodeId": "coal-18"
     },
     {
       "id": 60,
@@ -3584,7 +3585,7 @@
         94,
         102
       ],
-      "coalNodeId": "coal-40"
+      "coalNodeId": "coal-39"
     },
     {
       "id": 70,
@@ -3803,7 +3804,7 @@
         179,
         180
       ],
-      "coalNodeId": "coal-25"
+      "coalNodeId": "coal-23"
     },
     {
       "id": 75,
@@ -3985,10 +3986,9 @@
       "issues": [
         12,
         41,
-        178,
-        230
+        178
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-26"
     },
     {
       "id": 79,
@@ -4564,7 +4564,7 @@
         162,
         184
       ],
-      "coalNodeId": "coal-45"
+      "coalNodeId": "coal-44"
     },
     {
       "id": 93,
@@ -4698,7 +4698,7 @@
         49,
         137
       ],
-      "coalNodeId": "coal-36"
+      "coalNodeId": "coal-35"
     },
     {
       "id": 96,
@@ -4940,7 +4940,7 @@
         122,
         189
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 103,
@@ -4985,10 +4985,9 @@
         171,
         178,
         180,
-        185,
-        230
+        185
       ],
-      "coalNodeId": "coal-15"
+      "coalNodeId": "coal-13"
     },
     {
       "id": 104,
@@ -5188,7 +5187,7 @@
       "issues": [
         29
       ],
-      "coalNodeId": "coal-50"
+      "coalNodeId": "coal-49"
     },
     {
       "id": 110,
@@ -5405,9 +5404,10 @@
         169,
         176,
         189,
-        196
+        196,
+        235
       ],
-      "coalNodeId": "coal-9"
+      "coalNodeId": "coal-2"
     },
     {
       "id": 116,
@@ -5524,7 +5524,7 @@
         97,
         102
       ],
-      "coalNodeId": "coal-39"
+      "coalNodeId": "coal-38"
     },
     {
       "id": 119,
@@ -6971,41 +6971,67 @@
   "coalNodes": [
     {
       "symbols": [
-        "listTasks"
+        "detectPotentialDuplicates"
       ],
       "issues": [
-        12,
-        36,
-        90,
-        154,
-        178,
-        230
+        15,
+        21,
+        26,
+        27,
+        32,
+        35,
+        60,
+        72,
+        92,
+        94,
+        97,
+        102,
+        135,
+        145,
+        161,
+        164,
+        168,
+        171,
+        172,
+        176,
+        179,
+        196,
+        227,
+        235
       ],
-      "score": 6,
-      "count": 6
+      "score": 24,
+      "count": 24
     },
     {
       "symbols": [
-        "getTasksDir"
+        "buildFocusedPrompt"
       ],
       "issues": [
-        12,
-        41,
-        178,
-        230
+        162,
+        235
       ],
-      "score": 4,
-      "count": 4
+      "score": 2,
+      "count": 2
     },
     {
       "symbols": [
-        "loadProjectDiagram"
+        "orchestrate"
       ],
       "issues": [
-        230
+        75,
+        91,
+        92,
+        96,
+        160,
+        163,
+        169,
+        176,
+        189,
+        196,
+        235
       ],
-      "score": 1,
-      "count": 1
+      "score": 11,
+      "count": 11
     },
     {
       "symbols": [
@@ -7044,38 +7070,6 @@
     },
     {
       "symbols": [
-        "detectPotentialDuplicates"
-      ],
-      "issues": [
-        15,
-        21,
-        26,
-        27,
-        32,
-        35,
-        60,
-        72,
-        92,
-        94,
-        97,
-        102,
-        135,
-        145,
-        161,
-        164,
-        168,
-        171,
-        172,
-        176,
-        179,
-        196,
-        227
-      ],
-      "score": 23,
-      "count": 23
-    },
-    {
-      "symbols": [
         "stopConsoleStream"
       ],
       "issues": [
@@ -7108,25 +7102,6 @@
       ],
       "score": 2,
       "count": 2
-    },
-    {
-      "symbols": [
-        "orchestrate"
-      ],
-      "issues": [
-        75,
-        91,
-        92,
-        96,
-        160,
-        163,
-        169,
-        176,
-        189,
-        196
-      ],
-      "score": 10,
-      "count": 10
     },
     {
       "symbols": [
@@ -7360,11 +7335,37 @@
     },
     {
       "symbols": [
+        "listTasks"
+      ],
+      "issues": [
+        12,
+        36,
+        90,
+        154,
+        178
+      ],
+      "score": 5,
+      "count": 5
+    },
+    {
+      "symbols": [
         "getTask"
       ],
       "issues": [
         72,
         154,
+        178
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "getTasksDir"
+      ],
+      "issues": [
+        12,
+        41,
         178
       ],
       "score": 3,
@@ -7439,16 +7440,6 @@
       ],
       "score": 7,
       "count": 7
-    },
-    {
-      "symbols": [
-        "buildFocusedPrompt"
-      ],
-      "issues": [
-        162
-      ],
-      "score": 1,
-      "count": 1
     },
     {
       "symbols": [
