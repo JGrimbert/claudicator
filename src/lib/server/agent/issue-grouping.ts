@@ -280,7 +280,15 @@ export function detectIssueGroups(
 
         const subs = detectIssueGroups(uniqueIssues, { minIssues: 2 });
         const parentNums = new Set(group.issues.map(i => i.number));
-        group.subdivisions = subs
+        const assignedNums = new Set<number>();
+        const dedupedSubs: typeof subs = [];
+        for (const sub of subs.sort((a, b) => b.issues.length - a.issues.length)) {
+            const filtered = sub.issues.filter(i => !assignedNums.has(i.number));
+            if (filtered.length < 2) continue;
+            dedupedSubs.push({ ...sub, issues: filtered });
+            for (const i of filtered) assignedNums.add(i.number);
+        }
+        group.subdivisions = dedupedSubs
             .filter(sub =>
                 sub.issues.length < group.issues.length &&
                 sub.issues.every(i => parentNums.has(i.number))
