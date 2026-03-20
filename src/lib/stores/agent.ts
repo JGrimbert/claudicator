@@ -161,7 +161,7 @@ export const issueAnalysis = writable<{
 export const projectUsage = writable<{ totalInputTokens: number; totalOutputTokens: number } | null>(null);
 
 export const planModeTask = writable<{ id: string; title: string; issueNumber?: number } | null>(null);
-export const consoleTab = writable<string>("codebase");
+export const consoleTab = writable<string>("atlas");
 
 /** Passe à true une fois que TaskList a chargé les tasks et sélectionné l'éventuelle task en cours */
 export const tasksReady = writable(false);

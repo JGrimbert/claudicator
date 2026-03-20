@@ -4,6 +4,7 @@
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import SymbolsView from "$lib/components/SymbolsView.svelte";
     import ArchiView from "$lib/components/ArchiView.svelte";
+    import RunConsole from "$lib/components/RunConsole.svelte";
     import { JgrBtn } from 'jgr-ui';
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
@@ -161,10 +162,11 @@
                 t.push({ id: `role:${role}`, label: role, count });
             }
         }
-        t.push({ id: "codebase", label: "codebase", count: "" });
+        t.push({ id: "atlas", label: "ATLAS", count: "" });
         t.push({ id: "documentation", label: "docs", count: files.length });
         t.push({ id: "symbols", label: "symboles", count: "" });
         t.push({ id: "archi", label: "archi", count: "" });
+        t.push({ id: "console", label: "CONSOLE", count: "" });
         if (queryLabel) t.push({ id: "query", label: queryLabel, count: queryGrep.length });
         return t.filter(t => !HIDDEN_TABS.has(t.id));
     })();
@@ -218,34 +220,6 @@
         <pre class="exp-content">{expandedFile.content}</pre>
     </div>
 {:else}
-    <div class="projet-section">
-        <div class="section-header">
-            ATLAS
-            <div class="header-actions">
-                {#each CMD_BUTTONS as btn}
-                    <JgrBtn
-                        variant="cmd"
-                        active={runningCmd === btn.id}
-                        onclick={() => runCmd(btn.id)}
-                        disabled={!!runningCmd}
-                        title={btn.id}
-                    >
-                        {runningCmd === btn.id ? "…" : btn.label}
-                    </JgrBtn>
-                {/each}
-            </div>
-        </div>
-
-        <!-- Logs commande -->
-        {#if cmdLogs.length > 0}
-            <div class="cmd-logs">
-                {#each cmdLogs.slice(-5) as log}
-                    <div class="cmd-line">{log}</div>
-                {/each}
-            </div>
-        {/if}
-    </div>
-
     <!-- ══════════════ AGENT WRAPPER (input + tabs + liste) ══════════════ -->
     <div class="agent-wrapper">
 
@@ -321,9 +295,29 @@
                     </div>
                 {/if}
             </div>
-        {:else if activeTab === "codebase"}
+        {:else if activeTab === "atlas"}
             <div class="dv-panel">
+                <div class="atlas-init-bar">
+                    {#each CMD_BUTTONS as btn}
+                        <JgrBtn variant="cmd" active={runningCmd === btn.id}
+                            onclick={() => runCmd(btn.id)}
+                            disabled={!!runningCmd} title={btn.id}>
+                            {runningCmd === btn.id ? "…" : btn.label}
+                        </JgrBtn>
+                    {/each}
+                    {#if cmdLogs.length > 0}
+                        <div class="cmd-logs inline">
+                            {#each cmdLogs.slice(-3) as log}
+                                <div class="cmd-line">{log}</div>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
                 <DiagramViewer />
+            </div>
+        {:else if activeTab === "console"}
+            <div class="dv-panel">
+                <RunConsole />
             </div>
         {:else if activeTab === "symbols"}
             <div class="dv-panel">
@@ -377,12 +371,6 @@
 <style>
 
 /* ── Layout ───────────────────────────────────────────────────────── */
-.projet-section {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    border-bottom: 2px solid var(--border);
-}
 .agent-wrapper {
     display: flex;
     flex-direction: column;
@@ -512,14 +500,20 @@
     display: flex;
     flex-direction: column;
 }
-/* ── Actions header (droite) ──────────────────────────────────────── */
-.header-actions {
-    margin-left: auto;
+/* ── Atlas init bar ───────────────────────────────────────────────── */
+.atlas-init-bar {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
-
+.cmd-logs.inline {
+    display: flex;
+    flex-direction: column;
+    margin-left: 0.5rem;
+}
 
 /* ── Logs commande ────────────────────────────────────────────────── */
 .cmd-logs {

@@ -1,6 +1,5 @@
 <script>
     import favicon from '$lib/assets/favicon.svg';
-    import ConsoleDrawer from '$lib/components/ConsoleDrawer.svelte';
     let { children } = $props();
 </script>
 
@@ -9,7 +8,6 @@
 </svelte:head>
 
 {@render children()}
-<ConsoleDrawer />
 
 <style>
     :root {
@@ -39,7 +37,6 @@
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         height: 100vh;
         overflow: hidden;
-        padding-bottom: 26px; /* ConsoleBar height */
     }
     :global(pre), :global(code), :global(.monospace) {
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
