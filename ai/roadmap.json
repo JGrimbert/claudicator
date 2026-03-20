@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-19T17:49:10.120Z",
+  "generated": "2026-03-20T00:38:59.097Z",
   "stats": {
     "nodes": 207,
     "edges": 307,
@@ -71,7 +71,7 @@
         189,
         196
       ],
-      "coalNodeId": "coal-15"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 2,
@@ -327,7 +327,7 @@
         92,
         171
       ],
-      "coalNodeId": "coal-31"
+      "coalNodeId": "coal-29"
     },
     {
       "id": 6,
@@ -449,7 +449,7 @@
       "issues": [
         189
       ],
-      "coalNodeId": "coal-13"
+      "coalNodeId": "coal-6"
     },
     {
       "id": 8,
@@ -629,7 +629,7 @@
       "issues": [
         189
       ],
-      "coalNodeId": "coal-14"
+      "coalNodeId": "coal-7"
     },
     {
       "id": 11,
@@ -809,7 +809,7 @@
       "issues": [
         196
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-3"
     },
     {
       "id": 14,
@@ -1643,10 +1643,9 @@
         42,
         122,
         125,
-        162,
-        203
+        162
       ],
-      "coalNodeId": "coal-1"
+      "coalNodeId": "coal-33"
     },
     {
       "id": 28,
@@ -1778,7 +1777,7 @@
         173,
         176
       ],
-      "coalNodeId": "coal-29"
+      "coalNodeId": "coal-25"
     },
     {
       "id": 30,
@@ -1904,7 +1903,7 @@
         86,
         179
       ],
-      "coalNodeId": "coal-27"
+      "coalNodeId": "coal-23"
     },
     {
       "id": 32,
@@ -1971,7 +1970,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-24"
+      "coalNodeId": "coal-20"
     },
     {
       "id": 33,
@@ -2694,10 +2693,9 @@
         82,
         122,
         125,
-        162,
-        203
+        162
       ],
-      "coalNodeId": "coal-0"
+      "coalNodeId": "coal-31"
     },
     {
       "id": 47,
@@ -2804,7 +2802,7 @@
         171,
         189
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-4"
     },
     {
       "id": 50,
@@ -3047,10 +3045,9 @@
         172,
         175,
         181,
-        184,
-        202
+        184
       ],
-      "coalNodeId": "coal-4"
+      "coalNodeId": "coal-19"
     },
     {
       "id": 57,
@@ -3082,7 +3079,7 @@
       "issues": [
         187
       ],
-      "coalNodeId": "coal-19"
+      "coalNodeId": "coal-12"
     },
     {
       "id": 58,
@@ -3162,10 +3159,9 @@
         175,
         176,
         179,
-        184,
-        202
+        184
       ],
-      "coalNodeId": "coal-2"
+      "coalNodeId": "coal-17"
     },
     {
       "id": 60,
@@ -3200,7 +3196,7 @@
         106,
         196
       ],
-      "coalNodeId": "coal-8"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 61,
@@ -3807,7 +3803,7 @@
         180,
         188
       ],
-      "coalNodeId": "coal-16"
+      "coalNodeId": "coal-9"
     },
     {
       "id": 75,
@@ -3942,7 +3938,7 @@
         162,
         187
       ],
-      "coalNodeId": "coal-33"
+      "coalNodeId": "coal-32"
     },
     {
       "id": 78,
@@ -3995,7 +3991,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-21"
+      "coalNodeId": "coal-14"
     },
     {
       "id": 79,
@@ -4583,8 +4579,7 @@
         173,
         175,
         176,
-        184,
-        202
+        184
       ],
       "coalNodeId": "coal-52"
     },
@@ -4634,7 +4629,7 @@
         168,
         169
       ],
-      "coalNodeId": "coal-32"
+      "coalNodeId": "coal-30"
     },
     {
       "id": 94,
@@ -4761,7 +4756,7 @@
       "issues": [
         196
       ],
-      "coalNodeId": "coal-9"
+      "coalNodeId": "coal-2"
     },
     {
       "id": 97,
@@ -5001,7 +4996,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-23"
+      "coalNodeId": "coal-16"
     },
     {
       "id": 104,
@@ -6973,142 +6968,6 @@
   "coalNodes": [
     {
       "symbols": [
-        "spawnClaudeStream"
-      ],
-      "issues": [
-        12,
-        30,
-        42,
-        82,
-        122,
-        125,
-        162,
-        203
-      ],
-      "score": 8,
-      "count": 8
-    },
-    {
-      "symbols": [
-        "askClaude"
-      ],
-      "issues": [
-        12,
-        30,
-        42,
-        122,
-        125,
-        162,
-        203
-      ],
-      "score": 7,
-      "count": 7
-    },
-    {
-      "symbols": [
-        "prepareIssues"
-      ],
-      "issues": [
-        15,
-        21,
-        27,
-        32,
-        74,
-        110,
-        136,
-        142,
-        144,
-        148,
-        172,
-        173,
-        175,
-        176,
-        179,
-        184,
-        202
-      ],
-      "score": 17,
-      "count": 17
-    },
-    {
-      "symbols": [
-        "getIssueSlots"
-      ],
-      "issues": [
-        15,
-        21,
-        27,
-        32,
-        74,
-        110,
-        136,
-        137,
-        142,
-        144,
-        145,
-        148,
-        164,
-        172,
-        173,
-        175,
-        176,
-        184,
-        202
-      ],
-      "score": 19,
-      "count": 19
-    },
-    {
-      "symbols": [
-        "getIssues"
-      ],
-      "issues": [
-        15,
-        21,
-        27,
-        74,
-        136,
-        142,
-        148,
-        172,
-        175,
-        184,
-        202
-      ],
-      "score": 11,
-      "count": 11
-    },
-    {
-      "symbols": [
-        "getIssuesWithBodies"
-      ],
-      "issues": [
-        21,
-        148,
-        172,
-        175,
-        202
-      ],
-      "score": 5,
-      "count": 5
-    },
-    {
-      "symbols": [
-        "getSubIssues"
-      ],
-      "issues": [
-        21,
-        110,
-        148,
-        172,
-        175,
-        202
-      ],
-      "score": 6,
-      "count": 6
-    },
-    {
-      "symbols": [
         "buildAtlasText"
       ],
       "issues": [
@@ -7329,6 +7188,77 @@
     },
     {
       "symbols": [
+        "prepareIssues"
+      ],
+      "issues": [
+        15,
+        21,
+        27,
+        32,
+        74,
+        110,
+        136,
+        142,
+        144,
+        148,
+        172,
+        173,
+        175,
+        176,
+        179,
+        184
+      ],
+      "score": 16,
+      "count": 16
+    },
+    {
+      "symbols": [
+        "getIssueSlots"
+      ],
+      "issues": [
+        15,
+        21,
+        27,
+        32,
+        74,
+        110,
+        136,
+        137,
+        142,
+        144,
+        145,
+        148,
+        164,
+        172,
+        173,
+        175,
+        176,
+        184
+      ],
+      "score": 18,
+      "count": 18
+    },
+    {
+      "symbols": [
+        "getIssues"
+      ],
+      "issues": [
+        15,
+        21,
+        27,
+        74,
+        136,
+        142,
+        148,
+        172,
+        175,
+        184
+      ],
+      "score": 10,
+      "count": 10
+    },
+    {
+      "symbols": [
         "getRemoteRepo"
       ],
       "issues": [
@@ -7394,6 +7324,33 @@
     },
     {
       "symbols": [
+        "getIssuesWithBodies"
+      ],
+      "issues": [
+        21,
+        148,
+        172,
+        175
+      ],
+      "score": 4,
+      "count": 4
+    },
+    {
+      "symbols": [
+        "getSubIssues"
+      ],
+      "issues": [
+        21,
+        110,
+        148,
+        172,
+        175
+      ],
+      "score": 5,
+      "count": 5
+    },
+    {
+      "symbols": [
         "generateDescriptions"
       ],
       "issues": [
@@ -7430,6 +7387,22 @@
     },
     {
       "symbols": [
+        "spawnClaudeStream"
+      ],
+      "issues": [
+        12,
+        30,
+        42,
+        82,
+        122,
+        125,
+        162
+      ],
+      "score": 7,
+      "count": 7
+    },
+    {
+      "symbols": [
         "getSessionWithCode"
       ],
       "issues": [
@@ -7440,6 +7413,21 @@
       ],
       "score": 4,
       "count": 4
+    },
+    {
+      "symbols": [
+        "askClaude"
+      ],
+      "issues": [
+        12,
+        30,
+        42,
+        122,
+        125,
+        162
+      ],
+      "score": 6,
+      "count": 6
     },
     {
       "symbols": [

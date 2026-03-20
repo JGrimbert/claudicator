@@ -7,6 +7,7 @@
         issueListRefreshTick,
         issueListPendingNumber,
         todoIssueNumbers,
+        taskIssueNumbers,
         issueListNumbers,
         type Issue,
     } from "$lib/stores/agent";
@@ -100,6 +101,8 @@
     let issuesLoading = false;
     let closingNums = new Set<number>();
     let closedNums = new Set<number>();
+    let issueTaskCreating = new Set<number>();
+    let issueTaskDone = new Set<number>();
 
     function openCreate() {
         agentState.update((s) => ({
@@ -146,6 +149,26 @@
             }
         } finally {
             closingNums = new Set([...closingNums].filter((x) => x !== n));
+        }
+    }
+
+    async function createTaskFromIssue(issue: Issue) {
+        if (issueTaskCreating.has(issue.number) || issueTaskDone.has(issue.number)) return;
+        issueTaskCreating = new Set([...issueTaskCreating, issue.number]);
+        try {
+            const res = await fetch("/api/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
+            });
+            const created = await res.json();
+            issueTaskDone = new Set([...issueTaskDone, issue.number]);
+            notifyTaskCreated(created?.id);
+            setTimeout(() => {
+                issueTaskDone = new Set([...issueTaskDone].filter((n) => n !== issue.number));
+            }, 1500);
+        } finally {
+            issueTaskCreating = new Set([...issueTaskCreating].filter((n) => n !== issue.number));
         }
     }
 
@@ -215,6 +238,15 @@
             label: issue.title,
             prefix: `#${issue.number}`,
             labels: issue.labels ?? [],
+            ...(!$taskIssueNumbers.has(issue.number)
+                ? {
+                      actionLabel: "→",
+                      actionHoverOnly: true,
+                      actionLoading: issueTaskCreating.has(issue.number),
+                      actionDone: issueTaskDone.has(issue.number),
+                      onaction: () => createTaskFromIssue(issue),
+                  }
+                : {}),
             onclose: {
                 handler: () => closeIssue(issue.number),
                 loading: closingNums.has(issue.number),
