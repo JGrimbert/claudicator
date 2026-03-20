@@ -32,3 +32,18 @@ export async function POST({ params, request }) {
     const updated = updateTask(params.id, { status: "implementation", hasPlan: true });
     return json({ ok: true, task: updated });
 }
+
+/** Met à jour le contenu d'un plan existant sans changer le statut */
+export async function PUT({ params, request }) {
+    const task = getTask(params.id);
+    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+
+    const body = await request.json().catch(() => ({}));
+    const content = typeof body.content === "string" ? body.content : "";
+    if (!content) return json({ error: "Contenu vide" }, { status: 400 });
+
+    const planPath = path.join(getTasksDir(), `${params.id}.plan.md`);
+    fs.writeFileSync(planPath, content, "utf-8");
+
+    return json({ ok: true });
+}

@@ -37,6 +37,9 @@
     let hasPlan     = $state(false);
     let sections    = $state<Section[]>([]);
     let collapsed   = $state(new Set<string>());
+    let editingPlan = $state(false);
+    let editText    = $state("");
+    let savingPlan  = $state(false);
 
     function toggleSec(name: string) {
         const next = new Set(collapsed);
@@ -105,11 +108,42 @@
         return parts.join('');
     }
 
+    // ── Édition du plan ────────────────────────────────────────────────────────
+    function startEditPlan() {
+        editText = taskText;
+        editingPlan = true;
+    }
+
+    function cancelEditPlan() {
+        editingPlan = false;
+        editText = "";
+    }
+
+    async function savePlan() {
+        if (!editText.trim() || savingPlan) return;
+        savingPlan = true;
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/plan`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: editText }),
+            });
+            if (res.ok) {
+                taskText = editText;
+                editingPlan = false;
+                editText = "";
+            }
+        } finally {
+            savingPlan = false;
+        }
+    }
+
     // ── Reset refineText à chaque nouvelle task ────────────────────────────────
     $effect(() => {
         const id = task?.id ?? "";
         if (!id || id === loadedId) return;
         refineText = "";
+        editingPlan = false;
     });
 
     // ── Chargement du contexte ─────────────────────────────────────────────────
@@ -292,14 +326,36 @@
             <!-- Section INPUT — pas de toggle -->
             <div class="doc-sec sec-input">
                 {#if hasPlan}
-                    <JgrPre content={taskText} previewLines={5} maxHeight="14rem" />
-                    <textarea
-                        class="field-ta refine-ta"
-                        bind:value={refineText}
-                        placeholder="Refinement… (Entrée pour lancer)"
-                        rows="3"
-                        onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); launch(); } }}
-                    ></textarea>
+                    {#if editingPlan}
+                        <textarea
+                            class="field-ta plan-edit-ta"
+                            bind:value={editText}
+                            disabled={savingPlan}
+                            rows="12"
+                        ></textarea>
+                        <div class="plan-edit-actions">
+                            <button class="plan-save-btn" onclick={savePlan} disabled={savingPlan || !editText.trim()}>
+                                {savingPlan ? "…" : "✓ Sauvegarder"}
+                            </button>
+                            <button class="plan-cancel-btn" onclick={cancelEditPlan} disabled={savingPlan}>
+                                ✕ Annuler
+                            </button>
+                        </div>
+                    {:else}
+                        <div class="plan-preview-row">
+                            <div class="plan-preview-content">
+                                <JgrPre content={taskText} previewLines={5} maxHeight="14rem" />
+                            </div>
+                            <button class="plan-edit-btn" onclick={startEditPlan} title="Modifier le plan">✎</button>
+                        </div>
+                        <textarea
+                            class="field-ta refine-ta"
+                            bind:value={refineText}
+                            placeholder="Refinement… (Entrée pour lancer)"
+                            rows="3"
+                            onkeydown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); launch(); } }}
+                        ></textarea>
+                    {/if}
                 {:else}
                     <textarea
                         class="field-ta"
@@ -557,6 +613,58 @@
 }
 .refine-ta:focus { border-color: var(--accent); color: #ccc; }
 .refine-ta::placeholder { color: #2a2a3a; font-style: italic; }
+
+/* ── Édition plan ── */
+.plan-preview-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+.plan-preview-content { flex: 1; min-width: 0; }
+.plan-edit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: #555;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 0.1rem;
+}
+.plan-edit-btn:hover { color: #9a8ad4; border-color: #3a2e70; }
+.plan-edit-ta {
+    min-height: 12rem;
+    resize: vertical;
+}
+.plan-edit-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+.plan-save-btn, .plan-cancel-btn {
+    border: none;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+}
+.plan-save-btn {
+    background: #1e1540;
+    color: #9a8ad4;
+    border: 1px solid #3a2e70;
+}
+.plan-save-btn:hover:not(:disabled) { background: #2a1e58; }
+.plan-save-btn:disabled { opacity: 0.4; cursor: default; }
+.plan-cancel-btn {
+    background: none;
+    color: #555;
+    border: 1px solid var(--border);
+}
+.plan-cancel-btn:hover:not(:disabled) { color: #999; }
+.plan-cancel-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Blocs read-only ── */
 .ro-block { display: flex; flex-direction: column; gap: 0.1rem; }
