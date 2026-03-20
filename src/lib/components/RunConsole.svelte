@@ -96,7 +96,7 @@
         title={$agentRunState.taskTitle}
         completionLabel={$agentRunState.completionLabel ?? undefined}
         sessionAlive={$agentRunState.sessionAlive}
-        showInput={!!$agentRunState.taskId && !$agentRunState.running}
+        showInput={false}
         oninterrupt={stop}
         onterminate={terminateSession}
         ondismiss={dismiss}
