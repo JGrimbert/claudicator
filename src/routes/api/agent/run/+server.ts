@@ -12,11 +12,10 @@ import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/p
 import { generateAtlasStrings } from "$lib/server/services/cartography";
 import { orchestrate } from "$lib/server/agent/orchestrator";
 import {
-    createSession,
-    sendTurn,
-    destroySession,
     isSessionAlive,
     isSessionBusy,
+    sendTurn,
+    destroySession,
 } from "$lib/server/services/claude-session";
 
 /** Supprime les séquences d'échappement ANSI d'une chaîne */
@@ -43,7 +42,9 @@ export async function POST({ request }) {
     // Phase : plan si aucun plan fourni, implémentation sinon, suivi si isFollowUp
     // contextFollowUp=true : one-shot avec logs précédents injectés dans le prompt
     const isImplementationPhase = !!(plan?.trim() && taskId);
-    const isSessionPhase = isImplementationPhase || !!(isFollowUp && taskId);
+    // Session persistante uniquement pour les vrais follow-ups (isFollowUp=true)
+    // L'implémentation passe par le mode one-shot (-p) : plus fiable sur Windows
+    const isSessionPhase = !!(isFollowUp && taskId);
 
     // Si contextFollowUp : injecter les derniers logs de la task dans le prompt (limité à 60 lignes)
     let prompt: string = rawPrompt ?? "";
@@ -172,11 +173,6 @@ export async function POST({ request }) {
     // Tuer tout processus one-shot zombie sur la même task avant d'en lancer un nouveau
     if (taskId && !isFollowUp && isRunning(taskId)) {
         killProcess(taskId);
-    }
-
-    // Créer la session si nécessaire (premier tour d'implémentation)
-    if (isImplementationPhase && taskId && !isSessionAlive(taskId)) {
-        createSession(taskId, root, root);
     }
 
     const encoder = new TextEncoder();
@@ -367,6 +363,7 @@ export async function POST({ request }) {
                         }
                         if (success) savePlan(taskId, planLines);
                     }
+                    if (isImplementationPhase) emit("false", "session_status");
                     const msg = success ? "✓ terminé" : `erreur (code ${code})`;
                     emit(`[${msg}]`, "system");
                     try { controller.close(); } catch { /* déjà fermé */ }

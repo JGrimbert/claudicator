@@ -2,7 +2,7 @@
     import type { Snippet } from 'svelte';
     import { get } from "svelte/store";
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
-    import { JgrCta } from 'jgr-ui';
+    import { JgrCta, JgrPre } from 'jgr-ui';
 
     type Task = { id: string; title: string; issueNumber?: number };
     type Section = { key: string; content: string };
@@ -32,8 +32,8 @@
     let taskText    = $state("");
     let refineText  = $state("");
     let planMode    = $state(true);
-    let docMode     = $state(true);
-    let atlasMode   = $state(true);
+    let docMode     = $state(false);
+    let atlasMode   = $state(false);
     let hasPlan     = $state(false);
     let sections    = $state<Section[]>([]);
     let collapsed   = $state(new Set<string>());
@@ -273,7 +273,7 @@
             <!-- Section INPUT — pas de toggle -->
             <div class="doc-sec sec-input">
                 {#if hasPlan}
-                    <pre class="plan-md">{taskText}</pre>
+                    <JgrPre content={taskText} previewLines={5} maxHeight="14rem" />
                     <textarea
                         class="field-ta refine-ta"
                         bind:value={refineText}
@@ -292,16 +292,36 @@
                 {/if}
             </div>
 
-            <!-- Toggle PLAN — entre input et arbo plan -->
-            {#if planSections.length > 0}
-                <div class="doc-sec sec-plan-toggle">
-                    <label class="plan-toggle-row">
-                        <span class="plan-toggle-label">plan</span>
-                        <span class="plan-toggle-track" class:on={planMode}>
-                            <span class="plan-toggle-thumb"></span>
-                        </span>
-                        <input type="checkbox" bind:checked={planMode} hidden />
-                    </label>
+            <!-- Toggles PLAN / DOCS / ATLAS — empilés -->
+            {#if planSections.length > 0 || docSections.length > 0 || hasAtlas}
+                <div class="doc-sec sec-toggles">
+                    {#if planSections.length > 0}
+                        <label class="plan-toggle-row">
+                            <span class="plan-toggle-label">plan</span>
+                            <span class="plan-toggle-track" class:on={planMode}>
+                                <span class="plan-toggle-thumb"></span>
+                            </span>
+                            <input type="checkbox" bind:checked={planMode} hidden />
+                        </label>
+                    {/if}
+                    {#if docSections.length > 0}
+                        <label class="plan-toggle-row">
+                            <span class="plan-toggle-label">docs</span>
+                            <span class="plan-toggle-track" class:on={docMode}>
+                                <span class="plan-toggle-thumb"></span>
+                            </span>
+                            <input type="checkbox" bind:checked={docMode} hidden />
+                        </label>
+                    {/if}
+                    {#if hasAtlas}
+                        <label class="plan-toggle-row">
+                            <span class="plan-toggle-label">atlas</span>
+                            <span class="plan-toggle-track" class:on={atlasMode}>
+                                <span class="plan-toggle-thumb"></span>
+                            </span>
+                            <input type="checkbox" bind:checked={atlasMode} hidden />
+                        </label>
+                    {/if}
                 </div>
             {/if}
 
@@ -316,7 +336,7 @@
                             {#each planSections as s}
                                 <div class="ro-block">
                                     <div class="ro-key">{s.key}</div>
-                                    <pre class="ro-pre">{s.content}</pre>
+                                    <JgrPre content={s.content} previewLines={5} maxHeight="10rem" />
                                 </div>
                             {/each}
                         </div>
@@ -371,24 +391,6 @@
         </div><!-- /doc-scroll -->
 
         <div class="ai-footer">
-            {#if docSections.length > 0}
-                <label class="plan-toggle-row">
-                    <span class="plan-toggle-label">docs</span>
-                    <span class="plan-toggle-track" class:on={docMode}>
-                        <span class="plan-toggle-thumb"></span>
-                    </span>
-                    <input type="checkbox" bind:checked={docMode} hidden />
-                </label>
-            {/if}
-            {#if hasAtlas}
-                <label class="plan-toggle-row">
-                    <span class="plan-toggle-label">atlas</span>
-                    <span class="plan-toggle-track" class:on={atlasMode}>
-                        <span class="plan-toggle-thumb"></span>
-                    </span>
-                    <input type="checkbox" bind:checked={atlasMode} hidden />
-                </label>
-            {/if}
             {@render footerExtra?.()}
             <JgrCta
                 label={hasPlan ? "Implémenter" : "Lancer l'agent"}
@@ -480,7 +482,11 @@
     flex-shrink: 0;
 }
 .sec-input { padding-top: 0.5rem; }
-.sec-plan-toggle { padding-top: 0.3rem; padding-bottom: 0; }
+.sec-toggles {
+    padding-top: 0.4rem;
+    padding-bottom: 0.1rem;
+    gap: 0.3rem;
+}
 
 .sec-toggle {
     background: none;
@@ -504,17 +510,6 @@
     padding-bottom: 0.2rem;
 }
 
-/* ── Plan rendu (hasPlan) ── */
-.plan-md {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.67rem;
-    color: #888;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-    padding: 0.1rem 0;
-}
 
 /* ── Textarea éditable ── */
 .field-ta {
@@ -589,7 +584,6 @@
     gap: 0.35rem;
     cursor: pointer;
     user-select: none;
-    margin-right: auto;
 }
 .plan-toggle-label {
     font-size: 0.46rem;
