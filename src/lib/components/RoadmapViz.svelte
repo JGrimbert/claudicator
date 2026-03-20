@@ -10,36 +10,45 @@
     let roadmap: RoadmapData | undefined = $state(undefined);
     let clusters: IssueCluster[] = $state([]);
 
-    onMount(async () => {
-        try {
-            const res = await fetch("/api/roadmap-data");
-            if (res.ok) {
-                const data = await res.json();
-                roadmap = data ?? undefined;
+    onMount(() => {
+        (async () => {
+            try {
+                const res = await fetch("/api/roadmap-data", { cache: "no-store" });
+                if (res.ok) {
+                    const data = await res.json();
+                    roadmap = data ?? undefined;
+                }
+                status = roadmap ? "ok" : "empty";
+            } catch {
+                status = "empty";
             }
-            status = roadmap ? "ok" : "empty";
-        } catch {
-            status = "empty";
-        }
 
-        try {
-            const r = await fetch("/api/issues/groups?min=3");
-            if (r.ok) {
-                const data = await r.json();
-                clusters = (data.groups ?? []).map((g: any) => ({
-                    keyword: g.keyword,
-                    keywords: g.keywords ?? [g.keyword],
-                    issues: (g.issues ?? []).map((i: any) => typeof i === "number" ? i : i.number),
-                    score: g.score ?? 0,
-                    hasParent: g.hasParent ?? false,
-                }));
-            }
-        } catch { /* ignore */ }
+            try {
+                const r = await fetch("/api/issues/groups?min=3");
+                if (r.ok) {
+                    const data = await r.json();
+                    clusters = (data.groups ?? []).map((g: any) => ({
+                        keyword: g.keyword,
+                        keywords: g.keywords ?? [g.keyword],
+                        issues: (g.issues ?? []).map((i: any) => typeof i === "number" ? i : i.number),
+                        score: g.score ?? 0,
+                        hasParent: g.hasParent ?? false,
+                    }));
+                }
+            } catch { /* ignore */ }
+        })();
+
+        const es = new EventSource("/api/roadmap-watch");
+        es.onmessage = (e) => {
+            if (e.data === "changed") fetchRoadmapData();
+        };
+
+        return () => es.close();
     });
 
     async function fetchRoadmapData() {
         try {
-            const res = await fetch("/api/roadmap-data");
+            const res = await fetch("/api/roadmap-data", { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
                 roadmap = data ?? undefined;

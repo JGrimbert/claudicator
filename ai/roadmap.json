@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-20T10:37:11.730Z",
+  "generated": "2026-03-20T12:29:21.976Z",
   "stats": {
     "nodes": 207,
     "edges": 306,
@@ -1624,7 +1624,7 @@
         132,
         140
       ],
-      "coalNodeId": "coal-36"
+      "coalNodeId": "coal-35"
     },
     {
       "id": 28,
@@ -1687,7 +1687,7 @@
       "issues": [
         162
       ],
-      "coalNodeId": "coal-34"
+      "coalNodeId": "coal-33"
     },
     {
       "id": 29,
@@ -1750,7 +1750,7 @@
         144,
         189
       ],
-      "coalNodeId": "coal-12"
+      "coalNodeId": "coal-11"
     },
     {
       "id": 30,
@@ -1811,7 +1811,7 @@
       "issues": [
         86
       ],
-      "coalNodeId": "coal-44"
+      "coalNodeId": "coal-43"
     },
     {
       "id": 31,
@@ -1877,7 +1877,7 @@
         35,
         185
       ],
-      "coalNodeId": "coal-15"
+      "coalNodeId": "coal-14"
     },
     {
       "id": 32,
@@ -1944,7 +1944,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-24"
+      "coalNodeId": "coal-23"
     },
     {
       "id": 33,
@@ -2069,7 +2069,7 @@
         163,
         171
       ],
-      "coalNodeId": "coal-29"
+      "coalNodeId": "coal-28"
     },
     {
       "id": 35,
@@ -2205,7 +2205,7 @@
         180,
         230
       ],
-      "coalNodeId": "coal-25"
+      "coalNodeId": "coal-24"
     },
     {
       "id": 37,
@@ -2279,7 +2279,7 @@
         196,
         227
       ],
-      "coalNodeId": "coal-6"
+      "coalNodeId": "coal-4"
     },
     {
       "id": 38,
@@ -2340,7 +2340,7 @@
       "issues": [
         41
       ],
-      "coalNodeId": "coal-49"
+      "coalNodeId": "coal-48"
     },
     {
       "id": 39,
@@ -2407,7 +2407,7 @@
         179,
         225
       ],
-      "coalNodeId": "coal-9"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 40,
@@ -2469,7 +2469,7 @@
         86,
         95
       ],
-      "coalNodeId": "coal-43"
+      "coalNodeId": "coal-42"
     },
     {
       "id": 41,
@@ -2594,10 +2594,9 @@
         176,
         179,
         196,
-        227,
-        229
+        227
       ],
-      "coalNodeId": "coal-53"
+      "coalNodeId": "coal-52"
     },
     {
       "id": 44,
@@ -2671,7 +2670,7 @@
       "issues": [
         35
       ],
-      "coalNodeId": "coal-50"
+      "coalNodeId": "coal-49"
     },
     {
       "id": 46,
@@ -2712,7 +2711,7 @@
         140,
         162
       ],
-      "coalNodeId": "coal-33"
+      "coalNodeId": "coal-32"
     },
     {
       "id": 47,
@@ -2945,10 +2944,9 @@
       "concept": "projects",
       "pattern": null,
       "issues": [
-        26,
-        229
+        26
       ],
-      "coalNodeId": "coal-52"
+      "coalNodeId": "coal-51"
     },
     {
       "id": 54,
@@ -3018,7 +3016,7 @@
         176,
         184
       ],
-      "coalNodeId": "coal-18"
+      "coalNodeId": "coal-17"
     },
     {
       "id": 56,
@@ -3062,7 +3060,7 @@
         181,
         182
       ],
-      "coalNodeId": "coal-20"
+      "coalNodeId": "coal-19"
     },
     {
       "id": 57,
@@ -3096,7 +3094,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-14"
+      "coalNodeId": "coal-13"
     },
     {
       "id": 58,
@@ -3131,7 +3129,7 @@
         106,
         146
       ],
-      "coalNodeId": "coal-35"
+      "coalNodeId": "coal-34"
     },
     {
       "id": 59,
@@ -3168,7 +3166,7 @@
         175,
         182
       ],
-      "coalNodeId": "coal-21"
+      "coalNodeId": "coal-20"
     },
     {
       "id": 60,
@@ -3586,7 +3584,7 @@
         94,
         102
       ],
-      "coalNodeId": "coal-41"
+      "coalNodeId": "coal-40"
     },
     {
       "id": 70,
@@ -3805,7 +3803,7 @@
         179,
         180
       ],
-      "coalNodeId": "coal-26"
+      "coalNodeId": "coal-25"
     },
     {
       "id": 75,
@@ -3945,7 +3943,7 @@
         169,
         227
       ],
-      "coalNodeId": "coal-5"
+      "coalNodeId": "coal-3"
     },
     {
       "id": 78,
@@ -4566,7 +4564,7 @@
         162,
         184
       ],
-      "coalNodeId": "coal-46"
+      "coalNodeId": "coal-45"
     },
     {
       "id": 93,
@@ -4613,7 +4611,7 @@
         168,
         169
       ],
-      "coalNodeId": "coal-30"
+      "coalNodeId": "coal-29"
     },
     {
       "id": 94,
@@ -4700,7 +4698,7 @@
         49,
         137
       ],
-      "coalNodeId": "coal-37"
+      "coalNodeId": "coal-36"
     },
     {
       "id": 96,
@@ -4942,7 +4940,7 @@
         122,
         189
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-10"
     },
     {
       "id": 103,
@@ -4988,10 +4986,9 @@
         178,
         180,
         185,
-        229,
         230
       ],
-      "coalNodeId": "coal-16"
+      "coalNodeId": "coal-15"
     },
     {
       "id": 104,
@@ -5191,7 +5188,7 @@
       "issues": [
         29
       ],
-      "coalNodeId": "coal-51"
+      "coalNodeId": "coal-50"
     },
     {
       "id": 110,
@@ -5410,7 +5407,7 @@
         189,
         196
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-9"
     },
     {
       "id": 116,
@@ -5527,7 +5524,7 @@
         97,
         102
       ],
-      "coalNodeId": "coal-40"
+      "coalNodeId": "coal-39"
     },
     {
       "id": 119,
@@ -6982,11 +6979,10 @@
         90,
         154,
         178,
-        229,
         230
       ],
-      "score": 7,
-      "count": 7
+      "score": 6,
+      "count": 6
     },
     {
       "symbols": [
@@ -7007,49 +7003,6 @@
       ],
       "issues": [
         230
-      ],
-      "score": 1,
-      "count": 1
-    },
-    {
-      "symbols": [
-        "detectPotentialDuplicates"
-      ],
-      "issues": [
-        15,
-        21,
-        26,
-        27,
-        32,
-        35,
-        60,
-        72,
-        92,
-        94,
-        97,
-        102,
-        135,
-        145,
-        161,
-        164,
-        168,
-        171,
-        172,
-        176,
-        179,
-        196,
-        227,
-        229
-      ],
-      "score": 24,
-      "count": 24
-    },
-    {
-      "symbols": [
-        "listProjects"
-      ],
-      "issues": [
-        229
       ],
       "score": 1,
       "count": 1
@@ -7088,6 +7041,38 @@
       ],
       "score": 10,
       "count": 10
+    },
+    {
+      "symbols": [
+        "detectPotentialDuplicates"
+      ],
+      "issues": [
+        15,
+        21,
+        26,
+        27,
+        32,
+        35,
+        60,
+        72,
+        92,
+        94,
+        97,
+        102,
+        135,
+        145,
+        161,
+        164,
+        168,
+        171,
+        172,
+        176,
+        179,
+        196,
+        227
+      ],
+      "score": 23,
+      "count": 23
     },
     {
       "symbols": [

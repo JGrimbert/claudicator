@@ -14,11 +14,13 @@ export const GET: RequestHandler = () => {
     const jsonPath = path.join(projectRoot, "ai", "roadmap.json");
 
     if (!fs.existsSync(jsonPath)) {
-        return json(null);
+        return json(null, { headers: { "Cache-Control": "no-store" } });
     }
 
     try {
-        return json(JSON.parse(fs.readFileSync(jsonPath, "utf-8")));
+        return json(JSON.parse(fs.readFileSync(jsonPath, "utf-8")), {
+            headers: { "Cache-Control": "no-store" },
+        });
     } catch {
         return json(null);
     }
