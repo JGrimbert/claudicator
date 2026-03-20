@@ -87,12 +87,15 @@
         try {
             const res = await fetch("/api/roadmap-viz", { method: "POST" });
             if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                console.error("[roadmap-viz] Erreur génération:", body.error ?? res.statusText);
                 status = "error";
                 return;
             }
             await fetchRoadmapData();
             status = "ok";
-        } catch {
+        } catch (e) {
+            console.error("[roadmap-viz] Exception:", e);
             status = "error";
         }
     }
