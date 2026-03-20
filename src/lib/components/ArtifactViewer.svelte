@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { agentState, notifyTaskCreated, taskIssueNumbers, issueListRefreshTick, issueListPendingNumber, coalCodeFocus, planModeTask } from "$lib/stores/agent";
+    import { agentState, issueListRefreshTick, issueListPendingNumber, coalCodeFocus } from "$lib/stores/agent";
     import type { SymbolEntry } from "$lib/types/symbols";
     import { JgrBtn } from 'jgr-ui';
 
@@ -307,39 +307,6 @@
         agentState.update(s => ({ ...s, issue: null, plan: null, status: "idle", navigationStack: [] }));
     }
 
-    // ─── Créer une task ───────────────────────────────────────────────────────
-    let taskCreating = false;
-    let taskCreated = false;
-
-    function waitForTaskActive(taskId: string): Promise<void> {
-        return new Promise(resolve => {
-            const unsub = planModeTask.subscribe(task => {
-                if (task?.id === taskId) { unsub(); resolve(); }
-            });
-            setTimeout(() => { unsub(); resolve(); }, 5000);
-        });
-    }
-
-    async function createTask() {
-        const issue = $agentState.issue;
-        if (!issue || taskCreating) return;
-        taskCreating = true;
-        taskCreated = false;
-        try {
-            const res = await fetch("/api/tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: issue.title, issueNumber: issue.number }),
-            });
-            const created = await res.json();
-            notifyTaskCreated(created?.id);
-            if (created?.id) await waitForTaskActive(created.id);
-            taskCreated = true;
-            setTimeout(() => { taskCreated = false; }, 1500);
-        } finally {
-            taskCreating = false;
-        }
-    }
 </script>
 
 <div class="panel">
@@ -362,11 +329,6 @@
             </div>
         {:else}
             <div class="header-right">
-                {#if $agentState.issue && !$taskIssueNumbers.has($agentState.issue.number)}
-                    <button class="task-btn-top" onclick={createTask} disabled={taskCreating || taskCreated} title="Créer une task liée à cette issue">
-                        {taskCreating ? "…" : taskCreated ? "✓" : "Task →"}
-                    </button>
-                {/if}
                 <button class="new-issue-btn" onclick={openCreate} title="Créer une nouvelle issue">+ Issue</button>
             </div>
         {/if}
@@ -566,20 +528,6 @@
     gap: 0.4rem;
     flex-shrink: 0;
 }
-.task-btn-top {
-    background: #1e1540;
-    border: 1px solid #3a2e70;
-    border-radius: 3px;
-    color: cornsilk;
-    font-size: 0.62rem;
-    padding: 0.25rem 0.7rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.03em;
-    flex-shrink: 0;
-}
-.task-btn-top:hover:not(:disabled) { background: #2a1e58; border-color: #5a4a9a; }
-.task-btn-top:disabled { opacity: 0.4; cursor: default; }
 .new-issue-btn {
     background: none;
     border: 1px solid var(--border-strong);
