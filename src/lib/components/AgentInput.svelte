@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import { get } from "svelte/store";
-    import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
+    import { agentRunState, taskRefreshTick, startConsoleStream, consoleTab } from "$lib/stores/agent";
     import { JgrCta, JgrPre } from 'jgr-ui';
 
     type Task = { id: string; title: string; issueNumber?: number };
@@ -161,6 +161,24 @@
         }
     }
 
+    // ── Rechargement plan post-run ─────────────────────────────────────────────
+    async function reloadPlan(taskId: string) {
+        const res = await fetch(`/api/tasks/${taskId}/plan`);
+        const data = await res.json();
+        if (data.content) {
+            taskText = data.content;
+            hasPlan = true;
+        }
+    }
+
+    $effect(() => {
+        const tick = $taskRefreshTick;
+        const runTaskId = $agentRunState.taskId;
+        if (tick === 0) return;
+        if (!runTaskId || runTaskId !== task?.id) return;
+        reloadPlan(task.id);
+    });
+
     // ── Lancement ──────────────────────────────────────────────────────────────
     async function launch() {
         // hasPlan → session impl ; sinon → one-shot spec (plus fiable sur Windows)
@@ -194,6 +212,7 @@
             }
         }
 
+        consoleTab.set("console");
         agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
         const body = hasPlan
             ? { plan: text, taskId: task.id }
