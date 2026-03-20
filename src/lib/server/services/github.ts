@@ -58,6 +58,7 @@ export async function getIssuesWithBodies(owner: string, repo: string): Promise<
     body: string | null;
     labels: string[];
     updatedAt: string;
+    html_url: string;
 }>> {
     const octokit = getOctokit();
     const { data } = await octokit.issues.listForRepo({
@@ -69,6 +70,7 @@ export async function getIssuesWithBodies(owner: string, repo: string): Promise<
         body:      i.body ?? null,
         labels:    i.labels.map(l => typeof l === "string" ? l : (l.name ?? "")),
         updatedAt: i.updated_at,
+        html_url:  i.html_url,
     }));
 }
 
@@ -155,6 +157,26 @@ export async function mergePullRequest(owner: string, repo: string, pullNumber: 
 export async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
     const octokit = getOctokit();
     await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
+}
+
+/** Attache une issue enfant à une issue parente (API sub-issues GitHub) */
+export async function addSubIssue(
+    owner: string,
+    repo: string,
+    parentNumber: number,
+    childId: number  // id numérique GitHub de l'issue enfant (pas le numéro)
+): Promise<void> {
+    const octokit = getOctokit();
+    await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues",
+        {
+            owner,
+            repo,
+            issue_number: parentNumber,
+            sub_issue_id: childId,
+            headers: { "X-GitHub-Api-Version": "2022-11-28" }
+        }
+    );
 }
 
 /** Ajoute un commentaire à une issue */
