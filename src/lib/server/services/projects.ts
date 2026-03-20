@@ -11,6 +11,7 @@ export type Project = {
     path: string;
     owner?: string;
     repo?: string;
+    installationId?: string;
 };
 
 type State = { current: string | null; projects: Project[] };
@@ -91,6 +92,16 @@ export async function addProject(projectPath: string): Promise<Project> {
     s.current = project.id;
     save(s);
     return project;
+}
+
+/** Met à jour les champs d'un projet */
+export function updateProject(id: string, changes: Partial<Project>): boolean {
+    const s = load();
+    const idx = s.projects.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    s.projects[idx] = { ...s.projects[idx], ...changes };
+    save(s);
+    return true;
 }
 
 /** Supprime un projet et réinitialise le courant */

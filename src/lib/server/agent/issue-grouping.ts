@@ -40,6 +40,17 @@ const STOPWORDS = new Set([
     "when", "where", "which", "while", "how", "what", "who",
 ]);
 
+/** Normalise un mot vers sa forme racine pour regrouper pluriels/singuliers */
+function stem(word: string): string {
+    if (word.length <= 3) return word;
+    if (word.endsWith('ations')) return word.slice(0, -1);   // validations → validation
+    if (word.endsWith('ies'))   return word.slice(0, -3) + 'y';
+    if (word.endsWith('ves'))   return word.slice(0, -3) + 'f';
+    if (word.endsWith('s'))     return word.slice(0, -1);
+    if (word.endsWith('x') && word.length >= 5) return word.slice(0, -1);
+    return word;
+}
+
 /** Tokenise un texte en mots saillants (longueur >= 3, sans stopwords) */
 function tokenize(text: string): string[] {
     return text
@@ -65,18 +76,22 @@ export function detectIssueGroups(
 
     if (total === 0) return [];
 
-    // Étape 1 : tokeniser les titres de chaque issue
-    const issueTokens: Map<number, Set<string>> = new Map();
+    // Étape 1 : tokeniser les titres — Map<issueNumber, Map<stem, tokenOriginal>>
+    const issueTokens: Map<number, Map<string, string>> = new Map();
     for (const issue of issues) {
-        const tokens = new Set(tokenize(issue.title));
-        issueTokens.set(issue.number, tokens);
+        const tokenMap = new Map<string, string>();
+        for (const w of tokenize(issue.title)) {
+            const s = stem(w);
+            if (!tokenMap.has(s)) tokenMap.set(s, w); // garde la première forme rencontrée
+        }
+        issueTokens.set(issue.number, tokenMap);
     }
 
-    // Étape 2 : calculer la fréquence de chaque mot (nombre d'issues qui le contiennent)
+    // Étape 2 : calculer la fréquence de chaque stem (nombre d'issues qui le contiennent)
     const wordFreq: Map<string, number> = new Map();
-    for (const tokens of issueTokens.values()) {
-        for (const word of tokens) {
-            wordFreq.set(word, (wordFreq.get(word) ?? 0) + 1);
+    for (const tokenMap of issueTokens.values()) {
+        for (const s of tokenMap.keys()) {
+            wordFreq.set(s, (wordFreq.get(s) ?? 0) + 1);
         }
     }
 
@@ -87,12 +102,12 @@ export function detectIssueGroups(
 
     if (salientWords.length === 0) return [];
 
-    // Étape 4 : pour chaque mot saillant, collecter les issues correspondantes
+    // Étape 4 : pour chaque stem saillant, collecter les issues correspondantes
     const candidateGroups: Map<string, { number: number; title: string }[]> = new Map();
-    for (const word of salientWords) {
-        const matching = issues.filter(issue => issueTokens.get(issue.number)?.has(word));
+    for (const stemWord of salientWords) {
+        const matching = issues.filter(issue => issueTokens.get(issue.number)?.has(stemWord));
         if (matching.length >= minIssues) {
-            candidateGroups.set(word, matching.map(i => ({ number: i.number, title: i.title })));
+            candidateGroups.set(stemWord, matching.map(i => ({ number: i.number, title: i.title })));
         }
     }
 
@@ -125,13 +140,24 @@ export function detectIssueGroups(
         });
     });
 
-    // Étape 7 : calculer le score et trier
+    // Étape 7 : calculer le score et choisir la forme originale la plus fréquente comme keyword affiché
     const result: IssueGroup[] = maximal.map(g => {
         const freq = wordFreq.get(g.keywords[0]) ?? g.issues.length;
         const score = g.issues.length * Math.log(freq + 1);
+
+        // Pour chaque stem du groupe, trouver la forme originale la plus fréquente parmi les issues
+        const displayKeywords = g.keywords.map(stemKw => {
+            const rawCounts = new Map<string, number>();
+            for (const issue of g.issues) {
+                const raw = issueTokens.get(issue.number)?.get(stemKw);
+                if (raw) rawCounts.set(raw, (rawCounts.get(raw) ?? 0) + 1);
+            }
+            return [...rawCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? stemKw;
+        });
+
         return {
-            keyword: g.keywords[0],
-            keywords: g.keywords,
+            keyword: displayKeywords[0],
+            keywords: displayKeywords,
             issues: g.issues,
             score,
             hasParent: false,

@@ -3,6 +3,7 @@ import { createAppAuth } from "@octokit/auth-app";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import dotenv from "dotenv";
+import { getCurrentProject } from "./projects";
 
 dotenv.config();
 
@@ -15,10 +16,17 @@ function getPrivateKey(): string {
     throw new Error("GITHUB_PRIVATE_KEY_PATH manquant dans .env");
 }
 
-/** Crée un client Octokit authentifié */
+/** Résout l'installation ID du projet courant (fallback → env) */
+function getInstallationId(): number {
+    const project = getCurrentProject();
+    if (project?.installationId) return Number(project.installationId);
+    return Number(process.env.GITHUB_INSTALLATION_ID);
+}
+
+/** Crée un client Octokit authentifié (installation courante) */
 function getOctokit() {
     const appId = process.env.GITHUB_APP_ID;
-    const installationId = Number(process.env.GITHUB_INSTALLATION_ID);
+    const installationId = getInstallationId();
     const privateKey = getPrivateKey();
 
     if (!appId || !installationId) {
@@ -31,6 +39,25 @@ function getOctokit() {
         authStrategy: createAppAuth,
         auth: { appId, privateKey, installationId }
     });
+}
+
+/** Crée un client Octokit JWT (app-level, sans installationId) */
+function getOctokitJWT() {
+    const appId = process.env.GITHUB_APP_ID;
+    const privateKey = getPrivateKey();
+    if (!appId) throw new Error("GITHUB_APP_ID manquant");
+    return new Octokit({ authStrategy: createAppAuth, auth: { appId, privateKey } });
+}
+
+/** Trouve l'installation ID d'un repo via JWT GitHub App */
+export async function findInstallationForRepo(owner: string, repo: string): Promise<number | null> {
+    try {
+        const octokit = getOctokitJWT();
+        const { data } = await octokit.apps.getRepoInstallation({ owner, repo });
+        return data.id;
+    } catch {
+        return null;
+    }
 }
 
 /** Récupère une issue par numéro */
@@ -181,7 +208,6 @@ export async function addSubIssue(
 
 /** Ajoute un commentaire à une issue */
 export async function createIssueComment(issueNumber: number, body: string) {
-    const { getCurrentProject } = await import("./projects");
     const project = getCurrentProject();
     const owner = project?.owner ?? process.env.TARGET_OWNER!;
     const repo  = project?.repo  ?? process.env.TARGET_REPO!;
