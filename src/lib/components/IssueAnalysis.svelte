@@ -1,6 +1,7 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
     import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick, issueStates, hasInvalidatedSlots, stopConsoleStream, startConsoleStream } from "$lib/stores/agent";
+    import IssueGroups from "./IssueGroups.svelte";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
@@ -14,6 +15,7 @@
     let highlightedGroup: string | null = null;
     let createLoading = false;
     let createFeedback = "";
+    let activeView: 'roadmap' | 'groups' = 'roadmap';
 
     // ── Roadmaps nommées ──────────────────────────────────────────────────
     let roadmaps: Array<{ id: string; name: string; updatedAt: string }> = [];
@@ -714,9 +716,17 @@
                 <button onclick={() => { showNewRoadmap = false; newRoadmapName = ""; }}>✕</button>
             </div>
         {/if}
+        <button
+            class="btn-view-toggle"
+            class:active={activeView === 'groups'}
+            onclick={() => activeView = activeView === 'groups' ? 'roadmap' : 'groups'}
+            title="Regroupements / Dédoublonnage"
+        >⊞</button>
     </div>
 
-    {#if isActive}
+    {#if activeView === 'groups'}
+        <IssueGroups />
+    {:else if isActive}
         <!-- Console de logs temps réel -->
         <div class="log-area" bind:this={logArea} onscroll={onScroll}>
             {#if visibleLogs.length === 0}
@@ -823,6 +833,20 @@
     flex-shrink: 0;
     background: var(--bg-panel);
 }
+.btn-view-toggle {
+    background: none;
+    border: 1px solid #333;
+    color: #555;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.12s, border-color 0.12s;
+    flex-shrink: 0;
+}
+.btn-view-toggle:hover { color: #9181f9; border-color: #4a3a8a; }
+.btn-view-toggle.active { color: #9181f9; border-color: #4a3a8a; background: #1a1040; }
 .dot {
     width: 7px;
     height: 7px;

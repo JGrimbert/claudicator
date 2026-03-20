@@ -1,0 +1,3 @@
+`<IssueGroups />` est bien placé après le `{/if}`. Regardons la structure HTML du composant pour comprendre pourquoi il ne s'affiche pas.
+Le problème est que `.analysis` a `height: 100%` en flex colonne — `<IssueGroups />` est repoussé hors de la vue. L'utilisateur veut le voir en haut. Je vais le déplacer avant le bloc principal.
+`<IssueGroups />` est maintenant placé **avant** le `div.analysis`, donc il apparaît en haut de l'onglet ATLAS, indépendamment de l'état de l'analyse et sans être écrasé par le flex `height: 100%`.
