@@ -40,6 +40,11 @@
 
     let groupState: Record<string, { creating: boolean; created: CreatedParent | null; err: string }> = $state({});
 
+    const sortedGroups = $derived([
+        ...groups.filter(g => (g.subdivisions ?? []).length > 0),
+        ...groups.filter(g => (g.subdivisions ?? []).length === 0),
+    ]);
+
     async function loadGroups(min = 3) {
         loading = true;
         error = "";
@@ -209,7 +214,7 @@
 
         {@const maxScore = groups.length > 0 ? Math.max(...groups.map(g => g.score)) : 0}
         <div class="groups-list">
-            {#each groups as group (group.keyword)}
+            {#each sortedGroups as group (group.keyword)}
                 {@const state = groupState[group.keyword]}
                 {@const tier = scoreTier(group.score, maxScore)}
                 {@const haiku = haikus[group.keyword]}
@@ -233,40 +238,73 @@
                         <span class="group-count">{group.issues.length} issues</span>
                     </div>
 
-                    <ul class="group-issues">
-                        {#each group.issues as issue}
-                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)}>
-                                <button class="issue-num" onclick={() => openIssue(issue.number)}>
-                                    #{issue.number}
-                                </button>
-                                <span class="issue-title">{issue.title}</span>
-                                {#if twinNums.has(issue.number)}
-                                    <span class="twin-badge" title="Sujet identique">⇔</span>
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-
                     {#if (group.subdivisions ?? []).length > 0}
-                        <details class="group-subdivisions">
-                            <summary>Subdivisions possibles ({group.subdivisions.length})</summary>
+                        {@const assignedInSubs = new Set(group.subdivisions.flatMap(s => s.issues.map(i => i.number)))}
+                        {@const residual = group.issues.filter(i => !assignedInSubs.has(i.number))}
+                        <div class="group-tree">
                             {#each group.subdivisions as sub}
-                                <div class="sub-group">
-                                    <span class="sub-keyword">{sub.keyword}</span>
-                                    <span class="sub-count">{sub.issues.length} issues</span>
+                                <div class="tree-branch">
+                                    <div class="tree-branch-head">
+                                        <span class="branch-connector">├─</span>
+                                        <span class="sub-keyword">{sub.keyword}</span>
+                                        {#if sub.keywords.length > 1}
+                                            <span class="sub-extra-kw">+{sub.keywords.slice(1).join(", ")}</span>
+                                        {/if}
+                                        <span class="sub-count">{sub.issues.length}</span>
+                                    </div>
                                     <ul class="sub-issues">
                                         {#each sub.issues as issue}
-                                            <li>
+                                            <li class="tree-leaf">
+                                                <span class="leaf-pipe">│</span>
                                                 <button class="issue-num" onclick={() => openIssue(issue.number)}>
                                                     #{issue.number}
                                                 </button>
-                                                {issue.title}
+                                                <span class="issue-title">{issue.title}</span>
+                                                {#if twinNums.has(issue.number)}
+                                                    <span class="twin-badge" title="Sujet identique">⇔</span>
+                                                {/if}
                                             </li>
                                         {/each}
                                     </ul>
                                 </div>
                             {/each}
-                        </details>
+                            {#if residual.length > 0}
+                                <div class="group-residual">
+                                    <div class="residual-head">
+                                        <span class="residual-connector">└─</span>
+                                        <span class="residual-label">autres ({residual.length})</span>
+                                    </div>
+                                    <ul class="sub-issues">
+                                        {#each residual as issue}
+                                            <li class="tree-leaf">
+                                                <span class="leaf-pipe"> </span>
+                                                <button class="issue-num" onclick={() => openIssue(issue.number)}>
+                                                    #{issue.number}
+                                                </button>
+                                                <span class="issue-title">{issue.title}</span>
+                                                {#if twinNums.has(issue.number)}
+                                                    <span class="twin-badge" title="Sujet identique">⇔</span>
+                                                {/if}
+                                            </li>
+                                        {/each}
+                                    </ul>
+                                </div>
+                            {/if}
+                        </div>
+                    {:else}
+                        <ul class="group-issues">
+                            {#each group.issues as issue}
+                                <li class="group-issue" class:is-twin={twinNums.has(issue.number)}>
+                                    <button class="issue-num" onclick={() => openIssue(issue.number)}>
+                                        #{issue.number}
+                                    </button>
+                                    <span class="issue-title">{issue.title}</span>
+                                    {#if twinNums.has(issue.number)}
+                                        <span class="twin-badge" title="Sujet identique">⇔</span>
+                                    {/if}
+                                </li>
+                            {/each}
+                        </ul>
                     {/if}
 
                     <div class="group-footer">
@@ -602,19 +640,46 @@
 /* Jumeaux */
 .twin-badge { font-size: 0.55rem; color: #6a5a9a; margin-left: auto; }
 
-/* ── Subdivisions ── */
-.group-subdivisions { margin-top: 0.35rem; margin-bottom: 0.2rem; }
-.group-subdivisions summary {
-    font-size: 0.58rem;
-    color: #777;
-    cursor: pointer;
-    padding: 0.15rem 0;
+/* ── Arborescence subdivisions ── */
+.group-tree {
+    margin: 0.2rem 0 0.35rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
 }
-.sub-group {
-    padding: 0.25rem 0.35rem;
-    border-left: 1px solid #2a2a4a;
-    margin-top: 0.2rem;
+.tree-branch { display: flex; flex-direction: column; }
+.tree-branch-head {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.08rem 0;
 }
+.branch-connector, .residual-connector {
+    color: #3a3a5a;
+    font-size: 0.6rem;
+    flex-shrink: 0;
+}
+.sub-extra-kw { font-size: 0.55rem; color: #555; }
+.tree-leaf {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-size: 0.6rem;
+    padding-left: 0.1rem;
+}
+.leaf-pipe {
+    color: #2a2a4a;
+    flex-shrink: 0;
+    width: 0.7rem;
+}
+.group-residual { display: flex; flex-direction: column; gap: 0.05rem; }
+.residual-head {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.08rem 0;
+}
+.residual-label { font-size: 0.55rem; color: #555; font-style: italic; }
 .sub-keyword {
     font-size: 0.62rem;
     color: #7a6ad9;
