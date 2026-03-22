@@ -1,0 +1,3 @@
+Le toggle `⊞` en mode split montre 2 colonnes — je dois supprimer la colonne gauche (Steps) et garder seulement la droite (Tasks/Clusters/Steps).
+Maintenant je lance `npm run package` dans `C:/jgr-ui` pour que le changement soit visible dans claudicator.
+Done. En mode `⊞`, la colonne gauche (Steps filtrés) est supprimée — seul le DAG droit (Tasks / Clusters / Steps selon l'onglet actif) s'affiche maintenant en pleine largeur.
