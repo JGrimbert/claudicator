@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-20T16:07:48.475Z",
+  "generated": "2026-03-22T11:03:41.934Z",
   "stats": {
     "nodes": 207,
     "edges": 306,
@@ -1624,7 +1624,7 @@
         132,
         140
       ],
-      "coalNodeId": "coal-34"
+      "coalNodeId": "coal-35"
     },
     {
       "id": 28,
@@ -1687,7 +1687,7 @@
       "issues": [
         162
       ],
-      "coalNodeId": "coal-32"
+      "coalNodeId": "coal-34"
     },
     {
       "id": 29,
@@ -1750,7 +1750,7 @@
         144,
         189
       ],
-      "coalNodeId": "coal-8"
+      "coalNodeId": "coal-11"
     },
     {
       "id": 30,
@@ -1811,7 +1811,7 @@
       "issues": [
         86
       ],
-      "coalNodeId": "coal-42"
+      "coalNodeId": "coal-43"
     },
     {
       "id": 31,
@@ -1877,7 +1877,7 @@
         35,
         185
       ],
-      "coalNodeId": "coal-11"
+      "coalNodeId": "coal-14"
     },
     {
       "id": 32,
@@ -1944,7 +1944,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-20"
+      "coalNodeId": "coal-23"
     },
     {
       "id": 33,
@@ -2067,9 +2067,10 @@
       "issues": [
         42,
         163,
-        171
+        171,
+        238
       ],
-      "coalNodeId": "coal-27"
+      "coalNodeId": "coal-30"
     },
     {
       "id": 35,
@@ -2127,8 +2128,10 @@
       "isSpine": false,
       "concept": "logs",
       "pattern": null,
-      "issues": [],
-      "coalNodeId": null
+      "issues": [
+        244
+      ],
+      "coalNodeId": "coal-2"
     },
     {
       "id": 36,
@@ -2204,7 +2207,7 @@
         168,
         180
       ],
-      "coalNodeId": "coal-21"
+      "coalNodeId": "coal-24"
     },
     {
       "id": 37,
@@ -2278,7 +2281,7 @@
         196,
         227
       ],
-      "coalNodeId": "coal-2"
+      "coalNodeId": "coal-5"
     },
     {
       "id": 38,
@@ -2339,7 +2342,7 @@
       "issues": [
         41
       ],
-      "coalNodeId": "coal-47"
+      "coalNodeId": "coal-48"
     },
     {
       "id": 39,
@@ -2406,7 +2409,7 @@
         179,
         225
       ],
-      "coalNodeId": "coal-5"
+      "coalNodeId": "coal-8"
     },
     {
       "id": 40,
@@ -2468,7 +2471,7 @@
         86,
         95
       ],
-      "coalNodeId": "coal-41"
+      "coalNodeId": "coal-42"
     },
     {
       "id": 41,
@@ -2594,9 +2597,10 @@
         179,
         196,
         227,
-        238
+        238,
+        244
       ],
-      "coalNodeId": "coal-51"
+      "coalNodeId": "coal-52"
     },
     {
       "id": 44,
@@ -2670,7 +2674,7 @@
       "issues": [
         35
       ],
-      "coalNodeId": "coal-48"
+      "coalNodeId": "coal-49"
     },
     {
       "id": 46,
@@ -2711,7 +2715,7 @@
         140,
         162
       ],
-      "coalNodeId": "coal-31"
+      "coalNodeId": "coal-33"
     },
     {
       "id": 47,
@@ -2946,7 +2950,7 @@
       "issues": [
         26
       ],
-      "coalNodeId": "coal-50"
+      "coalNodeId": "coal-51"
     },
     {
       "id": 54,
@@ -3015,7 +3019,7 @@
         176,
         184
       ],
-      "coalNodeId": "coal-14"
+      "coalNodeId": "coal-17"
     },
     {
       "id": 56,
@@ -3059,7 +3063,7 @@
         181,
         182
       ],
-      "coalNodeId": "coal-16"
+      "coalNodeId": "coal-19"
     },
     {
       "id": 57,
@@ -3093,7 +3097,7 @@
         181,
         187
       ],
-      "coalNodeId": "coal-10"
+      "coalNodeId": "coal-13"
     },
     {
       "id": 58,
@@ -3126,9 +3130,10 @@
       "pattern": null,
       "issues": [
         106,
-        146
+        146,
+        244
       ],
-      "coalNodeId": "coal-33"
+      "coalNodeId": "coal-1"
     },
     {
       "id": 59,
@@ -3165,7 +3170,7 @@
         175,
         182
       ],
-      "coalNodeId": "coal-17"
+      "coalNodeId": "coal-20"
     },
     {
       "id": 60,
@@ -3583,7 +3588,7 @@
         94,
         102
       ],
-      "coalNodeId": "coal-39"
+      "coalNodeId": "coal-40"
     },
     {
       "id": 70,
@@ -3802,7 +3807,7 @@
         179,
         180
       ],
-      "coalNodeId": "coal-22"
+      "coalNodeId": "coal-25"
     },
     {
       "id": 75,
@@ -3943,7 +3948,7 @@
         227,
         238
       ],
-      "coalNodeId": "coal-0"
+      "coalNodeId": "coal-4"
     },
     {
       "id": 78,
@@ -3987,7 +3992,7 @@
         41,
         178
       ],
-      "coalNodeId": "coal-25"
+      "coalNodeId": "coal-28"
     },
     {
       "id": 79,
@@ -4562,7 +4567,7 @@
         162,
         184
       ],
-      "coalNodeId": "coal-44"
+      "coalNodeId": "coal-45"
     },
     {
       "id": 93,
@@ -4609,7 +4614,7 @@
         168,
         169
       ],
-      "coalNodeId": "coal-28"
+      "coalNodeId": "coal-31"
     },
     {
       "id": 94,
@@ -4696,7 +4701,7 @@
         49,
         137
       ],
-      "coalNodeId": "coal-35"
+      "coalNodeId": "coal-36"
     },
     {
       "id": 96,
@@ -4938,7 +4943,7 @@
         122,
         189
       ],
-      "coalNodeId": "coal-7"
+      "coalNodeId": "coal-10"
     },
     {
       "id": 103,
@@ -4985,7 +4990,7 @@
         180,
         185
       ],
-      "coalNodeId": "coal-12"
+      "coalNodeId": "coal-15"
     },
     {
       "id": 104,
@@ -5185,7 +5190,7 @@
       "issues": [
         29
       ],
-      "coalNodeId": "coal-49"
+      "coalNodeId": "coal-50"
     },
     {
       "id": 110,
@@ -5404,7 +5409,7 @@
         189,
         196
       ],
-      "coalNodeId": "coal-6"
+      "coalNodeId": "coal-9"
     },
     {
       "id": 116,
@@ -5521,7 +5526,7 @@
         97,
         102
       ],
-      "coalNodeId": "coal-38"
+      "coalNodeId": "coal-39"
     },
     {
       "id": 119,
@@ -6968,23 +6973,6 @@
   "coalNodes": [
     {
       "symbols": [
-        "getSessionWithCode"
-      ],
-      "issues": [
-        24,
-        34,
-        95,
-        97,
-        106,
-        169,
-        227,
-        238
-      ],
-      "score": 8,
-      "count": 8
-    },
-    {
-      "symbols": [
         "detectPotentialDuplicates"
       ],
       "issues": [
@@ -7011,10 +6999,61 @@
         179,
         196,
         227,
+        238,
+        244
+      ],
+      "score": 25,
+      "count": 25
+    },
+    {
+      "symbols": [
+        "ensureHistoryDir"
+      ],
+      "issues": [
+        106,
+        146,
+        244
+      ],
+      "score": 3,
+      "count": 3
+    },
+    {
+      "symbols": [
+        "emitLog"
+      ],
+      "issues": [
+        244
+      ],
+      "score": 1,
+      "count": 1
+    },
+    {
+      "symbols": [
+        "sendTurn"
+      ],
+      "issues": [
+        163,
         238
       ],
-      "score": 24,
-      "count": 24
+      "score": 2,
+      "count": 2
+    },
+    {
+      "symbols": [
+        "getSessionWithCode"
+      ],
+      "issues": [
+        24,
+        34,
+        95,
+        97,
+        106,
+        169,
+        227,
+        238
+      ],
+      "score": 8,
+      "count": 8
     },
     {
       "symbols": [
@@ -7400,16 +7439,6 @@
     },
     {
       "symbols": [
-        "sendTurn"
-      ],
-      "issues": [
-        163
-      ],
-      "score": 1,
-      "count": 1
-    },
-    {
-      "symbols": [
         "spawnClaudeStream"
       ],
       "issues": [
@@ -7433,17 +7462,6 @@
       ],
       "score": 1,
       "count": 1
-    },
-    {
-      "symbols": [
-        "ensureHistoryDir"
-      ],
-      "issues": [
-        106,
-        146
-      ],
-      "score": 2,
-      "count": 2
     },
     {
       "symbols": [
