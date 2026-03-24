@@ -219,6 +219,84 @@ export function writeAtlasMd(
 }
 
 /**
+ * Génère ATLAS.md à partir d'un ensemble d'issues (groupe ou multi-stack).
+ * La query est la concaténation de toutes les issues pour un scoring plus large.
+ */
+export function writeAtlasForIssues(
+    issues: { number: number; title: string; body?: string }[],
+    label: string
+): { entryPoints: number; tokenCost: number } {
+    const combinedQuery = issues
+        .map(i => buildQuery(i.title, i.body))
+        .join(" ");
+
+    const hits          = searchMethods(combinedQuery, CLAUDICATOR_ROOT);
+    const routeHits     = findRelevantRoutes(CLAUDICATOR_ROOT, combinedQuery);
+    const componentHits = findRelevantComponents(CLAUDICATOR_ROOT, combinedQuery);
+
+    const hitFiles      = new Set(hits.map(h => (h.method.file ?? "").split("\\").join("/")));
+    const newRoutes     = routeHits.filter(r => !hitFiles.has(r.file));
+    const newComponents = componentHits.filter(c => !hitFiles.has(c.file) && !newRoutes.some(r => r.file === c.file));
+
+    const totalEntries = hits.length + newRoutes.length + newComponents.length;
+
+    const lines: string[] = [];
+    lines.push("# Atlas — Claudicator");
+    lines.push(`_Généré pour le groupe : ${label} (${issues.length} issues)_`);
+    lines.push("");
+
+    if (totalEntries > 0) {
+        lines.push(`## Points d'entrée — ${label}`);
+        lines.push("");
+        lines.push("Ces symboles ont été identifiés comme pertinents pour le groupe :");
+        lines.push("");
+        lines.push("| Symbole | Fichier | Signature |");
+        lines.push("|---|---|---|");
+        for (const { key, method } of hits) {
+            const sym  = key.split(".").at(-1) ?? key;
+            const file = (method.file ?? "").replace(/\\/g, "/");
+            const sig  = method.signature ?? sym;
+            lines.push(`| \`${sym}\` | \`${file}\` | \`${sig}\` |`);
+        }
+        for (const r of newRoutes) {
+            const handlers = r.handlers.length > 0 ? r.handlers.join(", ") : "handler";
+            const desc     = r.description ? ` — ${r.description.slice(0, 80)}` : "";
+            lines.push(`| \`${r.routePath}\` | \`${r.file}\` | \`${handlers}\`${desc} |`);
+        }
+        for (const c of newComponents) {
+            const fns = c.matchedFunctions.length > 0 ? c.matchedFunctions.join(", ") : "composant";
+            lines.push(`| \`${c.name}\` | \`${c.file}\` | \`${fns}\` — composant UI |`);
+        }
+        lines.push("");
+        lines.push("---");
+        lines.push("");
+
+        const hotHits = hits.filter(h => h.score >= 4).slice(0, 3);
+        if (hotHits.length > 0) {
+            lines.push("## Snippets");
+            lines.push("");
+            for (const { key, method } of hotHits) {
+                const snippet = getSnippet(key, CLAUDICATOR_ROOT);
+                if (!snippet) continue;
+                const sym = key.split(".").at(-1) ?? key;
+                lines.push(`### \`${sym}\``);
+                lines.push(`_${(method.file ?? "").replace(/\\/g, "/")}_`);
+                lines.push("");
+                lines.push("```ts");
+                lines.push(snippet.trim());
+                lines.push("```");
+                lines.push("");
+            }
+        }
+    }
+
+    const content   = lines.join("\n");
+    const atlasPath = path.join(CLAUDICATOR_ROOT, "ATLAS.md");
+    fs.writeFileSync(atlasPath, content, "utf-8");
+    return { entryPoints: totalEntries, tokenCost: Math.round(content.length / 4) };
+}
+
+/**
  * Si ATLAS.md est absent, le génère (sans GitHub — sync).
  * Retourne le contenu du fichier, ou undefined si la génération échoue.
  */

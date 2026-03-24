@@ -33,6 +33,10 @@
                         issues: (g.issues ?? []).map((i: any) => typeof i === "number" ? i : i.number),
                         score: g.score ?? 0,
                         hasParent: g.hasParent ?? false,
+                        subdivisions: (g.subdivisions ?? []).map((s: any) => ({
+                            keyword: s.keyword,
+                            issues: (s.issues ?? []).map((i: any) => typeof i === "number" ? i : i.number),
+                        })),
                     }));
                 }
             } catch { /* ignore */ }

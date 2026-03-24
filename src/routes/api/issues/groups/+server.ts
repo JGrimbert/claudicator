@@ -18,6 +18,8 @@ export const GET: RequestHandler = async ({ url }) => {
     const issues = await getIssuesWithBodies(owner, repo);
     const groups = detectIssueGroups(issues, { minIssues });
 
+    const issueBodyMap = new Map(issues.map(i => [i.number, i.body ?? ""]));
+
     // Pour chaque groupe : vérifier si une issue parente existe + récupérer son numéro/url
     const result = groups.map(g => {
         const parentIssue = issues.find(i =>
@@ -25,6 +27,11 @@ export const GET: RequestHandler = async ({ url }) => {
         );
         return {
             ...g,
+            issues: g.issues.map(i => ({ ...i, body: issueBodyMap.get(i.number) ?? "" })),
+            subdivisions: (g.subdivisions ?? []).map(s => ({
+                ...s,
+                issues: s.issues.map(i => ({ ...i, body: issueBodyMap.get(i.number) ?? "" }))
+            })),
             hasParent:   !!parentIssue,
             parentNumber: parentIssue?.number ?? null,
             parentUrl:    parentIssue?.html_url ?? null,
