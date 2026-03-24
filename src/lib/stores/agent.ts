@@ -59,6 +59,7 @@ export async function startConsoleStream(
         opts?.onDone?.();
         return;
     }
+    consoleTab.set("console");
     // Persister taskId + title pour reconnexion après refresh
     const state = get(agentRunState);
     if (state.taskId) {

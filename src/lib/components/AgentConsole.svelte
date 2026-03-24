@@ -132,7 +132,7 @@
     let _prevIssue = $agentState.issue;
     $: if ($planModeTask !== _prevPlanTask) { _prevPlanTask = $planModeTask; if ($planModeTask) symbolsQuery = $planModeTask.title; }
     $: if ($agentState.issue !== _prevIssue) { _prevIssue = $agentState.issue; if ($agentState.issue) symbolsQuery = $agentState.issue.title; }
-    let activeTab = $consoleTab;
+    $: activeTab = $consoleTab;
     $: consoleTab.set(activeTab);
 
     // Dérive les méthodes filtrées selon l'onglet actif
