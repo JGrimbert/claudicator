@@ -1,16 +1,14 @@
 /** Tâches — annule tous les changements non commités (POST) */
 import { json } from "@sveltejs/kit";
-import { getTask } from "$lib/server/services/tasks";
+import { resolveTaskContext } from "$lib/server/services/tasks";
 import { revertAll } from "$lib/server/services/git";
-import { getProjectRoot } from "$lib/server/services/projects";
 
 /** Annule toutes les modifications non commitées de la branche */
 export async function POST({ params }) {
-    const task = getTask(params.id);
-    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+    const ctx = resolveTaskContext(params.id);
+    if (!ctx) return json({ error: "Task introuvable" }, { status: 404 });
+    const { task, projectRoot: root } = ctx;
     if (!task.branch) return json({ error: "Pas de branche associée" }, { status: 400 });
-
-    const root = getProjectRoot();
     try {
         await revertAll(root);
         return json({ ok: true });

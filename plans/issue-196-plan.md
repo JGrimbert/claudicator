@@ -1,0 +1,1 @@
+Fait. `src/lib/server/core/` et les 4 PNG supprimés.

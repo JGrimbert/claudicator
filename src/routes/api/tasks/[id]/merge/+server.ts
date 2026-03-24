@@ -1,14 +1,15 @@
 /** Tâches — crée une PR et merge la branche de la tâche (POST) */
 import { json } from "@sveltejs/kit";
-import { getTask, updateTask } from "$lib/server/services/tasks";
+import { resolveTaskContext, updateTask } from "$lib/server/services/tasks";
 import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";
 import { getMainBranch, checkoutMain } from "$lib/server/services/git";
-import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
+import { getCurrentProject } from "$lib/server/services/projects";
 
 /** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
-    const task = getTask(params.id);
-    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+    const ctx = resolveTaskContext(params.id);
+    if (!ctx) return json({ error: "Task introuvable" }, { status: 404 });
+    const { task, projectRoot: root } = ctx;
     if (!task.branch) return json({ error: "Pas de branche associée" }, { status: 400 });
 
     const project = getCurrentProject();
@@ -17,7 +18,6 @@ export async function POST({ params }) {
     if (!owner || !repo) return json({ error: "Projet sans owner/repo configuré" }, { status: 400 });
 
     try {
-        const root = getProjectRoot();
         const base = await getMainBranch(root);
 
         // Réutiliser une PR ouverte existante ou en créer une
@@ -41,7 +41,6 @@ export async function POST({ params }) {
         // La branche est déjà mergée dans main → marquer comme merged
         if (message.includes("No commits between")) {
             try {
-                const root = getProjectRoot();
                 await checkoutMain(root);
             } catch { /* ignore */ }
             return json(updateTask(params.id, { status: "merged" }));
