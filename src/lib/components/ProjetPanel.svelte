@@ -237,6 +237,7 @@
             id: String(issue.number),
             label: issue.title,
             prefix: `#${issue.number}`,
+            description: issue.body || undefined,
             labels: issue.labels ?? [],
             ...(!$taskIssueNumbers.has(issue.number)
                 ? {
