@@ -18,6 +18,12 @@ import {
     destroySession,
 } from "$lib/server/services/claude-session";
 
+const SSE_HEADERS = {
+    "Content-Type":  "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection":    "keep-alive",
+} as const;
+
 /** Supprime les séquences d'échappement ANSI d'une chaîne */
 function stripAnsi(str: string): string {
     return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, '').replace(/\x1B\][^\x07]*\x07/g, '').trim();
@@ -33,20 +39,232 @@ function savePlan(taskId: string, lines: string[]) {
     } catch { /* silencieux */ }
 }
 
+type EmitFn = (line: string, type: string) => void;
+
+type OneShotState = {
+    capturedUsage: TokenUsage | null;
+    resultSubtype: string | null;
+};
+
+/** Parse une ligne JSON stdout de Claude CLI et émet le résultat */
+function parseClaudeJsonLine(rawLine: string, state: OneShotState, emit: EmitFn): void {
+    if (!rawLine.trim()) return;
+    try {
+        const obj = JSON.parse(rawLine);
+        if (obj.type === "assistant") {
+            const content = obj.message?.content ?? [];
+            for (const block of content) {
+                if (block.type === "text" && block.text) {
+                    emit(block.text, "agent");
+                } else if (block.type === "tool_use" && block.name) {
+                    const inp = block.input as Record<string, unknown> | undefined;
+                    const hint = inp ? Object.values(inp).find(v => typeof v === "string") as string | undefined : undefined;
+                    emit(`⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}`, "system");
+                }
+            }
+        } else if (obj.type === "result") {
+            state.resultSubtype = obj.subtype ?? null;
+            const u = obj.usage;
+            if (u && (u.input_tokens !== undefined || u.inputTokens !== undefined)) {
+                state.capturedUsage = {
+                    inputTokens: u.input_tokens ?? u.inputTokens ?? 0,
+                    outputTokens: u.output_tokens ?? u.outputTokens ?? 0,
+                };
+                emit(JSON.stringify(state.capturedUsage), "usage");
+            }
+        }
+    } catch {
+        emit(rawLine, "agent");
+    }
+}
+
+/** Mode orchestré : plusieurs étapes via orchestrate(), retourne directement une Response */
+function runOrchestrated(
+    taskId: string,
+    task: NonNullable<ReturnType<typeof getTask>>,
+    root: string,
+    rawPrompt: string | undefined,
+): Response {
+    updateTask(taskId, { status: "planification", logs: [] });
+
+    const encoder = new TextEncoder();
+    const allLogs: string[] = [];
+    const planLines: string[] = [];
+
+    const stream = new ReadableStream({
+        start(controller) {
+            const emit = (line: string, type: "agent" | "system" | "segment" = "agent") => {
+                try { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`)); } catch { /* fermé */ }
+                allLogs.push(line);
+                if (type === "agent" || type === "segment") planLines.push(line);
+            };
+
+            orchestrate(task, root, rawPrompt || undefined, (event) => {
+                if (event.type === "text") {
+                    emit(event.payload, event.segment === "merged" ? "agent" : "segment");
+                } else if (event.type === "system") {
+                    emit(event.payload, "system");
+                } else if (event.type === "error") {
+                    emit(`[erreur segment ${event.segment}: ${event.payload}]`, "system");
+                }
+            }).then(() => {
+                savePlan(taskId, planLines);
+                updateTask(taskId, { status: "implementation", logs: allLogs });
+                emit("[✓ orchestration terminée]", "system");
+                try { controller.close(); } catch { /* déjà fermé */ }
+            }).catch((err: Error) => {
+                emit(`[erreur orchestration: ${err.message}]`, "system");
+                updateTask(taskId, { status: "failed", logs: allLogs });
+                try { controller.close(); } catch { /* déjà fermé */ }
+            });
+        }
+    });
+
+    return new Response(stream, { headers: SSE_HEADERS });
+}
+
+/** Mode session long-lived : envoie un tour à une session Claude existante */
+function runSession(
+    taskId: string,
+    prompt: string,
+    contextStats: { methods: number; hasAtlas: boolean } | null,
+    emit: EmitFn,
+    allLogs: string[],
+    controller: ReadableStreamDefaultController,
+): void {
+    if (contextStats) emit(JSON.stringify(contextStats), "context");
+    emit("⚙ Envoi du message à la session…", "system");
+
+    let capturedUsage: TokenUsage | null = null;
+
+    sendTurn(taskId, prompt, (event) => {
+        if (event.type === "agent_text") {
+            emit(event.payload as string, "agent");
+        } else if (event.type === "tool_use") {
+            emit(event.payload as string, "system");
+        } else if (event.type === "stderr") {
+            emit(event.payload as string, "system");
+        } else if (event.type === "usage") {
+            const u = event.payload as { inputTokens: number; outputTokens: number };
+            capturedUsage = u;
+            emit(JSON.stringify(u), "usage");
+        } else if (event.type === "turn_end") {
+            const existing = getTask(taskId);
+            if (existing) {
+                const updates: Parameters<typeof updateTask>[1] = { logs: allLogs };
+                if (capturedUsage) {
+                    const prev = existing.totalUsage;
+                    updates.usage = capturedUsage;
+                    updates.totalUsage = {
+                        inputTokens: (prev?.inputTokens ?? 0) + capturedUsage.inputTokens,
+                        outputTokens: (prev?.outputTokens ?? 0) + capturedUsage.outputTokens,
+                    };
+                    addProjectUsage(capturedUsage.inputTokens, capturedUsage.outputTokens);
+                }
+                updateTask(taskId, updates);
+            }
+            destroySession(taskId);
+            emit("false", "session_status");
+            emit("[✓ tour terminé]", "system");
+            try { controller.close(); } catch { /* déjà fermé */ }
+        } else if (event.type === "error") {
+            emit(`[erreur: ${event.payload}]`, "system");
+            updateTask(taskId, { status: "failed", logs: allLogs });
+            try { controller.close(); } catch { /* déjà fermé */ }
+        }
+    });
+}
+
+/** Mode one-shot : spawn claude -p, stream stdout/stderr */
+function runOneShot(
+    taskId: string | undefined,
+    prompt: string,
+    root: string,
+    isImplementationPhase: boolean,
+    contextStats: { methods: number; hasAtlas: boolean } | null,
+    emit: EmitFn,
+    allLogs: string[],
+    planLines: string[],
+    controller: ReadableStreamDefaultController,
+): void {
+    const spawnArgs = ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root];
+    const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
+    const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
+    const proc = spawn(claudeCmd, spawnArgs, { shell: true, windowsHide: true, env: cleanEnv, cwd: root });
+
+    if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
+    if (taskId) register(taskId, proc);
+    if (proc.pid) emit(`[pid:${proc.pid}]`, "system");
+    emit("⚙ Analyse du projet en cours…", "system");
+    if (contextStats) emit(JSON.stringify(contextStats), "context");
+
+    const state: OneShotState = { capturedUsage: null, resultSubtype: null };
+    let stdoutBuf = "";
+    let stderrBuf = "";
+
+    proc.stdout.on("data", (chunk: Buffer) => {
+        stdoutBuf += chunk.toString();
+        const lines = stdoutBuf.split("\n");
+        stdoutBuf = lines.pop() ?? "";
+        for (const rawLine of lines) parseClaudeJsonLine(rawLine, state, emit);
+    });
+
+    proc.stderr.on("data", (chunk: Buffer) => {
+        stderrBuf += chunk.toString();
+        const lines = stderrBuf.split("\n");
+        stderrBuf = lines.pop() ?? "";
+        lines.forEach(l => {
+            const line = stripAnsi(l);
+            if (!line || line.length < 2) return;
+            emit(line, "system");
+        });
+    });
+
+    proc.on("error", (err: Error) => {
+        emit(`[erreur: ${err.message}]`, "system");
+        if (taskId) { unregister(taskId); updateTask(taskId, { status: "failed", logs: allLogs }); }
+        try { controller.close(); } catch { /* déjà fermé */ }
+    });
+
+    proc.on("close", (code: number | null) => {
+        if (stdoutBuf.trim()) parseClaudeJsonLine(stdoutBuf.trim(), state, emit);
+        if (stderrBuf.trim()) emit(stderrBuf, "system");
+
+        const success = code === 0 || state.resultSubtype === "success";
+        const status = success ? "implementation" : "failed";
+
+        if (taskId) {
+            unregister(taskId);
+            if (success && state.capturedUsage) {
+                const existing = getTask(taskId);
+                const prev = existing?.totalUsage;
+                const totalUsage: TokenUsage = {
+                    inputTokens: (prev?.inputTokens ?? 0) + state.capturedUsage.inputTokens,
+                    outputTokens: (prev?.outputTokens ?? 0) + state.capturedUsage.outputTokens,
+                };
+                updateTask(taskId, { status, logs: allLogs, usage: state.capturedUsage, totalUsage, planUsage: state.capturedUsage });
+                addProjectUsage(state.capturedUsage.inputTokens, state.capturedUsage.outputTokens);
+            } else {
+                updateTask(taskId, { status, logs: allLogs });
+            }
+            if (success) savePlan(taskId, planLines);
+        }
+        if (isImplementationPhase) emit("false", "session_status");
+        emit(`[${success ? "✓ terminé" : `erreur (code ${code})`}]`, "system");
+        try { controller.close(); } catch { /* déjà fermé */ }
+    });
+}
+
 /** Reçoit une requête agent et détermine la phase d'exécution */
 export async function POST({ request }) {
     const body = await request.json();
     const { prompt: rawPrompt, plan, taskId, projectRoot, isFollowUp, orchestrated, contextFollowUp } = body;
     const root = projectRoot?.trim() || getProjectRoot();
 
-    // Phase : plan si aucun plan fourni, implémentation sinon, suivi si isFollowUp
-    // contextFollowUp=true : one-shot avec logs précédents injectés dans le prompt
     const isImplementationPhase = !!(plan?.trim() && taskId);
-    // Session persistante uniquement pour les vrais follow-ups (isFollowUp=true)
-    // L'implémentation passe par le mode one-shot (-p) : plus fiable sur Windows
     const isSessionPhase = !!(isFollowUp && taskId);
 
-    // Si contextFollowUp : injecter les derniers logs de la task dans le prompt (limité à 60 lignes)
+    // contextFollowUp : injecter les derniers logs dans le prompt
     let prompt: string = rawPrompt ?? "";
     if (contextFollowUp && taskId && rawPrompt?.trim()) {
         const prevTask = getTask(taskId);
@@ -58,7 +276,7 @@ export async function POST({ request }) {
         }
     }
 
-    // Si un plan est fourni, construire le prompt enrichi côté serveur
+    // Prompt enrichi côté serveur pour la phase d'implémentation
     let contextStats: { methods: number; hasAtlas: boolean } | null = null;
     if (isImplementationPhase && !isFollowUp) {
         const task = getTask(taskId);
@@ -75,110 +293,32 @@ export async function POST({ request }) {
         }
     }
 
-    // Mode orchestré : bypass du flux one-shot normal
+    // ── Mode orchestré ──
     if (orchestrated && taskId && !isFollowUp) {
         const task = getTask(taskId);
-        if (!task) {
-            return new Response(JSON.stringify({ error: "Task introuvable" }), {
-                status: 404,
-                headers: { "Content-Type": "application/json" }
-            });
-        }
-        updateTask(taskId, { status: "planification", logs: [] });
-
-        const encoder = new TextEncoder();
-        const allLogs: string[] = [];
-        const planLines: string[] = [];
-
-        const stream = new ReadableStream({
-            start(controller) {
-                const emit = (line: string, type: "agent" | "system" | "segment" = "agent") => {
-                    try { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`)); } catch { /* fermé */ }
-                    allLogs.push(line);
-                    if (type === "agent" || type === "segment") planLines.push(line);
-                };
-
-                const desc = rawPrompt || undefined;
-                orchestrate(task, root, desc, (event) => {
-                    if (event.type === "text") {
-                        emit(event.payload, event.segment === "merged" ? "agent" : "segment");
-                    } else if (event.type === "system") {
-                        emit(event.payload, "system");
-                    } else if (event.type === "error") {
-                        emit(`[erreur segment ${event.segment}: ${event.payload}]`, "system");
-                    }
-                    // "done" per-segment : pas d'émission, suivi interne
-                }).then((result) => {
-                    savePlan(taskId, planLines);
-                    updateTask(taskId, { status: "implementation", logs: allLogs });
-                    emit("[✓ orchestration terminée]", "system");
-                    try { controller.close(); } catch { /* déjà fermé */ }
-                }).catch((err: Error) => {
-                    emit(`[erreur orchestration: ${err.message}]`, "system");
-                    updateTask(taskId, { status: "failed", logs: allLogs });
-                    try { controller.close(); } catch { /* déjà fermé */ }
-                });
-            }
-        });
-
-        return new Response(stream, {
-            headers: {
-                "Content-Type":  "text/event-stream",
-                "Cache-Control": "no-cache",
-                "Connection":    "keep-alive"
-            }
-        });
+        if (!task) return new Response(JSON.stringify({ error: "Task introuvable" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        return runOrchestrated(taskId, task, root, rawPrompt);
     }
 
     if (!prompt?.trim()) {
-        return new Response(JSON.stringify({ error: "Prompt manquant" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ error: "Prompt manquant" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
-
-    // Vérification follow-up : la session doit exister
     if (isFollowUp && taskId && !isSessionAlive(taskId)) {
-        return new Response(JSON.stringify({ error: "Pas de session active pour cette task" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ error: "Pas de session active pour cette task" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
-
-    // Rejet 409 si session occupée
     if (isSessionPhase && taskId && isSessionBusy(taskId)) {
-        return new Response(JSON.stringify({ error: "Session occupée" }), {
-            status: 409,
-            headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ error: "Session occupée" }), { status: 409, headers: { "Content-Type": "application/json" } });
     }
-
     if (taskId) {
         const task = getTask(taskId);
-        if (!task) {
-            return new Response(JSON.stringify({ error: "Task introuvable" }), {
-                status: 404,
-                headers: { "Content-Type": "application/json" }
-            });
-        }
-        if (isSessionPhase) {
-            // Vider les logs sans changer le statut
-            updateTask(taskId, { logs: [] });
-        } else {
-            // Génération du plan : specification → planification
-            updateTask(taskId, { status: "planification", logs: [] });
-        }
+        if (!task) return new Response(JSON.stringify({ error: "Task introuvable" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        updateTask(taskId, isSessionPhase ? { logs: [] } : { status: "planification", logs: [] });
     }
-
-    // Tuer tout processus one-shot zombie sur la même task avant d'en lancer un nouveau
-    if (taskId && !isFollowUp && isRunning(taskId)) {
-        killProcess(taskId);
-    }
+    if (taskId && !isFollowUp && isRunning(taskId)) killProcess(taskId);
 
     const encoder = new TextEncoder();
     const allLogs: string[] = [];
     const planLines: string[] = [];
-    let capturedUsage: TokenUsage | null = null;
 
     const stream = new ReadableStream({
         start(controller) {
@@ -191,192 +331,12 @@ export async function POST({ request }) {
             };
 
             if (isSessionPhase && taskId) {
-                // ── Mode session long-lived ──
-                if (contextStats) emit(JSON.stringify(contextStats), "context");
-                emit("⚙ Envoi du message à la session…", "system");
-
-                sendTurn(taskId, prompt, (event) => {
-                    if (event.type === "agent_text") {
-                        emit(event.payload as string, "agent");
-                    } else if (event.type === "tool_use") {
-                        emit(event.payload as string, "system");
-                    } else if (event.type === "stderr") {
-                        emit(event.payload as string, "system");
-                    } else if (event.type === "usage") {
-                        const u = event.payload as { inputTokens: number; outputTokens: number };
-                        capturedUsage = u;
-                        emit(JSON.stringify(u), "usage");
-                    } else if (event.type === "turn_end") {
-                        // Mise à jour de la task
-                        if (taskId) {
-                            const existing = getTask(taskId);
-                            if (existing) {
-                                const updates: Parameters<typeof updateTask>[1] = { logs: allLogs };
-                                // Premier tour impl → avancer le statut
-                                if (isImplementationPhase && !isFollowUp) {
-                                    updates.status = "documentation";
-                                }
-                                if (capturedUsage) {
-                                    const prev = existing.totalUsage;
-                                    updates.usage = capturedUsage;
-                                    updates.totalUsage = {
-                                        inputTokens: (prev?.inputTokens ?? 0) + capturedUsage.inputTokens,
-                                        outputTokens: (prev?.outputTokens ?? 0) + capturedUsage.outputTokens,
-                                    };
-                                    if (isImplementationPhase && !isFollowUp) {
-                                        updates.implUsage = capturedUsage;
-                                    }
-                                    addProjectUsage(capturedUsage.inputTokens, capturedUsage.outputTokens);
-                                }
-                                updateTask(taskId, updates);
-                            }
-                        }
-                        // Détruire la session : les follow-ups utilisent le mode one-shot
-                        // (évite les conflits de processus Claude CLI sur Windows)
-                        if (taskId) destroySession(taskId);
-                        emit("false", "session_status");
-                        emit("[✓ tour terminé]", "system");
-                        try { controller.close(); } catch { /* déjà fermé */ }
-                    } else if (event.type === "error") {
-                        emit(`[erreur: ${event.payload}]`, "system");
-                        if (taskId) updateTask(taskId, { status: "failed", logs: allLogs });
-                        try { controller.close(); } catch { /* déjà fermé */ }
-                    }
-                });
-
+                runSession(taskId, prompt, contextStats, emit, allLogs, controller);
             } else {
-                // ── Mode one-shot (-p) ──
-                const spawnArgs = ["-p", "--verbose", "--dangerously-skip-permissions", "--output-format", "stream-json", "--add-dir", root];
-                const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
-                const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
-                const proc = spawn(
-                    claudeCmd,
-                    spawnArgs,
-                    { shell: true, windowsHide: true, env: cleanEnv, cwd: root }
-                );
-                if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
-                if (taskId) register(taskId, proc);
-                if (proc.pid) emit(`[pid:${proc.pid}]`, "system");
-                emit("⚙ Analyse du projet en cours…", "system");
-                if (contextStats) emit(JSON.stringify(contextStats), "context");
-
-                let stdoutBuf = "";
-                let stderrBuf = "";
-                let resultSubtype: string | null = null;
-
-                proc.stdout.on("data", (chunk: Buffer) => {
-                    stdoutBuf += chunk.toString();
-                    const lines = stdoutBuf.split("\n");
-                    stdoutBuf = lines.pop() ?? "";
-                    for (const rawLine of lines) {
-                        if (!rawLine.trim()) continue;
-                        try {
-                            const obj = JSON.parse(rawLine);
-                            if (obj.type === "assistant") {
-                                const content = obj.message?.content ?? [];
-                                for (const block of content) {
-                                    if (block.type === "text" && block.text) {
-                                        emit(block.text, "agent");
-                                    } else if (block.type === "tool_use" && block.name) {
-                                        const inp = block.input as Record<string, unknown> | undefined;
-                                        const hint = inp ? Object.values(inp).find(v => typeof v === "string") as string | undefined : undefined;
-                                        emit(`⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}`, "system");
-                                    }
-                                }
-                            } else if (obj.type === "result") {
-                                resultSubtype = obj.subtype ?? null;
-                                const u = obj.usage;
-                                if (u && (u.input_tokens !== undefined || u.inputTokens !== undefined)) {
-                                    capturedUsage = {
-                                        inputTokens: u.input_tokens ?? u.inputTokens ?? 0,
-                                        outputTokens: u.output_tokens ?? u.outputTokens ?? 0,
-                                    };
-                                    emit(JSON.stringify(capturedUsage), "usage");
-                                }
-                            }
-                        } catch {
-                            emit(rawLine, "agent");
-                        }
-                    }
-                });
-                proc.stderr.on("data", (chunk: Buffer) => {
-                    stderrBuf += chunk.toString();
-                    const lines = stderrBuf.split("\n");
-                    stderrBuf = lines.pop() ?? "";
-                    lines.forEach(l => {
-                        const line = stripAnsi(l);
-                        if (!line || line.length < 2) return;
-                        emit(line, "system");
-                    });
-                });
-                proc.on("error", (err: Error) => {
-                    emit(`[erreur: ${err.message}]`, "system");
-                    if (taskId) { unregister(taskId); updateTask(taskId, { status: "failed", logs: allLogs }); }
-                    try { controller.close(); } catch { /* déjà fermé */ }
-                });
-                proc.on("close", (code: number | null) => {
-                    if (stdoutBuf.trim()) {
-                        try {
-                            const obj = JSON.parse(stdoutBuf.trim());
-                            if (obj.type === "assistant") {
-                                const content = obj.message?.content ?? [];
-                                for (const block of content) {
-                                    if (block.type === "text" && block.text) emit(block.text, "agent");
-                                    else if (block.type === "tool_use" && block.name) {
-                                        const inp = block.input as Record<string, unknown> | undefined;
-                                        const hint = inp ? Object.values(inp).find(v => typeof v === "string") as string | undefined : undefined;
-                                        emit(`⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}`, "system");
-                                    }
-                                }
-                            } else if (obj.type === "result") {
-                                resultSubtype = obj.subtype ?? null;
-                                const u = obj.usage;
-                                if (u && (u.input_tokens !== undefined || u.inputTokens !== undefined)) {
-                                    capturedUsage = {
-                                        inputTokens: u.input_tokens ?? u.inputTokens ?? 0,
-                                        outputTokens: u.output_tokens ?? u.outputTokens ?? 0,
-                                    };
-                                    emit(JSON.stringify(capturedUsage), "usage");
-                                }
-                            }
-                        } catch {
-                            emit(stdoutBuf, "agent");
-                        }
-                    }
-                    if (stderrBuf.trim()) emit(stderrBuf, "system");
-
-                    const success = code === 0 || resultSubtype === "success";
-                    const status = success ? "implementation" : "failed";
-                    if (taskId) {
-                        unregister(taskId);
-                        if (success && capturedUsage) {
-                            const existing = getTask(taskId);
-                            const prev = existing?.totalUsage;
-                            const totalUsage: TokenUsage = {
-                                inputTokens: (prev?.inputTokens ?? 0) + capturedUsage.inputTokens,
-                                outputTokens: (prev?.outputTokens ?? 0) + capturedUsage.outputTokens,
-                            };
-                            updateTask(taskId, { status, logs: allLogs, usage: capturedUsage, totalUsage, planUsage: capturedUsage });
-                            addProjectUsage(capturedUsage.inputTokens, capturedUsage.outputTokens);
-                        } else {
-                            updateTask(taskId, { status, logs: allLogs });
-                        }
-                        if (success) savePlan(taskId, planLines);
-                    }
-                    if (isImplementationPhase) emit("false", "session_status");
-                    const msg = success ? "✓ terminé" : `erreur (code ${code})`;
-                    emit(`[${msg}]`, "system");
-                    try { controller.close(); } catch { /* déjà fermé */ }
-                });
+                runOneShot(taskId, prompt, root, isImplementationPhase, contextStats, emit, allLogs, planLines, controller);
             }
         }
     });
 
-    return new Response(stream, {
-        headers: {
-            "Content-Type":  "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection":    "keep-alive"
-        }
-    });
+    return new Response(stream, { headers: SSE_HEADERS });
 }

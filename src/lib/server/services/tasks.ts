@@ -2,7 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-import { getCurrentProject } from "./projects";
+import { getCurrentProject, getProjectRoot } from "./projects";
 
 export type TaskStatus =
   | "specification"    // tâche créée, plan non encore généré
@@ -121,6 +121,14 @@ export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "log
     const updated: Task = { ...task, ...patch, updatedAt: new Date().toISOString() };
     fs.writeFileSync(taskPath(id), JSON.stringify(updated, null, 2));
     return updated;
+}
+
+/** Résout le contexte d'une tâche : task + racine du projet.
+ *  Retourne null si la tâche n'existe pas. */
+export function resolveTaskContext(id: string): { task: Task; projectRoot: string } | null {
+    const task = getTask(id);
+    if (!task) return null;
+    return { task, projectRoot: getProjectRoot() };
 }
 
 /** Supprime le fichier d'une task */

@@ -3,9 +3,8 @@ import fs from "fs";
 import path from "path";
 import simpleGit from "simple-git";
 import { json } from "@sveltejs/kit";
-import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
+import { resolveTaskContext, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import { createIssueComment } from "$lib/server/services/github";
-import { getProjectRoot } from "$lib/server/services/projects";
 
 /** Génère un nom de branche git depuis un titre */
 function toBranchName(issueNumber: number | undefined, title: string): string {
@@ -23,15 +22,15 @@ function toBranchName(issueNumber: number | undefined, title: string): string {
 
 /** Crée la branche initiale pour une tâche */
 export async function POST({ params }) {
-    const task = getTask(params.id);
-    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+    const ctx = resolveTaskContext(params.id);
+    if (!ctx) return json({ error: "Task introuvable" }, { status: 404 });
+    const { task, projectRoot: root } = ctx;
     if (task.branch) return json({ error: "Branche déjà créée", branch: task.branch }, { status: 409 });
 
     const planPath = path.join(getTasksDir(), `${params.id}.plan.md`);
     if (!fs.existsSync(planPath)) return json({ error: "Plan introuvable" }, { status: 404 });
 
     const planContent = fs.readFileSync(planPath, "utf-8");
-    const root = getProjectRoot();
     const branchName = toBranchName(task.issueNumber, task.title);
 
     try {

@@ -1,20 +1,18 @@
 /** Tâches — commite les changements sur la branche de la tâche (POST) */
 import { json } from "@sveltejs/kit";
-import { getTask, updateTask } from "$lib/server/services/tasks";
+import { resolveTaskContext, updateTask } from "$lib/server/services/tasks";
 import { commitAll } from "$lib/server/services/git";
-import { getProjectRoot } from "$lib/server/services/projects";
 
 /** Commite les changements de la branche de la tâche */
 export async function POST({ params, request }) {
-    const task = getTask(params.id);
-    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+    const ctx = resolveTaskContext(params.id);
+    if (!ctx) return json({ error: "Task introuvable" }, { status: 404 });
+    const { task, projectRoot: root } = ctx;
     if (!task.branch) return json({ error: "Pas de branche associée" }, { status: 400 });
 
     const body = await request.json();
     const commitMessage: string = body.message?.trim();
     if (!commitMessage) return json({ error: "Message de commit requis" }, { status: 400 });
-
-    const root = getProjectRoot();
     try {
         await commitAll(root, commitMessage);
         updateTask(params.id, { status: "validation" });
