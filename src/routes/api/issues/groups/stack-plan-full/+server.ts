@@ -82,30 +82,75 @@ ${stepsTemplate}`;
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
     const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
 
+    function stripAnsi(str: string): string {
+        return str.replace(/\x1B\[[0-9;]*[mGKHF]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").trim();
+    }
+
     const stream = new ReadableStream({
         start(controller) {
             const enc = new TextEncoder();
-            const send = (obj: object) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
+            const send = (obj: object) => {
+                try { controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`)); } catch { /* fermé */ }
+            };
 
-            const proc = spawn(claudeCmd, ["-p", "--dangerously-skip-permissions"], {
+            const proc = spawn(claudeCmd, [
+                "-p", "--verbose", "--dangerously-skip-permissions",
+                "--output-format", "stream-json"
+            ], {
                 shell: true, windowsHide: true, env: cleanEnv, cwd: process.cwd()
             });
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
 
             let fullOutput = "";
+            let stdoutBuf = "";
+            let stderrBuf = "";
 
             proc.stdout?.on("data", (chunk: Buffer) => {
-                const text = chunk.toString();
-                fullOutput += text;
-                for (const line of text.split("\n")) {
-                    if (line.trim()) send({ line, type: "agent" });
+                stdoutBuf += chunk.toString();
+                const lines = stdoutBuf.split("\n");
+                stdoutBuf = lines.pop() ?? "";
+                for (const rawLine of lines) {
+                    if (!rawLine.trim()) continue;
+                    try {
+                        const obj = JSON.parse(rawLine);
+                        if (obj.type === "assistant") {
+                            for (const block of (obj.message?.content ?? [])) {
+                                if (block.type === "text" && block.text) {
+                                    fullOutput += block.text + "\n";
+                                    send({ line: block.text, type: "agent" });
+                                } else if (block.type === "tool_use" && block.name) {
+                                    const inp = block.input as Record<string, unknown> | undefined;
+                                    const hint = inp ? Object.values(inp).find(v => typeof v === "string") as string | undefined : undefined;
+                                    send({ line: `⚙ ${block.name}${hint ? ` ${hint.slice(0, 80)}` : ""}`, type: "system" });
+                                }
+                            }
+                        }
+                    } catch {
+                        fullOutput += rawLine + "\n";
+                        send({ line: rawLine, type: "agent" });
+                    }
                 }
             });
             proc.stderr?.on("data", (chunk: Buffer) => {
-                const line = chunk.toString().trim();
-                if (line) send({ line, type: "system" });
+                stderrBuf += chunk.toString();
+                const lines = stderrBuf.split("\n");
+                stderrBuf = lines.pop() ?? "";
+                for (const l of lines) {
+                    const line = stripAnsi(l);
+                    if (line && line.length >= 2) send({ line, type: "system" });
+                }
             });
             proc.on("close", () => {
+                if (stdoutBuf.trim()) {
+                    try {
+                        const obj = JSON.parse(stdoutBuf.trim());
+                        if (obj.type === "assistant") {
+                            for (const block of (obj.message?.content ?? [])) {
+                                if (block.type === "text" && block.text) fullOutput += block.text + "\n";
+                            }
+                        }
+                    } catch { fullOutput += stdoutBuf + "\n"; }
+                }
                 const dir = getTasksDir();
                 fs.mkdirSync(dir, { recursive: true });
                 const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
