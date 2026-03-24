@@ -1,5 +1,6 @@
 <script lang="ts">
     import { get } from "svelte/store";
+    import { onDestroy } from "svelte";
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
     import { JgrConsole } from 'jgr-ui';
     import type { LogEntry } from 'jgr-ui';
@@ -36,7 +37,7 @@
     }
 
     function dismiss() {
-        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false, consoleMinimized: false, completionLabel: null });
+        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false, consoleMinimized: false, completionLabel: null, liveUsage: null });
     }
 
     async function terminateSession() {
@@ -67,6 +68,32 @@
             osc.stop(ctx.currentTime + 0.6);
             osc.onended = () => ctx.close();
         } catch {}
+    }
+
+    // ── Timer live ──────────────────────────────────────────────────────────────
+    let startTime: number | null = null;
+    let elapsed = 0;
+    let _timerInterval: ReturnType<typeof setInterval> | null = null;
+    $: {
+        const running = $agentRunState.running;
+        if (running) {
+            if (!_timerInterval) {
+                startTime = Date.now();
+                elapsed = 0;
+                _timerInterval = setInterval(() => {
+                    elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+                }, 1000);
+            }
+        } else if (_timerInterval) {
+            clearInterval(_timerInterval);
+            _timerInterval = null;
+        }
+    }
+    onDestroy(() => { if (_timerInterval) clearInterval(_timerInterval); });
+
+    function fmtElapsed(s: number): string {
+        if (s < 60) return `${s}s`;
+        return `${Math.floor(s / 60)}m${s % 60 > 0 ? (s % 60) + 's' : ''}`;
     }
 
     let _wasRunning = false;
@@ -102,7 +129,16 @@
         ondismiss={dismiss}
         oninput={sendFollowUp}
     />
-    {#if !$agentRunState.running && lastUsage}
+    {#if $agentRunState.running}
+        <div class="live-bar">
+            <span class="live-elapsed">{fmtElapsed(elapsed)}</span>
+            {#if lastUsage}
+                <span class="live-tok">{Math.round(lastUsage.inputTokens / 100) / 10}k in</span>
+                <span class="live-sep">·</span>
+                <span class="live-tok">{Math.round(lastUsage.outputTokens / 100) / 10}k out</span>
+            {/if}
+        </div>
+    {:else if lastUsage}
         <PromptUsage usage={lastUsage} context={lastContext} />
     {/if}
 </div>
@@ -113,4 +149,18 @@
     flex-direction: column;
     height: 100%;
 }
+.live-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.3rem 1.2rem;
+    border-top: 1px solid #1a1a2a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    background: #07070f;
+    flex-shrink: 0;
+}
+.live-elapsed { color: cornsilk; opacity: 0.7; }
+.live-tok     { color: #4a4a6a; }
+.live-sep     { color: #222; }
 </style>

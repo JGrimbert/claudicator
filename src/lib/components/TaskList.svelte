@@ -223,9 +223,11 @@
         if (task.status === "planification") return [{ name: "en cours",  color: "f7c948" }];
         if (task.status === "merged")        return [{ name: "Mergée",    color: "4caf50" }];
         if (task.status === "documentation" || task.status === "validation" || task.status === "implementation") {
-            const tokens = task.totalUsage ?? task.usage;
-            const tokStr = tokens ? ` · ${Math.round(tokens.inputTokens / 100) / 10}k` : "";
-            return [{ name: `impl.${tokStr}`, color: "9181f9" }];
+            const planStr = task.planUsage ? `p:${Math.round(task.planUsage.inputTokens / 100) / 10}k` : "";
+            const implTokens = task.totalUsage ?? task.usage;
+            const implStr = implTokens ? `${Math.round(implTokens.inputTokens / 100) / 10}k` : "";
+            const label = [planStr, implStr].filter(Boolean).join(" · ");
+            return [{ name: label || "impl.", color: "9181f9" }];
         }
         return [];
     }
@@ -583,7 +585,9 @@
                     <JgrItem
                         prefix={taskPrefix(task)}
                         title={task.title}
-                        labels={rowLabels(task, selected?.id === task.id)}
+                        labels={($agentRunState.running && $agentRunState.taskId === task.id && $agentRunState.liveUsage)
+                            ? [{ name: `${Math.round($agentRunState.liveUsage.inputTokens / 100) / 10}k…`, color: "f7c948" }]
+                            : rowLabels(task, selected?.id === task.id)}
                         state={selected?.id === task.id || ($planAllState.running && $planAllState.currentTaskId === task.id) ? 'selected' : 'default'}
                         onselect={() => selectTask(task)}
                     />

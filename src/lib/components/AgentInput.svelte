@@ -41,6 +41,8 @@
     let editText        = $state("");
     let savingPlan      = $state(false);
     let generatingAtlas = $state(false);
+    let promptLength  = $state(0);
+    let contextTokens = $derived(Math.round(promptLength / 4));
 
     function toggleSec(name: string) {
         const next = new Set(collapsed);
@@ -176,6 +178,7 @@
             } else {
                 const parsed = parseByKeys(data.prompt ?? task.title, TOP_KEYS);
                 sections = parsed;
+                promptLength = data.prompt?.length ?? 0;
                 if (!taskText) {
                     const taskContent = parsed.find(s => s.key === 'TASK')?.content ?? task.title;
                     const descContent = parsed.find(s => s.key === 'DESCRIPTION')?.content ?? "";
@@ -267,7 +270,7 @@
         }
 
         consoleTab.set("console");
-        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null });
+        agentRunState.set({ taskId: task.id, taskTitle: task.title, logs: [], running: true, sessionAlive: false, consoleMinimized: false, completionLabel: null, liveUsage: null });
         const body = hasPlan
             ? { plan: text, taskId: task.id }
             : { prompt: text, taskId: task.id, projectRoot: projectRoot || undefined };
@@ -329,8 +332,10 @@
                 <span class="ai-hint err" title={contextError}>Contexte indisponible</span>
             {:else if mode === "impl"}
                 <span class="ai-hint plan">impl</span>
+                {#if contextTokens > 0}<span class="ctx-tok">~{Math.round(contextTokens / 100) / 10}k</span>{/if}
             {:else}
                 <span class="ai-hint">spec</span>
+                {#if contextTokens > 0}<span class="ctx-tok">~{Math.round(contextTokens / 100) / 10}k</span>{/if}
             {/if}
             <button
                 class="ai-reload"
@@ -725,6 +730,13 @@
     display: flex;
     align-items: center;
     gap: 4px;
+}
+.ctx-tok {
+    font-size: 0.58rem;
+    color: cornsilk;
+    opacity: 0.6;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
 }
 .atlas-token-badge {
     color: cornsilk;

@@ -224,7 +224,8 @@ export function writeAtlasMd(
  */
 export function writeAtlasForIssues(
     issues: { number: number; title: string; body?: string }[],
-    label: string
+    label: string,
+    outputPath?: string
 ): { entryPoints: number; tokenCost: number } {
     const combinedQuery = issues
         .map(i => buildQuery(i.title, i.body))
@@ -291,7 +292,7 @@ export function writeAtlasForIssues(
     }
 
     const content   = lines.join("\n");
-    const atlasPath = path.join(CLAUDICATOR_ROOT, "ATLAS.md");
+    const atlasPath = outputPath ?? path.join(CLAUDICATOR_ROOT, "ATLAS.md");
     fs.writeFileSync(atlasPath, content, "utf-8");
     return { entryPoints: totalEntries, tokenCost: Math.round(content.length / 4) };
 }
