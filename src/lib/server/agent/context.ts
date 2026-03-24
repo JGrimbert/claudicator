@@ -99,7 +99,8 @@ export function buildContext(
     task: Pick<Task, "id" | "title">,
     projectRoot: string,
     description?: string,
-    skillOverride?: Skill
+    skillOverride?: Skill,
+    atlasContent?: string
 ): AgentContext {
     const query     = buildQuery(task.title, description);
     const symbolMap = loadSymbolMap(projectRoot, query);
@@ -118,7 +119,10 @@ export function buildContext(
 
     const conceptMap  = loadConceptMap(projectRoot) ?? undefined;
     const projectDocs = loadProjectDocs(projectRoot);
-    const atlas       = generateAtlasStrings(projectRoot, query)?.compressed;
+    // Si atlasContent est fourni (même vide), on n'appelle pas generateAtlasStrings
+    const atlas = atlasContent !== undefined
+        ? (atlasContent.trim() || undefined)
+        : generateAtlasStrings(projectRoot, query)?.compressed;
     ctx.prompt = formatPrompt(ctx, { description, conceptMap, projectDocs, atlas, skill });
 
     return ctx;

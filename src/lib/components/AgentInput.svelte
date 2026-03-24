@@ -37,9 +37,10 @@
     let hasPlan     = $state(false);
     let sections    = $state<Section[]>([]);
     let collapsed   = $state(new Set<string>());
-    let editingPlan = $state(false);
-    let editText    = $state("");
-    let savingPlan  = $state(false);
+    let editingPlan     = $state(false);
+    let editText        = $state("");
+    let savingPlan      = $state(false);
+    let generatingAtlas = $state(false);
 
     function toggleSec(name: string) {
         const next = new Set(collapsed);
@@ -55,7 +56,6 @@
     ];
     const PLAN_KEYS      = new Set(['OBJECTIF', 'CONTRAINTES', 'FORMAT DU PLAN']);
     const DOC_KEYS       = new Set(['DOCUMENTATION', 'CONCEPTS']);
-    const ATLAS_SUB_KEYS = ['SYSTEM', 'MODULES', 'API ROUTES', 'DÉPENDANCES'];
 
     function parseByKeys(text: string, keys: string[]): Section[] {
         const result: Section[] = [];
@@ -78,14 +78,9 @@
     let planSections = $derived(sections.filter(s => PLAN_KEYS.has(s.key)));
     let docSections  = $derived(sections.filter(s => DOC_KEYS.has(s.key)));
 
-    let atlasSubs = $derived.by(() => {
-        const atlasSection = sections.find(s => s.key === 'ATLAS');
-        if (!atlasSection?.content) return [];
-        return parseByKeys(atlasSection.content, ATLAS_SUB_KEYS);
-    });
-
-    let hasAtlas = $derived(sections.some(s => s.key === 'ATLAS'));
-    let atlasRaw = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
+    let hasAtlas    = $derived(sections.some(s => s.key === 'ATLAS'));
+    let atlasRaw    = $derived(sections.find(s => s.key === 'ATLAS')?.content ?? '');
+    let atlasTokens = $derived(atlasRaw ? Math.round(atlasRaw.length / 4) : 0);
 
     // ── Assemblage prompt complet ──────────────────────────────────────────────
     function buildFullPrompt(): string {
@@ -211,6 +206,31 @@
         if (tick === 0) return;
         if (!runTaskId || runTaskId !== task?.id) return;
         reloadPlan(task.id);
+    });
+
+    // ── Génération atlas à la demande ─────────────────────────────────────────
+    async function generateAndReloadAtlas() {
+        generatingAtlas = true;
+        try {
+            await fetch('/api/atlas/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId: task.id }),
+            });
+            await fetch(`/api/tasks/${task.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ atlasEnabled: true }),
+            });
+            await loadContext(task.id);
+            loadedId = task.id;
+        } catch { /* silencieux */ }
+        generatingAtlas = false;
+    }
+
+    $effect(() => {
+        if (!atlasMode || hasAtlas || !loadedId || generatingAtlas) return;
+        generateAndReloadAtlas();
     });
 
     // ── Lancement ──────────────────────────────────────────────────────────────
@@ -368,7 +388,7 @@
             </div>
 
             <!-- Toggles PLAN / DOCS / ATLAS — empilés -->
-            {#if planSections.length > 0 || docSections.length > 0 || hasAtlas}
+            {#if planSections.length > 0 || docSections.length > 0 || loadedId}
                 <div class="doc-sec sec-toggles">
                     {#if planSections.length > 0}
                         <label class="plan-toggle-row">
@@ -388,15 +408,18 @@
                             <input type="checkbox" bind:checked={docMode} hidden />
                         </label>
                     {/if}
-                    {#if hasAtlas}
-                        <label class="plan-toggle-row">
-                            <span class="plan-toggle-label">atlas</span>
-                            <span class="plan-toggle-track" class:on={atlasMode}>
-                                <span class="plan-toggle-thumb"></span>
-                            </span>
-                            <input type="checkbox" bind:checked={atlasMode} hidden />
-                        </label>
-                    {/if}
+                    <label class="plan-toggle-row">
+                        <span class="plan-toggle-label">
+                            atlas{generatingAtlas ? ' …' : ''}
+                            {#if atlasMode && atlasTokens > 0}
+                                <span class="atlas-token-badge">~{atlasTokens}t</span>
+                            {/if}
+                        </span>
+                        <span class="plan-toggle-track" class:on={atlasMode} class:disabled={generatingAtlas}>
+                            <span class="plan-toggle-thumb"></span>
+                        </span>
+                        <input type="checkbox" bind:checked={atlasMode} hidden disabled={generatingAtlas} />
+                    </label>
                 </div>
             {/if}
 
@@ -446,18 +469,7 @@
                     </button>
                     {#if !collapsed.has('atlas')}
                         <div class="sec-body">
-                            {#if atlasSubs.length > 0}
-                                <div class="atlas-grid">
-                                    {#each atlasSubs as sub}
-                                        <div class="atlas-block">
-                                            <div class="ro-key">{sub.key}</div>
-                                            <pre class="ro-pre">{sub.content}</pre>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {:else}
-                                <pre class="ro-pre">{atlasRaw}</pre>
-                            {/if}
+                            <pre class="ro-pre">{atlasRaw}</pre>
                         </div>
                     {/if}
                 </div>
@@ -685,14 +697,6 @@
     margin: 0;
 }
 
-/* ── Atlas grid ── */
-.atlas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.5rem 0.8rem;
-}
-.atlas-block { display: flex; flex-direction: column; gap: 0.1rem; }
-
 /* ── Footer ── */
 .ai-footer {
     display: flex;
@@ -718,6 +722,15 @@
     letter-spacing: 0.14em;
     color: #4a4a6a;
     font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.atlas-token-badge {
+    color: cornsilk;
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
 }
 .plan-toggle-track {
     display: inline-flex;
@@ -747,6 +760,10 @@
 .plan-toggle-track.on .plan-toggle-thumb {
     left: 12px;
     background: #9a8ad4;
+}
+.plan-toggle-track.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 

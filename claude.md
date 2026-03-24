@@ -198,6 +198,25 @@ Claude should be used for:
 
 ---
 
+# Navigation par Atlas
+
+Quand `ATLAS.md` est présent à la racine, **lis-le en premier** avant d'explorer le dépôt.
+
+Il contient deux sections :
+
+1. **Points d'entrée** — symboles identifiés comme pertinents pour l'issue en cours.
+   Utilise ces symboles comme points de départ : lis leurs fichiers directement.
+2. **Snippets** — code source des méthodes les plus chaudes.
+   Tu peux utiliser ces snippets pour comprendre la logique existante sans lecture de fichier supplémentaire.
+
+### Règles
+
+* Si un fichier cible apparaît dans les Points d'entrée → **lis directement ce fichier**, ne fais pas de Glob/Grep aveugle.
+* Ne recharge pas l'arborescence complète si les Points d'entrée couvrent déjà le périmètre de l'issue.
+* L'Atlas est généré pour **claudicator** (ce dépôt), pas pour le projet cible (`lolve`).
+
+---
+
 # Development Rules
 
 When modifying the codebase:

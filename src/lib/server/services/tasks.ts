@@ -31,6 +31,7 @@ export type Task = {
     planUsage?: TokenUsage;   // tokens phase planification
     implUsage?: TokenUsage;   // tokens phase implémentation
     hasPlan?: boolean;        // fichier .plan.md présent
+    atlasEnabled?: boolean;   // inclure ATLAS.md dans le prompt
     createdAt: string;
     updatedAt: string;
 };
@@ -115,7 +116,7 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
 }
 
 /** Met à jour les champs d'une task */
-export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage">>): Task | null {
+export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage" | "atlasEnabled">>): Task | null {
     const task = getTask(id);
     if (!task) return null;
     const updated: Task = { ...task, ...patch, updatedAt: new Date().toISOString() };

@@ -4,6 +4,7 @@ import { getTask } from "$lib/server/services/tasks";
 import { buildContext } from "$lib/server/agent/context";
 import { getProjectRoot, getCurrentProject } from "$lib/server/services/projects";
 import { getIssue } from "$lib/server/services/github";
+import { ensureAtlasMd } from "$lib/server/agent/atlas";
 
 /** Crée le commit initial pour une task liée */
 export async function POST({ request }) {
@@ -38,8 +39,17 @@ export async function POST({ request }) {
         } catch { /* GitHub indisponible — on continue sans description */ }
     }
 
+    // Atlas : si toggle actif → auto-générer si absent, puis lire
+    //         si toggle OFF  → passer "" pour désactiver generateAtlasStrings
+    let atlasContent: string | undefined;
+    if (task.atlasEnabled) {
+        atlasContent = ensureAtlasMd(task) ?? "";
+    } else {
+        atlasContent = "";
+    }
+
     try {
-        const ctx = buildContext(task, root, description);
+        const ctx = buildContext(task, root, description, undefined, atlasContent);
         return json(ctx);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
