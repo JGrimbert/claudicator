@@ -22,6 +22,7 @@
         planUsage?: TokenUsage;
         implUsage?: TokenUsage;
         hasPlan?: boolean;
+        atlasEnabled?: boolean;
         createdAt: string;
         updatedAt: string;
     };
@@ -102,6 +103,41 @@
     // Push / merge
     let pushing = false;
     let merging = false;
+
+    // ATLAS
+    let atlasGenerating = false;
+    let atlasFeedback   = "";
+
+    async function toggleAtlas(task: Task, enabled: boolean) {
+        await fetch(`/api/tasks/${task.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ atlasEnabled: enabled }),
+        });
+        await loadTasks();
+        atlasFeedback = "";
+        // Auto-générer l'atlas dès l'activation
+        if (enabled) generateAtlas(task);
+    }
+
+    async function generateAtlas(task: Task) {
+        if (atlasGenerating) return;
+        atlasGenerating = true;
+        atlasFeedback   = "";
+        try {
+            const res  = await fetch("/api/atlas/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId: task.id }),
+            });
+            const data = await res.json();
+            atlasFeedback = data.error ? data.error : `✓ ${data.entryPoints} points d'entrée`;
+        } catch (e: any) {
+            atlasFeedback = e.message ?? "Erreur";
+        } finally {
+            atlasGenerating = false;
+        }
+    }
 
     // Sauter la planification
     let skippingPlan = false;
@@ -631,6 +667,28 @@
                             <div class="wf-error">{wfError}</div>
                         {/if}
 
+                        <!-- ── Toggle ATLAS ── -->
+                        <div class="atlas-row">
+                            <label class="atlas-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={task.atlasEnabled ?? false}
+                                    onchange={(e) => toggleAtlas(task, (e.target as HTMLInputElement).checked)}
+                                />
+                                ATLAS
+                            </label>
+                            {#if task.atlasEnabled}
+                                <button
+                                    class="atlas-gen-btn"
+                                    onclick={() => generateAtlas(task)}
+                                    disabled={atlasGenerating}
+                                >{atlasGenerating ? "…" : "Générer l'Atlas"}</button>
+                                {#if atlasFeedback}
+                                    <span class="atlas-feedback">{atlasFeedback}</span>
+                                {/if}
+                            {/if}
+                        </div>
+
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
                             <div class="plan-scene-hint">↗ Scène principale</div>
@@ -1055,6 +1113,38 @@
 }
 .impl-skip:hover { color: #7cbf7c; border-color: #4a7a4a; }
 .impl-skip:disabled { opacity: 0.35; cursor: default; }
+
+/* ── ATLAS toggle ── */
+.atlas-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+.atlas-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: #aaa;
+    cursor: pointer;
+    user-select: none;
+}
+.atlas-toggle input { cursor: pointer; accent-color: #9181f9; }
+.atlas-gen-btn {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.5rem;
+    background: none;
+    border: 1px solid #4a3a9a;
+    color: #9181f9;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.atlas-gen-btn:hover:not(:disabled) { background: #1a1040; }
+.atlas-gen-btn:disabled { opacity: 0.4; cursor: default; }
+.atlas-feedback { font-size: 0.68rem; color: #888; }
 
 /* ── Panneau Commit ── */
 .commit-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }

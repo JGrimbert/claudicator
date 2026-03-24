@@ -9,7 +9,7 @@ import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
 import { loadMethodSnippets } from "$lib/server/agent/context";
 import { formatImplementationPrompt, loadProjectDocs } from "$lib/server/agent/prompt";
-import { generateAtlasStrings } from "$lib/server/services/cartography";
+import { ensureAtlasMd } from "$lib/server/agent/atlas";
 import { orchestrate } from "$lib/server/agent/orchestrator";
 import {
     isSessionAlive,
@@ -285,7 +285,11 @@ export async function POST({ request }) {
             const query    = `${task.title} ${planHint}`;
             const methods  = loadMethodSnippets(root, query);
             const docs     = loadProjectDocs(root);
-            const atlas    = generateAtlasStrings(root, query)?.compressed;
+            // Atlas : si toggle actif, lire ATLAS.md (le générer si absent)
+            let atlas: string | undefined;
+            if (task.atlasEnabled) {
+                atlas = ensureAtlasMd(task);
+            }
             contextStats   = { methods: methods?.length ?? 0, hasAtlas: !!(atlas?.trim()) };
             prompt = formatImplementationPrompt(task, plan, methods, docs, atlas);
         } else {
