@@ -292,6 +292,7 @@ export async function POST({ request }) {
             }
             contextStats   = { methods: methods?.length ?? 0, hasAtlas: !!(atlas?.trim()) };
             prompt = formatImplementationPrompt(task, plan, methods, docs, atlas);
+            console.log(`\n${'─'.repeat(80)}\n[PROMPT][taskId=${taskId}]\n${'─'.repeat(80)}\n${prompt}\n${'─'.repeat(80)}\n`);
         } else {
             prompt = plan;
         }
