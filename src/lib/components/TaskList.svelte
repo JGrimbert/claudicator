@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
@@ -99,6 +99,13 @@
             wfError = e.message;
         } finally { branchCreating = false; }
     }
+
+    // Spinner braille
+    const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    let frame = 0;
+    let spinnerInterval: ReturnType<typeof setInterval> | null = null;
+    onMount(() => { spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80); });
+    onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
     // Push / merge
     let pushing = false;
@@ -526,7 +533,9 @@
             planContent = null;
             diffContent = null;
             commitMsg = "";
+            planModeTask.set(null);
             localStorage.removeItem(SELECTED_KEY);
+            if (task.issueNumber) issueListRefreshTick.update(n => n + 1);
             await loadTasks();
         } catch (e: any) {
             wfError = e.message;
@@ -772,9 +781,10 @@
                                         class="wf-btn"
                                         class:wf-active={task.pushed && !merging}
                                         class:wf-disabled={!task.pushed}
+                                        class:merging-spin={merging}
                                         onclick={() => mergeBranch(task)}
                                         disabled={!task.pushed || merging}
-                                    >{merging ? "…" : "⇒ Merge → main"}</button>
+                                    >{merging ? FRAMES[frame] : "⇒ Merge → main"}</button>
                                     {#if task.issueNumber && linkedIssueState === "open"}
                                         <button
                                             class="wf-btn close-issue-btn"
@@ -936,6 +946,7 @@
 .issue-state.closed { color: #7c6af7; background: rgba(124,106,247,0.1); }
 .close-issue-btn { color: #a04040 !important; border-color: #3a2a2a !important; }
 .close-issue-btn:hover:not(:disabled) { color: #f44336 !important; border-color: #f44336 !important; }
+.merging-spin { color: cornsilk !important; }
 
 /* ── Task mergée ── */
 .merged-panel {
