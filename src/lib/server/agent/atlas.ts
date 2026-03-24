@@ -11,13 +11,85 @@ function buildQuery(title: string, description?: string): string {
     return `${title} ${description.replace(/\n+/g, " ").trim().slice(0, 250)}`;
 }
 
+type RouteHit = { routePath: string; file: string; handlers: string[]; description: string | null };
+
+/**
+ * Cherche les routes API pertinentes par matching des segments de chemin et du commentaire de fichier.
+ * Compense l'absence de scoring sémantique pour les exports génériques SvelteKit (GET/POST/etc.).
+ */
+function findRelevantRoutes(projectRoot: string, query: string): RouteHit[] {
+    const routesDir = path.join(projectRoot, "src", "routes", "api");
+    if (!fs.existsSync(routesDir)) return [];
+
+    const queryTokens = query.toLowerCase().split(/[\s\-_\/\.#]+/).filter(t => t.length >= 3);
+    if (queryTokens.length === 0) return [];
+
+    const results: (RouteHit & { score: number })[] = [];
+
+    function walk(dir: string): void {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, e.name);
+            if (e.isDirectory()) { walk(full); continue; }
+            if (e.name !== "+server.ts") continue;
+
+            const rel        = path.relative(projectRoot, full).split("\\").join("/");
+            const routePath  = rel.replace(/^src\/routes/, "").replace(/\/\+server\.ts$/, "");
+            const pathTokens = routePath.toLowerCase().split("/").filter(Boolean);
+
+            let content = "";
+            try { content = fs.readFileSync(full, "utf-8"); } catch { continue; }
+
+            // Score 1 : tokens de la query présents dans les segments de chemin
+            let score = queryTokens.filter(qt =>
+                pathTokens.some(seg => seg.includes(qt) || qt.includes(seg))
+            ).length;
+
+            // Score 2 : tokens de la query présents dans le commentaire de tête de fichier
+            const fileComment = content.match(/^\/\*\*([\s\S]*?)\*\//)?.[1] ?? "";
+            const commentText = fileComment.replace(/\s*\*\s?/g, " ").toLowerCase();
+            score += queryTokens.filter(qt => commentText.includes(qt)).length;
+
+            if (score === 0) continue;
+
+            // Noms des handlers exportés (GET, POST, etc.)
+            const handlers = [...content.matchAll(/export\s+(?:async\s+)?(?:function\s+|const\s+)(\w+)/g)]
+                .map(m => m[1])
+                .filter(name => /^(GET|POST|PUT|PATCH|DELETE|HEAD)$/.test(name));
+
+            // Description : premier commentaire JSDoc ou commentaire inline avant le premier handler
+            let description: string | null = fileComment
+                ? fileComment.replace(/\s*\*\s?/g, " ").trim().slice(0, 120) || null
+                : null;
+            if (!description) {
+                const inlineMatch = content.match(/\/\/\s*(.+)\n(?:export\s+(?:async\s+)?(?:function|const)\s+(?:GET|POST|PUT|PATCH|DELETE))/);
+                if (inlineMatch) description = inlineMatch[1].trim();
+            }
+
+            results.push({ routePath, file: rel, handlers, description, score });
+        }
+    }
+
+    walk(routesDir);
+    return results
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map(({ routePath, file, handlers, description }) => ({ routePath, file, handlers, description }));
+}
+
 /** Écrit ATLAS.md et retourne le nombre de points d'entrée et le coût en tokens. */
 export function writeAtlasMd(
     task: Task,
     description?: string
 ): { entryPoints: number; tokenCost: number } {
-    const query = buildQuery(task.title, description);
-    const hits  = searchMethods(query, CLAUDICATOR_ROOT);
+    const query      = buildQuery(task.title, description);
+    const hits       = searchMethods(query, CLAUDICATOR_ROOT);
+    const routeHits  = findRelevantRoutes(CLAUDICATOR_ROOT, query);
+
+    // Fichiers déjà couverts par les hits symboliques (éviter les doublons)
+    const hitFiles = new Set(hits.map(h => (h.method.file ?? "").split("\\").join("/")));
+    const newRoutes = routeHits.filter(r => !hitFiles.has(r.file));
+
+    const totalEntries = hits.length + newRoutes.length;
 
     const lines: string[] = [];
     lines.push("# Atlas — Claudicator");
@@ -28,7 +100,7 @@ export function writeAtlasMd(
     }
     lines.push("");
 
-    if (hits.length > 0) {
+    if (totalEntries > 0) {
         const issueRef = task.issueNumber ? ` (issue #${task.issueNumber})` : "";
         lines.push(`## Points d'entrée${issueRef}`);
         lines.push("");
@@ -41,6 +113,11 @@ export function writeAtlasMd(
             const file = (method.file ?? "").replace(/\\/g, "/");
             const sig  = method.signature ?? sym;
             lines.push(`| \`${sym}\` | \`${file}\` | \`${sig}\` |`);
+        }
+        for (const r of newRoutes) {
+            const handlers = r.handlers.length > 0 ? r.handlers.join(", ") : "handler";
+            const desc     = r.description ? ` — ${r.description.slice(0, 80)}` : "";
+            lines.push(`| \`${r.routePath}\` | \`${r.file}\` | \`${handlers}\`${desc} |`);
         }
         lines.push("");
         lines.push("---");
@@ -66,10 +143,10 @@ export function writeAtlasMd(
         }
     }
 
-    const content  = lines.join("\n");
+    const content   = lines.join("\n");
     const atlasPath = path.join(CLAUDICATOR_ROOT, "ATLAS.md");
     fs.writeFileSync(atlasPath, content, "utf-8");
-    return { entryPoints: hits.length, tokenCost: Math.round(content.length / 4) };
+    return { entryPoints: totalEntries, tokenCost: Math.round(content.length / 4) };
 }
 
 /**
