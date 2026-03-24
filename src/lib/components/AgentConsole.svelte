@@ -133,7 +133,6 @@
     $: if ($planModeTask !== _prevPlanTask) { _prevPlanTask = $planModeTask; if ($planModeTask) symbolsQuery = $planModeTask.title; }
     $: if ($agentState.issue !== _prevIssue) { _prevIssue = $agentState.issue; if ($agentState.issue) symbolsQuery = $agentState.issue.title; }
     $: activeTab = $consoleTab;
-    $: consoleTab.set(activeTab);
 
     // Dérive les méthodes filtrées selon l'onglet actif
     $: filteredMethods = (() => {
@@ -196,7 +195,7 @@
             queryMethods  = data.grepMethods ?? [];
             querySemantic = queryMethods.length === 0 ? (data.results ?? []) : [];
             queryLabel    = searchQuery;
-            activeTab     = "query";
+            consoleTab.set("query");
         } catch (e: any) {
             searchError = e.message;
         } finally {
@@ -232,7 +231,7 @@
                         class="tab"
                         class:tab-active={activeTab === t.id}
                         class:tab-todo={t.id === "todo"}
-                        onclick={() => activeTab = t.id}
+                        onclick={() => consoleTab.set(t.id)}
                     >{t.label}{#if t.count !== 0 && t.count !== ""}<span class="tab-count"> {t.count}</span>{/if}</button>
                 {/each}
             </div>
@@ -317,14 +316,6 @@
                 </div>
                 <DiagramViewer />
             </div>
-        {:else if activeTab === "groupes"}
-            <div class="dv-panel">
-                <IssueGroups />
-            </div>
-        {:else if activeTab === "console"}
-            <div class="dv-panel">
-                <RunConsole />
-            </div>
         {:else if activeTab === "symbols"}
             <div class="dv-panel">
                 <SymbolsView initialQuery={symbolsQuery} extraContext={$agentState.issue?.body ?? ''} />
@@ -370,6 +361,12 @@
                 {/each}
             </div>
         {/if}
+        <div class="dv-panel" style:display={activeTab === "groupes" ? "flex" : "none"}>
+            <IssueGroups />
+        </div>
+        <div class="dv-panel" style:display={activeTab === "console" ? "flex" : "none"}>
+            <RunConsole />
+        </div>
         </div>
     </div>
 {/if}
