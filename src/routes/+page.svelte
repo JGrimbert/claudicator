@@ -10,13 +10,15 @@
     import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
     import CoalCodeView from "$lib/components/CoalCodeView.svelte";
     import RoadmapViz from "$lib/components/RoadmapViz.svelte";
+    import FullPlanView from "$lib/components/FullPlanView.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan } from "$lib/stores/agent";
 
-    let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" = "dag";
+    let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" | "fullplan" = "dag";
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
+    $: if ($activeFullPlan?.status === "done") activeMiddleTab = "fullplan";
 
 
     /**
@@ -320,7 +322,7 @@
         } catch { /* silencieux */ }
     }
 
-    onMount(() => {
+    onMount(async () => {
         loadProjectUsage();
         try {
             const raw = localStorage.getItem(ASIDE_SPLIT_KEY);
@@ -336,6 +338,24 @@
                 if (!isNaN(v)) mainTopPct = Math.max(MAIN_LIMITS[0], Math.min(MAIN_LIMITS[1], v));
             }
         } catch { /* ignore */ }
+
+        // Restaurer le dernier plan complet après refresh
+        try {
+            const r = await fetch("/api/issues/groups/full-plans");
+            if (r.ok) {
+                const plans = await r.json();
+                if (plans.length > 0) {
+                    const latest = plans[0];
+                    activeFullPlan.set({
+                        id: latest.id,
+                        keyword: latest.keyword,
+                        planFile: latest.planFile,
+                        // Si interrompu en cours de génération → erreur
+                        status: latest.status === "generating" ? "error" : latest.status,
+                    });
+                }
+            }
+        } catch { /* silencieux */ }
     });
 
     // Handle vertical aside split
@@ -395,6 +415,7 @@
         { id: 'plan',    label: 'plan'    },
         ...($clusterFocusedSymbol ? [{ id: 'cluster', label: 'cluster' }] : []),
         ...($coalCodeFocus ? [{ id: 'coal', label: '#' + $coalCodeFocus.issueNum }] : []),
+        ...($activeFullPlan ? [{ id: 'fullplan', label: 'plan complet' }] : []),
     ];
 </script>
 
@@ -470,6 +491,12 @@
                                 <CoalCodeView issueNum={$coalCodeFocus.issueNum} symbols={$coalCodeFocus.symbols} />
                             {:else}
                                 <div class="plan-placeholder"><span>Aucun symbole coalescent sélectionné</span></div>
+                            {/if}
+                        {:else if tab === 'fullplan'}
+                            {#if $activeFullPlan}
+                                <FullPlanView plan={$activeFullPlan} />
+                            {:else}
+                                <div class="plan-placeholder"><span>Aucun plan complet disponible</span></div>
                             {/if}
                         {/if}
                     {/snippet}
