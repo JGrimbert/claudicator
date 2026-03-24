@@ -677,15 +677,8 @@
                                 />
                                 ATLAS
                             </label>
-                            {#if task.atlasEnabled}
-                                <button
-                                    class="atlas-gen-btn"
-                                    onclick={() => generateAtlas(task)}
-                                    disabled={atlasGenerating}
-                                >{atlasGenerating ? "…" : "Générer l'Atlas"}</button>
-                                {#if atlasFeedback}
-                                    <span class="atlas-feedback">{atlasFeedback}</span>
-                                {/if}
+                            {#if atlasFeedback}
+                                <span class="atlas-feedback">{atlasFeedback}</span>
                             {/if}
                         </div>
 
@@ -1133,17 +1126,6 @@
     user-select: none;
 }
 .atlas-toggle input { cursor: pointer; accent-color: #9181f9; }
-.atlas-gen-btn {
-    font-size: 0.72rem;
-    padding: 0.15rem 0.5rem;
-    background: none;
-    border: 1px solid #4a3a9a;
-    color: #9181f9;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.atlas-gen-btn:hover:not(:disabled) { background: #1a1040; }
-.atlas-gen-btn:disabled { opacity: 0.4; cursor: default; }
 .atlas-feedback { font-size: 0.68rem; color: #888; }
 
 /* ── Panneau Commit ── */

@@ -194,8 +194,7 @@ export function formatImplementationPrompt(
 
     // ── Atlas architectural du projet cible ───────────────────────────────────
     if (atlas) {
-        lines.push("ATLAS");
-        lines.push(atlas.trim());
+        lines.push("useAtlas");
         lines.push("");
     }
 

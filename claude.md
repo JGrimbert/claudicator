@@ -200,7 +200,9 @@ Claude should be used for:
 
 # Navigation par Atlas
 
-Quand `ATLAS.md` est présent à la racine, **lis-le en premier** avant d'explorer le dépôt.
+Le skill s'appelle **`useAtlas`** (`.claude/commands/useAtlas.md`).
+
+Quand le toggle Atlas est actif, le prompt d'implémentation commence par `useAtlas` — ce mot-clé déclenche le skill, qui impose le protocole de navigation. Claude lit `ATLAS.md` lui-même via le skill ; le contenu n'est plus embarqué dans le prompt.
 
 Il contient deux sections :
 
