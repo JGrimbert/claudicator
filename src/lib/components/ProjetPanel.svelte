@@ -204,11 +204,17 @@
 
     // ─── ITEMS ────────────────────────────────────────────────────────────────
 
-    $: displayedIssues = issues.filter(
-        (i) =>
-            i.state === "open" &&
-            !$agentState.knownSubIssueNumbers.includes(i.number)
-    );
+    $: displayedIssues = (() => {
+        const filtered = issues.filter(
+            (i) => i.state === "open" && !$agentState.knownSubIssueNumbers.includes(i.number)
+        );
+        const pending = $issueListPendingNumber;
+        const pendingIssue = $agentState.issue;
+        if (pending !== null && pendingIssue && !filtered.some((i) => i.number === pending)) {
+            return [pendingIssue, ...filtered];
+        }
+        return filtered;
+    })();
 
     $: todoIssueNumbers.set(
         new Set(
@@ -248,7 +254,8 @@
                       onaction: () => createTaskFromIssue(issue),
                   }
                 : {}),
-            onclose: {
+            loading: $issueListPendingNumber === issue.number,
+            onclose: $issueListPendingNumber === issue.number ? undefined : {
                 handler: () => closeIssue(issue.number),
                 loading: closingNums.has(issue.number),
                 done: closedNums.has(issue.number),
