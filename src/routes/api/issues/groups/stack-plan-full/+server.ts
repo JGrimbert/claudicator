@@ -1,4 +1,4 @@
-import { json, error } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { spawn } from "child_process";
 import fs from "fs";
@@ -10,38 +10,11 @@ import { writeAtlasForIssues } from "$lib/server/agent/atlas";
  * POST /api/issues/groups/stack-plan-full
  * Body: { groupKeyword, subStacks, residualIssues }
  *
- * Génère ATLAS.md pour l'ensemble du groupe, puis appelle Claude avec un prompt
- * useAtlas couvrant toutes les sous-stacks. Sauvegarde dans .agent/tasks/.
+ * Génère ATLAS.md pour l'ensemble du groupe, puis streame Claude en SSE.
+ * Format: data: {"line":"...","type":"agent"|"system"[,"planFile":"..."]}
  */
 
 type IssueRef = { number: number; title: string; body?: string };
-
-async function callClaude(prompt: string, timeoutMs = 180_000): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
-        const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
-        const proc = spawn(claudeCmd, ["-p", "--dangerously-skip-permissions"], {
-            shell: true, windowsHide: true, env: cleanEnv, cwd: process.cwd()
-        });
-
-        const timer = setTimeout(() => {
-            proc.kill();
-            reject(new Error("Timeout (180s)"));
-        }, timeoutMs);
-
-        let out = "";
-        let err = "";
-        if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
-        proc.stdout?.on("data", (d: Buffer) => { out += d.toString(); });
-        proc.stderr?.on("data", (d: Buffer) => { err += d.toString(); });
-        proc.on("close", (code: number | null) => {
-            clearTimeout(timer);
-            if (code === 0) resolve(out.trim());
-            else reject(new Error(err.trim() || `code ${code}`));
-        });
-        proc.on("error", (e) => { clearTimeout(timer); reject(e); });
-    });
-}
 
 export const POST: RequestHandler = async ({ request }) => {
     const body = await request.json();
@@ -106,12 +79,48 @@ Pour chaque sous-stack : ordre logique, commits indépendants, diff précis.
 
 ${stepsTemplate}`;
 
-    const content = await callClaude(prompt);
+    const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
+    const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
 
-    const dir = getTasksDir();
-    fs.mkdirSync(dir, { recursive: true });
-    const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
-    fs.writeFileSync(path.join(dir, planFile), content, "utf-8");
+    const stream = new ReadableStream({
+        start(controller) {
+            const enc = new TextEncoder();
+            const send = (obj: object) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
-    return json({ planFile, content });
+            const proc = spawn(claudeCmd, ["-p", "--dangerously-skip-permissions"], {
+                shell: true, windowsHide: true, env: cleanEnv, cwd: process.cwd()
+            });
+            if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
+
+            let fullOutput = "";
+
+            proc.stdout?.on("data", (chunk: Buffer) => {
+                const text = chunk.toString();
+                fullOutput += text;
+                for (const line of text.split("\n")) {
+                    if (line.trim()) send({ line, type: "agent" });
+                }
+            });
+            proc.stderr?.on("data", (chunk: Buffer) => {
+                const line = chunk.toString().trim();
+                if (line) send({ line, type: "system" });
+            });
+            proc.on("close", () => {
+                const dir = getTasksDir();
+                fs.mkdirSync(dir, { recursive: true });
+                const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
+                fs.writeFileSync(path.join(dir, planFile), fullOutput, "utf-8");
+                send({ line: "[done]", type: "system", planFile });
+                controller.close();
+            });
+            proc.on("error", (e: Error) => {
+                send({ line: `[erreur] ${e.message}`, type: "system" });
+                controller.close();
+            });
+        }
+    });
+
+    return new Response(stream, {
+        headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" }
+    });
 };

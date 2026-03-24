@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab } from "$lib/stores/agent";
 
     type IssueRef = { number: number; title: string; body?: string };
 
@@ -171,6 +171,16 @@
     async function planFullStack(group: IssueGroup) {
         const key = group.keyword;
         fullStackState = { ...fullStackState, [key]: { planning: true, feedback: "" } };
+
+        agentRunState.update(s => ({
+            ...s,
+            running: true,
+            logs: [],
+            taskId: null,
+            taskTitle: `Plan complet — ${group.keyword}`,
+        }));
+        consoleTab.set("console");
+
         try {
             const assignedInSubs = new Set((group.subdivisions ?? []).flatMap(s => s.issues.map(i => i.number)));
             const residualIssues = group.issues.filter(i => !assignedInSubs.has(i.number));
@@ -183,10 +193,21 @@
                     residualIssues
                 })
             });
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            const data = await r.json();
-            fullStackState = { ...fullStackState, [key]: { planning: false, feedback: data.planFile ?? "✓" } };
+
+            await startConsoleStream(r, {
+                onEvent: (event: any) => {
+                    if (event.type === "system" && event.line === "[done]" && event.planFile) {
+                        fullStackState = { ...fullStackState, [key]: { planning: false, feedback: event.planFile } };
+                    }
+                },
+                onDone: () => {
+                    if (fullStackState[key]?.planning) {
+                        fullStackState = { ...fullStackState, [key]: { planning: false, feedback: "✓" } };
+                    }
+                }
+            });
         } catch (e) {
+            agentRunState.update(s => ({ ...s, running: false }));
             fullStackState = { ...fullStackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
         }
     }

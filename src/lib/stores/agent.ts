@@ -48,7 +48,7 @@ export const agentRunState = writable<{
  */
 export async function startConsoleStream(
     res: Response,
-    opts?: { onDone?: () => void }
+    opts?: { onDone?: () => void; onEvent?: (event: RunLog & Record<string, any>) => void }
 ): Promise<void> {
     if (!res.ok || !res.body) {
         agentRunState.update(s => ({
@@ -83,12 +83,13 @@ export async function startConsoleStream(
             for (const raw of dec.decode(value).split("\n")) {
                 if (!raw.startsWith("data: ")) continue;
                 try {
-                    const event = JSON.parse(raw.slice(6)) as { line: string; type: RunLog["type"] };
+                    const event = JSON.parse(raw.slice(6)) as RunLog & Record<string, any>;
                     if (event.type === "session_status") {
                         agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
                     } else {
                         agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
                     }
+                    opts?.onEvent?.(event);
                 } catch { /* ligne malformée */ }
             }
         }
