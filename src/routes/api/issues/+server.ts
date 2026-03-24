@@ -20,6 +20,7 @@ export async function GET() {
             issues.map(issue => ({
                 number: issue.number,
                 title: issue.title,
+                body: (issue.body ?? "").slice(0, 400),
                 state: issue.state,
                 created: issue.created_at,
                 labels: issue.labels.map(l =>
