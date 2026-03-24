@@ -585,6 +585,8 @@
     min-height: 0;
     overflow-y: auto;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 .content::-webkit-scrollbar { width: 4px; }
 .content::-webkit-scrollbar-track { background: transparent; }
@@ -747,7 +749,14 @@ ul { list-style: none; padding: 0; margin: 0; }
     font-weight: normal;
     color: var(--text-secondary);
     line-height: 1.6;
-    min-height: 4rem;
+    flex: 1;
+    min-height: 0;
+    transition: background 0.15s;
+}
+.edit-inline--body:focus {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    padding: 0.5rem;
 }
 .issue-title, .body-text { cursor: text; }
 .issue-title:hover, .body-text:hover {
@@ -763,6 +772,8 @@ ul { list-style: none; padding: 0; margin: 0; }
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
 }
 .blink {
     color: #555;
