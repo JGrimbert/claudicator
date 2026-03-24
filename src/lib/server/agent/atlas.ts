@@ -12,6 +12,7 @@ function buildQuery(title: string, description?: string): string {
 }
 
 type RouteHit = { routePath: string; file: string; handlers: string[]; description: string | null };
+type ComponentHit = { name: string; file: string; score: number; matchedFunctions: string[] };
 
 /**
  * Cherche les routes API pertinentes par matching des segments de chemin et du commentaire de fichier.
@@ -76,20 +77,84 @@ function findRelevantRoutes(projectRoot: string, query: string): RouteHit[] {
         .map(({ routePath, file, handlers, description }) => ({ routePath, file, handlers, description }));
 }
 
+/**
+ * Cherche les composants Svelte pertinents par matching sur le nom de fichier,
+ * les noms de fonctions, les URL fetch() et les variables réactives.
+ * Compense l'invisibilité des callers UI dans la cartographie symbolique.
+ */
+function findRelevantComponents(projectRoot: string, query: string): ComponentHit[] {
+    const componentsDir = path.join(projectRoot, "src", "lib", "components");
+    if (!fs.existsSync(componentsDir)) return [];
+
+    const queryTokens = query.toLowerCase().split(/[\s\-_\/\.#]+/).filter(t => t.length >= 3);
+    if (queryTokens.length === 0) return [];
+
+    const results: ComponentHit[] = [];
+
+    function walk(dir: string): void {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, e.name);
+            if (e.isDirectory()) { walk(full); continue; }
+            if (!e.name.endsWith(".svelte")) continue;
+
+            let content = "";
+            try { content = fs.readFileSync(full, "utf-8"); } catch { continue; }
+
+            const rel        = path.relative(projectRoot, full).split("\\").join("/");
+            const baseName   = e.name.replace(".svelte", "").toLowerCase();
+
+            // Score 1 : tokens dans le nom de fichier
+            let score = queryTokens.filter(qt => baseName.includes(qt)).length;
+
+            // Score 2 : tokens dans les noms de fonctions <script> (signal fort, poids 2)
+            const functionMatches = [...content.matchAll(/(?:async\s+)?function\s+(\w+)/g)];
+            const matchedFunctions: string[] = [];
+            for (const qt of queryTokens) {
+                for (const m of functionMatches) {
+                    if (m[1].toLowerCase().includes(qt)) {
+                        score += 2;
+                        matchedFunctions.push(m[1]);
+                    }
+                }
+            }
+            const uniqueFunctions = [...new Set(matchedFunctions)];
+
+            // Score 3 : tokens dans les URL fetch()
+            const fetchUrls = [...content.matchAll(/fetch\s*\(\s*[`'"](.*?)[`'"]/g)].map(m => m[1].toLowerCase());
+            score += queryTokens.filter(qt => fetchUrls.some(url => url.includes(qt))).length;
+
+            // Score 4 : tokens dans les variables réactives (let/const déclarées dans <script>)
+            const varNames = [...content.matchAll(/(?:let|const)\s+(\w+)/g)].map(m => m[1].toLowerCase());
+            score += queryTokens.filter(qt => varNames.some(v => v.includes(qt))).length;
+
+            if (score === 0) continue;
+
+            results.push({ name: e.name.replace(".svelte", ""), file: rel, score, matchedFunctions: uniqueFunctions });
+        }
+    }
+
+    walk(componentsDir);
+    return results
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2);
+}
+
 /** Écrit ATLAS.md et retourne le nombre de points d'entrée et le coût en tokens. */
 export function writeAtlasMd(
     task: Task,
     description?: string
 ): { entryPoints: number; tokenCost: number } {
-    const query      = buildQuery(task.title, description);
-    const hits       = searchMethods(query, CLAUDICATOR_ROOT);
-    const routeHits  = findRelevantRoutes(CLAUDICATOR_ROOT, query);
+    const query          = buildQuery(task.title, description);
+    const hits           = searchMethods(query, CLAUDICATOR_ROOT);
+    const routeHits      = findRelevantRoutes(CLAUDICATOR_ROOT, query);
+    const componentHits  = findRelevantComponents(CLAUDICATOR_ROOT, query);
 
     // Fichiers déjà couverts par les hits symboliques (éviter les doublons)
     const hitFiles = new Set(hits.map(h => (h.method.file ?? "").split("\\").join("/")));
-    const newRoutes = routeHits.filter(r => !hitFiles.has(r.file));
+    const newRoutes     = routeHits.filter(r => !hitFiles.has(r.file));
+    const newComponents = componentHits.filter(c => !hitFiles.has(c.file) && !newRoutes.some(r => r.file === c.file));
 
-    const totalEntries = hits.length + newRoutes.length;
+    const totalEntries = hits.length + newRoutes.length + newComponents.length;
 
     const lines: string[] = [];
     lines.push("# Atlas — Claudicator");
@@ -118,6 +183,10 @@ export function writeAtlasMd(
             const handlers = r.handlers.length > 0 ? r.handlers.join(", ") : "handler";
             const desc     = r.description ? ` — ${r.description.slice(0, 80)}` : "";
             lines.push(`| \`${r.routePath}\` | \`${r.file}\` | \`${handlers}\`${desc} |`);
+        }
+        for (const c of newComponents) {
+            const fns = c.matchedFunctions.length > 0 ? c.matchedFunctions.join(", ") : "composant";
+            lines.push(`| \`${c.name}\` | \`${c.file}\` | \`${fns}\` — composant UI |`);
         }
         lines.push("");
         lines.push("---");
