@@ -1,41 +1,46 @@
 # Atlas — Claudicator
-_Généré pour : Issue #261 — Usecase et symboles_
+_Généré pour : Issue #260 — Bugs refresh issue list_
 
-## Points d'entrée (issue #261)
+## Points d'entrée (issue #260)
 
 Ces symboles ont été identifiés comme pertinents :
 
 | Symbole | Fichier | Signature |
 |---|---|---|
-| `unregister` | `src/lib/server/services/processes.ts` | `unregister(taskId)` |
-| `mergeBranch` | `src/lib/server/services/git.ts` | `mergeBranch(root, branch)` |
-| `updateIssue` | `src/lib/server/services/github.ts` | `updateIssue(owner, repo, number, changes)` |
-| `/api/tasks/[id]/commit` | `src/routes/api/tasks/[id]/commit/+server.ts` | `POST` — Tâches — commite les changements sur la branche de la tâche (POST) |
-| `/api/tasks/[id]/merge` | `src/routes/api/tasks/[id]/merge/+server.ts` | `POST` — Tâches — crée une PR et merge la branche de la tâche (POST) |
-| `/api/tasks/[id]/methods` | `src/routes/api/tasks/[id]/methods/+server.ts` | `GET` — Tâches — retourne les méthodes pertinentes pour la tâche (GET) |
+| `closeIssue` | `src/lib/server/services/github.ts` | `closeIssue(owner, repo, issueNumber)` |
+| `getIssue` | `src/lib/server/services/github.ts` | `getIssue(owner, repo, number)` |
+| `getIssueSlots` | `src/lib/server/services/git-history.ts` | `getIssueSlots()` |
+| `/api/issue` | `src/routes/api/issue/+server.ts` | `GET, PATCH, POST` — GitHub — lit une issue avec ses sous-issues (GET) |
+| `/api/github/issues` | `src/routes/api/github/issues/+server.ts` | `POST` — GitHub — crée une issue dans le dépôt courant (POST) |
+| `/api/issues` | `src/routes/api/issues/+server.ts` | `GET, POST` — GitHub — liste toutes les issues du projet (GET) |
+| `ProjetPanel` | `src/lib/components/ProjetPanel.svelte` | `loadIssues, closeIssue, createTaskFromIssue, selectIssue` — composant UI |
+| `TaskList` | `src/lib/components/TaskList.svelte` | `onRefreshTick, loadLinkedIssueState, closeLinkedIssue` — composant UI |
 
 ---
 
 ## Snippets
 
-### `unregister`
-_src/lib/server/services/processes.ts_
+### `closeIssue`
+_src/lib/server/services/github.ts_
 
 ```ts
-function unregister(taskId: string) {
-    active.delete(taskId);
+async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    const octokit = getOctokit();
+    await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
 }
 ```
 
-### `mergeBranch`
-_src/lib/server/services/git.ts_
+### `getIssue`
+_src/lib/server/services/github.ts_
 
 ```ts
-async function mergeBranch(root: string, branch: string): Promise<void> {
-    const g = simpleGit(root);
-    const branches = await g.branchLocal();
-    const mainBranch = branches.all.includes("main") ? "main" : "master";
-    await g.checkout(mainBranch);
-    await g.merge(["--no-ff", branch]);
+async function getIssue(owner: string, repo: string, number: number) {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.get({
+        owner,
+        repo,
+        issue_number: number
+    });
+    return data;
 }
 ```
