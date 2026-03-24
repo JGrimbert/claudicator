@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import { getTasksDir } from "$lib/server/services/tasks";
 import { writeAtlasForIssues } from "$lib/server/agent/atlas";
-import { createFullPlan, updateFullPlan } from "$lib/server/services/fullPlans";
+import { createFullPlan, updateFullPlan, getFullPlanDir } from "$lib/server/services/fullPlans";
 
 /**
  * POST /api/issues/groups/stack-plan-full
@@ -43,6 +43,16 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // Enrichir ATLAS.md avec l'ensemble du groupe
     writeAtlasForIssues(allIssues, groupKeyword);
+
+    // ATLAS par sub-stack (pour utilisation lors du lancement implémentation)
+    const planDir = getFullPlanDir(planId);
+    fs.mkdirSync(planDir, { recursive: true });
+    const stepAtlasFiles: Record<string, string> = {};
+    for (const s of subStacks) {
+        const atlasPath = path.join(planDir, `atlas-${s.keyword}.md`);
+        writeAtlasForIssues(s.issues, s.keyword, atlasPath);
+        stepAtlasFiles[s.keyword] = atlasPath;
+    }
 
     // Construire les sections par sous-stack
     const stackSections = subStacks.map(s => {
@@ -168,7 +178,7 @@ ${stepsTemplate}`;
                 fs.mkdirSync(dir, { recursive: true });
                 const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
                 fs.writeFileSync(path.join(dir, planFile), fullOutput, "utf-8");
-                updateFullPlan(planId, { status: "done", planFile });
+                updateFullPlan(planId, { status: "done", planFile, stepAtlasFiles });
                 send({ line: "[done]", type: "system", planFile });
                 controller.close();
             });

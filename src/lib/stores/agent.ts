@@ -31,6 +31,7 @@ export const agentRunState = writable<{
     sessionAlive: boolean;
     consoleMinimized: boolean;
     completionLabel: string | null;
+    liveUsage: { inputTokens: number; outputTokens: number } | null;
 }>({
     taskId: null,
     taskTitle: "",
@@ -39,6 +40,7 @@ export const agentRunState = writable<{
     sessionAlive: false,
     consoleMinimized: false,
     completionLabel: null,
+    liveUsage: null,
 });
 
 /**
@@ -86,6 +88,13 @@ export async function startConsoleStream(
                     const event = JSON.parse(raw.slice(6)) as RunLog & Record<string, any>;
                     if (event.type === "session_status") {
                         agentRunState.update(s => ({ ...s, sessionAlive: event.line === "true" }));
+                    } else if (event.type === "usage") {
+                        try {
+                            const u = JSON.parse(event.line) as { inputTokens: number; outputTokens: number };
+                            agentRunState.update(s => ({ ...s, liveUsage: u, logs: [...s.logs, event as RunLog] }));
+                        } catch {
+                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
+                        }
                     } else {
                         agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
                     }
