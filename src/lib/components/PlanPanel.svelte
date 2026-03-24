@@ -266,6 +266,23 @@
 
     $: if ((activeTab === "clusters" || activeTab === "étape") && !clustersLoaded) loadClusters();
 
+    function groupIssuesByPlanGroup(issues: number[], groups: PlanGroup[]): { name: string; issues: number[] }[] {
+        if (issues.length === 0) return [];
+        if (groups.length === 0) return [{ name: "", issues }];
+        const result: { name: string; issues: number[] }[] = [];
+        const seen = new Set<number>();
+        for (const g of groups) {
+            const matched = issues.filter(n => g.issues.includes(n));
+            if (matched.length > 0) {
+                result.push({ name: g.name, issues: matched });
+                matched.forEach(n => seen.add(n));
+            }
+        }
+        const others = issues.filter(n => !seen.has(n));
+        if (others.length > 0) result.push({ name: "autres", issues: others });
+        return result.length > 0 ? result : [{ name: "", issues }];
+    }
+
     // ─── Nœuds historiques matchés (pour filtrer la section HISTORIQUE) ────────
     $: matchedHistSymbolSets = new Set(
         coal.filter(n => n.histMatch).map(n => (n.histMatch!.symbols ?? []).slice().sort().join(","))
@@ -458,6 +475,7 @@
                     <div class="section-label section-label--coal">COALESCENCE</div>
                     {#each coal as node, i}
                         {@const open = coalExpanded.has(i)}
+                        {@const slotGroups = groupIssuesByPlanGroup(node.issues, $planGroups)}
                         <div class="dir-row coal-row">
                             <button class="dir-head" onclick={() => toggleCoal(i)}>
                                 <span class="dir-toggle">{open ? "▾" : "▸"}</span>
@@ -472,35 +490,98 @@
                                     <span class="hist-score hist-score--inline">{node.histMatch.count}×</span>
                                 {/if}
                             </button>
-                            <div class="dir-issues">
-                                {#each node.issues as num}
-                                    <IssueChip number={num} />
-                                {/each}
-                                {#if node.histMatch}
-                                    {@const histExtra = (node.histMatch.issues ?? []).filter(n => !node.issues.includes(n))}
-                                    {#if histExtra.length <= 2}
-                                        {#each histExtra as num}
-                                            <IssueChip number={num} variant="hist" />
-                                        {/each}
-                                    {:else}
-                                        <span class="hist-issues-more">+{histExtra.length}</span>
-                                    {/if}
-                                {/if}
-                            </div>
-                            {#if open}
-                                <div class="dir-symbols">
-                                    {#each node.symbols as sym}
-                                        <div class="sym-line">
-                                            <button
-                                                class="sym-name"
-                                                class:sym-name--hist={node.histMatch?.symbols.includes(sym.key)}
-                                                class:sym-active={$clusterFocusedSymbol?.name === sym.key}
-                                                onclick={() => clusterFocusedSymbol.set({ name: sym.key, dir: sym.dir })}
-                                            >{sym.key.split(".").at(-1)}</button>
-                                            <span class="sym-dir-tag">{sym.dir}</span>
+                            {#if slotGroups.length > 1}
+                                <div class="slot-stacks">
+                                    {#each slotGroups as sg, sgIdx}
+                                        <div class="slot-stack-box" style="--stack-hue: {(sgIdx * 60) % 360}">
+                                            <div class="slot-stack-head">
+                                                <span class="slot-stack-name">{sg.name}</span>
+                                                <span class="slot-stack-count">{sg.issues.length}</span>
+                                            </div>
+                                            <div class="slot-issues">
+                                                {#each sg.issues as num}
+                                                    <IssueChip number={num} />
+                                                {/each}
+                                            </div>
                                         </div>
                                     {/each}
                                 </div>
+                                {#if node.histMatch}
+                                    {@const histExtra = (node.histMatch.issues ?? []).filter(n => !node.issues.includes(n))}
+                                    {#if histExtra.length > 0}
+                                        <div class="dir-issues">
+                                            {#if histExtra.length <= 2}
+                                                {#each histExtra as num}
+                                                    <IssueChip number={num} variant="hist" />
+                                                {/each}
+                                            {:else}
+                                                <span class="hist-issues-more">+{histExtra.length}</span>
+                                            {/if}
+                                        </div>
+                                    {/if}
+                                {/if}
+                            {:else}
+                                <div class="dir-issues">
+                                    {#each node.issues as num}
+                                        <IssueChip number={num} />
+                                    {/each}
+                                    {#if node.histMatch}
+                                        {@const histExtra = (node.histMatch.issues ?? []).filter(n => !node.issues.includes(n))}
+                                        {#if histExtra.length <= 2}
+                                            {#each histExtra as num}
+                                                <IssueChip number={num} variant="hist" />
+                                            {/each}
+                                        {:else}
+                                            <span class="hist-issues-more">+{histExtra.length}</span>
+                                        {/if}
+                                    {/if}
+                                </div>
+                            {/if}
+                            {#if open}
+                                {@const dirGroups = [...node.symbols.reduce((m, s) => {
+                                    const d = s.dir || "—";
+                                    if (!m.has(d)) m.set(d, [] as CoalSymbol[]);
+                                    m.get(d)!.push(s);
+                                    return m;
+                                }, new Map<string, CoalSymbol[]>()).entries()]}
+                                {#if dirGroups.length > 1}
+                                    <div class="coal-sub-groups">
+                                        {#each dirGroups as [dir, syms], dIdx}
+                                            <div class="coal-sub-box" style="--stack-hue: {(dIdx * 60) % 360}">
+                                                <div class="coal-sub-head">
+                                                    <span class="coal-sub-dir">{dir}/</span>
+                                                    <span class="coal-sub-count">{syms.length}</span>
+                                                </div>
+                                                <div class="dir-symbols">
+                                                    {#each syms as sym}
+                                                        <div class="sym-line">
+                                                            <button
+                                                                class="sym-name"
+                                                                class:sym-name--hist={node.histMatch?.symbols.includes(sym.key)}
+                                                                class:sym-active={$clusterFocusedSymbol?.name === sym.key}
+                                                                onclick={() => clusterFocusedSymbol.set({ name: sym.key, dir: sym.dir })}
+                                                            >{sym.key.split(".").at(-1)}</button>
+                                                        </div>
+                                                    {/each}
+                                                </div>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                {:else}
+                                    <div class="dir-symbols">
+                                        {#each node.symbols as sym}
+                                            <div class="sym-line">
+                                                <button
+                                                    class="sym-name"
+                                                    class:sym-name--hist={node.histMatch?.symbols.includes(sym.key)}
+                                                    class:sym-active={$clusterFocusedSymbol?.name === sym.key}
+                                                    onclick={() => clusterFocusedSymbol.set({ name: sym.key, dir: sym.dir })}
+                                                >{sym.key.split(".").at(-1)}</button>
+                                                <span class="sym-dir-tag">{sym.dir}</span>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                {/if}
                             {/if}
                         </div>
                     {/each}
@@ -545,17 +626,36 @@
                     <div class="section-label">PAR DOSSIER</div>
                     {#each dirs as c}
                         {@const open = expanded.has(c.dir)}
+                        {@const slotGroupsDir = groupIssuesByPlanGroup(c.issues, $planGroups)}
                         <div class="dir-row">
                             <button class="dir-head" onclick={() => toggleExpand(c.dir)}>
                                 <span class="dir-toggle">{open ? "▾" : "▸"}</span>
                                 <span class="dir-name">{c.dir}/</span>
                                 <span class="dir-count">×{c.count}</span>
                             </button>
-                            <div class="dir-issues">
-                                {#each c.issues as num}
-                                    <IssueChip number={num} />
-                                {/each}
-                            </div>
+                            {#if slotGroupsDir.length > 1}
+                                <div class="slot-stacks">
+                                    {#each slotGroupsDir as sg, sgIdx}
+                                        <div class="slot-stack-box" style="--stack-hue: {(sgIdx * 60) % 360}">
+                                            <div class="slot-stack-head">
+                                                <span class="slot-stack-name">{sg.name}</span>
+                                                <span class="slot-stack-count">{sg.issues.length}</span>
+                                            </div>
+                                            <div class="slot-issues">
+                                                {#each sg.issues as num}
+                                                    <IssueChip number={num} />
+                                                {/each}
+                                            </div>
+                                        </div>
+                                    {/each}
+                                </div>
+                            {:else}
+                                <div class="dir-issues">
+                                    {#each c.issues as num}
+                                        <IssueChip number={num} />
+                                    {/each}
+                                </div>
+                            {/if}
                             {#if open}
                                 <div class="dir-symbols">
                                     {#each c.symbols as sym}
@@ -1126,6 +1226,73 @@
     flex-shrink: 0;
     margin-right: 0.3rem;
 }
+/* ── Coal sous-groupes par dossier ── */
+.coal-sub-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.1rem 0;
+}
+.coal-sub-box {
+    border: 1px dashed hsl(calc(var(--stack-hue, 200) * 1deg) 28% 30%);
+    border-radius: 3px;
+    padding: 0.2rem 0.35rem;
+}
+.coal-sub-head {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.1rem;
+}
+.coal-sub-dir {
+    font-size: 0.56rem;
+    color: #3a7f8f;
+    background: #061418;
+    border-radius: 2px;
+    padding: 0 0.25rem;
+}
+.coal-sub-count {
+    font-size: 0.52rem;
+    color: #2a5a5a;
+}
+
+/* ── Slot stacks (issues groupées par plan group) ── */
+.slot-stacks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0.1rem 0;
+}
+.slot-stack-box {
+    border: 1px dashed hsl(calc(var(--stack-hue, 0) * 1deg) 28% 30%);
+    border-radius: 3px;
+    padding: 0.15rem 0.3rem;
+}
+.slot-stack-head {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.08rem;
+}
+.slot-stack-name {
+    font-size: 0.55rem;
+    color: #7a6ad9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.slot-stack-count {
+    font-size: 0.5rem;
+    color: #555;
+    flex-shrink: 0;
+}
+.slot-issues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem;
+}
+
 /* ── Mixed clusters ── */
 .mixed-head {
     display: flex;

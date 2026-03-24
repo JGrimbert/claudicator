@@ -1,16 +1,18 @@
 <script lang="ts">
     import { agentState } from "$lib/stores/agent";
 
+    type IssueRef = { number: number; title: string; body?: string };
+
     type IssueGroup = {
         keyword: string;
         keywords: string[];
-        issues: { number: number; title: string }[];
+        issues: IssueRef[];
         score: number;
         hasParent: boolean;
         parentNumber: number | null;
         parentUrl: string | null;
         twins: number[][];
-        subdivisions: { keyword: string; keywords: string[]; issues: { number: number; title: string }[] }[];
+        subdivisions: { keyword: string; keywords: string[]; issues: IssueRef[] }[];
     };
 
     type Stats = {
@@ -39,6 +41,8 @@
     let haikuLoading = $state(false);
 
     let groupState: Record<string, { creating: boolean; created: CreatedParent | null; err: string }> = $state({});
+    let stackState: Record<string, { planning: boolean; feedback: string }> = $state({});
+    let fullStackState: Record<string, { planning: boolean; feedback: string }> = $state({});
 
     const sortedGroups = $derived([
         ...groups.filter(g => (g.subdivisions ?? []).length > 0),
@@ -131,7 +135,12 @@
                         keyword: g.keyword,
                         keywords: g.keywords,
                         issueTitles: g.issues.map(i => i.title)
-                    }))
+                    })),
+                    subdivisions: groups.flatMap(g => (g.subdivisions ?? []).map(s => ({
+                        keyword: s.keyword,
+                        keywords: s.keywords,
+                        issueTitles: s.issues.map(i => i.title)
+                    })))
                 })
             });
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -139,6 +148,46 @@
             haikus = data.haikus ?? {};
         } finally {
             haikuLoading = false;
+        }
+    }
+
+    async function planStack(parentKeyword: string, sub: { keyword: string; issues: { number: number; title: string }[] }) {
+        const key = `${parentKeyword}::${sub.keyword}`;
+        stackState = { ...stackState, [key]: { planning: true, feedback: "" } };
+        try {
+            const r = await fetch("/api/issues/groups/stack-plan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ keyword: sub.keyword, parentKeyword, issues: sub.issues })
+            });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const data = await r.json();
+            stackState = { ...stackState, [key]: { planning: false, feedback: data.planFile ?? "✓" } };
+        } catch (e) {
+            stackState = { ...stackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
+        }
+    }
+
+    async function planFullStack(group: IssueGroup) {
+        const key = group.keyword;
+        fullStackState = { ...fullStackState, [key]: { planning: true, feedback: "" } };
+        try {
+            const assignedInSubs = new Set((group.subdivisions ?? []).flatMap(s => s.issues.map(i => i.number)));
+            const residualIssues = group.issues.filter(i => !assignedInSubs.has(i.number));
+            const r = await fetch("/api/issues/groups/stack-plan-full", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    groupKeyword: group.keyword,
+                    subStacks: group.subdivisions ?? [],
+                    residualIssues
+                })
+            });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const data = await r.json();
+            fullStackState = { ...fullStackState, [key]: { planning: false, feedback: data.planFile ?? "✓" } };
+        } catch (e) {
+            fullStackState = { ...fullStackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
         }
     }
 
@@ -241,21 +290,34 @@
                     {#if (group.subdivisions ?? []).length > 0}
                         {@const assignedInSubs = new Set(group.subdivisions.flatMap(s => s.issues.map(i => i.number)))}
                         {@const residual = group.issues.filter(i => !assignedInSubs.has(i.number))}
-                        <div class="group-tree">
-                            {#each group.subdivisions as sub}
-                                <div class="tree-branch">
+                        <div class="stack-group">
+                            {#each group.subdivisions as sub, subIdx}
+                                {@const stackKey = `${group.keyword}::${sub.keyword}`}
+                                {@const ss = stackState[stackKey]}
+                                {@const subHaiku = haikus[sub.keyword]}
+                                <div class="stack-box" style="--stack-hue: {(subIdx * 60) % 360}">
                                     <div class="tree-branch-head">
-                                        <span class="branch-connector">├─</span>
                                         <span class="sub-keyword">{sub.keyword}</span>
                                         {#if sub.keywords.length > 1}
                                             <span class="sub-extra-kw">+{sub.keywords.slice(1).join(", ")}</span>
                                         {/if}
                                         <span class="sub-count">{sub.issues.length}</span>
+                                        {#if subHaiku && !subHaiku.err}
+                                            <span class="sub-haiku-inline">{subHaiku.title}</span>
+                                        {/if}
+                                        <button
+                                            class="btn-stack-plan"
+                                            onclick={() => planStack(group.keyword, sub)}
+                                            disabled={ss?.planning}
+                                            title="Générer le plan stack"
+                                        >{ss?.planning ? "…" : "⚡"}</button>
+                                        {#if ss?.feedback}
+                                            <span class="stack-feedback">{ss.feedback}</span>
+                                        {/if}
                                     </div>
                                     <ul class="sub-issues">
                                         {#each sub.issues as issue}
                                             <li class="tree-leaf">
-                                                <span class="leaf-pipe">│</span>
                                                 <button class="issue-num" onclick={() => openIssue(issue.number)}>
                                                     #{issue.number}
                                                 </button>
@@ -277,7 +339,6 @@
                                     <ul class="sub-issues">
                                         {#each residual as issue}
                                             <li class="tree-leaf">
-                                                <span class="leaf-pipe"> </span>
                                                 <button class="issue-num" onclick={() => openIssue(issue.number)}>
                                                     #{issue.number}
                                                 </button>
@@ -308,6 +369,18 @@
                     {/if}
 
                     <div class="group-footer">
+                        {#if (group.subdivisions ?? []).length > 0}
+                            {@const fss = fullStackState[group.keyword]}
+                            <button
+                                class="btn-full-plan"
+                                onclick={() => planFullStack(group)}
+                                disabled={fss?.planning}
+                                title="Générer le plan complet du groupe (toutes les stacks)"
+                            >{fss?.planning ? "…" : "⚡ Plan complet"}</button>
+                            {#if fss?.feedback}
+                                <span class="stack-feedback">{fss.feedback}</span>
+                            {/if}
+                        {/if}
                         {#if state?.created}
                             <a class="created-link" href={state.created.html_url} target="_blank" rel="noopener">
                                 ✓ #{state.created.parentNumber} — {state.created.title}
@@ -640,21 +713,25 @@
 /* Jumeaux */
 .twin-badge { font-size: 0.55rem; color: #6a5a9a; margin-left: auto; }
 
-/* ── Arborescence subdivisions ── */
-.group-tree {
+/* ── Stack boxes (subdivisions) ── */
+.stack-group {
     margin: 0.2rem 0 0.35rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: 0.25rem;
 }
-.tree-branch { display: flex; flex-direction: column; }
+.stack-box {
+    border: 1px dashed hsl(calc(var(--stack-hue, 0) * 1deg) 28% 32%);
+    border-radius: 3px;
+    padding: 0.25rem 0.4rem;
+}
 .tree-branch-head {
     display: flex;
     align-items: center;
     gap: 0.3rem;
     padding: 0.08rem 0;
 }
-.branch-connector, .residual-connector {
+.residual-connector {
     color: #3a3a5a;
     font-size: 0.6rem;
     flex-shrink: 0;
@@ -666,11 +743,6 @@
     gap: 0.25rem;
     font-size: 0.6rem;
     padding-left: 0.1rem;
-}
-.leaf-pipe {
-    color: #2a2a4a;
-    flex-shrink: 0;
-    width: 0.7rem;
 }
 .group-residual { display: flex; flex-direction: column; gap: 0.05rem; }
 .residual-head {
@@ -687,12 +759,47 @@
     border: 1px solid #3a2a7a;
     border-radius: 3px;
     padding: 0.02rem 0.3rem;
+    flex-shrink: 0;
 }
-.sub-count { font-size: 0.55rem; color: #555; margin-left: 0.3rem; }
+.sub-count { font-size: 0.55rem; color: #555; }
+.sub-haiku-inline {
+    font-size: 0.55rem;
+    color: #8a7ac9;
+    font-style: italic;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.btn-stack-plan {
+    background: none;
+    border: 1px solid #2a3a5a;
+    color: #5a7ab9;
+    font-size: 0.6rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+.btn-stack-plan:hover:not(:disabled) { background: #0a1020; color: #7a9adf; }
+.btn-stack-plan:disabled { opacity: 0.4; cursor: default; }
+.stack-feedback {
+    font-size: 0.52rem;
+    color: #5a7a5a;
+    font-style: italic;
+    flex-shrink: 0;
+    max-width: 8rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 .sub-issues {
     list-style: none;
     padding: 0;
-    margin: 0.15rem 0 0 0.5rem;
+    margin: 0.15rem 0 0 0.3rem;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
@@ -707,6 +814,18 @@
     gap: 0.4rem;
     margin-top: 0.2rem;
 }
+.btn-full-plan {
+    background: #0a1020;
+    border: 1px solid #2a3a6a;
+    color: #6a8ad9;
+    font-size: 0.62rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+}
+.btn-full-plan:hover:not(:disabled) { background: #0e1830; color: #8aaaff; }
+.btn-full-plan:disabled { opacity: 0.5; cursor: default; }
 .btn-create-parent {
     background: #0a1a0a;
     border: 1px solid #2a5a2a;
