@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan } from "$lib/stores/agent";
 
     type IssueRef = { number: number; title: string; body?: string };
 
@@ -172,6 +172,9 @@
         const key = group.keyword;
         fullStackState = { ...fullStackState, [key]: { planning: true, feedback: "" } };
 
+        // Initialiser le store global en mode génération
+        activeFullPlan.set({ id: "", keyword: group.keyword, status: "generating" });
+
         agentRunState.update(s => ({
             ...s,
             running: true,
@@ -196,8 +199,12 @@
 
             await startConsoleStream(r, {
                 onEvent: (event: any) => {
+                    if (event.type === "system" && event.line === "[planId]" && event.planId) {
+                        activeFullPlan.update(s => s ? { ...s, id: event.planId } : s);
+                    }
                     if (event.type === "system" && event.line === "[done]" && event.planFile) {
                         fullStackState = { ...fullStackState, [key]: { planning: false, feedback: event.planFile } };
+                        activeFullPlan.update(s => s ? { ...s, status: "done", planFile: event.planFile } : s);
                     }
                 },
                 onDone: () => {
@@ -208,6 +215,7 @@
             });
         } catch (e) {
             agentRunState.update(s => ({ ...s, running: false }));
+            activeFullPlan.update(s => s ? { ...s, status: "error" } : s);
             fullStackState = { ...fullStackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
         }
     }

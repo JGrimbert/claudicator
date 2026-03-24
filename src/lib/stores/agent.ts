@@ -246,6 +246,14 @@ export const planGroupsDeduped = derived(
 
 export const clusterFocusedSymbol = writable<{ name: string; dir: string } | null>(null);
 
+export type ActiveFullPlan = {
+    id: string;
+    keyword: string;
+    status: "generating" | "done" | "error";
+    planFile?: string;
+};
+export const activeFullPlan = writable<ActiveFullPlan | null>(null);
+
 export type CoalCodeFocus = {
     issueNum: number;
     symbols: { key: string; dir: string; file?: string }[];

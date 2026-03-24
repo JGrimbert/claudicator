@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { getTasksDir } from "$lib/server/services/tasks";
 import { writeAtlasForIssues } from "$lib/server/agent/atlas";
+import { createFullPlan, updateFullPlan } from "$lib/server/services/fullPlans";
 
 /**
  * POST /api/issues/groups/stack-plan-full
@@ -25,6 +26,15 @@ export const POST: RequestHandler = async ({ request }) => {
     };
 
     if (!groupKeyword || !subStacks?.length) throw error(400, "groupKeyword et subStacks requis");
+
+    const planId = `stack-full-${groupKeyword}-${Date.now()}`;
+    createFullPlan({
+        id: planId,
+        keyword: groupKeyword,
+        status: "generating",
+        subStacks,
+        residualIssues,
+    });
 
     const allIssues: IssueRef[] = [
         ...subStacks.flatMap(s => s.issues),
@@ -93,6 +103,9 @@ ${stepsTemplate}`;
                 try { controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`)); } catch { /* fermé */ }
             };
 
+            // Émettre le planId en premier event pour que le client puisse le référencer
+            send({ type: "system", line: "[planId]", planId });
+
             const proc = spawn(claudeCmd, [
                 "-p", "--verbose", "--dangerously-skip-permissions",
                 "--output-format", "stream-json"
@@ -155,10 +168,12 @@ ${stepsTemplate}`;
                 fs.mkdirSync(dir, { recursive: true });
                 const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
                 fs.writeFileSync(path.join(dir, planFile), fullOutput, "utf-8");
+                updateFullPlan(planId, { status: "done", planFile });
                 send({ line: "[done]", type: "system", planFile });
                 controller.close();
             });
             proc.on("error", (e: Error) => {
+                updateFullPlan(planId, { status: "error" });
                 send({ line: `[erreur] ${e.message}`, type: "system" });
                 controller.close();
             });
