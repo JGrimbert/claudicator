@@ -12,7 +12,8 @@
     import RoadmapViz from "$lib/components/RoadmapViz.svelte";
     import FullPlanView from "$lib/components/FullPlanView.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
+    import type { RunLog } from "$lib/stores/agent";
 
     let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" | "fullplan" = "dag";
     $: if ($planModeTask)             activeMiddleTab = "plan";
@@ -324,6 +325,38 @@
 
     onMount(async () => {
         loadProjectUsage();
+
+        // Reconnexion automatique après refresh HMR
+        try {
+            const taskId = sessionStorage.getItem("activeTaskId");
+            if (taskId) {
+                const taskTitle = sessionStorage.getItem("activeTaskTitle") || "";
+                const savedLogsRaw = sessionStorage.getItem("activeTaskLogs");
+                const savedLogs: RunLog[] = savedLogsRaw ? JSON.parse(savedLogsRaw) : [];
+
+                agentRunState.set({
+                    taskId,
+                    taskTitle,
+                    logs: savedLogs,
+                    running: true,
+                    sessionAlive: false,
+                    consoleMinimized: false,
+                    completionLabel: null,
+                    liveUsage: null,
+                });
+
+                const res = await fetch("/api/agent/reconnect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ taskId }),
+                });
+                if (res.ok && res.body) {
+                    await startConsoleStream(res, { onDone: () => taskRefreshTick.update(n => n + 1) });
+                } else {
+                    agentRunState.update(s => ({ ...s, running: false }));
+                }
+            }
+        } catch { /* sessionStorage indisponible */ }
         try {
             const raw = localStorage.getItem(ASIDE_SPLIT_KEY);
             if (raw) {

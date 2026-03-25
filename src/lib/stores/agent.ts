@@ -91,12 +91,24 @@ export async function startConsoleStream(
                     } else if (event.type === "usage") {
                         try {
                             const u = JSON.parse(event.line) as { inputTokens: number; outputTokens: number };
-                            agentRunState.update(s => ({ ...s, liveUsage: u, logs: [...s.logs, event as RunLog] }));
+                            agentRunState.update(s => {
+                                const newLogs = [...s.logs, event as RunLog];
+                                try { sessionStorage.setItem("activeTaskLogs", JSON.stringify(newLogs)); } catch { /* SSR */ }
+                                return { ...s, liveUsage: u, logs: newLogs };
+                            });
                         } catch {
-                            agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
+                            agentRunState.update(s => {
+                                const newLogs = [...s.logs, event as RunLog];
+                                try { sessionStorage.setItem("activeTaskLogs", JSON.stringify(newLogs)); } catch { /* SSR */ }
+                                return { ...s, logs: newLogs };
+                            });
                         }
                     } else {
-                        agentRunState.update(s => ({ ...s, logs: [...s.logs, event as RunLog] }));
+                        agentRunState.update(s => {
+                            const newLogs = [...s.logs, event as RunLog];
+                            try { sessionStorage.setItem("activeTaskLogs", JSON.stringify(newLogs)); } catch { /* SSR */ }
+                            return { ...s, logs: newLogs };
+                        });
                     }
                     opts?.onEvent?.(event);
                 } catch { /* ligne malformée */ }

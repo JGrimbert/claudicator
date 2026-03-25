@@ -1,9 +1,16 @@
 /** Processus — registre taskId → ChildProcess actif (stdin/stdout) */
 import { spawn } from "child_process";
+import { EventEmitter } from "events";
 import type { ChildProcess } from "child_process";
 
+// Ancrer dans globalThis pour survivre aux HMR reloads en mode dev
+const g = globalThis as any;
+if (!g.__claudicatorProcs)   g.__claudicatorProcs   = new Map<string, ChildProcess>();
+if (!g.__claudicatorLogBus)  g.__claudicatorLogBus  = new Map<string, EventEmitter>();
+
 /** Map taskId → process en cours d'exécution */
-const active = new Map<string, ChildProcess>();
+const active: Map<string, ChildProcess>  = g.__claudicatorProcs;
+const logBus: Map<string, EventEmitter>  = g.__claudicatorLogBus;
 
 /** Enregistre un processus actif */
 export function register(taskId: string, proc: ChildProcess) {
@@ -31,6 +38,18 @@ export function writeInput(taskId: string, input: string): boolean {
     if (!proc?.stdin) return false;
     proc.stdin.write(input + "\n");
     return true;
+}
+
+/** Retourne (ou crée) l'EventEmitter de fan-out des logs pour une task. */
+export function getLogBus(taskId: string): EventEmitter {
+    if (!logBus.has(taskId)) logBus.set(taskId, new EventEmitter());
+    return logBus.get(taskId)!;
+}
+
+/** Supprime l'EventEmitter de fan-out (fin de run). */
+export function clearLogBus(taskId: string): void {
+    const bus = logBus.get(taskId);
+    if (bus) { bus.removeAllListeners(); logBus.delete(taskId); }
 }
 
 /**

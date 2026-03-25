@@ -44,7 +44,8 @@
       "Bash(mkdir -p \"C:/jgr-ui/src/lib/utils\")",
       "Bash(cp \"C:/lolve/src/dag/DagOrb.js\" \"C:/jgr-ui/src/lib/utils/DagOrb.js\")",
       "Read(//c/jgr-maestra//**)",
-      "Read(//c/jgr-maestra/**)"
+      "Read(//c/jgr-maestra/**)",
+      "Skill(update-config)"
     ]
   }
 }
