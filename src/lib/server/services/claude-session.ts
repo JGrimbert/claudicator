@@ -20,7 +20,10 @@ interface Session {
     stderrBuf: string;
 }
 
-const sessions = new Map<string, Session>();
+// Ancrer dans globalThis pour survivre aux HMR reloads en mode dev
+const _g = globalThis as any;
+if (!_g.__claudicatorSessions) _g.__claudicatorSessions = new Map<string, Session>();
+const sessions: Map<string, Session> = _g.__claudicatorSessions;
 
 /** Supprime les séquences ANSI d'une chaîne. */
 function stripAnsi(str: string): string {

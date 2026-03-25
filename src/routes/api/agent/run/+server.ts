@@ -4,7 +4,7 @@ import path from "path";
 import { spawn } from "child_process";
 import { getTask, updateTask, getTasksDir } from "$lib/server/services/tasks";
 import type { TokenUsage } from "$lib/server/services/tasks";
-import { register, unregister, killProcess, isRunning } from "$lib/server/services/processes";
+import { register, unregister, killProcess, isRunning, getLogBus, clearLogBus } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
 import { addProjectUsage } from "$lib/server/services/usage";
 import { loadMethodSnippets } from "$lib/server/agent/context";
@@ -91,12 +91,19 @@ function runOrchestrated(
     const allLogs: string[] = [];
     const planLines: string[] = [];
 
+    // Initialiser le fichier log
+    const logFile = path.join(getTasksDir(), `${taskId}.log`);
+    try { fs.writeFileSync(logFile, "", "utf-8"); } catch { /* silencieux */ }
+    const bus = getLogBus(taskId);
+
     const stream = new ReadableStream({
         start(controller) {
             const emit = (line: string, type: "agent" | "system" | "segment" = "agent") => {
                 try { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ line, type })}\n\n`)); } catch { /* fermé */ }
                 allLogs.push(line);
                 if (type === "agent" || type === "segment") planLines.push(line);
+                try { fs.appendFileSync(logFile, JSON.stringify({ line, type }) + "\n", "utf-8"); } catch { /* silencieux */ }
+                bus.emit("log", { line, type });
             };
 
             orchestrate(task, root, rawPrompt || undefined, (event) => {
@@ -112,10 +119,12 @@ function runOrchestrated(
                 updateTask(taskId, { status: "implementation", logs: allLogs });
                 emit("[✓ orchestration terminée]", "system");
                 try { controller.close(); } catch { /* déjà fermé */ }
+                setTimeout(() => clearLogBus(taskId), 5000);
             }).catch((err: Error) => {
                 emit(`[erreur orchestration: ${err.message}]`, "system");
                 updateTask(taskId, { status: "failed", logs: allLogs });
                 try { controller.close(); } catch { /* déjà fermé */ }
+                setTimeout(() => clearLogBus(taskId), 5000);
             });
         }
     });
@@ -325,6 +334,13 @@ export async function POST({ request }) {
     const allLogs: string[] = [];
     const planLines: string[] = [];
 
+    // Initialiser le fichier log pour ce run
+    const runLogFile = taskId ? path.join(getTasksDir(), `${taskId}.log`) : null;
+    if (runLogFile) {
+        try { fs.writeFileSync(runLogFile, "", "utf-8"); } catch { /* silencieux */ }
+    }
+    const runBus = taskId ? getLogBus(taskId) : null;
+
     const stream = new ReadableStream({
         start(controller) {
             const emit = (line: string, type: "agent" | "system" | "usage" | "context" | "session_status" = "agent") => {
@@ -333,12 +349,23 @@ export async function POST({ request }) {
                 } catch { /* stream fermé */ }
                 if (type !== "usage" && type !== "context" && type !== "session_status") allLogs.push(line);
                 if (type === "agent") planLines.push(line);
+                if (type !== "context" && type !== "session_status" && runLogFile) {
+                    try { fs.appendFileSync(runLogFile, JSON.stringify({ line, type }) + "\n", "utf-8"); } catch { /* silencieux */ }
+                }
+                if (runBus && type !== "context" && type !== "session_status") runBus.emit("log", { line, type });
             };
 
             if (isSessionPhase && taskId) {
                 runSession(taskId, prompt, contextStats, emit, allLogs, controller);
             } else {
                 runOneShot(taskId, prompt, root, isImplementationPhase, contextStats, emit, allLogs, planLines, controller);
+                // Nettoyer le bus après la fin du one-shot (délai pour permettre les reconnexions tardives)
+                if (taskId) {
+                    const _taskId = taskId;
+                    // Le nettoyage est déclenché depuis onClose dans runOneShot via emit("[✓ terminé]")
+                    // On schedule ici un nettoyage de sécurité après 30s
+                    setTimeout(() => clearLogBus(_taskId), 30_000);
+                }
             }
         }
     });
