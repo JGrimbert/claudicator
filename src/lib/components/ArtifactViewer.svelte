@@ -749,8 +749,8 @@ ul { list-style: none; padding: 0; margin: 0; }
     font-weight: normal;
     color: var(--text-secondary);
     line-height: 1.6;
-    flex: 1;
-    min-height: 0;
+    min-height: 10rem;
+    resize: vertical;
     transition: background 0.15s;
 }
 .edit-inline--body:focus {
