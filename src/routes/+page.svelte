@@ -19,7 +19,7 @@
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
-    $: if ($activeFullPlan?.status === "done") activeMiddleTab = "fullplan";
+    $: if ($activeFullPlan) activeMiddleTab = "fullplan";
 
 
     /**

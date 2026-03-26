@@ -1,18 +1,21 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
 
 
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
+    type TaskType = "standard" | "fullplan";
     type TokenUsage = { inputTokens: number; outputTokens: number };
     type Task = {
         id: string;
         title: string;
         status: TaskStatus;
+        type?: TaskType;
+        fullPlanId?: string;
         issueNumber?: number;
         branch?: string;
         pushed?: boolean;
@@ -411,7 +414,11 @@
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             commitMsg = ""; selectedPanel = "plan"; wfError = "";
-            planModeTask.set(null);
+            if (initialTask.type === "fullplan") {
+                activeFullPlan.set(null);
+            } else {
+                planModeTask.set(null);
+            }
             localStorage.removeItem(SELECTED_KEY);
             return;
         }
@@ -423,6 +430,17 @@
         linkedIssueState = null;
         const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
+
+        // Task de type fullplan → ouvrir le panel plan complet
+        if (initialTask.type === "fullplan" && initialTask.fullPlanId) {
+            const res = await fetch(`/api/issues/groups/full-plans/${initialTask.fullPlanId}`);
+            if (res.ok) {
+                const fp = await res.json();
+                activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile });
+            }
+            return;
+        }
+
         // Toujours activer la scène plan pour une task active (même au démarrage)
         if (initialTask.status !== "merged" && initialTask.status !== "failed") {
             planModeTask.set({ id: initialTask.id, title: initialTask.title, issueNumber: initialTask.issueNumber });
