@@ -169,6 +169,7 @@ export function notifyTaskCreated(taskId?: string) {
 }
 
 export const evalIssueDag = writable<RoadmapData | null>(null);
+export const evalIssueDagsByKeyword = writable<Record<string, RoadmapData>>({});
 export const planPanelActiveTab = writable<"clusters" | "étape" | "étapes" | "history" | "skills">("clusters");
 
 export type IssueGroupsSnapshot = {

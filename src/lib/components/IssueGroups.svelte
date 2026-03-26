@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, planPanelActiveTab, issueGroupsCache } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, evalIssueDagsByKeyword, planPanelActiveTab, issueGroupsCache } from "$lib/stores/agent";
     import { get } from "svelte/store";
     import type { RoadmapData, RoadmapStep } from "jgr-ui";
 
@@ -31,6 +31,14 @@
         title: string;
         html_url: string;
     };
+
+    let {
+        selectedGroupKeyword = null,
+        onGroupSelect,
+    }: {
+        selectedGroupKeyword?: string | null;
+        onGroupSelect?: (kw: string | null) => void;
+    } = $props();
 
     let groups: IssueGroup[] = $state([]);
     let stats: Stats | null = $state(null);
@@ -258,6 +266,7 @@
                             const d = event.data as { deps?: { from: number; to: number[] }[]; complexity?: Record<string, string> };
                             const roadmapData = depsToRoadmapData(group.issues, d.deps ?? [], d.complexity ?? {});
                             evalIssueDag.set(roadmapData);
+                            evalIssueDagsByKeyword.update(m => ({ ...m, [key]: roadmapData }));
                             planPanelActiveTab.set("clusters");
                         }
                         if (event.type === "system" && event.line === "[done]") {
@@ -405,7 +414,16 @@
                 {@const haiku = haikus[group.keyword]}
                 {@const twinNums = new Set((group.twins ?? []).flat())}
                 {@const ev = evalState[group.keyword]}
-                <div class="group-card" class:has-parent={group.hasParent} data-tier={tier}>
+                <div
+                    class="group-card"
+                    class:has-parent={group.hasParent}
+                    class:is-selected={group.keyword === selectedGroupKeyword}
+                    data-tier={tier}
+                    role="button"
+                    tabindex="0"
+                    onclick={(e) => { if (!(e.target as Element).closest('button')) onGroupSelect?.(group.keyword === selectedGroupKeyword ? null : group.keyword); }}
+                    onkeydown={(e) => { if (e.key === 'Enter') onGroupSelect?.(group.keyword === selectedGroupKeyword ? null : group.keyword); }}
+                >
                     {#if haiku && !haiku.err}
                         <div class="group-haiku">
                             <span class="haiku-title">{haiku.title}</span>
@@ -722,9 +740,18 @@
     padding: 0.45rem 0.55rem;
     background: var(--bg-panel, #0e0e1a);
 }
+.group-card {
+    cursor: pointer;
+    transition: border-color 0.1s;
+}
 .group-card.has-parent {
     border-color: #2a3a2a;
     opacity: 0.75;
+}
+.group-card.is-selected {
+    border-color: #6a50c0 !important;
+    background: #0d0a22;
+    opacity: 1;
 }
 /* Teintes selon tier */
 .group-card[data-tier="hot"]  { border-color: #3a2a5a; }
