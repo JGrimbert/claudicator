@@ -171,6 +171,14 @@ export function notifyTaskCreated(taskId?: string) {
 export const evalIssueDag = writable<RoadmapData | null>(null);
 export const planPanelActiveTab = writable<"clusters" | "étape" | "étapes" | "history" | "skills">("clusters");
 
+export type IssueGroupsSnapshot = {
+    groups: any[];
+    ungroupedClusters: any[];
+    ungroupedIssues: { number: number; title: string }[];
+    stats: any | null;
+};
+export const issueGroupsCache = writable<IssueGroupsSnapshot | null>(null);
+
 export const hoveredIssueNumber = writable<number | null>(null);
 export const taskIssueNumbers  = writable<Set<number>>(new Set());
 export const todoIssueNumbers  = writable<Set<number>>(new Set());

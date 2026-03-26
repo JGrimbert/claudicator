@@ -113,6 +113,7 @@
             onRegenerate={generate}
             onissueclick={handleIssueClick}
             extraTabs={[{ id: 'groupes', label: 'Groupes' }]}
+            defaultTab="groupes"
         >
             {#snippet extracontent(tabId)}
                 {#if tabId === 'groupes'}

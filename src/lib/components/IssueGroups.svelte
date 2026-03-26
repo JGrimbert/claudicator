@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, planPanelActiveTab } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, planPanelActiveTab, issueGroupsCache } from "$lib/stores/agent";
+    import { get } from "svelte/store";
     import type { RoadmapData, RoadmapStep } from "jgr-ui";
 
     type IssueRef = { number: number; title: string; body?: string };
@@ -51,22 +52,39 @@
         ...groups.filter(g => (g.subdivisions ?? []).length === 0),
     ]);
 
-    async function loadGroups(min = 3) {
+    function applySnapshot(data: { groups?: any[]; ungroupedClusters?: any[]; ungroupedIssues?: any[]; stats?: any }) {
+        groups = data.groups ?? [];
+        stats = data.stats ?? null;
+        ungroupedClusters = data.ungroupedClusters ?? [];
+        ungroupedIssues = data.ungroupedIssues ?? [];
+        const st: typeof groupState = {};
+        for (const g of groups) {
+            st[g.keyword] = { creating: false, created: null, err: "" };
+        }
+        groupState = st;
+    }
+
+    async function loadGroups(min = 3, force = false) {
+        // Si données déjà en cache et pas de forçage, on les utilise directement
+        const cached = get(issueGroupsCache);
+        if (!force && cached) {
+            applySnapshot(cached);
+            return;
+        }
         loading = true;
         error = "";
         try {
             const r = await fetch(`/api/issues/groups?min=${min}`);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const data = await r.json();
-            groups = data.groups ?? data; // compat si ancien format
-            stats  = data.stats ?? null;
-            ungroupedClusters = data.ungroupedClusters ?? [];
-            ungroupedIssues = data.ungroupedIssues ?? [];
-            const st: typeof groupState = {};
-            for (const g of groups) {
-                st[g.keyword] = { creating: false, created: null, err: "" };
-            }
-            groupState = st;
+            applySnapshot(data);
+            // Persister dans le store
+            issueGroupsCache.set({
+                groups,
+                ungroupedClusters,
+                ungroupedIssues,
+                stats,
+            });
         } catch (e) {
             error = e instanceof Error ? e.message : String(e);
         } finally {
@@ -318,7 +336,7 @@
     }
 
     $effect(() => {
-        loadGroups();
+        loadGroups(3, false);
     });
 </script>
 
@@ -326,7 +344,7 @@
     <!-- Header avec stats -->
     <div class="groups-header">
         <span class="groups-title">Regroupements</span>
-        <button class="btn-refresh" onclick={() => loadGroups()} disabled={loading} title="Actualiser">
+        <button class="btn-refresh" onclick={() => loadGroups(3, true)} disabled={loading} title="Actualiser">
             {loading ? "…" : "↻"}
         </button>
     </div>
