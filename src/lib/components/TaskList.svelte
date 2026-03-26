@@ -440,8 +440,15 @@
     }
 
     async function remove(task: Task) {
+        if (task.type === "fullplan" && task.fullPlanId) {
+            await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}`, { method: "DELETE" });
+            if (selected?.id === task.id) activeFullPlan.set(null);
+        }
         await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
-        if (selected?.id === task.id) { selected = null; planContent = null; diffContent = null; }
+        if (selected?.id === task.id) {
+            selected = null; planContent = null; diffContent = null;
+            patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
+        }
         await loadTasks();
     }
 

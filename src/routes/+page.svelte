@@ -372,23 +372,7 @@
             }
         } catch { /* ignore */ }
 
-        // Restaurer le dernier plan complet après refresh
-        try {
-            const r = await fetch("/api/issues/groups/full-plans");
-            if (r.ok) {
-                const plans = await r.json();
-                if (plans.length > 0) {
-                    const latest = plans[0];
-                    activeFullPlan.set({
-                        id: latest.id,
-                        keyword: latest.keyword,
-                        planFile: latest.planFile,
-                        // Si interrompu en cours de génération → erreur
-                        status: latest.status === "generating" ? "error" : latest.status,
-                    });
-                }
-            }
-        } catch { /* silencieux */ }
+        // Le fullplan actif est restauré par TaskList via SELECTED_KEY (selectTask → activeFullPlan)
     });
 
     // Handle vertical aside split
