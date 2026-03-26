@@ -38,7 +38,7 @@
         </div>
         {#if showTotal && totalUsage}
             <div class="usage-total">
-                Total cumulé : {fmtK(totalUsage.inputTokens)} / {fmtK(totalUsage.outputTokens)}
+                Σ {fmtK(totalUsage.inputTokens)} / {fmtK(totalUsage.outputTokens)}
             </div>
         {/if}
     </div>

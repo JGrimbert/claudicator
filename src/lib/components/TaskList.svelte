@@ -224,10 +224,13 @@
         if (task.status === "merged")        return [{ name: "Mergée",    color: "4caf50" }];
         if (task.status === "documentation" || task.status === "validation" || task.status === "implementation") {
             const planStr = task.planUsage ? `p:${Math.round(task.planUsage.inputTokens / 100) / 10}k` : "";
-            const implTokens = task.totalUsage ?? task.usage;
+            const implTokens = task.implUsage ?? task.totalUsage ?? task.usage;
             const implStr = implTokens ? `${Math.round(implTokens.inputTokens / 100) / 10}k` : "";
+            const sigma = (task.planUsage && task.implUsage)
+                ? ` Σ${Math.round((task.planUsage.inputTokens + task.implUsage.inputTokens) / 100) / 10}k`
+                : "";
             const label = [planStr, implStr].filter(Boolean).join(" · ");
-            return [{ name: label || "impl.", color: "9181f9" }];
+            return [{ name: (label || "impl.") + sigma, color: "9181f9" }];
         }
         return [];
     }

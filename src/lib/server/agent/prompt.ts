@@ -179,13 +179,23 @@ export function formatImplementationPrompt(
     plan: string,
     methods: MethodSnippet[],
     docs?: ProjectDocs,
-    atlas?: string
+    atlas?: string,
+    projectRoot?: string
 ): string {
     const lines: string[] = [];
+
+    lines.push('@"tdd-issue (agent)"');
+    lines.push("");
 
     lines.push("TASK");
     lines.push(task.title);
     lines.push("");
+
+    if (projectRoot) {
+        lines.push("PROJECT ROOT");
+        lines.push(projectRoot);
+        lines.push("");
+    }
 
     lines.push("OBJECTIF");
     lines.push("Implémenter le plan ci-dessous étape par étape. Modifier le code dans le projet.");

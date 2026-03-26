@@ -53,6 +53,12 @@
         else expanded.add(key);
         expanded = expanded;
     }
+
+    function estimateTokens(r: SearchResult): number {
+        return Math.round((r.codeSnippet?.length ?? 0) / 4);
+    }
+
+    $: totalTokens = results.reduce((sum, r) => sum + estimateTokens(r), 0);
 </script>
 
 <div class="sv">
@@ -66,12 +72,16 @@
         {:else if searched && results.length === 0}
             <div class="sv-state muted">Aucun résultat</div>
         {:else}
+            <div class="sv-ctx-header">
+                <span class="sv-total-tok">Σ contexte ≈ {totalTokens.toLocaleString("fr-FR")} tok</span>
+            </div>
             {#each results as r}
                 <div class="sv-item">
                     <div class="sv-head" role="button" onclick={() => toggle(r.key)}>
                         <div class="sv-meta">
                             <span class="sv-key">{r.key}</span>
                             {#if r.role}<span class="sv-role">{r.role}</span>{/if}
+                            {#if estimateTokens(r) > 0}<span class="sv-tok">~{estimateTokens(r)} tok</span>{/if}
                             <span class="sv-score" style="margin-left:auto">{r.score?.toFixed ? r.score.toFixed(3) : r.score}</span>
                         </div>
                         {#if r.summary}<div class="sv-summary">{r.summary}</div>{/if}
@@ -178,5 +188,21 @@
     font-size: 0.63rem;
     color: #444;
     border-top: 1px solid var(--border);
+}
+.sv-ctx-header {
+    padding: 0.25rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+.sv-total-tok {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    color: cornsilk;
+    opacity: 0.35;
+}
+.sv-tok {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    color: cornsilk;
+    opacity: 0.45;
 }
 </style>

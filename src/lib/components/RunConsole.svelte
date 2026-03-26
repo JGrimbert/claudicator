@@ -37,7 +37,7 @@
     }
 
     function dismiss() {
-        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false, consoleMinimized: false, completionLabel: null, liveUsage: null });
+        agentRunState.set({ taskId: null, taskTitle: "", logs: [], running: false, sessionAlive: false, consoleMinimized: false, completionLabel: null, liveUsage: null, sessionUsage: null });
     }
 
     async function terminateSession() {
@@ -136,10 +136,14 @@
                 <span class="live-tok">{Math.round(lastUsage.inputTokens / 100) / 10}k in</span>
                 <span class="live-sep">·</span>
                 <span class="live-tok">{Math.round(lastUsage.outputTokens / 100) / 10}k out</span>
+                {#if $agentRunState.sessionUsage && $agentRunState.sessionUsage.inputTokens !== lastUsage.inputTokens}
+                    <span class="live-sep">·</span>
+                    <span class="live-tok live-sigma">Σ{Math.round($agentRunState.sessionUsage.inputTokens / 100) / 10}k</span>
+                {/if}
             {/if}
         </div>
     {:else if lastUsage}
-        <PromptUsage usage={lastUsage} context={lastContext} />
+        <PromptUsage usage={lastUsage} context={lastContext} label={elapsed > 0 ? fmtElapsed(elapsed) : undefined} />
     {/if}
 </div>
 
@@ -163,4 +167,5 @@
 .live-elapsed { color: cornsilk; opacity: 0.7; }
 .live-tok     { color: #4a4a6a; }
 .live-sep     { color: #222; }
+.live-sigma   { color: cornsilk; opacity: 0.45; }
 </style>
