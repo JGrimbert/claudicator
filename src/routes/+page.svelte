@@ -443,12 +443,18 @@
     }
 
     // ─── Tabs centre ──────────────────────────────────────────────────────────
+    $: planTabLabel = $planModeTask
+        ? `#${$planModeTask.issueNumber ?? $planModeTask.id.slice(0, 6)} — ${$planModeTask.title}`
+        : ($globalPlanPrompt ? 'plan' : null);
+
+    $: if (!planTabLabel && activeMiddleTab === 'plan') activeMiddleTab = 'dag';
+
     $: midTabs = [
         { id: 'dag',     label: 'dag'     },
-        { id: 'plan',    label: 'plan'    },
+        ...(planTabLabel ? [{ id: 'plan', label: planTabLabel }] : []),
         ...($clusterFocusedSymbol ? [{ id: 'cluster', label: 'cluster' }] : []),
         ...($coalCodeFocus ? [{ id: 'coal', label: '#' + $coalCodeFocus.issueNum }] : []),
-        ...($activeFullPlan ? [{ id: 'fullplan', label: 'plan complet' }] : []),
+        ...($activeFullPlan ? [{ id: 'fullplan', label: $activeFullPlan.keyword }] : []),
     ];
 </script>
 
