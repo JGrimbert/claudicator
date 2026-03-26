@@ -32,6 +32,7 @@ export const agentRunState = writable<{
     consoleMinimized: boolean;
     completionLabel: string | null;
     liveUsage: { inputTokens: number; outputTokens: number } | null;
+    sessionUsage: { inputTokens: number; outputTokens: number } | null;
 }>({
     taskId: null,
     taskTitle: "",
@@ -41,6 +42,7 @@ export const agentRunState = writable<{
     consoleMinimized: false,
     completionLabel: null,
     liveUsage: null,
+    sessionUsage: null,
 });
 
 /**
@@ -93,8 +95,12 @@ export async function startConsoleStream(
                             const u = JSON.parse(event.line) as { inputTokens: number; outputTokens: number };
                             agentRunState.update(s => {
                                 const newLogs = [...s.logs, event as RunLog];
+                                const sessionUsage = {
+                                    inputTokens: (s.sessionUsage?.inputTokens ?? 0) + u.inputTokens,
+                                    outputTokens: (s.sessionUsage?.outputTokens ?? 0) + u.outputTokens,
+                                };
                                 try { sessionStorage.setItem("activeTaskLogs", JSON.stringify(newLogs)); } catch { /* SSR */ }
-                                return { ...s, liveUsage: u, logs: newLogs };
+                                return { ...s, liveUsage: u, sessionUsage, logs: newLogs };
                             });
                         } catch {
                             agentRunState.update(s => {

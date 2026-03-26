@@ -1,54 +1,58 @@
 # Atlas — Claudicator
-_Généré pour : Issue #265 — usecase: lance l'édition d'une issue_
+_Généré pour le groupe : token (6 issues)_
 
-## Points d'entrée (issue #265)
+## Points d'entrée — token
 
-Ces symboles ont été identifiés comme pertinents :
+Ces symboles ont été identifiés comme pertinents pour le groupe :
 
 | Symbole | Fichier | Signature |
 |---|---|---|
-| `detectPotentialDuplicates` | `src/lib/server/agent/issue-analysis.ts` | `detectPotentialDuplicates(issues)` |
-| `getIssue` | `src/lib/server/services/github.ts` | `getIssue(owner, repo, number)` |
-| `closeIssue` | `src/lib/server/services/github.ts` | `closeIssue(owner, repo, issueNumber)` |
-| `/api/issues/roadmap/reprocess-group` | `src/routes/api/issues/roadmap/reprocess-group/+server.ts` | `POST` — Roadmap — retire les issues fermées d'un groupe dans le Markdown (POST) |
-| `/api/github/issues` | `src/routes/api/github/issues/+server.ts` | `POST` — GitHub — crée une issue dans le dépôt courant (POST) |
-| `/api/issues` | `src/routes/api/issues/+server.ts` | `GET, POST` — GitHub — liste toutes les issues du projet (GET) |
-| `ProjetPanel` | `src/lib/components/ProjetPanel.svelte` | `loadIssues, closeIssue, createTaskFromIssue, selectIssue` — composant UI |
-| `PlanPanel` | `src/lib/components/PlanPanel.svelte` | `openIssue, groupIssuesByPlanGroup, toggleSkillCand` — composant UI |
+| `deleteTask` | `src/lib/server/services/tasks.ts` | `deleteTask(id)` |
+| `askClaude` | `src/lib/server/services/claude.ts` | `askClaude(prompt)` |
+| `unregister` | `src/lib/server/services/processes.ts` | `unregister(taskId)` |
+| `/api/usage` | `src/routes/api/usage/+server.ts` | `GET` — Usage — retourne la consommation de tokens du projet (GET) |
+| `/api/plan` | `src/routes/api/plan/+server.ts` | `GET` — Plans — retourne le plan global d'une issue (GET) |
+| `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
+| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, loadLinkedIssueState, skipPlan, loadPlan` — composant UI |
+| `AgentInput` | `src/lib/components/AgentInput.svelte` | `parseByKeys, toggleSec, startEditPlan, cancelEditPlan, savePlan, reloadPlan` — composant UI |
 
 ---
 
 ## Snippets
 
-### `detectPotentialDuplicates`
-_src/lib/server/agent/issue-analysis.ts_
+### `deleteTask`
+_src/lib/server/services/tasks.ts_
 
 ```ts
-function detectPotentialDuplicates(issues: IssueInput[]): Map<number, number> {
-    const result = new Map<number, number>();
-    for (let i = 0; i < issues.length; i++) {
-        for (let j = i + 1; j < issues.length; j++) {
-            if (!result.has(issues[j].number)) {
-                const score = jaccardWords(issues[i].title, issues[j].title);
-                if (score > 0.5) result.set(issues[j].number, issues[i].number);
-            }
-        }
-    }
-    return result;
+function deleteTask(id: string): boolean {
+    const p = taskPath(id);
+    if (!fs.existsSync(p)) return false;
+    fs.unlinkSync(p);
+    return true;
 }
 ```
 
-### `getIssue`
-_src/lib/server/services/github.ts_
+### `askClaude`
+_src/lib/server/services/claude.ts_
 
 ```ts
-async function getIssue(owner: string, repo: string, number: number) {
-    const octokit = getOctokit();
-    const { data } = await octokit.issues.get({
-        owner,
-        repo,
-        issue_number: number
+function askClaude(prompt: string) {
+    const escaped = prompt.replace(/"/g, '\\"');
+
+    const output = execSync(`claude "${escaped}"`, {
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024 * 20
     });
-    return data;
+
+    return output;
+}
+```
+
+### `unregister`
+_src/lib/server/services/processes.ts_
+
+```ts
+function unregister(taskId: string) {
+    active.delete(taskId);
 }
 ```

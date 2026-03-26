@@ -1,5 +1,6 @@
 /** Agent — lit ou détruit la session Claude active (GET / DELETE) */
 import { destroySession, isSessionAlive, isSessionBusy } from "$lib/server/services/claude-session";
+import { isRunning } from "$lib/server/services/processes";
 import { getTask, updateTask } from "$lib/server/services/tasks";
 
 /** Retourne l'état d'une session : { alive, busy, taskId } */
@@ -11,9 +12,11 @@ export async function GET({ url }) {
             headers: { "Content-Type": "application/json" }
         });
     }
+    const sessionAlive = isSessionAlive(taskId);
+    const oneShotRunning = isRunning(taskId);
     return new Response(JSON.stringify({
-        alive: isSessionAlive(taskId),
-        busy: isSessionBusy(taskId),
+        alive: sessionAlive || oneShotRunning,
+        busy: isSessionBusy(taskId) || oneShotRunning,
         taskId,
     }), { headers: { "Content-Type": "application/json" } });
 }

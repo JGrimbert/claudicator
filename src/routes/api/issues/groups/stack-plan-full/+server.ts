@@ -78,7 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
         ).join("\n\n")
     ).join("\n\n");
 
-    const prompt = `useAtlas
+    const prompt = `@"plan-complet (agent)"
 
 # TASK : Plan complet du groupe "${groupKeyword}"
 ## ${subStacks.length} sous-stacks — ${allIssues.length} issues
