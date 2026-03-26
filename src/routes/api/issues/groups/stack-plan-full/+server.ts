@@ -3,7 +3,7 @@ import type { RequestHandler } from "./$types";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
-import { getTasksDir } from "$lib/server/services/tasks";
+import { getTasksDir, createTask, updateTask } from "$lib/server/services/tasks";
 import { writeAtlasForIssues } from "$lib/server/agent/atlas";
 import { createFullPlan, updateFullPlan, getFullPlanDir } from "$lib/server/services/fullPlans";
 
@@ -40,6 +40,13 @@ export const POST: RequestHandler = async ({ request }) => {
         ...subStacks.flatMap(s => s.issues),
         ...(residualIssues ?? [])
     ];
+
+    const fpTask = createTask({
+        title: `Plan complet — ${groupKeyword} (${allIssues.length} issues)`,
+        type: "fullplan",
+        fullPlanId: planId,
+        status: "planification",
+    });
 
     // Enrichir ATLAS.md avec l'ensemble du groupe
     writeAtlasForIssues(allIssues, groupKeyword);
@@ -179,11 +186,13 @@ ${stepsTemplate}`;
                 const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
                 fs.writeFileSync(path.join(dir, planFile), fullOutput, "utf-8");
                 updateFullPlan(planId, { status: "done", planFile, stepAtlasFiles });
+                updateTask(fpTask.id, { status: "implementation" });
                 send({ line: "[done]", type: "system", planFile });
                 controller.close();
             });
             proc.on("error", (e: Error) => {
                 updateFullPlan(planId, { status: "error" });
+                updateTask(fpTask.id, { status: "failed" });
                 send({ line: `[erreur] ${e.message}`, type: "system" });
                 controller.close();
             });

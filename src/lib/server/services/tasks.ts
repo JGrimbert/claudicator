@@ -18,10 +18,14 @@ export type TokenUsage = {
     outputTokens: number;
 };
 
+export type TaskType = "standard" | "fullplan";
+
 export type Task = {
     id: string;
     title: string;
     status: TaskStatus;
+    type?: TaskType;          // "fullplan" pour les plans complets de groupe
+    fullPlanId?: string;      // référence au FullPlan associé (si type === "fullplan")
     issueNumber?: number;
     branch?: string;
     pushed?: boolean;
@@ -94,17 +98,19 @@ export function getTask(id: string): Task | null {
     return migrateTaskStatus(JSON.parse(fs.readFileSync(p, "utf-8")));
 }
 
-/** Crée une task (déduplique par numéro d'issue) */
-export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issueNumber" | "branch">>): Task {
+/** Crée une task (déduplique par numéro d'issue pour les tasks standard) */
+export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issueNumber" | "branch" | "type" | "fullPlanId" | "status">>): Task {
     ensureDir();
-    if (data.issueNumber !== undefined) {
+    if (data.issueNumber !== undefined && data.type !== "fullplan") {
         const existing = listTasks().find(t => t.issueNumber === data.issueNumber);
         if (existing) return existing;
     }
     const task: Task = {
         id: randomUUID(),
         title: data.title,
-        status: "specification",
+        status: data.status ?? "specification",
+        type: data.type,
+        fullPlanId: data.fullPlanId,
         issueNumber: data.issueNumber,
         branch: data.branch,
         logs: [],

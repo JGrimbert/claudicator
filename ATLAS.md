@@ -1,20 +1,20 @@
 # Atlas — Claudicator
-_Généré pour le groupe : token (6 issues)_
+_Généré pour : Issue #284 — Task de type fullplan_
 
-## Points d'entrée — token
+## Points d'entrée (issue #284)
 
-Ces symboles ont été identifiés comme pertinents pour le groupe :
+Ces symboles ont été identifiés comme pertinents :
 
 | Symbole | Fichier | Signature |
 |---|---|---|
 | `deleteTask` | `src/lib/server/services/tasks.ts` | `deleteTask(id)` |
-| `askClaude` | `src/lib/server/services/claude.ts` | `askClaude(prompt)` |
-| `unregister` | `src/lib/server/services/processes.ts` | `unregister(taskId)` |
-| `/api/usage` | `src/routes/api/usage/+server.ts` | `GET` — Usage — retourne la consommation de tokens du projet (GET) |
+| `getTasksDir` | `src/lib/server/services/tasks.ts` | `getTasksDir()` |
+| `listTasks` | `src/lib/server/services/tasks.ts` | `listTasks()` |
+| `/api/tasks/[id]/plan` | `src/routes/api/tasks/[id]/plan/+server.ts` | `GET, POST, PUT` — Tâches — lit le plan de la tâche depuis le disque (GET) ou le sauvegarde (POST) |
 | `/api/plan` | `src/routes/api/plan/+server.ts` | `GET` — Plans — retourne le plan global d'une issue (GET) |
 | `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
-| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, loadLinkedIssueState, skipPlan, loadPlan` — composant UI |
-| `AgentInput` | `src/lib/components/AgentInput.svelte` | `parseByKeys, toggleSec, startEditPlan, cancelEditPlan, savePlan, reloadPlan` — composant UI |
+| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask` — composant UI |
+| `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks` — composant UI |
 
 ---
 
@@ -32,27 +32,12 @@ function deleteTask(id: string): boolean {
 }
 ```
 
-### `askClaude`
-_src/lib/server/services/claude.ts_
+### `getTasksDir`
+_src/lib/server/services/tasks.ts_
 
 ```ts
-function askClaude(prompt: string) {
-    const escaped = prompt.replace(/"/g, '\\"');
-
-    const output = execSync(`claude "${escaped}"`, {
-        encoding: "utf8",
-        maxBuffer: 1024 * 1024 * 20
-    });
-
-    return output;
-}
-```
-
-### `unregister`
-_src/lib/server/services/processes.ts_
-
-```ts
-function unregister(taskId: string) {
-    active.delete(taskId);
+function getTasksDir(): string {
+    const id = getCurrentProject()?.id ?? "default";
+    return id === "default" ? ".agent/tasks" : path.join(".agent/tasks", id);
 }
 ```
