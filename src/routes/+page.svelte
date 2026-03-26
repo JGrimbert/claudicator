@@ -12,14 +12,15 @@
     import RoadmapViz from "$lib/components/RoadmapViz.svelte";
     import FullPlanView from "$lib/components/FullPlanView.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream, evalIssueDag } from "$lib/stores/agent";
     import type { RunLog } from "$lib/stores/agent";
 
     let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" | "fullplan" = "dag";
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
-    $: if ($activeFullPlan) activeMiddleTab = "fullplan";
+    $: if ($activeFullPlan)           activeMiddleTab = "fullplan";
+    $: if ($evalIssueDag)             activeMiddleTab = "dag";
 
 
     /**

@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { JgrRoadmap } from "jgr-ui";
+    import { JgrRoadmap, JgrDag } from "jgr-ui";
     import type { RoadmapData, IssueCluster } from "jgr-ui";
-    import { agentState, projetPanelTab, pendingSelectTaskId, taskIssueNumbers } from "$lib/stores/agent";
+    import IssueGroups from "$lib/components/IssueGroups.svelte";
+    import { agentState, projetPanelTab, pendingSelectTaskId, taskIssueNumbers, evalIssueDag } from "$lib/stores/agent";
     type Status = "loading" | "ok" | "empty" | "generating" | "error";
 
     let status: Status = $state("loading");
@@ -63,7 +64,6 @@
     }
 
     async function handleIssueClick(n: number) {
-        // Charger l'issue dans le panel artefact
         try {
             const res = await fetch(`/api/issue?number=${n}`);
             if (res.ok) {
@@ -72,7 +72,6 @@
             }
         } catch { /* ignore */ }
 
-        // Si une task est liée à cette issue, activer l'onglet Tasks et sélectionner la task
         if (get(taskIssueNumbers).has(n)) {
             projetPanelTab.set("tasks");
             try {
@@ -105,21 +104,83 @@
     }
 </script>
 
-<div class="roadmap-wrap">
-    <JgrRoadmap
-        {roadmap}
-        {clusters}
-        {status}
-        onRegenerate={generate}
-        onissueclick={handleIssueClick}
-    />
+<div class="roadmap-wrap" class:has-eval={!!$evalIssueDag}>
+    <div class="roadmap-main">
+        <JgrRoadmap
+            {roadmap}
+            {clusters}
+            {status}
+            onRegenerate={generate}
+            onissueclick={handleIssueClick}
+            extraTabs={[{ id: 'groupes', label: 'Groupes' }]}
+        >
+            {#snippet extracontent(tabId)}
+                {#if tabId === 'groupes'}
+                    <IssueGroups />
+                {/if}
+            {/snippet}
+        </JgrRoadmap>
+    </div>
+    {#if $evalIssueDag}
+        <div class="eval-dag-panel">
+            <div class="eval-dag-header">
+                <span class="eval-dag-label">DAG issues</span>
+                <button class="eval-dag-close" onclick={() => evalIssueDag.set(null)}>✕</button>
+            </div>
+            <div class="eval-dag-body">
+                <JgrDag roadmap={$evalIssueDag} onNodeClick={handleIssueClick} />
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
 .roadmap-wrap {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100%;
+    overflow: hidden;
+}
+.roadmap-main {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.eval-dag-panel {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #2a2a4a;
+    background: #0d0d1a;
+}
+.eval-dag-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0.6rem;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+}
+.eval-dag-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    color: #6a5aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.eval-dag-close {
+    background: none;
+    border: none;
+    color: #4a4a6a;
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.eval-dag-close:hover { color: #9181f9; }
+.eval-dag-body {
+    flex: 1;
     overflow: hidden;
 }
 </style>

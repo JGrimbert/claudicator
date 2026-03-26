@@ -85,6 +85,18 @@
 
     // Fullplan detail + issue status
     let fullPlanDetail: FullPlanDetail | null = null;
+    let closingIssues = false;
+
+    async function closeFullPlanIssues(task: Task) {
+        if (!task.fullPlanId || closingIssues) return;
+        closingIssues = true; wfError = "";
+        try {
+            const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/close-issues`, { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) wfError = data.message ?? "Erreur fermeture issues";
+        } catch (e: any) { wfError = e.message; }
+        finally { closingIssues = false; }
+    }
     $: issueRows = ((): IssueRow[] => {
         if (!fullPlanDetail) return [];
         const rows: IssueRow[] = [];
@@ -771,6 +783,13 @@
                                         {/if}
                                     </div>
                                 {/each}
+                                <div class="issue-status-footer">
+                                    <button
+                                        class="wf-btn"
+                                        onclick={() => closeFullPlanIssues(task)}
+                                        disabled={closingIssues}
+                                    >{closingIssues ? "…" : `✕ Fermer les ${issueRows.length} issues`}</button>
+                                </div>
                             </div>
                         {/if}
 
@@ -1438,6 +1457,7 @@
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
 .is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
+.issue-status-footer  { padding: 4px 8px; }
 
 /* ── Patches ── */
 .patch-sublist {

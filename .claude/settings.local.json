@@ -46,7 +46,12 @@
       "Read(//c/jgr-maestra//**)",
       "Read(//c/jgr-maestra/**)",
       "Skill(update-config)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(for n:*)",
+      "Bash(do gh:*)",
+      "Bash(echo \"✓ #$n\")",
+      "Bash(echo \"✗ #$n\")",
+      "Bash(netstat -ano)"
     ]
   }
 }

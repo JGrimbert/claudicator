@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, planPanelActiveTab } from "$lib/stores/agent";
+    import type { RoadmapData, RoadmapStep } from "jgr-ui";
 
     type IssueRef = { number: number; title: string; body?: string };
 
@@ -43,6 +44,7 @@
     let groupState: Record<string, { creating: boolean; created: CreatedParent | null; err: string }> = $state({});
     let stackState: Record<string, { planning: boolean; feedback: string }> = $state({});
     let fullStackState: Record<string, { planning: boolean; feedback: string }> = $state({});
+    let evalState: Record<string, { loading: boolean; result?: string; err?: string; open: boolean }> = $state({});
 
     const sortedGroups = $derived([
         ...groups.filter(g => (g.subdivisions ?? []).length > 0),
@@ -165,6 +167,93 @@
             stackState = { ...stackState, [key]: { planning: false, feedback: data.planFile ?? "✓" } };
         } catch (e) {
             stackState = { ...stackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
+        }
+    }
+
+    function depsToRoadmapData(
+        issues: IssueRef[],
+        deps: { from: number; to: number[] }[],
+        complexity: Record<string, string>
+    ): RoadmapData {
+        const skillMap: Record<string, string> = { complexe: "flow", moyen: "domain", simple: "utility" };
+        const dependsOn: Record<number, number[]> = {};
+        for (const { from, to } of deps) {
+            for (const t of to) {
+                dependsOn[t] = [...(dependsOn[t] ?? []), from];
+            }
+        }
+        const steps: RoadmapStep[] = issues.map(i => ({
+            id: i.number,
+            label: `#${i.number}`,
+            skill: skillMap[complexity[String(i.number)] ?? "moyen"] ?? "domain",
+            nodes: [i.title.slice(0, 40)],
+            files: [],
+            rationale: i.title,
+            dependsOnSteps: dependsOn[i.number] ?? [],
+            issues: [i.number],
+        }));
+        const edgeCount = deps.reduce((acc, d) => acc + d.to.length, 0);
+        return {
+            steps,
+            spine: [],
+            stats: { nodes: issues.length, edges: edgeCount, levels: 0, steps: issues.length }
+        };
+    }
+
+    async function evaluateGroup(group: IssueGroup) {
+        const key = group.keyword;
+        evalState = { ...evalState, [key]: { loading: true, result: "", open: true } };
+        try {
+            const r = await fetch("/api/issues/groups/evaluate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    keyword: group.keyword,
+                    issues: group.issues,
+                    subdivisions: group.subdivisions ?? []
+                })
+            });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+
+            const reader = r.body!.getReader();
+            const decoder = new TextDecoder();
+            let buf = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const parts = buf.split("\n\n");
+                buf = parts.pop() ?? "";
+                for (const part of parts) {
+                    const dataLine = part.split("\n").find(l => l.startsWith("data: "));
+                    if (!dataLine) continue;
+                    try {
+                        const event = JSON.parse(dataLine.slice(6));
+                        if (event.type === "agent" && event.line) {
+                            evalState = {
+                                ...evalState,
+                                [key]: { ...evalState[key], result: (evalState[key].result ?? "") + event.line }
+                            };
+                        }
+                        if (event.type === "system" && event.line === "[deps]" && event.data) {
+                            const d = event.data as { deps?: { from: number; to: number[] }[]; complexity?: Record<string, string> };
+                            const roadmapData = depsToRoadmapData(group.issues, d.deps ?? [], d.complexity ?? {});
+                            evalIssueDag.set(roadmapData);
+                            planPanelActiveTab.set("clusters");
+                        }
+                        if (event.type === "system" && event.line === "[done]") {
+                            evalState = { ...evalState, [key]: { ...evalState[key], loading: false } };
+                        }
+                        if (event.type === "error") {
+                            evalState = { ...evalState, [key]: { loading: false, err: event.line, open: true } };
+                        }
+                    } catch { /* ligne non-JSON */ }
+                }
+            }
+            evalState = { ...evalState, [key]: { ...evalState[key], loading: false } };
+        } catch (e) {
+            evalState = { ...evalState, [key]: { loading: false, err: e instanceof Error ? e.message : String(e), open: true } };
         }
     }
 
@@ -297,6 +386,7 @@
                 {@const tier = scoreTier(group.score, maxScore)}
                 {@const haiku = haikus[group.keyword]}
                 {@const twinNums = new Set((group.twins ?? []).flat())}
+                {@const ev = evalState[group.keyword]}
                 <div class="group-card" class:has-parent={group.hasParent} data-tier={tier}>
                     {#if haiku && !haiku.err}
                         <div class="group-haiku">
@@ -397,7 +487,31 @@
                         </ul>
                     {/if}
 
+                    {#if ev?.open}
+                        <div class="eval-panel">
+                            <div class="eval-panel-head">
+                                <span class="eval-panel-label">Évaluation</span>
+                                <button class="eval-close" onclick={() => evalState = { ...evalState, [group.keyword]: { ...ev, open: false } }}>✕</button>
+                            </div>
+                            {#if ev.err}
+                                <div class="eval-err">{ev.err}</div>
+                            {:else if ev.result}
+                                <pre class="eval-result">{ev.result}</pre>
+                                {#if ev.loading}<span class="eval-cursor">▌</span>{/if}
+                            {:else if ev.loading}
+                                <div class="eval-loading">Analyse en cours…</div>
+                            {/if}
+                        </div>
+                    {/if}
+
                     <div class="group-footer">
+                        <button
+                            class="btn-evaluate"
+                            onclick={() => evaluateGroup(group)}
+                            disabled={ev?.loading}
+                            title="Évaluer la complexité du groupe avant de générer un fullPlan"
+                        >{ev?.loading ? "…" : "🔍"}</button>
+
                         {#if (group.subdivisions ?? []).length > 0}
                             {@const fss = fullStackState[group.keyword]}
                             <button
@@ -887,5 +1001,82 @@
 .group-err {
     font-size: 0.58rem;
     color: #e05a5a;
+}
+
+/* ── Bouton évaluer ── */
+.btn-evaluate {
+    background: none;
+    border: 1px solid #2a4a3a;
+    color: #5a9a7a;
+    font-size: 0.65rem;
+    padding: 0.12rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.btn-evaluate:hover:not(:disabled) { background: #0a1a10; color: #7abaa0; }
+.btn-evaluate:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Panneau d'évaluation ── */
+.eval-panel {
+    margin: 0.3rem 0 0.2rem;
+    border: 1px solid #2a4a3a;
+    border-radius: 3px;
+    background: #080f0c;
+    font-size: 0.6rem;
+}
+.eval-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.2rem 0.45rem;
+    border-bottom: 1px solid #1a3a2a;
+}
+.eval-panel-label {
+    font-size: 0.58rem;
+    color: #5a9a7a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.eval-close {
+    background: none;
+    border: none;
+    color: #4a6a5a;
+    font-size: 0.6rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.eval-close:hover { color: #7a9a8a; }
+.eval-loading {
+    padding: 0.4rem 0.45rem;
+    color: #5a7a6a;
+    font-style: italic;
+}
+.eval-cursor {
+    display: inline-block;
+    color: #5a9a7a;
+    font-size: 0.65rem;
+    animation: blink 1s step-end infinite;
+    margin-left: 0.15rem;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.eval-err {
+    padding: 0.4rem 0.45rem;
+    color: #e05a5a;
+}
+.eval-result {
+    padding: 0.45rem 0.55rem;
+    margin: 0;
+    color: #a0c0b0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    line-height: 1.55;
+    max-height: 18rem;
+    overflow-y: auto;
 }
 </style>

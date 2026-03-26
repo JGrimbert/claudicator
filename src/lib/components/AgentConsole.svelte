@@ -5,7 +5,6 @@
     import SymbolsView from "$lib/components/SymbolsView.svelte";
     import ArchiView from "$lib/components/ArchiView.svelte";
     import RunConsole from "$lib/components/RunConsole.svelte";
-    import IssueGroups from "$lib/components/IssueGroups.svelte";
     import { JgrBtn } from 'jgr-ui';
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
@@ -163,7 +162,6 @@
             }
         }
         t.push({ id: "atlas", label: "ATLAS", count: "" });
-        t.push({ id: "groupes", label: "groupes", count: "" });
         t.push({ id: "documentation", label: "docs", count: files.length });
         t.push({ id: "symbols", label: "symboles", count: "" });
         t.push({ id: "archi", label: "archi", count: "" });
@@ -361,9 +359,6 @@
                 {/each}
             </div>
         {/if}
-        <div class="dv-panel" style:display={activeTab === "groupes" ? "flex" : "none"}>
-            <IssueGroups />
-        </div>
         <div class="dv-panel" style:display={activeTab === "console" ? "flex" : "none"}>
             <RunConsole />
         </div>

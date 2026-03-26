@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { planGroups, planGroupsWithInvalidations, planGroupsDeduped, activePlanGroupIndex, clusterFocusedSymbol, agentState, issueAnalysis, issueStates } from "$lib/stores/agent";
+    import { planGroups, planGroupsWithInvalidations, planGroupsDeduped, activePlanGroupIndex, clusterFocusedSymbol, agentState, issueAnalysis, issueStates, planPanelActiveTab } from "$lib/stores/agent";
     import type { PlanGroup, PlanGroupWithInvalidations, PlanGroupDeduped } from "$lib/stores/agent";
     import IssueChip from "$lib/components/IssueChip.svelte";
 
@@ -13,7 +13,8 @@
     type CoalNode     = { symbols: CoalSymbol[]; issues: number[]; score: number; count: number; histMatch?: { symbols: string[]; count: number; issues: number[] } };
     type HistCoalNode = { symbols: string[]; count: number; score: number };
 
-    let activeTab: "clusters" | "étape" | "étapes" | "history" | "skills" = "clusters";
+    let activeTab: "clusters" | "étape" | "étapes" | "history" | "skills" = $planPanelActiveTab;
+    $: activeTab = $planPanelActiveTab;
     let dirs:  DirCluster[]   = [];
     let mixed: MixedCluster[] = [];
     let coal:  CoalNode[]     = [];

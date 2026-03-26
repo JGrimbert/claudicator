@@ -1,4 +1,5 @@
 import { writable, derived, get } from "svelte/store";
+import type { RoadmapData } from "jgr-ui";
 
 // Référence module-level à la connexion SSE active (survit aux changements de composants)
 let _streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
@@ -166,6 +167,9 @@ export function notifyTaskCreated(taskId?: string) {
     }
     taskRefreshTick.update(n => n + 1);
 }
+
+export const evalIssueDag = writable<RoadmapData | null>(null);
+export const planPanelActiveTab = writable<"clusters" | "étape" | "étapes" | "history" | "skills">("clusters");
 
 export const hoveredIssueNumber = writable<number | null>(null);
 export const taskIssueNumbers  = writable<Set<number>>(new Set());
