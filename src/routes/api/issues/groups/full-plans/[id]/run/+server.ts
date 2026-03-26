@@ -4,7 +4,9 @@ import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { getFullPlan } from "$lib/server/services/fullPlans";
-import { getTasksDir } from "$lib/server/services/tasks";
+import { getTasksDir, listTasks, updateTask } from "$lib/server/services/tasks";
+import { register, unregister } from "$lib/server/services/processes";
+import { getProjectRoot } from "$lib/server/services/projects";
 
 /**
  * POST /api/issues/groups/full-plans/[id]/run
@@ -16,7 +18,11 @@ export const POST: RequestHandler = async ({ params }) => {
     if (plan.status !== "done") throw error(400, "Le plan n'est pas encore terminé");
     if (!plan.planFile) throw error(400, "Aucun fichier plan associé");
 
+    const root = getProjectRoot();
     const planContent = fs.readFileSync(path.join(getTasksDir(), plan.planFile), "utf-8");
+
+    // Task liée (type fullplan) — pour mise à jour du statut
+    const linkedTask = listTasks().find(t => t.fullPlanId === params.id);
 
     // Construire les sections ATLAS par sub-stack
     let atlasSection = "";
@@ -55,11 +61,15 @@ ${planContent.trim()}${atlasSection}`;
 
             const proc = spawn(claudeCmd, [
                 "-p", "--verbose", "--dangerously-skip-permissions",
-                "--output-format", "stream-json"
+                "--output-format", "stream-json",
+                "--add-dir", root,
             ], {
-                shell: true, windowsHide: true, env: cleanEnv, cwd: process.cwd()
+                shell: true, windowsHide: true, env: cleanEnv, cwd: root
             });
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
+            register(plan.id, proc);
+            if (linkedTask) updateTask(linkedTask.id, { status: "implementation" });
+            if (proc.pid) send({ line: `[pid:${proc.pid}]`, type: "system" });
 
             let stdoutBuf = "";
             let stderrBuf = "";
@@ -98,10 +108,13 @@ ${planContent.trim()}${atlasSection}`;
                 }
             });
             proc.on("close", () => {
+                unregister(plan.id);
                 send({ line: "[done]", type: "system" });
                 controller.close();
             });
             proc.on("error", (e: Error) => {
+                unregister(plan.id);
+                if (linkedTask) updateTask(linkedTask.id, { status: "failed" });
                 send({ line: `[erreur] ${e.message}`, type: "system" });
                 controller.close();
             });
