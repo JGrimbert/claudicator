@@ -10,6 +10,11 @@
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
     type TaskType = "standard" | "fullplan";
     type TokenUsage = { inputTokens: number; outputTokens: number };
+    type PatchInfo = { name: string; issueNumber?: number; hasTests: boolean; createdAt: number };
+    type IssueRef = { number: number; title: string };
+    type FullPlanDetail = { id: string; subStacks: { keyword: string; issues: IssueRef[] }[]; residualIssues?: IssueRef[] };
+    type IssueState = "patch-tests" | "patch-no-tests" | "no-patch";
+    type IssueRow = IssueRef & { stack: string; state: IssueState; patch?: PatchInfo };
     type Task = {
         id: string;
         title: string;
@@ -25,11 +30,12 @@
         planUsage?: TokenUsage;
         implUsage?: TokenUsage;
         hasPlan?: boolean;
+        hasPatch?: boolean;
         atlasEnabled?: boolean;
         createdAt: string;
         updatedAt: string;
     };
-    type WfPanel = "plan" | "implement" | "commit" | "push";
+    type WfPanel = "plan" | "implement" | "commit" | "push" | "patch";
 
     const STATUS_LABEL: Record<TaskStatus, string> = {
         specification:  "Spécification",
@@ -76,6 +82,66 @@
     // Plan
     let planContent: string | null = null;
     let planLoading = false;
+
+    // Fullplan detail + issue status
+    let fullPlanDetail: FullPlanDetail | null = null;
+    $: issueRows = ((): IssueRow[] => {
+        if (!fullPlanDetail) return [];
+        const rows: IssueRow[] = [];
+        for (const stack of fullPlanDetail.subStacks) {
+            for (const issue of stack.issues) {
+                const patch = patches.find(p => p.issueNumber === issue.number);
+                const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
+                rows.push({ ...issue, stack: stack.keyword, state, patch });
+            }
+        }
+        for (const issue of (fullPlanDetail.residualIssues ?? [])) {
+            const patch = patches.find(p => p.issueNumber === issue.number);
+            const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
+            rows.push({ ...issue, stack: "résiduel", state, patch });
+        }
+        return rows;
+    })();
+
+    // Patches
+    let patches: PatchInfo[] = [];
+    let selectedPatch: PatchInfo | null = null;
+    let patchContent: string | null = null;
+    let patchLoading = false;
+    let patchApplying = false;
+
+    async function loadPatches(taskId: string) {
+        const res = await fetch(`/api/tasks/${taskId}/patches`);
+        if (res.ok) patches = await res.json();
+    }
+
+    async function openPatch(task: Task, patch: PatchInfo) {
+        selectedPatch = patch;
+        patchContent = null;
+        patchLoading = true;
+        selectedPanel = "patch";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/patches/${encodeURIComponent(patch.name)}`);
+            if (res.ok) patchContent = await res.text();
+        } finally { patchLoading = false; }
+    }
+
+    async function applySelectedPatch(task: Task) {
+        if (!selectedPatch || patchApplying) return;
+        patchApplying = true; wfError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/patches/${encodeURIComponent(selectedPatch.name)}/apply`, { method: "POST" });
+            if (!res.ok) { const d = await res.json(); wfError = d.message ?? "Erreur apply"; }
+        } catch (e: any) { wfError = e.message; }
+        finally { patchApplying = false; }
+    }
+
+    async function rejectPatch(task: Task, patch: PatchInfo) {
+        await fetch(`/api/tasks/${task.id}/patches/${encodeURIComponent(patch.name)}`, { method: "DELETE" });
+        if (selectedPatch?.name === patch.name) { selectedPatch = null; patchContent = null; selectedPanel = "plan"; }
+        await loadPatches(task.id);
+        await loadTasksSilent();
+    }
 
     // Diff / commit
     let diffContent: string | null = null;
@@ -227,7 +293,7 @@
         if (task.status === "merged")        return [{ name: "Mergée",    color: "4caf50" }];
         if (task.status === "documentation" || task.status === "validation" || task.status === "implementation") {
             const planStr = task.planUsage ? `p:${Math.round(task.planUsage.inputTokens / 100) / 10}k` : "";
-            const implTokens = task.implUsage ?? task.totalUsage ?? task.usage;
+            const implTokens = task.implUsage;
             const implStr = implTokens ? `${Math.round(implTokens.inputTokens / 100) / 10}k` : "";
             const sigma = (task.planUsage && task.implUsage)
                 ? ` Σ${Math.round((task.planUsage.inputTokens + task.implUsage.inputTokens) / 100) / 10}k`
@@ -413,6 +479,7 @@
     async function selectTask(initialTask: Task, silent = false) {
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
+            patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
             commitMsg = ""; selectedPanel = "plan"; wfError = "";
             if (initialTask.type === "fullplan") {
                 activeFullPlan.set(null);
@@ -425,18 +492,27 @@
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
         planContent = null; diffContent = null;
+        patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
         commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
+        if (initialTask.hasPatch) loadPatches(initialTask.id);
         linkedIssueState = null;
         const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
 
-        // Task de type fullplan → ouvrir le panel plan complet
+        // Task de type fullplan → ouvrir le panel plan complet + charger détail issues
         if (initialTask.type === "fullplan" && initialTask.fullPlanId) {
             const res = await fetch(`/api/issues/groups/full-plans/${initialTask.fullPlanId}`);
             if (res.ok) {
                 const fp = await res.json();
+                fullPlanDetail = fp;
                 activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile });
+            }
+            // Charger le diff si une branche existe (sans setter planModeTask)
+            if (initialTask.branch) {
+                await loadDiff(initialTask.id);
+                if (diffContent?.trim()) selectedPanel = "commit";
+                else if (diffContent !== null) selectedPanel = "push";
             }
             return;
         }
@@ -618,6 +694,29 @@
                         title="Supprimer"
                     >✕</button>
                 </div>
+                {#if task.hasPatch && selected?.id === task.id && patches.length > 0}
+                    <div class="patch-sublist">
+                        {#each patches as patch}
+                            <div
+                                class="patch-sub-item"
+                                class:patch-selected={selectedPatch?.name === patch.name}
+                                onclick={() => openPatch(task, patch)}
+                                title={patch.name}
+                                role="button"
+                                tabindex="0"
+                                onkeydown={(e) => e.key === 'Enter' && openPatch(task, patch)}
+                            >
+                                <span class="patch-dot" class:has-tests={patch.hasTests}></span>
+                                <span class="patch-sub-label">{patch.issueNumber ? `#${patch.issueNumber}` : patch.name.replace('.patch','')}</span>
+                                <button
+                                    class="patch-reject-btn"
+                                    onclick={(e) => { e.stopPropagation(); rejectPatch(task, patch); }}
+                                    title="Rejeter ce patch"
+                                >✕</button>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
 
                 {#if selected?.id === task.id}
                     <div class="inline-detail">
@@ -636,6 +735,37 @@
                             </div>
 
                         {:else}
+
+                        <!-- ── État des issues (fullplan) ── -->
+                        {#if task.type === "fullplan" && issueRows.length > 0}
+                            <div class="issue-status-table">
+                                {#each issueRows as row}
+                                    <div
+                                        class="issue-status-row"
+                                        class:clickable={!!row.patch}
+                                        onclick={row.patch ? () => openPatch(task, row.patch!) : undefined}
+                                        role={row.patch ? "button" : undefined}
+                                        tabindex={row.patch ? 0 : undefined}
+                                        onkeydown={row.patch ? (e) => e.key === 'Enter' && openPatch(task, row.patch!) : undefined}
+                                    >
+                                        <span class="is-dot is-{row.state}"></span>
+                                        <span class="is-num">#{row.number}</span>
+                                        <span class="is-title">{row.title}</span>
+                                        <span class="is-stack">{row.stack}</span>
+                                        {#if row.state === "no-patch"}
+                                            <span class="is-badge is-missing">∅ patch</span>
+                                            <span class="is-badge is-missing">? tests</span>
+                                        {:else if row.state === "patch-no-tests"}
+                                            <span class="is-badge is-ok">patch</span>
+                                            <span class="is-badge is-notests">∅ tests</span>
+                                        {:else}
+                                            <span class="is-badge is-ok">patch</span>
+                                            <span class="is-badge is-ok">✓ tests</span>
+                                        {/if}
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
 
                         <!-- ── Task bloquée / échouée ── -->
                         {#if task.status === "planification" || task.status === "failed"}
@@ -825,6 +955,31 @@
                         {/if}
 
                         {/if}<!-- /merged else -->
+
+                        {#if selectedPanel === "patch" && selectedPatch}
+                            <div class="patch-panel">
+                                <div class="patch-panel-bar">
+                                    <span class="patch-panel-title">{selectedPatch.issueNumber ? `#${selectedPatch.issueNumber}` : selectedPatch.name}</span>
+                                    <span class="patch-panel-test" class:has-tests={selectedPatch.hasTests}>{selectedPatch.hasTests ? "✓ tests" : "✗ tests"}</span>
+                                    <button class="wf-btn wf-active" onclick={() => applySelectedPatch(task)} disabled={patchApplying}>{patchApplying ? "…" : "↓ Appliquer"}</button>
+                                    <button class="wf-btn" onclick={() => rejectPatch(task, selectedPatch!)}>✕ Rejeter</button>
+                                </div>
+                                {#if patchLoading}
+                                    <span class="diff-hint">Chargement…</span>
+                                {:else if patchContent}
+                                    <div class="diff-view">
+                                        {#each patchContent.split('\n') as line}
+                                            <div class="diff-line"
+                                                class:add={line.startsWith('+') && !line.startsWith('+++')}
+                                                class:del={line.startsWith('-') && !line.startsWith('---')}
+                                                class:hunk={line.startsWith('@@')}
+                                                class:meta={line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('---') || line.startsWith('+++')}
+                                            >{line || '\u200b'}</div>
+                                        {/each}
+                                    </div>
+                                {/if}
+                            </div>
+                        {/if}
 
                     </div>
                 {/if}
@@ -1250,6 +1405,77 @@
 .diff-line.del { color: #f44336; background: rgba(244,67,54,0.05); }
 .diff-line.hunk { color: #7c6af7; }
 .diff-line.meta { color: #2a2a2a; }
+
+/* ── Issue status table (fullplan) ── */
+.issue-status-table {
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    padding: 4px 0;
+}
+.issue-status-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 8px; font-size: 0.65rem;
+}
+.issue-status-row.clickable { cursor: pointer; }
+.issue-status-row.clickable:hover { background: var(--bg-hover, #1a1a1a); }
+.is-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+.is-dot.is-patch-tests    { background: #4caf50; }
+.is-dot.is-patch-no-tests { background: #f7c948; }
+.is-dot.is-no-patch       { background: #555; }
+.is-num  { color: #888; flex-shrink: 0; }
+.is-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.is-stack { color: #555; font-size: 0.6rem; flex-shrink: 0; }
+.is-badge { font-size: 0.58rem; flex-shrink: 0; padding: 1px 4px; border-radius: 3px; }
+.is-badge.is-missing  { background: #2a2a2a; color: #555; }
+.is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
+.is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
+
+/* ── Patches ── */
+.patch-sublist {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 0 2px 8px;
+    border-left: 2px solid var(--border);
+    margin: 0 4px 4px 8px;
+    gap: 1px;
+}
+.patch-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 0.67rem;
+    color: var(--text-muted);
+    width: 100%;
+    text-align: left;
+    position: relative;
+}
+.patch-sub-item:hover, .patch-sub-item.patch-selected { background: var(--bg-hover, #1a1a1a); color: var(--text); }
+.patch-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    background: #f44336;
+}
+.patch-dot.has-tests { background: #4caf50; }
+.patch-sub-label { flex: 1; }
+.patch-reject-btn {
+    opacity: 0; background: none; border: none; cursor: pointer;
+    color: #555; font-size: 0.6rem; padding: 0 2px; line-height: 1;
+}
+.patch-sub-item:hover .patch-reject-btn { opacity: 1; }
+.patch-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+.patch-panel-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px; flex-shrink: 0;
+}
+.patch-panel-title { font-size: 0.7rem; font-weight: 600; color: var(--text); }
+.patch-panel-test { font-size: 0.62rem; color: #f44336; }
+.patch-panel-test.has-tests { color: #4caf50; }
 .diff-hint {
     display: block;
     padding: 0.4rem 1rem;

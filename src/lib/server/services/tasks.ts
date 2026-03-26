@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { getCurrentProject, getProjectRoot } from "./projects";
+import { hasPatchFiles } from "./patches";
 
 export type TaskStatus =
   | "specification"    // tâche créée, plan non encore généré
@@ -35,6 +36,7 @@ export type Task = {
     planUsage?: TokenUsage;   // tokens phase planification
     implUsage?: TokenUsage;   // tokens phase implémentation
     hasPlan?: boolean;        // fichier .plan.md présent
+    hasPatch?: boolean;       // au moins un .patch dans le dossier patches/
     atlasEnabled?: boolean;   // inclure ATLAS.md dans le prompt
     createdAt: string;
     updatedAt: string;
@@ -86,6 +88,7 @@ export function listTasks(): Task[] {
         .map(f => {
             const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
             task.hasPlan = fs.existsSync(path.join(dir, `${task.id}.plan.md`));
+            task.hasPatch = hasPatchFiles(task.id);
             return task;
         })
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
