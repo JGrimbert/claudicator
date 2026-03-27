@@ -1,24 +1,43 @@
 # Atlas — Claudicator
-_Généré pour le groupe : token (6 issues)_
+_Généré pour le groupe : task (13 issues)_
 
-## Points d'entrée — token
+## Points d'entrée — task
 
 Ces symboles ont été identifiés comme pertinents pour le groupe :
 
 | Symbole | Fichier | Signature |
 |---|---|---|
+| `listTasks` | `src/lib/server/services/tasks.ts` | `listTasks()` |
 | `deleteTask` | `src/lib/server/services/tasks.ts` | `deleteTask(id)` |
-| `askClaude` | `src/lib/server/services/claude.ts` | `askClaude(prompt)` |
-| `unregister` | `src/lib/server/services/processes.ts` | `unregister(taskId)` |
-| `/api/usage` | `src/routes/api/usage/+server.ts` | `GET` — Usage — retourne la consommation de tokens du projet (GET) |
-| `/api/plan` | `src/routes/api/plan/+server.ts` | `GET` — Plans — retourne le plan global d'une issue (GET) |
+| `getTask` | `src/lib/server/services/tasks.ts` | `getTask(id)` |
+| `/api/tasks/[id]/plan` | `src/routes/api/tasks/[id]/plan/+server.ts` | `GET, POST, PUT` — Tâches — lit le plan de la tâche depuis le disque (GET) ou le sauvegarde (POST) |
 | `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
-| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, loadLinkedIssueState, skipPlan, loadPlan` — composant UI |
-| `AgentInput` | `src/lib/components/AgentInput.svelte` | `parseByKeys, toggleSec, startEditPlan, cancelEditPlan, savePlan, reloadPlan` — composant UI |
+| `/api/tasks/[id]/commit` | `src/routes/api/tasks/[id]/commit/+server.ts` | `POST` — Tâches — commite les changements sur la branche de la tâche (POST) |
+| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, closeFullPlanIssues, skipPlan, loadPlan, loadLinkedIssueState, closeLinkedIssue, toggleAtlas, generateAtlas, createBranchAndShowDiff, loadDiff, btnVariant` — composant UI |
+| `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks, openIssue, loadRoadmaps, onRoadmapChange, createNewRoadmap, parseGroups` — composant UI |
 
 ---
 
 ## Snippets
+
+### `listTasks`
+_src/lib/server/services/tasks.ts_
+
+```ts
+function listTasks(): Task[] {
+    ensureDir();
+    const dir = getTasksDir();
+    return fs.readdirSync(dir)
+        .filter(f => f.endsWith(".json"))
+        .map(f => {
+            const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
+            task.hasPlan = fs.existsSync(path.join(dir, `${task.id}.plan.md`));
+            task.hasPatch = hasPatchFiles(task.id);
+            return task;
+        })
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+```
 
 ### `deleteTask`
 _src/lib/server/services/tasks.ts_
@@ -32,27 +51,13 @@ function deleteTask(id: string): boolean {
 }
 ```
 
-### `askClaude`
-_src/lib/server/services/claude.ts_
+### `getTask`
+_src/lib/server/services/tasks.ts_
 
 ```ts
-function askClaude(prompt: string) {
-    const escaped = prompt.replace(/"/g, '\\"');
-
-    const output = execSync(`claude "${escaped}"`, {
-        encoding: "utf8",
-        maxBuffer: 1024 * 1024 * 20
-    });
-
-    return output;
-}
-```
-
-### `unregister`
-_src/lib/server/services/processes.ts_
-
-```ts
-function unregister(taskId: string) {
-    active.delete(taskId);
+function getTask(id: string): Task | null {
+    const p = taskPath(id);
+    if (!fs.existsSync(p)) return null;
+    return migrateTaskStatus(JSON.parse(fs.readFileSync(p, "utf-8")));
 }
 ```

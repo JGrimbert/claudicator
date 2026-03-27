@@ -1,6 +1,8 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
 
 /**
  * POST /api/issues/groups/evaluate
@@ -143,7 +145,17 @@ Règles :
                     send({ line: `Erreur : ${stderrBuf.trim().slice(0, 200)}`, type: "error" });
                 }
                 const deps = extractDeps(fullOutput);
-                if (deps) send({ type: "system", line: "[deps]", data: deps });
+                if (deps) {
+                    try {
+                        const dir = path.join(process.cwd(), ".agent", "eval-dags");
+                        fs.mkdirSync(dir, { recursive: true });
+                        fs.writeFileSync(
+                            path.join(dir, `${keyword}.json`),
+                            JSON.stringify({ keyword, deps, issues: issues.map(i => i.number), timestamp: Date.now() })
+                        );
+                    } catch { /* ignore */ }
+                    send({ type: "system", line: "[deps]", data: deps });
+                }
                 send({ type: "system", line: "[done]" });
                 try { controller.close(); } catch { /* déjà fermé */ }
             });

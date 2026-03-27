@@ -12,14 +12,14 @@
     import RoadmapViz from "$lib/components/RoadmapViz.svelte";
     import FullPlanView from "$lib/components/FullPlanView.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
-    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream, evalIssueDag } from "$lib/stores/agent";
+    import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream, evalIssueDag, projetPanelTab, pendingSelectTaskId } from "$lib/stores/agent";
     import type { RunLog } from "$lib/stores/agent";
 
     let activeMiddleTab: "dag" | "plan" | "cluster" | "coal" | "fullplan" = "dag";
     $: if ($planModeTask)             activeMiddleTab = "plan";
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
-    $: if ($activeFullPlan)           activeMiddleTab = "fullplan";
+    $: if ($activeFullPlan?.status === "done") activeMiddleTab = "fullplan";
     $: if ($evalIssueDag)             activeMiddleTab = "dag";
 
 
@@ -374,6 +374,23 @@
         } catch { /* ignore */ }
 
         // Le fullplan actif est restauré par TaskList via SELECTED_KEY (selectTask → activeFullPlan)
+        // En plus : si une implémentation de fullplan est en cours, focus automatique sur l'onglet
+        // + sélection de la task et activation de l'onglet Tasks
+        try {
+            const fpRes = await fetch("/api/issues/groups/full-plans/active");
+            if (fpRes.ok) {
+                const fp = await fpRes.json();
+                if (fp) {
+                    activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile });
+                    activeMiddleTab = "fullplan";
+                    if (fp.taskId) {
+                        projetPanelTab.set("tasks");
+                        pendingSelectTaskId.set(fp.taskId);
+                        taskRefreshTick.update(n => n + 1);
+                    }
+                }
+            }
+        } catch { /* ignore */ }
     });
 
     // Handle vertical aside split

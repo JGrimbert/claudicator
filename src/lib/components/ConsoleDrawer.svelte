@@ -138,6 +138,13 @@
     $: expanded = hasRun && !$agentRunState.consoleMinimized;
     $: canPrompt = hasRun;
 
+    let wasRunning = false;
+    $: if ($agentRunState.running) wasRunning = true;
+    $: if (!$agentRunState.running && wasRunning) {
+        wasRunning = false;
+        taskRefreshTick.update(n => n + 1);
+    }
+
     // ── Input / prompt ─────────────────────────────────────────────────────────
     let userInput   = "";
     let sendingInput = false;
@@ -207,6 +214,25 @@
     {#if expanded && panelHeight > 0}
         <div class="console-panel" style="height: {panelHeight}px">
             <RunConsole />
+        </div>
+    {/if}
+
+    <!-- ── Barre de continuation (fin de run, session vivante) ── -->
+    {#if expanded && !$agentRunState.running && $agentRunState.sessionAlive && panelHeight > 0}
+        <div class="completion-bar">
+            <span class="completion-sym">›</span>
+            <input
+                class="completion-input"
+                type="text"
+                placeholder="Continuer le prompt…"
+                bind:value={userInput}
+                onkeydown={onInputKey}
+            />
+            <button
+                class="completion-send"
+                onclick={continuer}
+                disabled={!userInput.trim() || sendingInput}
+            >↵</button>
         </div>
     {/if}
 
@@ -305,6 +331,50 @@
     transition: border-color 0.15s;
 }
 .vhandle:hover, .vhandle.active { border-color: #3a3a3a; }
+
+/* ── Barre de continuation ── */
+.completion-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 1rem;
+    background: var(--bg-panel);
+    border-top: 1px solid #1a3020;
+    flex-shrink: 0;
+}
+.completion-sym {
+    color: #3a7a4a;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.completion-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0;
+}
+.completion-input:focus { color: #bbb; }
+.completion-input::placeholder { color: #2a4a2a; }
+.completion-send {
+    background: none;
+    border: 1px solid #2a3a2a;
+    color: #3a5a3a;
+    font-size: 0.7rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1.2;
+    font-family: 'JetBrains Mono', monospace;
+}
+.completion-send:hover:not(:disabled) { border-color: #3a7a4a; color: #3a7a4a; }
+.completion-send:disabled { opacity: 0.2; cursor: default; }
 
 /* ── Badge reconnexion ── */
 .reconnect-bar {

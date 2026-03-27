@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { getFullPlan } from "$lib/server/services/fullPlans";
@@ -12,26 +12,67 @@ import { getAbsPatchesDir } from "$lib/server/services/patches";
 /**
  * POST /api/issues/groups/full-plans/[id]/run
  * Lance l'implémentation du plan complet via Claude en SSE.
+ * Claude travaille dans un worktree git isolé — le repo cible n'est PAS modifié directement.
  */
-export const POST: RequestHandler = async ({ params }) => {
+export const POST: RequestHandler = async ({ params, request }) => {
     const plan = getFullPlan(params.id);
     if (!plan) throw error(404, "Plan introuvable");
     if (plan.status !== "done") throw error(400, "Le plan n'est pas encore terminé");
     if (!plan.planFile) throw error(400, "Aucun fichier plan associé");
 
+    const body = await request.json().catch(() => ({})) as { stackKeyword?: string };
+    const stackKeyword = body?.stackKeyword;
+
     const root = getProjectRoot();
-    const planContent = fs.readFileSync(path.join(getTasksDir(), plan.planFile), "utf-8");
+    const fullPlanContent = fs.readFileSync(path.join(getTasksDir(), plan.planFile), "utf-8");
+
+    // Si stackKeyword fourni : extraire seulement la section de cette stack
+    let planContent = fullPlanContent;
+    if (stackKeyword) {
+        const escaped = stackKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(`(^## Stack "${escaped}"[\\s\\S]*?)(?=^## Stack "|$)`, "m");
+        const match = fullPlanContent.match(re);
+        if (match) planContent = match[1].trim();
+    }
 
     // Task liée (type fullplan) — pour mise à jour du statut + patches dir
     const linkedTask = listTasks().find(t => t.fullPlanId === params.id);
     const patchesDir = linkedTask ? getAbsPatchesDir(linkedTask.id) : null;
     if (patchesDir) fs.mkdirSync(patchesDir, { recursive: true });
 
-    // Construire les sections ATLAS par sub-stack
+    // ── Worktree isolé ────────────────────────────────────────────────────────
+    // Claude travaille dans un worktree séparé du repo cible.
+    // Le repo principal n'est JAMAIS modifié directement.
+    const worktreesBase = path.join(process.cwd(), ".agent", "worktrees");
+    fs.mkdirSync(worktreesBase, { recursive: true });
+    const wtSuffix = stackKeyword ? `${plan.id}-${stackKeyword.replace(/[^a-z0-9]/gi, "-")}` : plan.id;
+    const worktreePath = path.join(worktreesBase, `fullplan-${wtSuffix}`);
+    const worktreeBranch = `fullplan-${wtSuffix}`;
+
+    if (!fs.existsSync(worktreePath)) {
+        // Vérifier si la branche existe déjà (reprise d'un run interrompu)
+        let branchExists = false;
+        try {
+            execSync(`git -C "${root}" rev-parse --verify "${worktreeBranch}"`, { stdio: "pipe" });
+            branchExists = true;
+        } catch { /* branche inexistante */ }
+
+        if (branchExists) {
+            execSync(`git -C "${root}" worktree add "${worktreePath}" "${worktreeBranch}"`, { stdio: "pipe" });
+        } else {
+            execSync(`git -C "${root}" worktree add "${worktreePath}" -b "${worktreeBranch}"`, { stdio: "pipe" });
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Construire les sections ATLAS (filtrées si stackKeyword)
     let atlasSection = "";
     if (plan.stepAtlasFiles && Object.keys(plan.stepAtlasFiles).length > 0) {
         const parts: string[] = ["## ATLAS par étape", ""];
-        for (const [keyword, atlasPath] of Object.entries(plan.stepAtlasFiles)) {
+        const entries = stackKeyword
+            ? Object.entries(plan.stepAtlasFiles).filter(([k]) => k === stackKeyword)
+            : Object.entries(plan.stepAtlasFiles);
+        for (const [keyword, atlasPath] of entries) {
             if (fs.existsSync(atlasPath)) {
                 const atlasContent = fs.readFileSync(atlasPath, "utf-8");
                 parts.push(`### Stack "${keyword}"`);
@@ -42,23 +83,43 @@ export const POST: RequestHandler = async ({ params }) => {
         atlasSection = "\n\n" + parts.join("\n");
     }
 
-    const patchInstruction = patchesDir ? `
+    const workflowInstruction = patchesDir ? `
 
-## PATCHES PAR ISSUE
-Après avoir implémenté les changements pour chaque issue, génère un patch des fichiers modifiés :
+## WORKFLOW PAR ISSUE — OBLIGATOIRE
+
+Tu travailles dans le worktree isolé : \`${worktreePath}\`
+Ce worktree est une copie propre du repo cible. **NE modifie PAS les fichiers en dehors de ce worktree.**
+
+Pour chaque issue #N mentionnée dans ce plan, dans l'ordre :
+
+### 1. Tests d'abord (TDD)
+Avant d'écrire le code de production, crée les fichiers de test :
+- Nomme-les \`*.test.ts\` ou \`*.spec.ts\` selon les conventions du projet
+- Couvre les cas normaux ET les cas limites
+- NE PASSE PAS à l'étape suivante sans avoir écrit les tests
+
+### 2. Implémentation
+Implémente le code pour faire passer les tests.
+
+### 3. Commit dans le worktree
 \`\`\`bash
-git -C "${root}" diff HEAD -- <fichiers modifiés pour cette issue> > "${patchesDir}/issue-<N>.patch"
+git -C "${worktreePath}" add -A
+git -C "${worktreePath}" commit -m "feat: #N — <titre court de l'issue>"
 \`\`\`
-- Remplace <N> par le numéro de l'issue (ex: issue-42.patch)
-- Liste TOUS les fichiers modifiés pour cette issue dans la commande diff
-- NE COMMITE PAS — le patch capture uniquement les changements non-commités
-- Un patch par issue, généré dès que les changements de cette issue sont complets` : "";
 
-    const prompt = `useAtlas
+### 4. Générer le patch
+\`\`\`bash
+git -C "${worktreePath}" format-patch HEAD~1 --stdout > "${patchesDir}/issue-N.patch"
+\`\`\`
 
-# IMPLÉMENTATION : plan groupe "${plan.keyword}"
+Règles :
+- Remplace N par le numéro de l'issue (ex: issue-42.patch)
+- Un commit + un patch par issue, dans l'ordre du plan
+- Les issues suivantes s'appuient sur les commits précédents dans ce même worktree` : "";
 
-${planContent.trim()}${atlasSection}${patchInstruction}`;
+    const prompt = `# IMPLÉMENTATION : plan groupe "${plan.keyword}"
+
+${planContent.trim()}${atlasSection}${workflowInstruction}`;
 
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
     const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
@@ -77,14 +138,15 @@ ${planContent.trim()}${atlasSection}${patchInstruction}`;
             const proc = spawn(claudeCmd, [
                 "-p", "--verbose", "--dangerously-skip-permissions",
                 "--output-format", "stream-json",
-                "--add-dir", root,
+                "--add-dir", worktreePath,
             ], {
-                shell: true, windowsHide: true, env: cleanEnv, cwd: root
+                shell: true, windowsHide: true, env: cleanEnv, cwd: worktreePath
             });
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
             register(plan.id, proc);
             if (linkedTask) updateTask(linkedTask.id, { status: "implementation" });
             if (proc.pid) send({ line: `[pid:${proc.pid}]`, type: "system" });
+            send({ line: `[worktree] ${worktreePath}`, type: "system" });
 
             let stdoutBuf = "";
             let stderrBuf = "";

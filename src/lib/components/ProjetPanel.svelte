@@ -163,7 +163,8 @@
             });
             const created = await res.json();
             issueTaskDone = new Set([...issueTaskDone, issue.number]);
-            notifyTaskCreated(created?.id);
+            const id = created?.alreadyExisted ? created.id : created?.id;
+            notifyTaskCreated(id);
             setTimeout(() => {
                 issueTaskDone = new Set([...issueTaskDone].filter((n) => n !== issue.number));
             }, 1500);

@@ -17,6 +17,17 @@
 
     // Lancement implémentation
     let launching = $state(false);
+    let launchingStack = $state<string | null>(null);
+
+    function parseStacks(text: string): string[] {
+        const re = /^## Stack "([^"]+)"/gm;
+        const out: string[] = [];
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.push(m[1]);
+        return out;
+    }
+
+    const stacks = $derived(content ? parseStacks(content) : []);
 
     $effect(() => {
         if (plan.status === "done" && plan.planFile && plan.id) {
@@ -62,27 +73,33 @@
         }
     }
 
-    async function launchImpl() {
-        if (!plan.id || launching) return;
-        launching = true;
+    async function launchImpl(stackKeyword?: string) {
+        if (!plan.id) return;
+        if (stackKeyword ? launchingStack === stackKeyword : launching) return;
+        if (stackKeyword) launchingStack = stackKeyword; else launching = true;
         agentRunState.update(s => ({
             ...s,
             taskId: plan.id,
-            taskTitle: `Implémentation — ${plan.keyword}`,
+            taskTitle: stackKeyword ? `Implémentation — ${plan.keyword} / ${stackKeyword}` : `Implémentation — ${plan.keyword}`,
             logs: [],
             running: true,
             sessionAlive: false,
         }));
         try {
-            const res = await fetch(`/api/issues/groups/full-plans/${plan.id}/run`, { method: "POST" });
-            await startConsoleStream(res, { onDone: () => { launching = false; } });
+            const body = stackKeyword ? JSON.stringify({ stackKeyword }) : undefined;
+            const res = await fetch(`/api/issues/groups/full-plans/${plan.id}/run`, {
+                method: "POST",
+                headers: body ? { "Content-Type": "application/json" } : {},
+                body,
+            });
+            await startConsoleStream(res, { onDone: () => { if (stackKeyword) launchingStack = null; else launching = false; } });
         } catch (e: any) {
             agentRunState.update(s => ({
                 ...s,
                 running: false,
                 logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" }],
             }));
-            launching = false;
+            if (stackKeyword) launchingStack = null; else launching = false;
         }
     }
 </script>
@@ -90,7 +107,7 @@
 <div class="fp-wrap">
     {#if plan.status === "generating"}
         <div class="fp-state fp-generating">
-            <span class="fp-spinner">⠋</span>
+            <span class="fp-spinner"></span>
             <span>Génération en cours — {plan.keyword}…</span>
         </div>
     {:else if plan.status === "error"}
@@ -129,7 +146,21 @@
                 </button>
             </div>
             <div class="fp-actions">
-                <JgrCta label="Lancer l'implémentation" pending={launching} onclick={launchImpl} />
+                {#if stacks.length > 0}
+                    <div class="fp-stacks">
+                        {#each stacks as kw}
+                            <button
+                                class="fp-stack-btn"
+                                onclick={() => launchImpl(kw)}
+                                disabled={launchingStack === kw || launching}
+                            >
+                                {launchingStack === kw ? "…" : "▶"} {kw}
+                            </button>
+                        {/each}
+                    </div>
+                    <div class="fp-actions-sep"></div>
+                {/if}
+                <JgrCta label="Lancer tout" pending={launching} onclick={() => launchImpl()} />
             </div>
         {/if}
     {:else}
@@ -155,9 +186,10 @@
     .fp-error {
         color: var(--color-error, #c0392b);
     }
-    .fp-spinner {
+    .fp-spinner::before {
+        content: "⠋";
         font-family: monospace;
-        animation: spin-braille 0.4s steps(8, end) infinite;
+        animation: spin-braille 0.8s steps(8, end) infinite;
     }
     @keyframes spin-braille {
         0%   { content: "⠋"; }
@@ -217,6 +249,36 @@
         padding: 12px 16px;
         border-top: 1px solid var(--color-border, #333);
         margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .fp-stacks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .fp-stack-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid var(--color-border, #333);
+        background: var(--color-bg-subtle, #1a1a2e);
+        color: var(--color-text, #ccc);
+        white-space: nowrap;
+    }
+    .fp-stack-btn:hover:not(:disabled) {
+        border-color: #6a50c0;
+        color: #a78bfa;
+    }
+    .fp-stack-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .fp-actions-sep {
+        height: 1px;
+        background: var(--color-border, #333);
     }
     .fp-edit-wrap {
         display: flex;

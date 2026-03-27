@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, startConsoleStream, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
@@ -146,6 +146,32 @@
             if (!res.ok) { const d = await res.json(); wfError = d.message ?? "Erreur apply"; }
         } catch (e: any) { wfError = e.message; }
         finally { patchApplying = false; }
+    }
+
+    async function writeTests(task: Task, row: IssueRow) {
+        if (!task.fullPlanId || !row.patch) return;
+        agentRunState.update(s => ({
+            ...s,
+            taskId: task.id,
+            taskTitle: `Tests — #${row.number} ${row.title}`,
+            logs: [],
+            running: true,
+            sessionAlive: false,
+        }));
+        try {
+            const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/write-tests`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ issueNumber: row.number, patchName: row.patch.name }),
+            });
+            await startConsoleStream(res, { onDone: async () => { await loadPatches(task.id); await loadTasksSilent(); } });
+        } catch (e: any) {
+            agentRunState.update(s => ({
+                ...s,
+                running: false,
+                logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" }],
+            }));
+        }
     }
 
     async function rejectPatch(task: Task, patch: PatchInfo) {
@@ -713,31 +739,7 @@
                         title="Supprimer"
                     >✕</button>
                 </div>
-                {#if task.hasPatch && selected?.id === task.id && patches.length > 0}
-                    <div class="patch-sublist">
-                        {#each patches as patch}
-                            <div
-                                class="patch-sub-item"
-                                class:patch-selected={selectedPatch?.name === patch.name}
-                                onclick={() => openPatch(task, patch)}
-                                title={patch.name}
-                                role="button"
-                                tabindex="0"
-                                onkeydown={(e) => e.key === 'Enter' && openPatch(task, patch)}
-                            >
-                                <span class="patch-dot" class:has-tests={patch.hasTests}></span>
-                                <span class="patch-sub-label">{patch.issueNumber ? `#${patch.issueNumber}` : patch.name.replace('.patch','')}</span>
-                                <button
-                                    class="patch-reject-btn"
-                                    onclick={(e) => { e.stopPropagation(); rejectPatch(task, patch); }}
-                                    title="Rejeter ce patch"
-                                >✕</button>
-                            </div>
-                        {/each}
-                    </div>
-                {/if}
-
-                {#if selected?.id === task.id}
+{#if selected?.id === task.id}
                     <div class="inline-detail">
 
                         {#if task.status === "merged"}
@@ -775,10 +777,10 @@
                                             <span class="is-badge is-missing">∅ patch</span>
                                             <span class="is-badge is-missing">? tests</span>
                                         {:else if row.state === "patch-no-tests"}
-                                            <span class="is-badge is-ok">patch</span>
-                                            <span class="is-badge is-notests">∅ tests</span>
+                                            <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(task, row.patch!); }} title="Rejeter ce patch">✕</button></span>
+                                            <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(task, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
                                         {:else}
-                                            <span class="is-badge is-ok">patch</span>
+                                            <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(task, row.patch!); }} title="Rejeter ce patch">✕</button></span>
                                             <span class="is-badge is-ok">✓ tests</span>
                                         {/if}
                                     </div>
@@ -1457,6 +1459,14 @@
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
 .is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
+.is-badge.is-btn      { border: none; cursor: pointer; }
+.is-badge.is-btn:hover { filter: brightness(1.4); }
+.is-reject-btn {
+    background: none; border: none; cursor: pointer;
+    color: inherit; font-size: 0.55rem; padding: 0 0 0 3px; line-height: 1; opacity: 0;
+}
+.is-badge:hover .is-reject-btn { opacity: 0.7; }
+.is-reject-btn:hover { opacity: 1 !important; }
 .issue-status-footer  { padding: 4px 8px; }
 
 /* ── Patches ── */
