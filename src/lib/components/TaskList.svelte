@@ -127,6 +127,7 @@
     let sandboxState: SandboxState | null = null;
     let sandboxError = "";
     let sandboxBusy: string | null = null; // nom du patch en cours d'opération
+    let repromptBusy: number | null = null; // issueNumber en cours de reprompt
 
     async function loadPatches(taskId: string) {
         const res = await fetch(`/api/tasks/${taskId}/patches`);
@@ -236,6 +237,52 @@
                 running: false,
                 logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" }],
             }));
+        }
+    }
+
+    async function repromptIssue(task: Task, row: IssueRow) {
+        if (!task.fullPlanId) return;
+        const extraContext = window.prompt(`Contexte supplémentaire pour #${row.number} — ${row.title} :\n(laisser vide pour relancer tel quel)`) ?? "";
+        repromptBusy = row.number;
+        agentRunState.update(s => ({
+            ...s,
+            taskId: task.id,
+            taskTitle: `Reprompt — #${row.number} ${row.title}`,
+            logs: [],
+            running: true,
+            sessionAlive: false,
+        }));
+        try {
+            // 1. Reprompt
+            const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/reprompt`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ issueNumber: row.number, extraContext }),
+            });
+            await startConsoleStream(res);
+            await loadPatches(task.id);
+            await loadTasksSilent();
+
+            // 2. Propagation automatique — SSE enchaîné dans la même console
+            agentRunState.update(s => ({
+                ...s,
+                running: true,
+                logs: [...s.logs, { line: "[propagation] inspection des patches suivants...", type: "system" as const }],
+            }));
+            const propRes = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/propagate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fromIssueNumber: row.number }),
+            });
+            await startConsoleStream(propRes, { onDone: async () => { await loadPatches(task.id); await loadTasksSilent(); } });
+        } catch (e: any) {
+            agentRunState.update(s => ({
+                ...s,
+                running: false,
+                logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" as const }],
+            }));
+        } finally {
+            repromptBusy = null;
         }
     }
 
@@ -872,59 +919,99 @@
 
                         {:else}
 
-                        <!-- ── État des issues (fullplan) ── -->
-                        {#if task.type === "fullplan" && issueRows.length > 0}
-                            <div class="issue-status-table">
+                        <!-- ── État des issues (fullplan) — arbre de dépendances ── -->
+                        {#snippet issueRow(t: Task, row: IssueRow)}
+                            <div
+                                class="issue-status-row"
+                                class:clickable={!!row.patch}
+                                onclick={row.patch ? () => openPatch(t, row.patch!) : undefined}
+                                role={row.patch ? "button" : undefined}
+                                tabindex={row.patch ? 0 : undefined}
+                                onkeydown={row.patch ? (e) => e.key === 'Enter' && openPatch(t, row.patch!) : undefined}
+                            >
+                                <span class="is-dot is-{row.state}"></span>
+                                <span class="is-num">#{row.number}</span>
+                                <span class="is-title">{row.title}</span>
+                                {#if row.state === "no-patch"}
+                                    <span class="is-badge is-missing">∅ patch</span>
+                                    <span class="is-badge is-missing">? tests</span>
+                                {:else if row.state === "patch-no-tests"}
+                                    <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
+                                    <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
+                                {:else}
+                                    <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
+                                    <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(t, row); }} title="Lancer les tests">
+                                        {$testRunState.planId === t.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
+                                    </button>
+                                {/if}
+                                <button
+                                    class="is-reprompt-btn"
+                                    onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }}
+                                    disabled={!!repromptBusy}
+                                    title="Rejouer l'implémentation de cette issue"
+                                >{repromptBusy === row.number ? "…" : "↺"}</button>
+                                {#if row.patch}
+                                    {#if sandboxState?.applied.includes(row.patch.name)}
+                                        <button
+                                            class="is-sandbox-btn is-sandbox-applied"
+                                            onclick={(e) => { e.stopPropagation(); sandboxUnapply(t, row.patch!.name); }}
+                                            disabled={!!sandboxBusy}
+                                            title="Retirer ce patch du repo"
+                                        >{sandboxBusy === row.patch.name ? "…" : "↩"}</button>
+                                    {:else}
+                                        <button
+                                            class="is-sandbox-btn"
+                                            onclick={(e) => { e.stopPropagation(); sandboxApply(t, row.patch!.name); }}
+                                            disabled={!!sandboxBusy}
+                                            title={sandboxState?.deps[row.patch.name]?.length ? `Applique aussi : ${sandboxState.deps[row.patch.name].join(', ')}` : "Appliquer ce patch dans le repo"}
+                                        >{sandboxBusy === row.patch.name ? "…" : "↓ tester"}</button>
+                                    {/if}
+                                {/if}
+                            </div>
+                        {/snippet}
+
+                        {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0}
+                            {@const fp = fullPlanDetail}
+                            {@const allGroups = [
+                                ...fp.subStacks,
+                                ...(fp.residualIssues?.length ? [{ keyword: "résiduel", issues: fp.residualIssues }] : [])
+                            ]}
+                            <div class="fp-tree">
                                 {#if sandboxError}
                                     <div class="sandbox-error">
                                         <span>⚠ {sandboxError}</span>
                                         <button onclick={() => sandboxError = ""}>✕</button>
                                     </div>
                                 {/if}
-                                {#each issueRows as row}
-                                    <div
-                                        class="issue-status-row"
-                                        class:clickable={!!row.patch}
-                                        onclick={row.patch ? () => openPatch(task, row.patch!) : undefined}
-                                        role={row.patch ? "button" : undefined}
-                                        tabindex={row.patch ? 0 : undefined}
-                                        onkeydown={row.patch ? (e) => e.key === 'Enter' && openPatch(task, row.patch!) : undefined}
-                                    >
-                                        <span class="is-dot is-{row.state}"></span>
-                                        <span class="is-num">#{row.number}</span>
-                                        <span class="is-title">{row.title}</span>
-                                        <span class="is-stack">{row.stack}</span>
-                                        {#if row.state === "no-patch"}
-                                            <span class="is-badge is-missing">∅ patch</span>
-                                            <span class="is-badge is-missing">? tests</span>
-                                        {:else if row.state === "patch-no-tests"}
-                                            <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(task, row.patch!); }} title="Rejeter ce patch">✕</button></span>
-                                            <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(task, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
-                                        {:else}
-                                            <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(task, row.patch!); }} title="Rejeter ce patch">✕</button></span>
-                                            <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(task, row); }} title="Lancer les tests">
-                                                {$testRunState.planId === task.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
-                                            </button>
-                                        {/if}
-                                        {#if row.patch}
-                                            {#if sandboxState?.applied.includes(row.patch.name)}
-                                                <button
-                                                    class="is-sandbox-btn is-sandbox-applied"
-                                                    onclick={(e) => { e.stopPropagation(); sandboxUnapply(task, row.patch!.name); }}
-                                                    disabled={!!sandboxBusy}
-                                                    title="Retirer ce patch du repo"
-                                                >{sandboxBusy === row.patch.name ? "…" : "↩"}</button>
-                                            {:else}
-                                                <button
-                                                    class="is-sandbox-btn"
-                                                    onclick={(e) => { e.stopPropagation(); sandboxApply(task, row.patch!.name); }}
-                                                    disabled={!!sandboxBusy}
-                                                    title={sandboxState?.deps[row.patch.name]?.length ? `Applique aussi : ${sandboxState.deps[row.patch.name].join(', ')}` : "Appliquer ce patch dans le repo"}
-                                                >{sandboxBusy === row.patch.name ? "…" : "↓ tester"}</button>
+                                <!-- Racine -->
+                                <div class="fp-root-row">
+                                    <span class="fp-root-label">[ {task.title} ]</span>
+                                </div>
+                                <!-- Arbre des groupes/stacks -->
+                                <div class="fp-trunk">
+                                    {#each allGroups as group, gi}
+                                        {@const isLast = gi === allGroups.length - 1}
+                                        <div class="fp-group" class:fp-last={isLast}>
+                                            <!-- Label du groupe -->
+                                            <div class="fp-node-row">
+                                                <span class="fp-group-label">[ {group.keyword} ]</span>
+                                            </div>
+                                            <!-- Toutes les issues du groupe -->
+                                            {#if group.issues.length > 0}
+                                                <div class="fp-children">
+                                                    {#each group.issues as issue}
+                                                        {@const row = issueRows.find(r => r.number === issue.number)}
+                                                        {#if row}
+                                                            <div class="fp-child-row">
+                                                                {@render issueRow(task, row)}
+                                                            </div>
+                                                        {/if}
+                                                    {/each}
+                                                </div>
                                             {/if}
-                                        {/if}
-                                    </div>
-                                {/each}
+                                        </div>
+                                    {/each}
+                                </div>
                                 <div class="issue-status-footer">
                                     <button
                                         class="wf-btn"
@@ -1575,17 +1662,141 @@
 .diff-line.meta { color: #2a2a2a; }
 
 /* ── Issue status table (fullplan) ── */
-.issue-status-table {
-    display: flex; flex-direction: column;
+/* ── Arbre fullplan ── */
+.fp-tree {
     border-bottom: 1px solid var(--border);
-    padding: 4px 0;
+    padding-bottom: 2px;
 }
+.fp-root-row {
+    padding: 4px 8px 2px;
+}
+.fp-root-label {
+    font-size: 0.6rem; color: #888;
+}
+/* Tronc principal */
+.fp-trunk {
+    position: relative;
+    margin-left: 12px;
+    padding-left: 14px;
+    --row-h: 22px;
+    --sub-x: 10px;  /* indentation des issues sous leur groupe */
+    --dot-v: repeating-linear-gradient(to bottom, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
+    --dot-h: repeating-linear-gradient(to right, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
+}
+/* Chaque groupe/stack */
+.fp-group {
+    position: relative;
+    margin-bottom: 2px;
+}
+.fp-group:not(:first-child) {
+    margin-top: 4px;
+}
+/* Segment de spine entrant : haut → centre du nœud */
+.fp-group::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 0;
+    width: 1px;
+    height: calc(var(--row-h) / 2);
+    background: var(--dot-v);
+}
+/* Segment de spine sortant : centre du nœud → bas du groupe (non-derniers) */
+.fp-group:not(.fp-last)::after {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: calc(var(--row-h) / 2);
+    bottom: 0;
+    width: 1px;
+    background: var(--dot-v);
+}
+/* Ligne de nœud : [label] ─ [première issue] */
+.fp-node-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: var(--row-h);  /* hauteur fixe → 50% = calc(--row-h/2) exactement */
+}
+/* Branche horizontale depuis la spine principale vers le nœud */
+.fp-node-row::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    width: 14px;
+    height: 1px;
+    background: var(--dot-h);
+    transform: translateY(-0.5px);
+}
+/* Connexion verticale depuis le label vers les issues du groupe */
+.fp-group:has(.fp-children) .fp-node-row::after {
+    content: '';
+    position: absolute;
+    left: var(--sub-x);
+    top: 50%;
+    bottom: 0;
+    width: 1px;
+    background: var(--dot-v);
+}
+/* Label de groupe */
+.fp-group-label {
+    font-size: 0.57rem;
+    color: cornsilk;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 248, 220, 0.25);
+    border-radius: 2px;
+    padding: 1px 5px;
+    position: relative;
+    z-index: 1;
+    background: #111;  /* masque la ligne verticale qui passe derrière */
+}
+/* Issues du groupe — alignées sous le label */
+.fp-children {
+    display: flex;
+    flex-direction: column;
+    margin-left: var(--sub-x);
+    padding-left: 8px;
+}
+.fp-child-row {
+    position: relative;
+    padding: 1px 0;
+}
+/* Segment vertical de la sous-spine :
+   - s'arrête au milieu pour le dernier enfant
+   - pleine hauteur pour les autres */
+.fp-child-row::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 0;
+    width: 1px;
+    height: 50%;
+    background: var(--dot-v);
+}
+.fp-child-row:not(:last-child)::before {
+    height: 100%;
+}
+/* Branche horizontale depuis la sous-spine vers l'issue enfant */
+.fp-child-row::after {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: var(--dot-h);
+    transform: translateY(-0.5px);
+}
+/* ── Issue row (contenu) ── */
 .issue-status-row {
     display: flex; align-items: center; gap: 6px;
-    padding: 3px 8px; font-size: 0.65rem;
+    padding: 2px 6px; font-size: 0.65rem;
+    flex: 1; min-width: 0;
 }
 .issue-status-row.clickable { cursor: pointer; }
-.issue-status-row.clickable:hover { background: var(--bg-hover, #1a1a1a); }
+.issue-status-row.clickable:hover { background: var(--bg-hover, #1a1a1a); border-radius: 2px; }
 .is-dot {
     width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
@@ -1594,7 +1805,6 @@
 .is-dot.is-no-patch       { background: #555; }
 .is-num  { color: #888; flex-shrink: 0; }
 .is-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.is-stack { color: #555; font-size: 0.6rem; flex-shrink: 0; }
 .is-badge { font-size: 0.58rem; flex-shrink: 0; padding: 1px 4px; border-radius: 3px; }
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
@@ -1610,12 +1820,20 @@
 .is-sandbox-btn {
     background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
     color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
-    opacity: 0; transition: opacity 0.1s;
+    opacity: 0.5; transition: opacity 0.1s;
 }
 .issue-status-row:hover .is-sandbox-btn { opacity: 1; }
 .is-sandbox-btn:hover { color: #aef; border-color: #aef; }
 .is-sandbox-btn.is-sandbox-applied { color: #f7c948; border-color: #f7c948; opacity: 1; }
 .is-sandbox-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.is-reprompt-btn {
+    background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
+    color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.1s;
+}
+.issue-status-row:hover .is-reprompt-btn { opacity: 1; }
+.is-reprompt-btn:hover { color: #f9a; border-color: #f9a; }
+.is-reprompt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .sandbox-error {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 8px; font-size: 0.62rem; color: #f7c948;
