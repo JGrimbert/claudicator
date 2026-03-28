@@ -67,25 +67,25 @@
         return null;
     }
 
-    let tasks: Task[] = [];
-    let loading = true;
-    let filter: Filter | null = null;
-    $: selectedTaskFilter = selected ? taskToFilter(selected) : null;
-    let selected: Task | null = null;
-    let filterQuery = "";
+    let tasks = $state<Task[]>([]);
+    let loading = $state(true);
+    let filter = $state<Filter | null>(null);
+    let selectedTaskFilter = $derived(selected ? taskToFilter(selected) : null);
+    let selected = $state<Task | null>(null);
+    let filterQuery = $state("");
 
 
     // Workflow state
-    let selectedPanel: WfPanel = "plan";
-    let wfError = "";
+    let selectedPanel = $state<WfPanel>("plan");
+    let wfError = $state("");
 
     // Plan
-    let planContent: string | null = null;
-    let planLoading = false;
+    let planContent = $state<string | null>(null);
+    let planLoading = $state(false);
 
     // Fullplan detail + issue status
-    let fullPlanDetail: FullPlanDetail | null = null;
-    let closingIssues = false;
+    let fullPlanDetail = $state<FullPlanDetail | null>(null);
+    let closingIssues = $state(false);
 
     async function closeFullPlanIssues(task: Task) {
         if (!task.fullPlanId || closingIssues) return;
@@ -97,8 +97,8 @@
         } catch (e: any) { wfError = e.message; }
         finally { closingIssues = false; }
     }
-    $: issueRows = ((): IssueRow[] => {
-        if (!fullPlanDetail) return [];
+    let issueRows = $derived((() => {
+        if (!fullPlanDetail) return [] as IssueRow[];
         const rows: IssueRow[] = [];
         for (const stack of fullPlanDetail.subStacks) {
             for (const issue of stack.issues) {
@@ -113,21 +113,26 @@
             rows.push({ ...issue, stack: "résiduel", state, patch });
         }
         return rows;
-    })();
+    })());
 
     // Patches
-    let patches: PatchInfo[] = [];
-    let selectedPatch: PatchInfo | null = null;
-    let patchContent: string | null = null;
-    let patchLoading = false;
-    let patchApplying = false;
+    let patches = $state<PatchInfo[]>([]);
+    let selectedPatch = $state<PatchInfo | null>(null);
+    let patchContent = $state<string | null>(null);
+    let patchLoading = $state(false);
+    let patchApplying = $state(false);
 
     // Sandbox (appliquer/retirer un patch dans le repo cible pour tester)
     type SandboxState = { applied: string[]; deps: Record<string, string[]> };
-    let sandboxState: SandboxState | null = null;
-    let sandboxError = "";
-    let sandboxBusy: string | null = null; // nom du patch en cours d'opération
-    let repromptBusy: number | null = null; // issueNumber en cours de reprompt
+    let sandboxState = $state<SandboxState | null>(null);
+    let sandboxError = $state("");
+    let sandboxBusy = $state<string | null>(null); // nom du patch en cours d'opération
+    let repromptBusy = $state<number | null>(null); // issueNumber en cours de reprompt
+
+    // Issue sélectionnée dans l'arbre fullplan
+    let selectedIssueRow: IssueRow | null = $state(null);
+    let selectedIssueDetail: { title: string; body: string } | null = $state(null);
+    let loadingIssueDetail = $state(false);
 
     async function loadPatches(taskId: string) {
         const res = await fetch(`/api/tasks/${taskId}/patches`);
@@ -185,13 +190,29 @@
     }
 
     // Démarre le polling quand un fullplan est sélectionné ET que l'agent tourne
-    $: if (selected?.type === "fullplan" && $agentRunState.running) {
-        _startPatchPoll(selected.id);
-    } else {
-        _stopPatchPoll();
-    }
+    $effect(() => {
+        if (selected?.type === "fullplan" && $agentRunState.running) {
+            _startPatchPoll(selected.id);
+        } else {
+            _stopPatchPoll();
+        }
+    });
 
     onDestroy(_stopPatchPoll);
+
+    async function selectIssueRow(row: IssueRow) {
+        selectedIssueRow = row;
+        selectedIssueDetail = null;
+        loadingIssueDetail = true;
+        try {
+            const res = await fetch(`/api/issue?number=${row.number}`);
+            if (res.ok) {
+                const data = await res.json();
+                selectedIssueDetail = { title: data.title ?? row.title, body: data.body ?? "" };
+            }
+        } catch { /* ignore */ }
+        finally { loadingIssueDetail = false; }
+    }
 
     async function openPatch(task: Task, patch: PatchInfo) {
         selectedPatch = patch;
@@ -340,13 +361,13 @@
     }
 
     // Diff / commit
-    let diffContent: string | null = null;
-    let diffLoading = false;
-    let commitMsg = "";
-    let committing = false;
-    let reverting = false;
-    let revertConfirm = false;
-    let branchCreating = false;
+    let diffContent = $state<string | null>(null);
+    let diffLoading = $state(false);
+    let commitMsg = $state("");
+    let committing = $state(false);
+    let reverting = $state(false);
+    let revertConfirm = $state(false);
+    let branchCreating = $state(false);
 
     async function createBranchAndShowDiff(task: Task) {
         if (branchCreating) return;
@@ -367,18 +388,18 @@
 
     // Spinner braille
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-    let frame = 0;
+    let frame = $state(0);
     let spinnerInterval: ReturnType<typeof setInterval> | null = null;
     onMount(() => { spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80); });
     onDestroy(() => { if (spinnerInterval) clearInterval(spinnerInterval); });
 
     // Push / merge
-    let pushing = false;
-    let merging = false;
+    let pushing = $state(false);
+    let merging = $state(false);
 
     // ATLAS
-    let atlasGenerating = false;
-    let atlasFeedback   = "";
+    let atlasGenerating = $state(false);
+    let atlasFeedback   = $state("");
 
     async function toggleAtlas(task: Task, enabled: boolean) {
         await fetch(`/api/tasks/${task.id}`, {
@@ -412,7 +433,7 @@
     }
 
     // Sauter la planification
-    let skippingPlan = false;
+    let skippingPlan = $state(false);
     async function skipPlan(task: Task) {
         if (skippingPlan) return;
         skippingPlan = true; wfError = "";
@@ -429,7 +450,7 @@
     }
 
     // Reset task bloquée
-    let resetting = false;
+    let resetting = $state(false);
     async function resetTask(task: Task) {
         if (resetting) return;
         resetting = true;
@@ -445,8 +466,8 @@
     }
 
     // Issue liée
-    let linkedIssueState: "open" | "closed" | null = null;
-    let closingIssue = false;
+    let linkedIssueState = $state<"open" | "closed" | null>(null);
+    let closingIssue = $state(false);
 
     async function loadLinkedIssueState(issueNumber: number) {
         linkedIssueState = null;
@@ -501,7 +522,7 @@
     }
 
 
-    $: statusFiltered = (() => {
+    let statusFiltered = $derived((() => {
         const groups = $planGroups;
         function pos(n: number | undefined): number {
             if (!n || !groups.length) return Infinity;
@@ -515,15 +536,15 @@
             ? tasks
             : tasks.filter(t => taskToFilter(t) === filter);
         return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
-    })();
-    $: fuse = new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 });
-    $: filtered = filterQuery.trim()
+    })());
+    let fuse = $derived(new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 }));
+    let filtered = $derived(filterQuery.trim()
         ? fuse.search(filterQuery).map(r => r.item)
-        : statusFiltered;
-    $: countOf = (f: Filter) => tasks.filter(t => taskToFilter(t) === f).length;
+        : statusFiltered);
+    let countOf = $derived((f: Filter) => tasks.filter(t => taskToFilter(t) === f).length);
 
     // Index de l'étape courante (0=plan, 1=impl, 2=commit, 3=push)
-    $: currentStep = (() => {
+    let currentStep = $derived((() => {
         if (!planContent) return 0;
         if (!selected?.branch) return 1;
         if (diffLoading || diffContent === null) {
@@ -534,7 +555,7 @@
         // Le diff prime : des modifications non commitées → commit, sinon → push
         if (diffContent.trim()) return 2;
         return 3;
-    })();
+    })());
 
     // Variante d'un bouton workflow selon sa position
     function btnVariant(idx: number): "active" | "secondary" | "disabled" {
@@ -574,9 +595,9 @@
     onDestroy(_unsubAnalysis);
 
     // ⚠ Ne PAS lire selected/planContent/planLoading ici directement :
-    // Svelte 4 les inclut comme dépendances et boucle à l'infini.
+    // En runes mode, $effect isole le scope de tracking — seul $taskRefreshTick est suivi.
     // On délègue à une fonction pour isoler le scope de tracking.
-    $: if ($taskRefreshTick) onRefreshTick();
+    $effect(() => { if ($taskRefreshTick) onRefreshTick(); });
 
 
     function onRefreshTick() {
@@ -683,6 +704,7 @@
         if (selected?.id === initialTask.id) {
             selected = null; planContent = null; diffContent = null;
             patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
+            selectedIssueRow = null; selectedIssueDetail = null;
             commitMsg = ""; selectedPanel = "plan"; wfError = "";
             if (initialTask.type === "fullplan") {
                 activeFullPlan.set(null);
@@ -696,6 +718,7 @@
         selected = initialTask;
         planContent = null; diffContent = null;
         patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
+        selectedIssueRow = null; selectedIssueDetail = null;
         commitMsg = ""; wfError = ""; revertConfirm = false;
         sandboxState = null; sandboxError = "";
         selectedPanel = "plan";
@@ -922,12 +945,12 @@
                         <!-- ── État des issues (fullplan) — arbre de dépendances ── -->
                         {#snippet issueRow(t: Task, row: IssueRow)}
                             <div
-                                class="issue-status-row"
-                                class:clickable={!!row.patch}
-                                onclick={row.patch ? () => openPatch(t, row.patch!) : undefined}
-                                role={row.patch ? "button" : undefined}
-                                tabindex={row.patch ? 0 : undefined}
-                                onkeydown={row.patch ? (e) => e.key === 'Enter' && openPatch(t, row.patch!) : undefined}
+                                class="issue-status-row clickable"
+                                class:is-selected={selectedIssueRow?.number === row.number}
+                                onclick={(e) => { if ((e.target as HTMLElement).closest('button, .is-badge')) return; selectIssueRow(row); }}
+                                role="button"
+                                tabindex={0}
+                                onkeydown={(e) => e.key === 'Enter' && selectIssueRow(row)}
                             >
                                 <span class="is-dot is-{row.state}"></span>
                                 <span class="is-num">#{row.number}</span>
@@ -935,37 +958,20 @@
                                 {#if row.state === "no-patch"}
                                     <span class="is-badge is-missing">∅ patch</span>
                                     <span class="is-badge is-missing">? tests</span>
+                                    <button
+                                        class="is-reprompt-btn"
+                                        onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }}
+                                        disabled={!!repromptBusy}
+                                        title="Rejouer l'implémentation de cette issue"
+                                    >{repromptBusy === row.number ? "…" : "↺"}</button>
                                 {:else if row.state === "patch-no-tests"}
-                                    <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
+                                    <span class="is-badge is-ok">patch <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title="Rejouer l'implémentation">{repromptBusy === row.number ? "…" : "↺"}</button><button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
                                     <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
                                 {:else}
-                                    <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
+                                    <span class="is-badge is-ok">patch <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title="Rejouer l'implémentation">{repromptBusy === row.number ? "…" : "↺"}</button><button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
                                     <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(t, row); }} title="Lancer les tests">
                                         {$testRunState.planId === t.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
                                     </button>
-                                {/if}
-                                <button
-                                    class="is-reprompt-btn"
-                                    onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }}
-                                    disabled={!!repromptBusy}
-                                    title="Rejouer l'implémentation de cette issue"
-                                >{repromptBusy === row.number ? "…" : "↺"}</button>
-                                {#if row.patch}
-                                    {#if sandboxState?.applied.includes(row.patch.name)}
-                                        <button
-                                            class="is-sandbox-btn is-sandbox-applied"
-                                            onclick={(e) => { e.stopPropagation(); sandboxUnapply(t, row.patch!.name); }}
-                                            disabled={!!sandboxBusy}
-                                            title="Retirer ce patch du repo"
-                                        >{sandboxBusy === row.patch.name ? "…" : "↩"}</button>
-                                    {:else}
-                                        <button
-                                            class="is-sandbox-btn"
-                                            onclick={(e) => { e.stopPropagation(); sandboxApply(t, row.patch!.name); }}
-                                            disabled={!!sandboxBusy}
-                                            title={sandboxState?.deps[row.patch.name]?.length ? `Applique aussi : ${sandboxState.deps[row.patch.name].join(', ')}` : "Appliquer ce patch dans le repo"}
-                                        >{sandboxBusy === row.patch.name ? "…" : "↓ tester"}</button>
-                                    {/if}
                                 {/if}
                             </div>
                         {/snippet}
@@ -983,9 +989,38 @@
                                         <button onclick={() => sandboxError = ""}>✕</button>
                                     </div>
                                 {/if}
-                                <!-- Racine -->
-                                <div class="fp-root-row">
-                                    <span class="fp-root-label">[ {task.title} ]</span>
+                                <!-- Panel issue sélectionnée -->
+                                <div class="fp-issue-panel">
+                                    <div class="fp-issue-header">
+                                        {#if selectedIssueRow}
+                                            <span class="fp-issue-num">#{selectedIssueRow.number}</span>
+                                            <span class="fp-issue-title">{selectedIssueDetail?.title ?? selectedIssueRow.title}</span>
+                                        {:else}
+                                            <span class="fp-issue-placeholder">— sélectionnez une issue</span>
+                                        {/if}
+                                        {#if selectedIssueRow?.patch}
+                                            {#if sandboxState?.applied.includes(selectedIssueRow.patch.name)}
+                                                <button
+                                                    class="fp-tester-btn is-applied"
+                                                    onclick={() => sandboxUnapply(task, selectedIssueRow!.patch!.name)}
+                                                    disabled={!!sandboxBusy}
+                                                >{sandboxBusy === selectedIssueRow.patch.name ? "…" : "↩"}</button>
+                                            {:else}
+                                                <button
+                                                    class="fp-tester-btn"
+                                                    onclick={() => sandboxApply(task, selectedIssueRow!.patch!.name)}
+                                                    disabled={!!sandboxBusy}
+                                                >{sandboxBusy === selectedIssueRow.patch.name ? "…" : "↓ tester"}</button>
+                                            {/if}
+                                        {:else}
+                                            <button class="fp-tester-btn" disabled>↓ tester</button>
+                                        {/if}
+                                    </div>
+                                    {#if loadingIssueDetail}
+                                        <div class="fp-issue-desc">…</div>
+                                    {:else if selectedIssueDetail?.body}
+                                        <div class="fp-issue-desc">{selectedIssueDetail.body}</div>
+                                    {/if}
                                 </div>
                                 <!-- Arbre des groupes/stacks -->
                                 <div class="fp-trunk">
@@ -1667,19 +1702,80 @@
     border-bottom: 1px solid var(--border);
     padding-bottom: 2px;
 }
-.fp-root-row {
-    padding: 4px 8px 2px;
+/* Panel issue sélectionnée (au-dessus de l'arbre) */
+.fp-issue-panel {
+    padding: 5px 8px 6px;
+    border-bottom: 1px solid rgba(255,248,220,0.08);
+    min-height: 28px;
 }
-.fp-root-label {
-    font-size: 0.6rem; color: #888;
+.fp-issue-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 20px;
+}
+.fp-issue-num {
+    font-size: 0.6rem;
+    color: #888;
+    flex-shrink: 0;
+}
+.fp-issue-title {
+    font-size: 0.65rem;
+    color: var(--text, #ccc);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fp-issue-placeholder {
+    font-size: 0.6rem;
+    color: #555;
+    flex: 1;
+}
+.fp-issue-desc {
+    margin-top: 4px;
+    font-size: 0.6rem;
+    color: #888;
+    line-height: 1.4;
+    max-height: 4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    white-space: pre-line;
+}
+.fp-tester-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid #444;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    transition: all 0.1s;
+}
+.fp-tester-btn:not(:disabled):hover {
+    border-color: #aef;
+    color: #aef;
+}
+.fp-tester-btn.is-applied {
+    border-color: #f7c948;
+    color: #f7c948;
+}
+.fp-tester-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 /* Tronc principal */
 .fp-trunk {
     position: relative;
     margin-left: 12px;
     padding-left: 14px;
+    padding-top: 6px;
     --row-h: 22px;
-    --sub-x: 10px;  /* indentation des issues sous leur groupe */
+    --sub-x: 18px;  /* indentation plus prononcée */
     --dot-v: repeating-linear-gradient(to bottom, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
     --dot-h: repeating-linear-gradient(to right, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
 }
@@ -1700,6 +1796,11 @@
     width: 1px;
     height: calc(var(--row-h) / 2);
     background: var(--dot-v);
+}
+/* Premier groupe : la spine remonte dans le padding-top du trunk vers le panel */
+.fp-group:first-child::before {
+    top: -6px;
+    height: calc(6px + var(--row-h) / 2);
 }
 /* Segment de spine sortant : centre du nœud → bas du groupe (non-derniers) */
 .fp-group:not(.fp-last)::after {
@@ -1757,7 +1858,7 @@
     display: flex;
     flex-direction: column;
     margin-left: var(--sub-x);
-    padding-left: 8px;
+    padding-left: 12px;
 }
 .fp-child-row {
     position: relative;
@@ -1769,7 +1870,7 @@
 .fp-child-row::before {
     content: '';
     position: absolute;
-    left: -8px;
+    left: -12px;
     top: 0;
     width: 1px;
     height: 50%;
@@ -1782,9 +1883,9 @@
 .fp-child-row::after {
     content: '';
     position: absolute;
-    left: -8px;
+    left: -12px;
     top: 50%;
-    width: 8px;
+    width: 12px;
     height: 1px;
     background: var(--dot-h);
     transform: translateY(-0.5px);
@@ -1797,6 +1898,7 @@
 }
 .issue-status-row.clickable { cursor: pointer; }
 .issue-status-row.clickable:hover { background: var(--bg-hover, #1a1a1a); border-radius: 2px; }
+.issue-status-row.is-selected { background: rgba(255,248,220,0.05); border-radius: 2px; }
 .is-dot {
     width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
@@ -1817,15 +1919,6 @@
 }
 .is-badge:hover .is-reject-btn { opacity: 0.7; }
 .is-reject-btn:hover { opacity: 1 !important; }
-.is-sandbox-btn {
-    background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
-    color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
-    opacity: 0.5; transition: opacity 0.1s;
-}
-.issue-status-row:hover .is-sandbox-btn { opacity: 1; }
-.is-sandbox-btn:hover { color: #aef; border-color: #aef; }
-.is-sandbox-btn.is-sandbox-applied { color: #f7c948; border-color: #f7c948; opacity: 1; }
-.is-sandbox-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .is-reprompt-btn {
     background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
     color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
@@ -1834,6 +1927,11 @@
 .issue-status-row:hover .is-reprompt-btn { opacity: 1; }
 .is-reprompt-btn:hover { color: #f9a; border-color: #f9a; }
 .is-reprompt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ↺ intégré dans le badge patch */
+.is-in-badge {
+    border: none; border-radius: 0; padding: 0 1px 0 3px; font-size: inherit;
+}
+.is-in-badge:hover { border: none; color: #f9a; }
 .sandbox-error {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 8px; font-size: 0.62rem; color: #f7c948;

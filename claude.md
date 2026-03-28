@@ -231,6 +231,12 @@ When modifying the codebase:
     * agent logic
     * external services
 4. Ensure server code stays in `src/lib/server`
+5. **Svelte 5 runes mode** — never use `$:` reactive statements in `.svelte` files:
+    * Use `let x = $state(value)` for all mutable state variables (required for reactivity)
+    * Use `let x = $derived(...)` for computed values
+    * Use `$effect(() => { ... })` for side effects
+    * `$:` is forbidden and will cause a compile error
+    * Plain `let` declarations are NOT reactive in runes mode — always use `$state`
 
 ---
 
