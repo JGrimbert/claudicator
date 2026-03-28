@@ -9,6 +9,7 @@ export type PatchInfo = {
     issueNumber?: number;
     hasTests: boolean;
     createdAt: number;
+    stale?: boolean;
 };
 
 export function getPatchesDir(taskId: string): string {
@@ -76,17 +77,36 @@ export function getPatchContent(taskId: string, name: string): string | null {
     return fs.readFileSync(filePath, "utf-8");
 }
 
+/** Vérifie si un patch peut s'appliquer sans modifier les fichiers. */
+export async function checkPatchStale(patchesDir: string, name: string): Promise<boolean> {
+    const filePath = path.resolve(patchesDir, name);
+    const root = getProjectRoot();
+    const g = simpleGit(root);
+    try {
+        await g.raw(["apply", "--check", "--whitespace=nowarn", filePath]);
+        return false;
+    } catch {
+        return true;
+    }
+}
+
 export async function applyPatch(taskId: string, name: string): Promise<void> {
     const filePath = path.resolve(getPatchesDir(taskId), name);
     const root = getProjectRoot();
     const g = simpleGit(root);
     try {
         await g.raw(["apply", "--whitespace=nowarn", filePath]);
-    } catch {
-        // Le patch ne s'applique pas proprement (fichier modifié depuis la génération).
-        // On tente un merge 3-voies : git reconstruit le contexte via l'index.
+        return;
+    } catch { /* essai suivant */ }
+    try {
+        // Contexte légèrement décalé : merge 3-voies via l'index git.
         await g.raw(["apply", "--3way", "--whitespace=nowarn", filePath]);
-    }
+        return;
+    } catch { /* essai suivant */ }
+    // Contexte trop stale (code refactorisé depuis la génération du patch).
+    // On applique ce qui peut l'être et on crée des .rej pour les hunks en échec.
+    // L'erreur indique quels fichiers .rej ont été générés.
+    await g.raw(["apply", "--reject", "--whitespace=nowarn", filePath]);
 }
 
 export function deletePatch(taskId: string, name: string): void {

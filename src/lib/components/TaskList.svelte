@@ -115,6 +115,8 @@
         return rows;
     })());
 
+    let staleRows = $derived(issueRows.filter(r => r.patch?.stale));
+
     // Patches
     let patches = $state<PatchInfo[]>([]);
     let selectedPatch = $state<PatchInfo | null>(null);
@@ -137,6 +139,18 @@
     async function loadPatches(taskId: string) {
         const res = await fetch(`/api/tasks/${taskId}/patches`);
         if (res.ok) patches = await res.json();
+        // Vérification du stale en arrière-plan (non-bloquant)
+        checkPatchStaleness(taskId);
+    }
+
+    async function checkPatchStaleness(taskId: string) {
+        const res = await fetch(`/api/tasks/${taskId}/patches?check=1`);
+        if (!res.ok) return;
+        const checked: PatchInfo[] = await res.json();
+        patches = patches.map(p => {
+            const c = checked.find(c => c.name === p.name);
+            return c ? { ...p, stale: c.stale } : p;
+        });
     }
 
     async function loadSandboxState(taskId: string) {
@@ -305,6 +319,43 @@
         } finally {
             repromptBusy = null;
         }
+    }
+
+    async function repromptAllStale(task: Task) {
+        if (!task.fullPlanId || !staleRows.length) return;
+        const n = staleRows.length;
+        const extraContext = window.prompt(
+            `Régénérer ${n} patch${n > 1 ? "s" : ""} périmé${n > 1 ? "s" : ""} :\n(contexte commun, laisser vide pour relancer tel quel)`
+        ) ?? "";
+        for (const row of staleRows) {
+            repromptBusy = row.number;
+            agentRunState.update(s => ({
+                ...s,
+                taskId: task.id,
+                taskTitle: `Reprompt — #${row.number} ${row.title}`,
+                logs: [],
+                running: true,
+                sessionAlive: false,
+            }));
+            try {
+                const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/reprompt`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ issueNumber: row.number, extraContext }),
+                });
+                await startConsoleStream(res);
+                await loadPatches(task.id);
+            } catch (e: any) {
+                agentRunState.update(s => ({
+                    ...s,
+                    running: false,
+                    logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" as const }],
+                }));
+                break;
+            }
+        }
+        repromptBusy = null;
+        await loadTasksSilent();
     }
 
     async function runTests(task: Task, row: IssueRow) {
@@ -965,13 +1016,25 @@
                                         title="Rejouer l'implémentation de cette issue"
                                     >{repromptBusy === row.number ? "…" : "↺"}</button>
                                 {:else if row.state === "patch-no-tests"}
-                                    <span class="is-badge is-ok">patch <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title="Rejouer l'implémentation">{repromptBusy === row.number ? "…" : "↺"}</button><button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
-                                    <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
+                                    <span class="is-badge" class:is-ok={!row.patch?.stale} class:is-stale={row.patch?.stale}>
+                                        {row.patch?.stale ? "⚠ périmé" : "patch"}
+                                        <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title={row.patch?.stale ? "Régénérer le patch" : "Rejouer l'implémentation"}>{repromptBusy === row.number ? "…" : "↺"}</button>
+                                        <button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button>
+                                    </span>
+                                    {#if !row.patch?.stale}
+                                        <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
+                                    {/if}
                                 {:else}
-                                    <span class="is-badge is-ok">patch <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title="Rejouer l'implémentation">{repromptBusy === row.number ? "…" : "↺"}</button><button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button></span>
-                                    <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(t, row); }} title="Lancer les tests">
-                                        {$testRunState.planId === t.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
-                                    </button>
+                                    <span class="is-badge" class:is-ok={!row.patch?.stale} class:is-stale={row.patch?.stale}>
+                                        {row.patch?.stale ? "⚠ périmé" : "patch"}
+                                        <button class="is-reprompt-btn is-in-badge" onclick={(e) => { e.stopPropagation(); repromptIssue(t, row); }} disabled={!!repromptBusy} title={row.patch?.stale ? "Régénérer le patch" : "Rejouer l'implémentation"}>{repromptBusy === row.number ? "…" : "↺"}</button>
+                                        <button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button>
+                                    </span>
+                                    {#if !row.patch?.stale}
+                                        <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(t, row); }} title="Lancer les tests">
+                                            {$testRunState.planId === t.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
+                                        </button>
+                                    {/if}
                                 {/if}
                             </div>
                         {/snippet}
@@ -1049,6 +1112,13 @@
                                     {/each}
                                 </div>
                                 <div class="issue-status-footer">
+                                    {#if staleRows.length > 0}
+                                        <button
+                                            class="wf-btn wf-stale"
+                                            onclick={() => repromptAllStale(task)}
+                                            disabled={!!repromptBusy}
+                                        >{repromptBusy ? "…" : `↺ Régénérer ${staleRows.length} patch${staleRows.length > 1 ? "s" : ""} périmé${staleRows.length > 1 ? "s" : ""}`}</button>
+                                    {/if}
                                     <button
                                         class="wf-btn"
                                         onclick={() => closeFullPlanIssues(task)}
@@ -1533,6 +1603,8 @@
     background: none;
 }
 .wf-btn.wf-active:hover { color: #b0a0ff; }
+.wf-btn.wf-stale { color: #ff9800; border-color: rgba(255,152,0,0.3); }
+.wf-btn.wf-stale:hover:not(:disabled) { color: #ffb74d; border-color: rgba(255,152,0,0.6); }
 /* secondary = étape déjà franchie, recliquable */
 .wf-btn.wf-secondary {
     color: #444;
@@ -1924,6 +1996,7 @@
 .is-badge { font-size: 0.58rem; flex-shrink: 0; padding: 1px 4px; border-radius: 3px; }
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
+.is-badge.is-stale    { background: rgba(255,152,0,0.15); color: #ff9800; }
 .is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
 .is-badge.is-btn      { border: none; cursor: pointer; }
 .is-badge.is-btn:hover { filter: brightness(1.4); }

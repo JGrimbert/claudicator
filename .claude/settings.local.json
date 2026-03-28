@@ -53,7 +53,9 @@
       "Bash(echo \"✗ #$n\")",
       "Bash(netstat -ano)",
       "Bash(git:*)",
-      "Bash(./node_modules/.bin/svelte-check)"
+      "Bash(./node_modules/.bin/svelte-check)",
+      "Bash(for patch:*)",
+      "Bash(echo \"=== $patch ===\")"
     ]
   }
 }
