@@ -324,38 +324,30 @@
     async function repromptAllStale(task: Task) {
         if (!task.fullPlanId || !staleRows.length) return;
         const n = staleRows.length;
-        const extraContext = window.prompt(
-            `Régénérer ${n} patch${n > 1 ? "s" : ""} périmé${n > 1 ? "s" : ""} :\n(contexte commun, laisser vide pour relancer tel quel)`
-        ) ?? "";
-        for (const row of staleRows) {
-            repromptBusy = row.number;
+        agentRunState.update(s => ({
+            ...s,
+            taskId: task.id,
+            taskTitle: `Régénération — ${n} patch${n > 1 ? "s" : ""} périmé${n > 1 ? "s" : ""}`,
+            logs: [],
+            running: true,
+            sessionAlive: false,
+        }));
+        try {
+            const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/rerun-stale`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ staleIssueNumbers: staleRows.map(r => r.number) }),
+            });
+            await startConsoleStream(res, { onDone: async () => { await loadPatches(task.id); await loadTasksSilent(); } });
+        } catch (e: any) {
             agentRunState.update(s => ({
                 ...s,
-                taskId: task.id,
-                taskTitle: `Reprompt — #${row.number} ${row.title}`,
-                logs: [],
-                running: true,
-                sessionAlive: false,
+                running: false,
+                logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" as const }],
             }));
-            try {
-                const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/reprompt`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ issueNumber: row.number, extraContext }),
-                });
-                await startConsoleStream(res);
-                await loadPatches(task.id);
-            } catch (e: any) {
-                agentRunState.update(s => ({
-                    ...s,
-                    running: false,
-                    logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" as const }],
-                }));
-                break;
-            }
+        } finally {
+            repromptBusy = null;
         }
-        repromptBusy = null;
-        await loadTasksSilent();
     }
 
     async function runTests(task: Task, row: IssueRow) {
