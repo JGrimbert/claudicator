@@ -65,12 +65,11 @@ export const POST: RequestHandler = async ({ params, request }) => {
     if (fs.existsSync(tempWorktreePath)) {
         try { execSync(`git -C "${root}" worktree remove --force "${tempWorktreePath}"`, { stdio: "pipe" }); } catch { /* ignore */ }
     }
-    if (parentHash) {
-        execSync(`git -C "${root}" worktree add --detach "${tempWorktreePath}" ${parentHash}`, { stdio: "pipe" });
-    } else {
-        // Fallback : pas de commit trouvé → partir de HEAD du worktree principal
-        execSync(`git -C "${root}" worktree add --detach "${tempWorktreePath}" "${mainWorktreePath === root ? "HEAD" : `$(git -C "${mainWorktreePath}" rev-parse HEAD)`}"`, { shell: true, stdio: "pipe" });
-    }
+    const baseHash = parentHash || execSync(
+        `git -C "${mainWorktreePath}" rev-parse HEAD`,
+        { stdio: "pipe" }
+    ).toString().trim();
+    execSync(`git -C "${root}" worktree add --detach "${tempWorktreePath}" ${baseHash}`, { stdio: "pipe" });
 
     const fullPlanContent = plan.planFile
         ? fs.readFileSync(path.join(tasksDir, plan.planFile), "utf-8")
