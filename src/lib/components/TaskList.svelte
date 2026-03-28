@@ -1029,7 +1029,8 @@
                                         <div class="fp-group" class:fp-last={isLast}>
                                             <!-- Label du groupe -->
                                             <div class="fp-node-row">
-                                                <span class="fp-group-label">[ {group.keyword} ]</span>
+                                                <span class="fp-group-symbol">+</span>
+                                                <span class="fp-group-text">[ {group.keyword} ]</span>
                                             </div>
                                             <!-- Toutes les issues du groupe -->
                                             {#if group.issues.length > 0}
@@ -1716,12 +1717,12 @@
 }
 .fp-issue-num {
     font-size: 0.6rem;
-    color: #888;
+    color: cornsilk;
     flex-shrink: 0;
 }
 .fp-issue-title {
     font-size: 0.65rem;
-    color: var(--text, #ccc);
+    color: #888;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1775,9 +1776,10 @@
     padding-left: 14px;
     padding-top: 6px;
     --row-h: 22px;
-    --sub-x: 18px;  /* indentation plus prononcée */
-    --dot-v: repeating-linear-gradient(to bottom, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
-    --dot-h: repeating-linear-gradient(to right, cornsilk 0, cornsilk 2px, transparent 2px, transparent 5px);
+    --sub-x: 7px;   /* centre du carré + (14px/2) */
+    --sym-size: 14px;
+    --dot-v: repeating-linear-gradient(to bottom, #e8e4d4 0, #e8e4d4 2px, transparent 2px, transparent 5px);
+    --dot-h: repeating-linear-gradient(to right, #e8e4d4 0, #e8e4d4 2px, transparent 2px, transparent 5px);
 }
 /* Chaque groupe/stack */
 .fp-group {
@@ -1840,18 +1842,30 @@
     width: 1px;
     background: var(--dot-v);
 }
-/* Label de groupe */
-.fp-group-label {
-    font-size: 0.57rem;
-    color: cornsilk;
+/* Nœud encadré du groupe (carré avec symbole +) */
+.fp-group-symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--sym-size);
+    height: var(--sym-size);
     flex-shrink: 0;
-    white-space: nowrap;
-    border: 1px solid rgba(255, 248, 220, 0.25);
+    font-size: 0.6rem;
+    line-height: 0;
+    color: #e8e4d4;
+    border: 1px solid rgba(232, 228, 212, 0.3);
     border-radius: 2px;
-    padding: 1px 5px;
     position: relative;
     z-index: 1;
     background: #111;  /* masque la ligne verticale qui passe derrière */
+    box-sizing: border-box;
+}
+/* Texte du groupe — discret, hors encadré */
+.fp-group-text {
+    font-size: 0.57rem;
+    color: #888;
+    white-space: nowrap;
+    margin-left: 5px;
 }
 /* Issues du groupe — alignées sous le label */
 .fp-children {
@@ -1905,8 +1919,8 @@
 .is-dot.is-patch-tests    { background: #4caf50; }
 .is-dot.is-patch-no-tests { background: #f7c948; }
 .is-dot.is-no-patch       { background: #555; }
-.is-num  { color: #888; flex-shrink: 0; }
-.is-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.is-num  { color: cornsilk; flex-shrink: 0; }
+.is-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #888; }
 .is-badge { font-size: 0.58rem; flex-shrink: 0; padding: 1px 4px; border-radius: 3px; }
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
@@ -1915,23 +1929,21 @@
 .is-badge.is-btn:hover { filter: brightness(1.4); }
 .is-reject-btn {
     background: none; border: none; cursor: pointer;
-    color: inherit; font-size: 0.55rem; padding: 0 0 0 3px; line-height: 1; opacity: 0;
+    color: inherit; font-size: 0.55rem; padding: 0 0 0 3px; line-height: 1;
 }
-.is-badge:hover .is-reject-btn { opacity: 0.7; }
-.is-reject-btn:hover { opacity: 1 !important; }
+.is-reject-btn:hover { color: #c8f5ca; }
 .is-reprompt-btn {
-    background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
-    color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
-    opacity: 0; transition: opacity 0.1s;
+    background: none; border: 1px solid rgba(76, 175, 80, 0.45); border-radius: 3px; cursor: pointer;
+    color: #4caf50; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
+    transition: color 0.1s, border-color 0.1s;
 }
-.issue-status-row:hover .is-reprompt-btn { opacity: 1; }
-.is-reprompt-btn:hover { color: #f9a; border-color: #f9a; }
+.is-reprompt-btn:hover { color: #c8f5ca; border-color: rgba(76, 175, 80, 0.75); }
 .is-reprompt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 /* ↺ intégré dans le badge patch */
 .is-in-badge {
     border: none; border-radius: 0; padding: 0 1px 0 3px; font-size: inherit;
 }
-.is-in-badge:hover { border: none; color: #f9a; }
+.is-in-badge:hover { border: none; color: #c8f5ca; }
 .sandbox-error {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 8px; font-size: 0.62rem; color: #f7c948;
