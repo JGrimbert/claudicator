@@ -1,7 +1,7 @@
 <script lang="ts">
     import { JgrPre, JgrCta } from "jgr-ui";
     import type { ActiveFullPlan } from "$lib/stores/agent";
-    import { agentRunState, startConsoleStream } from "$lib/stores/agent";
+    import { agentRunState, activeFullPlan, startConsoleStream, consoleTab } from "$lib/stores/agent";
 
     let { plan }: { plan: ActiveFullPlan } = $props();
     let content = $state("");
@@ -18,6 +18,24 @@
     // Lancement implémentation
     let launching = $state(false);
     let launchingStack = $state<string | null>(null);
+
+    // Nouveau cycle
+    let launchingNewCycle = $state(false);
+
+    /** Compte les issues résiduelles depuis le contenu du plan */
+    function parseResidualCount(text: string): number {
+        const start = text.search(/^## Résiduel/m);
+        if (start === -1) return 0;
+        // Extraire jusqu'au prochain ## heading (ou fin du texte)
+        const afterTitle = text.indexOf("\n", start) + 1;
+        const rest = text.slice(afterTitle);
+        const nextHeading = rest.search(/^## /m);
+        const section = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+        // Compter les références #NNN dans les tables (| #NNN) ou listes (- #NNN)
+        return (section.match(/[|\-]\s*#\d+/g) ?? []).length;
+    }
+
+    const residualCount = $derived(content ? parseResidualCount(content) : 0);
 
     function parseStacks(text: string): string[] {
         const re = /^## Stack "([^"]+)"/gm;
@@ -70,6 +88,71 @@
             loadError = e.message;
         } finally {
             saving = false;
+        }
+    }
+
+    async function launchNewCycle() {
+        if (launchingNewCycle || !plan.id) return;
+        launchingNewCycle = true;
+
+        try {
+            // Récupérer les données complètes du plan (subStacks + residualIssues)
+            const planData = await fetch(`/api/issues/groups/full-plans/${plan.id}`)
+                .then(r => r.ok ? r.json() : Promise.reject(r.status));
+
+            const residuals: { number: number; title: string }[] = planData.residualIssues ?? [];
+            if (!residuals.length) { launchingNewCycle = false; return; }
+
+            // Répartir les résiduels dans les stacks d'origine si leurs issues y correspondent,
+            // sinon regrouper en stack "suite"
+            const originalStacks: { keyword: string; issues: { number: number; title: string }[] }[] =
+                planData.subStacks ?? [];
+            const assignedNums = new Set(originalStacks.flatMap((s: any) => s.issues.map((i: any) => i.number)));
+
+            // Stacks reconstruites : seulement les résiduels (pas les issues déjà planifiées)
+            const newStacks: { keyword: string; issues: { number: number; title: string }[] }[] = [];
+            for (const s of originalStacks) {
+                const matching = residuals.filter(r => !assignedNums.has(r.number));
+                if (matching.length) {
+                    // Cherche si des résiduels "appartiennent" à cette stack par leur titre
+                    const keyword = s.keyword.toLowerCase();
+                    const forStack = matching.filter(r => r.title.toLowerCase().includes(keyword));
+                    if (forStack.length) newStacks.push({ keyword: s.keyword, issues: forStack });
+                }
+            }
+            // Le reste va dans une stack "suite"
+            const assigned = new Set(newStacks.flatMap(s => s.issues.map(i => i.number)));
+            const unassigned = residuals.filter(r => !assigned.has(r.number));
+            if (unassigned.length) newStacks.push({ keyword: "suite", issues: unassigned });
+
+            if (!newStacks.length) { launchingNewCycle = false; return; }
+
+            // Lancer l'analyse
+            activeFullPlan.set({ id: "", keyword: plan.keyword, status: "generating", taskId: plan.taskId });
+            agentRunState.update(s => ({
+                ...s, running: true, logs: [], taskId: plan.taskId ?? null,
+                taskTitle: `Plan complet — ${plan.keyword} (cycle suivant)`,
+            }));
+            consoleTab.set("console");
+
+            const r = await fetch("/api/issues/groups/stack-plan-full", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ groupKeyword: plan.keyword, subStacks: newStacks, residualIssues: [], existingTaskId: plan.taskId }),
+            });
+
+            await startConsoleStream(r, {
+                onEvent: (event: any) => {
+                    if (event.type === "system" && event.line === "[planId]" && event.planId)
+                        activeFullPlan.update(s => s ? { ...s, id: event.planId } : s);
+                    if (event.type === "system" && event.line === "[done]" && event.planFile)
+                        activeFullPlan.update(s => s ? { ...s, status: "done", planFile: event.planFile } : s);
+                },
+                onDone: () => { launchingNewCycle = false; }
+            });
+        } catch (e: any) {
+            agentRunState.update(s => ({ ...s, running: false }));
+            launchingNewCycle = false;
         }
     }
 
@@ -161,6 +244,16 @@
                     <div class="fp-actions-sep"></div>
                 {/if}
                 <JgrCta label="Lancer tout" pending={launching} onclick={() => launchImpl()} />
+                {#if residualCount > 0}
+                    <button
+                        class="fp-newcycle-btn"
+                        onclick={launchNewCycle}
+                        disabled={launchingNewCycle || launching || launchingStack !== null}
+                        title="Relancer l'analyse pour les {residualCount} issues résiduelles"
+                    >
+                        {launchingNewCycle ? "…" : `↻ Nouveau cycle (${residualCount} issues)`}
+                    </button>
+                {/if}
             </div>
         {/if}
     {:else}
@@ -279,6 +372,25 @@
     .fp-actions-sep {
         height: 1px;
         background: var(--color-border, #333);
+    }
+    .fp-newcycle-btn {
+        align-self: flex-start;
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px dashed var(--color-border, #555);
+        background: transparent;
+        color: var(--color-text-muted, #888);
+        margin-top: 2px;
+    }
+    .fp-newcycle-btn:hover:not(:disabled) {
+        border-color: #a78bfa;
+        color: #a78bfa;
+    }
+    .fp-newcycle-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     .fp-edit-wrap {
         display: flex;

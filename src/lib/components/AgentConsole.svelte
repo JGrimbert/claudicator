@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { agentState, agentRunState, planModeTask, consoleTab } from "$lib/stores/agent";
+    import { agentState, agentRunState, planModeTask, consoleTab, testRunState } from "$lib/stores/agent";
     import DiagramViewer from "$lib/components/DiagramViewer.svelte";
     import SymbolsView from "$lib/components/SymbolsView.svelte";
     import ArchiView from "$lib/components/ArchiView.svelte";
@@ -14,6 +14,17 @@
     let expandedFile: FileCard | null = null;
 
     onMount(() => {
+        // Restaurer le dernier run de tests (survit au refresh HMR)
+        try {
+            const saved = sessionStorage.getItem("lastTestRun");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.planId) testRunState.set({ ...parsed, running: false });
+            }
+            const savedTab = sessionStorage.getItem("lastConsoleTab");
+            if (savedTab) consoleTab.set(savedTab);
+        } catch { /* sessionStorage indisponible */ }
+
         FILE_NAMES.forEach(async (name, i) => {
             try {
                 const res = await fetch(`/api/repo-file?path=${encodeURIComponent(name)}`);
@@ -166,6 +177,7 @@
         t.push({ id: "symbols", label: "symboles", count: "" });
         t.push({ id: "archi", label: "archi", count: "" });
         t.push({ id: "console", label: "CONSOLE", count: "" });
+        if ($testRunState.planId) t.push({ id: "tests", label: $testRunState.running ? "TESTS…" : $testRunState.exitCode === 0 ? "TESTS ✓" : $testRunState.exitCode !== null ? "TESTS ✕" : "TESTS", count: "" });
         if (queryLabel) t.push({ id: "query", label: queryLabel, count: queryGrep.length });
         return t.filter(t => !HIDDEN_TABS.has(t.id));
     })();
@@ -229,7 +241,7 @@
                         class="tab"
                         class:tab-active={activeTab === t.id}
                         class:tab-todo={t.id === "todo"}
-                        onclick={() => consoleTab.set(t.id)}
+                        onclick={() => { consoleTab.set(t.id); try { sessionStorage.setItem("lastConsoleTab", t.id); } catch { /* SSR */ } }}
                     >{t.label}{#if t.count !== 0 && t.count !== ""}<span class="tab-count"> {t.count}</span>{/if}</button>
                 {/each}
             </div>
@@ -361,6 +373,22 @@
         {/if}
         <div class="dv-panel" style:display={activeTab === "console" ? "flex" : "none"}>
             <RunConsole />
+        </div>
+        <div class="dv-panel tc-panel" style:display={activeTab === "tests" ? "flex" : "none"}>
+            {#if $testRunState.planId}
+                <div class="tc-topbar">
+                    <span class="tc-label">Tests — #{$testRunState.issueNumber}</span>
+                    {#if $testRunState.running}
+                        <span class="tc-spin"></span>
+                    {:else if $testRunState.exitCode !== null}
+                        <span class="tc-result" class:tc-pass={$testRunState.exitCode === 0} class:tc-fail={$testRunState.exitCode !== 0}>
+                            {$testRunState.exitCode === 0 ? "✓ PASS" : "✕ FAIL"}
+                        </span>
+                    {/if}
+                    <button class="tc-dismiss" onclick={() => testRunState.set({ planId: null, issueNumber: null, logs: [], running: false, exitCode: null })}>✕</button>
+                </div>
+                <pre class="tc-output">{$testRunState.logs.map(l => l.line).join("\n")}</pre>
+            {/if}
         </div>
         </div>
     </div>
@@ -498,6 +526,27 @@
     display: flex;
     flex-direction: column;
 }
+/* ── Test console panel ───────────────────────────────────────────── */
+.tc-panel { flex-direction: column; background: #0a0a0a; }
+.tc-topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; border-bottom: 1px solid #222;
+    background: #111; flex-shrink: 0;
+}
+.tc-label { flex: 1; font-size: 0.65rem; color: #777; font-family: 'JetBrains Mono', monospace; }
+.tc-result { font-size: 0.65rem; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+.tc-pass { background: rgba(76,175,80,0.2); color: #4caf50; }
+.tc-fail { background: rgba(244,67,54,0.2); color: #f44336; }
+.tc-spin::before { content: "⠋"; font-family: monospace; color: #888; font-size: 0.75rem; animation: spin-braille 0.8s steps(8,end) infinite; }
+.tc-dismiss { background: none; border: none; cursor: pointer; color: #444; font-size: 0.65rem; padding: 0; }
+.tc-dismiss:hover { color: #f44336; }
+.tc-output {
+    flex: 1; margin: 0; padding: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: #ccc; background: transparent;
+    overflow-y: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+}
+
 /* ── Atlas init bar ───────────────────────────────────────────────── */
 .atlas-init-bar {
     display: flex;

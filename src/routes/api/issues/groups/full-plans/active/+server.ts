@@ -1,7 +1,7 @@
 import type { RequestHandler } from "./$types";
 import { json } from "@sveltejs/kit";
 import { listFullPlans } from "$lib/server/services/fullPlans";
-import { listTasks } from "$lib/server/services/tasks";
+import { findTaskGlobal } from "$lib/server/services/tasks";
 
 /**
  * GET /api/issues/groups/full-plans/active
@@ -9,13 +9,12 @@ import { listTasks } from "$lib/server/services/tasks";
  * pour restaurer l'UI au démarrage.
  */
 export const GET: RequestHandler = async () => {
-    const tasks = listTasks();
-    const activeTask = tasks.find(t => t.type === "fullplan" && t.status === "implementation" && t.fullPlanId);
-    if (!activeTask?.fullPlanId) return json(null);
+    const found = findTaskGlobal(t => t.type === "fullplan" && t.status === "implementation" && !!t.fullPlanId);
+    if (!found?.task.fullPlanId) return json(null);
 
     const plans = listFullPlans();
-    const plan = plans.find(p => p.id === activeTask.fullPlanId);
+    const plan = plans.find(p => p.id === found.task.fullPlanId);
     if (!plan || plan.status !== "done") return json(null);
 
-    return json({ id: plan.id, keyword: plan.keyword, status: plan.status, planFile: plan.planFile, taskId: activeTask.id });
+    return json({ id: plan.id, keyword: plan.keyword, status: plan.status, planFile: plan.planFile, taskId: found.task.id });
 };

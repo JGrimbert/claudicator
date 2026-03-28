@@ -79,6 +79,43 @@ function migrateTaskStatus(raw: any): Task {
     return task;
 }
 
+/** Cherche une task dans TOUS les projets (cross-project).
+ *  Retourne la task ET le répertoire de tasks où elle réside.
+ *  Nécessaire pour les fullPlans créés dans un projet différent du projet courant. */
+export function findTaskGlobal(predicate: (t: Task) => boolean): { task: Task; tasksDir: string } | undefined {
+    const base = ".agent/tasks";
+    if (!fs.existsSync(base)) return undefined;
+    const entries = fs.readdirSync(base, { withFileTypes: true });
+    // Projet "default" : fichiers JSON directs dans .agent/tasks/
+    for (const entry of entries) {
+        if (!entry.isDirectory() && entry.name.endsWith(".json")) {
+            try {
+                const absBase = path.resolve(base);
+                const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(base, entry.name), "utf-8")));
+                task.hasPatch = fs.existsSync(path.join(absBase, task.id, "patches")) &&
+                    fs.readdirSync(path.join(absBase, task.id, "patches")).some(f => f.endsWith(".patch"));
+                if (predicate(task)) return { task, tasksDir: absBase };
+            } catch { /* fichier malformé */ }
+        }
+    }
+    // Projets nommés : sous-dossiers de .agent/tasks/
+    for (const entry of entries) {
+        if (entry.isDirectory()) {
+            const dir = path.join(base, entry.name);
+            const absDir = path.resolve(dir);
+            try {
+                for (const f of fs.readdirSync(dir).filter(f => f.endsWith(".json"))) {
+                    const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
+                    task.hasPatch = fs.existsSync(path.join(absDir, task.id, "patches")) &&
+                        fs.readdirSync(path.join(absDir, task.id, "patches")).some(f => f.endsWith(".patch"));
+                    if (predicate(task)) return { task, tasksDir: absDir };
+                }
+            } catch { /* dossier inaccessible */ }
+        }
+    }
+    return undefined;
+}
+
 /** Liste toutes les tasks triées par date */
 export function listTasks(): Task[] {
     ensureDir();
@@ -124,12 +161,21 @@ export function createTask(data: Pick<Task, "title"> & Partial<Pick<Task, "issue
     return task;
 }
 
-/** Met à jour les champs d'une task */
-export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage" | "atlasEnabled">>): Task | null {
+/** Met à jour les champs d'une task (projet courant uniquement) */
+export function updateTask(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage" | "atlasEnabled" | "fullPlanId">>): Task | null {
     const task = getTask(id);
     if (!task) return null;
     const updated: Task = { ...task, ...patch, updatedAt: new Date().toISOString() };
     fs.writeFileSync(taskPath(id), JSON.stringify(updated, null, 2));
+    return updated;
+}
+
+/** Met à jour les champs d'une task dans n'importe quel projet (cross-project). */
+export function updateTaskGlobal(id: string, patch: Partial<Pick<Task, "status" | "logs" | "branch" | "pushed" | "usage" | "totalUsage" | "planUsage" | "implUsage" | "atlasEnabled">>): Task | null {
+    const found = findTaskGlobal(t => t.id === id);
+    if (!found) return null;
+    const updated: Task = { ...found.task, ...patch, updatedAt: new Date().toISOString() };
+    fs.writeFileSync(path.join(found.tasksDir, `${id}.json`), JSON.stringify(updated, null, 2));
     return updated;
 }
 

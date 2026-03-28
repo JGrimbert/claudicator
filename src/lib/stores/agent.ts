@@ -169,6 +169,15 @@ export function notifyTaskCreated(taskId?: string) {
 }
 
 export const evalIssueDag = writable<RoadmapData | null>(null);
+
+export type TestLog = { line: string; type: "out" | "sys" };
+export const testRunState = writable<{
+    planId: string | null;
+    issueNumber: number | null;
+    logs: TestLog[];
+    running: boolean;
+    exitCode: number | null;
+}>({ planId: null, issueNumber: null, logs: [], running: false, exitCode: null });
 export const evalIssueDagsByKeyword = writable<Record<string, RoadmapData>>({});
 export const planPanelActiveTab = writable<"clusters" | "étape" | "étapes" | "history" | "skills">("clusters");
 
@@ -291,6 +300,7 @@ export type ActiveFullPlan = {
     keyword: string;
     status: "generating" | "done" | "error";
     planFile?: string;
+    taskId?: string;
 };
 export const activeFullPlan = writable<ActiveFullPlan | null>(null);
 

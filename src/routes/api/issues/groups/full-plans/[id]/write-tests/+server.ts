@@ -4,9 +4,10 @@ import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { getFullPlan } from "$lib/server/services/fullPlans";
-import { listTasks } from "$lib/server/services/tasks";
+import { findTaskGlobal } from "$lib/server/services/tasks";
 import { register, unregister } from "$lib/server/services/processes";
-import { getAbsPatchesDir, getPatchContent } from "$lib/server/services/patches";
+import { getAbsPatchesDirFrom, getPatchContentFrom } from "$lib/server/services/patches";
+import { getProjectRoot } from "$lib/server/services/projects";
 
 /**
  * POST /api/issues/groups/full-plans/[id]/write-tests
@@ -22,22 +23,23 @@ export const POST: RequestHandler = async ({ params, request }) => {
     const body = await request.json() as { issueNumber: number; patchName: string };
     if (!body.issueNumber || !body.patchName) throw error(400, "issueNumber et patchName requis");
 
-    const linkedTask = listTasks().find(t => t.fullPlanId === params.id);
-    if (!linkedTask) throw error(400, "Aucune task liée à ce plan");
+    const found = findTaskGlobal(t => t.fullPlanId === params.id);
+    if (!found) throw error(400, "Aucune task liée à ce plan");
+    const { task: linkedTask, tasksDir } = found;
 
-    const patchesDir = getAbsPatchesDir(linkedTask.id);
-    const patchContent = getPatchContent(linkedTask.id, body.patchName);
+    const patchesDir = getAbsPatchesDirFrom(tasksDir, linkedTask.id);
+    const patchContent = getPatchContentFrom(tasksDir, linkedTask.id, body.patchName);
     if (!patchContent) throw error(404, "Patch introuvable");
 
     // Trouver le worktree du fullplan (fullplan-<id> ou fullplan-<id>-*)
+    // Fallback sur le repo principal si aucun worktree n'existe (run avec ancienne version)
     const worktreesBase = path.join(process.cwd(), ".agent", "worktrees");
     let worktreePath = path.join(worktreesBase, `fullplan-${plan.id}`);
     if (!fs.existsSync(worktreePath)) {
         const dirs = fs.existsSync(worktreesBase)
             ? fs.readdirSync(worktreesBase).filter(d => d.startsWith(`fullplan-${plan.id}`))
             : [];
-        if (dirs.length === 0) throw error(400, "Worktree introuvable — relancez l'implémentation d'abord");
-        worktreePath = path.join(worktreesBase, dirs[0]);
+        worktreePath = dirs.length > 0 ? path.join(worktreesBase, dirs[0]) : getProjectRoot();
     }
 
     const patchFile = path.join(patchesDir, body.patchName);

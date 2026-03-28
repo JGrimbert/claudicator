@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, startConsoleStream, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, startConsoleStream, testRunState, type TestLog, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
@@ -127,6 +127,26 @@
         if (res.ok) patches = await res.json();
     }
 
+    // ── Polling patches pendant un run fullplan ───────────────────────────────
+    let _patchPoll: ReturnType<typeof setInterval> | null = null;
+
+    function _startPatchPoll(taskId: string) {
+        if (_patchPoll) return; // déjà actif
+        _patchPoll = setInterval(() => loadPatches(taskId), 2500);
+    }
+    function _stopPatchPoll() {
+        if (_patchPoll) { clearInterval(_patchPoll); _patchPoll = null; }
+    }
+
+    // Démarre le polling quand un fullplan est sélectionné ET que l'agent tourne
+    $: if (selected?.type === "fullplan" && $agentRunState.running) {
+        _startPatchPoll(selected.id);
+    } else {
+        _stopPatchPoll();
+    }
+
+    onDestroy(_stopPatchPoll);
+
     async function openPatch(task: Task, patch: PatchInfo) {
         selectedPatch = patch;
         patchContent = null;
@@ -171,6 +191,52 @@
                 running: false,
                 logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" }],
             }));
+        }
+    }
+
+    async function runTests(task: Task, row: IssueRow) {
+        if (!task.fullPlanId || !row.patch) return;
+        testRunState.set({ planId: task.fullPlanId, issueNumber: row.number, logs: [], running: true, exitCode: null });
+        consoleTab.set("tests");
+        try { sessionStorage.setItem("lastConsoleTab", "tests"); } catch { /* SSR */ }
+        try {
+            const res = await fetch(`/api/issues/groups/full-plans/${task.fullPlanId}/run-tests`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ issueNumber: row.number, patchName: row.patch.name }),
+            });
+            if (!res.ok || !res.body) {
+                const msg = await res.text().catch(() => `HTTP ${res.status}`);
+                testRunState.update(s => ({ ...s, running: false, exitCode: 1, logs: [...s.logs, { line: msg, type: "sys" as const }] }));
+                return;
+            }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                for (const raw of dec.decode(value).split("\n")) {
+                    if (!raw.startsWith("data: ")) continue;
+                    try {
+                        const ev = JSON.parse(raw.slice(6));
+                        if (ev.type === "exit") {
+                            testRunState.update(s => {
+                                const next = { ...s, running: false, exitCode: ev.code };
+                                try { sessionStorage.setItem("lastTestRun", JSON.stringify(next)); } catch { /* SSR */ }
+                                return next;
+                            });
+                        } else {
+                            testRunState.update(s => ({ ...s, logs: [...s.logs, { line: ev.line, type: ev.type as TestLog["type"] }] }));
+                        }
+                    } catch { /* ligne malformée */ }
+                }
+            }
+        } catch (e: any) {
+            testRunState.update(s => {
+                const next = { ...s, running: false, exitCode: 1, logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "sys" as const }] };
+                try { sessionStorage.setItem("lastTestRun", JSON.stringify(next)); } catch { /* SSR */ }
+                return next;
+            });
         }
     }
 
@@ -540,7 +606,7 @@
         patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
         commitMsg = ""; wfError = ""; revertConfirm = false;
         selectedPanel = "plan";
-        if (initialTask.hasPatch) loadPatches(initialTask.id);
+        if (initialTask.hasPatch || initialTask.type === "fullplan") loadPatches(initialTask.id);
         linkedIssueState = null;
         const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
@@ -551,7 +617,7 @@
             if (res.ok) {
                 const fp = await res.json();
                 fullPlanDetail = fp;
-                activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile });
+                activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile, taskId: initialTask.id });
             }
             // Charger le diff si une branche existe (sans setter planModeTask)
             if (initialTask.branch) {
@@ -781,7 +847,9 @@
                                             <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(task, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
                                         {:else}
                                             <span class="is-badge is-ok">patch<button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(task, row.patch!); }} title="Rejeter ce patch">✕</button></span>
-                                            <span class="is-badge is-ok">✓ tests</span>
+                                            <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(task, row); }} title="Lancer les tests">
+                                                {$testRunState.planId === task.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
+                                            </button>
                                         {/if}
                                     </div>
                                 {/each}
@@ -1468,6 +1536,7 @@
 .is-badge:hover .is-reject-btn { opacity: 0.7; }
 .is-reject-btn:hover { opacity: 1 !important; }
 .issue-status-footer  { padding: 4px 8px; }
+
 
 /* ── Patches ── */
 .patch-sublist {

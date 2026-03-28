@@ -20,7 +20,7 @@
     $: if ($globalPlanPrompt)         activeMiddleTab = "plan";
     $: if ($clusterFocusedSymbol)     activeMiddleTab = "cluster";
     $: if ($activeFullPlan?.status === "done") activeMiddleTab = "fullplan";
-    $: if ($evalIssueDag)             activeMiddleTab = "dag";
+    $: if ($evalIssueDag && !$activeFullPlan)  activeMiddleTab = "dag";
 
 
     /**
@@ -381,7 +381,7 @@
             if (fpRes.ok) {
                 const fp = await fpRes.json();
                 if (fp) {
-                    activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile });
+                    activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile, taskId: fp.taskId });
                     activeMiddleTab = "fullplan";
                     if (fp.taskId) {
                         projetPanelTab.set("tasks");

@@ -3,7 +3,7 @@ import type { RequestHandler } from "./$types";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
-import { getTasksDir, createTask, updateTask } from "$lib/server/services/tasks";
+import { getTasksDir, createTask, updateTask, getTask } from "$lib/server/services/tasks";
 import { writeAtlasForIssues } from "$lib/server/agent/atlas";
 import { createFullPlan, updateFullPlan, getFullPlanDir } from "$lib/server/services/fullPlans";
 import { getProjectRoot } from "$lib/server/services/projects";
@@ -193,10 +193,11 @@ type IssueRef = { number: number; title: string; body?: string };
 
 export const POST: RequestHandler = async ({ request }) => {
     const body = await request.json();
-    const { groupKeyword, subStacks, residualIssues } = body as {
+    const { groupKeyword, subStacks, residualIssues, existingTaskId } = body as {
         groupKeyword: string;
         subStacks: { keyword: string; issues: IssueRef[] }[];
         residualIssues?: IssueRef[];
+        existingTaskId?: string;
     };
 
     if (!groupKeyword || !subStacks?.length) throw error(400, "groupKeyword et subStacks requis");
@@ -215,12 +216,15 @@ export const POST: RequestHandler = async ({ request }) => {
         ...(residualIssues ?? [])
     ];
 
-    const fpTask = createTask({
-        title: `Plan complet — ${groupKeyword} (${allIssues.length} issues)`,
-        type: "fullplan",
-        fullPlanId: planId,
-        status: "planification",
-    });
+    const existingTask = existingTaskId ? getTask(existingTaskId) : null;
+    const fpTask = existingTask
+        ? (updateTask(existingTask.id, { fullPlanId: planId, status: "planification" }) ?? existingTask)
+        : createTask({
+            title: `Plan complet — ${groupKeyword} (${allIssues.length} issues)`,
+            type: "fullplan",
+            fullPlanId: planId,
+            status: "planification",
+        });
 
     // Enrichir ATLAS.md avec l'ensemble du groupe
     writeAtlasForIssues(allIssues, groupKeyword);

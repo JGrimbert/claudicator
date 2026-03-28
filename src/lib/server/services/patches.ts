@@ -19,12 +19,29 @@ export function getAbsPatchesDir(taskId: string): string {
     return path.resolve(getPatchesDir(taskId));
 }
 
+/** Variante cross-projet : calcule le chemin absolu à partir du répertoire tasks réel de la task. */
+export function getAbsPatchesDirFrom(tasksDir: string, taskId: string): string {
+    return path.resolve(tasksDir, taskId, "patches");
+}
+
+/** Lit le contenu d'un patch à partir du répertoire tasks réel de la task. */
+export function getPatchContentFrom(tasksDir: string, taskId: string, name: string): string | null {
+    const filePath = path.join(tasksDir, taskId, "patches", name);
+    if (!fs.existsSync(filePath)) return null;
+    return fs.readFileSync(filePath, "utf-8");
+}
+
 function detectTests(content: string): boolean {
     return /\+\+\+ b\/.*\.(test|spec)\.(ts|js|tsx|jsx|vue)/.test(content);
 }
 
-export function listPatches(taskId: string): PatchInfo[] {
-    const dir = getPatchesDir(taskId);
+/** Variante cross-projet : liste les patches depuis le répertoire tasks réel de la task. */
+export function listPatchesFrom(tasksDir: string, taskId: string): PatchInfo[] {
+    const dir = path.join(tasksDir, taskId, "patches");
+    return _listPatchesFromDir(dir);
+}
+
+function _listPatchesFromDir(dir: string): PatchInfo[] {
     if (!fs.existsSync(dir)) return [];
     return fs.readdirSync(dir)
         .filter(f => f.endsWith(".patch"))
@@ -41,6 +58,10 @@ export function listPatches(taskId: string): PatchInfo[] {
             };
         })
         .sort((a, b) => (a.issueNumber ?? 0) - (b.issueNumber ?? 0));
+}
+
+export function listPatches(taskId: string): PatchInfo[] {
+    return _listPatchesFromDir(getPatchesDir(taskId));
 }
 
 export function hasPatchFiles(taskId: string): boolean {
@@ -64,5 +85,10 @@ export async function applyPatch(taskId: string, name: string): Promise<void> {
 
 export function deletePatch(taskId: string, name: string): void {
     const filePath = path.join(getPatchesDir(taskId), name);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+}
+
+export function deletePatchFrom(tasksDir: string, taskId: string, name: string): void {
+    const filePath = path.join(tasksDir, taskId, "patches", name);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }

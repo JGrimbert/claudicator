@@ -19,7 +19,7 @@ export default defineConfig({
 			allow: ['..']
 		},
 		watch: {
-			ignored: ['!**/node_modules/jgr-ui/**']
+			ignored: ['!**/node_modules/jgr-ui/**', '**/.agent/**']
 		}
 	}
 });

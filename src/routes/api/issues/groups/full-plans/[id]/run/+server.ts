@@ -4,10 +4,10 @@ import { spawn, execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { getFullPlan } from "$lib/server/services/fullPlans";
-import { getTasksDir, listTasks, updateTask } from "$lib/server/services/tasks";
+import { getTasksDir, findTaskGlobal, updateTaskGlobal } from "$lib/server/services/tasks";
 import { register, unregister } from "$lib/server/services/processes";
 import { getProjectRoot } from "$lib/server/services/projects";
-import { getAbsPatchesDir } from "$lib/server/services/patches";
+import { getAbsPatchesDirFrom } from "$lib/server/services/patches";
 
 /**
  * POST /api/issues/groups/full-plans/[id]/run
@@ -24,7 +24,15 @@ export const POST: RequestHandler = async ({ params, request }) => {
     const stackKeyword = body?.stackKeyword;
 
     const root = getProjectRoot();
-    const fullPlanContent = fs.readFileSync(path.join(getTasksDir(), plan.planFile), "utf-8");
+
+    // Task liée (type fullplan) — cherche dans tous les projets (cross-project)
+    const foundTask = findTaskGlobal(t => t.fullPlanId === params.id);
+    const linkedTask = foundTask?.task ?? null;
+    const tasksDir = foundTask?.tasksDir ?? getTasksDir();
+    const patchesDir = foundTask ? getAbsPatchesDirFrom(foundTask.tasksDir, foundTask.task.id) : null;
+    if (patchesDir) fs.mkdirSync(patchesDir, { recursive: true });
+
+    const fullPlanContent = fs.readFileSync(path.join(tasksDir, plan.planFile), "utf-8");
 
     // Si stackKeyword fourni : extraire seulement la section de cette stack
     let planContent = fullPlanContent;
@@ -34,11 +42,6 @@ export const POST: RequestHandler = async ({ params, request }) => {
         const match = fullPlanContent.match(re);
         if (match) planContent = match[1].trim();
     }
-
-    // Task liée (type fullplan) — pour mise à jour du statut + patches dir
-    const linkedTask = listTasks().find(t => t.fullPlanId === params.id);
-    const patchesDir = linkedTask ? getAbsPatchesDir(linkedTask.id) : null;
-    if (patchesDir) fs.mkdirSync(patchesDir, { recursive: true });
 
     // ── Worktree isolé ────────────────────────────────────────────────────────
     // Claude travaille dans un worktree séparé du repo cible.
@@ -144,7 +147,7 @@ ${planContent.trim()}${atlasSection}${workflowInstruction}`;
             });
             if (proc.stdin) { proc.stdin.write(prompt); proc.stdin.end(); }
             register(plan.id, proc);
-            if (linkedTask) updateTask(linkedTask.id, { status: "implementation" });
+            if (linkedTask) updateTaskGlobal(linkedTask.id, { status: "implementation" });
             if (proc.pid) send({ line: `[pid:${proc.pid}]`, type: "system" });
             send({ line: `[worktree] ${worktreePath}`, type: "system" });
 
@@ -191,7 +194,7 @@ ${planContent.trim()}${atlasSection}${workflowInstruction}`;
             });
             proc.on("error", (e: Error) => {
                 unregister(plan.id);
-                if (linkedTask) updateTask(linkedTask.id, { status: "failed" });
+                if (linkedTask) updateTaskGlobal(linkedTask.id, { status: "failed" });
                 send({ line: `[erreur] ${e.message}`, type: "system" });
                 controller.close();
             });
