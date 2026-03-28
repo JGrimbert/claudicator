@@ -122,9 +122,54 @@
     let patchLoading = false;
     let patchApplying = false;
 
+    // Sandbox (appliquer/retirer un patch dans le repo cible pour tester)
+    type SandboxState = { applied: string[]; deps: Record<string, string[]> };
+    let sandboxState: SandboxState | null = null;
+    let sandboxError = "";
+    let sandboxBusy: string | null = null; // nom du patch en cours d'opération
+
     async function loadPatches(taskId: string) {
         const res = await fetch(`/api/tasks/${taskId}/patches`);
         if (res.ok) patches = await res.json();
+    }
+
+    async function loadSandboxState(taskId: string) {
+        const res = await fetch(`/api/tasks/${taskId}/patches/sandbox`);
+        if (res.ok) sandboxState = await res.json();
+    }
+
+    async function sandboxApply(task: Task, patchName: string) {
+        if (sandboxBusy) return;
+        sandboxBusy = patchName; sandboxError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/patches/${encodeURIComponent(patchName)}/sandbox`, { method: "POST" });
+            const data = await res.json();
+            if (data.error === "dirty") {
+                sandboxError = "Le repo n'est pas clean — commite ou stashe tes modifications avant de tester un patch.";
+            } else if (!res.ok) {
+                sandboxError = data.message ?? "Erreur apply";
+            } else {
+                sandboxState = { applied: data.applied, deps: sandboxState?.deps ?? {} };
+            }
+        } catch (e: any) { sandboxError = e.message; }
+        finally { sandboxBusy = null; }
+    }
+
+    async function sandboxUnapply(task: Task, patchName: string) {
+        if (sandboxBusy) return;
+        sandboxBusy = patchName; sandboxError = "";
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/patches/${encodeURIComponent(patchName)}/sandbox`, { method: "DELETE" });
+            const data = await res.json();
+            if (data.error === "dirty") {
+                sandboxError = "Le repo n'est pas clean — commite ou stashe tes modifications avant de retirer un patch.";
+            } else if (!res.ok) {
+                sandboxError = data.message ?? "Erreur unapply";
+            } else {
+                sandboxState = { applied: data.applied, deps: sandboxState?.deps ?? {} };
+            }
+        } catch (e: any) { sandboxError = e.message; }
+        finally { sandboxBusy = null; }
     }
 
     // ── Polling patches pendant un run fullplan ───────────────────────────────
@@ -605,8 +650,12 @@
         planContent = null; diffContent = null;
         patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
         commitMsg = ""; wfError = ""; revertConfirm = false;
+        sandboxState = null; sandboxError = "";
         selectedPanel = "plan";
-        if (initialTask.hasPatch || initialTask.type === "fullplan") loadPatches(initialTask.id);
+        if (initialTask.hasPatch || initialTask.type === "fullplan") {
+            loadPatches(initialTask.id);
+            loadSandboxState(initialTask.id);
+        }
         linkedIssueState = null;
         const taskFilter = taskToFilter(initialTask);
         if (taskFilter) filter = taskFilter;
@@ -826,6 +875,12 @@
                         <!-- ── État des issues (fullplan) ── -->
                         {#if task.type === "fullplan" && issueRows.length > 0}
                             <div class="issue-status-table">
+                                {#if sandboxError}
+                                    <div class="sandbox-error">
+                                        <span>⚠ {sandboxError}</span>
+                                        <button onclick={() => sandboxError = ""}>✕</button>
+                                    </div>
+                                {/if}
                                 {#each issueRows as row}
                                     <div
                                         class="issue-status-row"
@@ -850,6 +905,23 @@
                                             <button class="is-badge is-ok is-btn" onclick={(e) => { e.stopPropagation(); runTests(task, row); }} title="Lancer les tests">
                                                 {$testRunState.planId === task.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
                                             </button>
+                                        {/if}
+                                        {#if row.patch}
+                                            {#if sandboxState?.applied.includes(row.patch.name)}
+                                                <button
+                                                    class="is-sandbox-btn is-sandbox-applied"
+                                                    onclick={(e) => { e.stopPropagation(); sandboxUnapply(task, row.patch!.name); }}
+                                                    disabled={!!sandboxBusy}
+                                                    title="Retirer ce patch du repo"
+                                                >{sandboxBusy === row.patch.name ? "…" : "↩"}</button>
+                                            {:else}
+                                                <button
+                                                    class="is-sandbox-btn"
+                                                    onclick={(e) => { e.stopPropagation(); sandboxApply(task, row.patch!.name); }}
+                                                    disabled={!!sandboxBusy}
+                                                    title={sandboxState?.deps[row.patch.name]?.length ? `Applique aussi : ${sandboxState.deps[row.patch.name].join(', ')}` : "Appliquer ce patch dans le repo"}
+                                                >{sandboxBusy === row.patch.name ? "…" : "↓ tester"}</button>
+                                            {/if}
                                         {/if}
                                     </div>
                                 {/each}
@@ -1535,6 +1607,24 @@
 }
 .is-badge:hover .is-reject-btn { opacity: 0.7; }
 .is-reject-btn:hover { opacity: 1 !important; }
+.is-sandbox-btn {
+    background: none; border: 1px solid #333; border-radius: 3px; cursor: pointer;
+    color: #888; font-size: 0.55rem; padding: 1px 4px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.1s;
+}
+.issue-status-row:hover .is-sandbox-btn { opacity: 1; }
+.is-sandbox-btn:hover { color: #aef; border-color: #aef; }
+.is-sandbox-btn.is-sandbox-applied { color: #f7c948; border-color: #f7c948; opacity: 1; }
+.is-sandbox-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sandbox-error {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 8px; font-size: 0.62rem; color: #f7c948;
+    background: rgba(247,201,72,0.08); border-bottom: 1px solid rgba(247,201,72,0.2);
+}
+.sandbox-error span { flex: 1; }
+.sandbox-error button {
+    background: none; border: none; cursor: pointer; color: #f7c948; font-size: 0.7rem; padding: 0 2px;
+}
 .issue-status-footer  { padding: 4px 8px; }
 
 

@@ -52,7 +52,8 @@
       "Bash(echo \"✓ #$n\")",
       "Bash(echo \"✗ #$n\")",
       "Bash(netstat -ano)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(./node_modules/.bin/svelte-check)"
     ]
   }
 }
