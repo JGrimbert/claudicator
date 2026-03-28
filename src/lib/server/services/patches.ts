@@ -80,7 +80,13 @@ export async function applyPatch(taskId: string, name: string): Promise<void> {
     const filePath = path.resolve(getPatchesDir(taskId), name);
     const root = getProjectRoot();
     const g = simpleGit(root);
-    await g.raw(["apply", "--whitespace=nowarn", filePath]);
+    try {
+        await g.raw(["apply", "--whitespace=nowarn", filePath]);
+    } catch {
+        // Le patch ne s'applique pas proprement (fichier modifié depuis la génération).
+        // On tente un merge 3-voies : git reconstruit le contexte via l'index.
+        await g.raw(["apply", "--3way", "--whitespace=nowarn", filePath]);
+    }
 }
 
 export function deletePatch(taskId: string, name: string): void {
