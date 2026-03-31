@@ -915,6 +915,13 @@
                 const fp = await res.json();
                 fullPlanDetail = fp;
                 activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile, taskId: initialTask.id });
+                // #246 : charger le DAG des issues
+                if (fp.keyword && fp.id) {
+                    fetch(`/api/issues/groups/eval-dag/${fp.keyword}?planId=${fp.id}`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(data => { if (data?.exists && data.levels?.length) taskDag = { steps: data.levels.flatMap((l: any) => l.issues.map((n: number) => ({ id: n }))) }; })
+                        .catch(() => {});
+                }
             } else {
                 // Plan supprimé ou introuvable — ouvre quand même l'onglet fullplan
                 activeFullPlan.set({ id: initialTask.fullPlanId, keyword: "", status: "error", taskId: initialTask.id });
@@ -1105,6 +1112,7 @@
                 <div
                     class="task-row-wrap"
                     class:task-closed={task.status === "failed" || task.status === "merged"}
+                    class:task-running={$agentRunState.running && $agentRunState.taskId === task.id}
                     data-task-id={task.id}
                     onmouseenter={() => task.issueNumber && hoveredIssueNumber.set(task.issueNumber)}
                     onmouseleave={() => hoveredIssueNumber.set(null)}
@@ -1751,6 +1759,7 @@
 .task-row-wrap { position: relative; }
 .task-closed :global(.item-row) { opacity: 0.55; }
 .task-closed :global(.item-title) { text-decoration: line-through; }
+.task-running { background: rgba(247, 201, 72, 0.06); border-left: 2px solid #f7c948; }
 .task-delete-btn {
     position: absolute;
     right: 0.5rem;
