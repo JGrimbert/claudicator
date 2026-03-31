@@ -10,9 +10,9 @@
     type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
     type TaskType = "standard" | "fullplan";
     type TokenUsage = { inputTokens: number; outputTokens: number };
-    type PatchInfo = { name: string; issueNumber?: number; hasTests: boolean; createdAt: number };
+    type PatchInfo = { name: string; issueNumber?: number; issueNumbers?: number[]; hasTests: boolean; createdAt: number };
     type IssueRef = { number: number; title: string };
-    type FullPlanDetail = { id: string; subStacks: { keyword: string; issues: IssueRef[] }[]; residualIssues?: IssueRef[] };
+    type FullPlanDetail = { id: string; subStacks: { keyword: string; issues: IssueRef[] }[]; residualIssues?: IssueRef[]; stepFiles?: { filename: string; issues: number[] }[] };
     type IssueState = "patch-tests" | "patch-no-tests" | "no-patch";
     type IssueRow = IssueRef & { stack: string; state: IssueState; patch?: PatchInfo };
     type Task = {
@@ -100,17 +100,39 @@
     let issueRows = $derived((() => {
         if (!fullPlanDetail) return [] as IssueRow[];
         const rows: IssueRow[] = [];
-        for (const stack of fullPlanDetail.subStacks) {
-            for (const issue of stack.issues) {
-                const patch = patches.find(p => p.issueNumber === issue.number);
-                const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
-                rows.push({ ...issue, stack: stack.keyword, state, patch });
+
+        const findPatch = (num: number) =>
+            patches.find(p => p.issueNumbers?.includes(num) ?? p.issueNumber === num);
+
+        if (fullPlanDetail.stepFiles?.length) {
+            // Nouveau format : résoudre les titres depuis subStacks + residualIssues
+            const titleMap = new Map<number, string>();
+            for (const s of fullPlanDetail.subStacks)
+                for (const i of s.issues) titleMap.set(i.number, i.title);
+            for (const i of (fullPlanDetail.residualIssues ?? []))
+                titleMap.set(i.number, i.title);
+            for (const sf of fullPlanDetail.stepFiles) {
+                const stepLabel = sf.filename.replace(".md", "");
+                for (const num of sf.issues) {
+                    const patch = findPatch(num);
+                    const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
+                    rows.push({ number: num, title: titleMap.get(num) ?? `#${num}`, stack: stepLabel, state, patch });
+                }
             }
-        }
-        for (const issue of (fullPlanDetail.residualIssues ?? [])) {
-            const patch = patches.find(p => p.issueNumber === issue.number);
-            const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
-            rows.push({ ...issue, stack: "résiduel", state, patch });
+        } else {
+            // Ancien format
+            for (const stack of fullPlanDetail.subStacks) {
+                for (const issue of stack.issues) {
+                    const patch = findPatch(issue.number);
+                    const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
+                    rows.push({ ...issue, stack: stack.keyword, state, patch });
+                }
+            }
+            for (const issue of (fullPlanDetail.residualIssues ?? [])) {
+                const patch = findPatch(issue.number);
+                const state: IssueState = patch ? (patch.hasTests ? "patch-tests" : "patch-no-tests") : "no-patch";
+                rows.push({ ...issue, stack: "résiduel", state, patch });
+            }
         }
         return rows;
     })());
@@ -1033,10 +1055,16 @@
 
                         {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0}
                             {@const fp = fullPlanDetail}
-                            {@const allGroups = [
-                                ...fp.subStacks,
-                                ...(fp.residualIssues?.length ? [{ keyword: "résiduel", issues: fp.residualIssues }] : [])
-                            ]}
+                            {@const allGroups = fp.stepFiles?.length
+                                ? fp.stepFiles.map(sf => ({
+                                    keyword: sf.filename.replace(".md", ""),
+                                    issues: sf.issues.map(n => issueRows.find(r => r.number === n) ?? { number: n, title: `#${n}` })
+                                }))
+                                : [
+                                    ...fp.subStacks,
+                                    ...(fp.residualIssues?.length ? [{ keyword: "résiduel", issues: fp.residualIssues }] : [])
+                                ]
+                            }
                             <div class="fp-tree">
                                 {#if sandboxError}
                                     <div class="sandbox-error">

@@ -6,7 +6,8 @@ import { getProjectRoot } from "./projects";
 
 export type PatchInfo = {
     name: string;
-    issueNumber?: number;
+    issueNumber?: number;       // premier numéro (compat)
+    issueNumbers?: number[];    // tous les numéros (multi-issue)
     hasTests: boolean;
     createdAt: number;
     stale?: boolean;
@@ -50,10 +51,17 @@ function _listPatchesFromDir(dir: string): PatchInfo[] {
             const filePath = path.join(dir, name);
             const content = fs.readFileSync(filePath, "utf-8");
             const stat = fs.statSync(filePath);
-            const m = name.match(/issue-(\d+)/);
+            // Extraire tous les numéros d'issues depuis le nom
+            // ex: "issue-132-18.patch" → [132, 18], "issue-262.patch" → [262]
+            const stem = name.replace(/\.patch$/, "");
+            const afterIssue = stem.match(/^issue-(.+)$/);
+            const issueNumbers = afterIssue
+                ? afterIssue[1].split("-").map(Number).filter(n => Number.isFinite(n) && n > 0)
+                : undefined;
             return {
                 name,
-                issueNumber: m ? Number(m[1]) : undefined,
+                issueNumber: issueNumbers?.[0],
+                issueNumbers,
                 hasTests: detectTests(content),
                 createdAt: stat.mtimeMs,
             };
@@ -77,7 +85,7 @@ export function getPatchContent(taskId: string, name: string): string | null {
     return fs.readFileSync(filePath, "utf-8");
 }
 
-/** Vérifie si un patch peut s'appliquer sans modifier les fichiers. */
+/** Vérifie si un patch isolé peut s'appliquer sans modifier les fichiers. */
 export async function checkPatchStale(patchesDir: string, name: string): Promise<boolean> {
     const filePath = path.resolve(patchesDir, name);
     const root = getProjectRoot();
@@ -88,6 +96,59 @@ export async function checkPatchStale(patchesDir: string, name: string): Promise
     } catch {
         return true;
     }
+}
+
+/**
+ * Vérifie la staleness d'une série de patches en appliquant chacun
+ * séquentiellement dans un worktree temporaire isolé.
+ *
+ * Principe : un patch est périmé uniquement s'il entre en conflit avec
+ * le repo ACTUEL (HEAD) une fois tous les patches précédents appliqués —
+ * pas à cause d'un commit antérieur à la génération.
+ *
+ * Retourne un Map<name, stale>.
+ */
+export async function checkPatchesStale(
+    patchesDir: string,
+    patches: PatchInfo[]
+): Promise<Map<string, boolean>> {
+    const result = new Map<string, boolean>(patches.map(p => [p.name, false]));
+    if (!patches.length) return result;
+
+    const root = getProjectRoot();
+    const g = simpleGit(root);
+
+    // Tri par date de création — ordre de génération dans le worktree source
+    const sorted = [...patches].sort((a, b) => a.createdAt - b.createdAt);
+
+    // Worktree temporaire isolé : copie propre depuis HEAD
+    const worktreesBase = path.join(process.cwd(), ".agent", "worktrees");
+    fs.mkdirSync(worktreesBase, { recursive: true });
+    const tmpPath = path.join(worktreesBase, `stale-check-${Date.now()}`);
+
+    try {
+        await g.raw(["worktree", "add", "--detach", tmpPath, "HEAD"]);
+        const gTmp = simpleGit(tmpPath);
+
+        for (const p of sorted) {
+            const filePath = path.resolve(patchesDir, p.name);
+            const idx = sorted.indexOf(p);
+            try {
+                // Application réelle dans le worktree tmp → contexte maintenu pour le patch suivant
+                await gTmp.raw(["apply", "--whitespace=nowarn", filePath]);
+            } catch {
+                // Ce patch ne s'applique pas au-dessus des précédents → lui et la suite sont périmés
+                for (let i = idx; i < sorted.length; i++) {
+                    result.set(sorted[i].name, true);
+                }
+                break;
+            }
+        }
+    } finally {
+        try { await g.raw(["worktree", "remove", "--force", tmpPath]); } catch { /* best-effort */ }
+    }
+
+    return result;
 }
 
 export async function applyPatch(taskId: string, name: string): Promise<void> {

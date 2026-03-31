@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { listPatches, listPatchesFrom, getAbsPatchesDir, getAbsPatchesDirFrom, checkPatchStale } from "$lib/server/services/patches";
+import { listPatches, listPatchesFrom, getAbsPatchesDir, getAbsPatchesDirFrom, checkPatchesStale } from "$lib/server/services/patches";
 import { findTaskGlobal } from "$lib/server/services/tasks";
 
 export const GET: RequestHandler = async ({ params, url }) => {
@@ -14,8 +14,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const patchesDir = found
         ? getAbsPatchesDirFrom(found.tasksDir, params.id)
         : getAbsPatchesDir(params.id);
-    await Promise.all(patches.map(async p => {
-        p.stale = await checkPatchStale(patchesDir, p.name);
-    }));
+    const staleMap = await checkPatchesStale(patchesDir, patches);
+    for (const p of patches) p.stale = staleMap.get(p.name) ?? false;
     return json(patches);
 };
