@@ -1045,7 +1045,11 @@
                                         <button class="is-reject-btn" onclick={(e) => { e.stopPropagation(); rejectPatch(t, row.patch!); }} title="Rejeter ce patch">✕</button>
                                     </span>
                                     {#if !row.patch?.stale}
-                                        <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
+                                        {#if row.patch?.isPureUI}
+                                            <span class="is-badge is-ui-only" title="Patch UI seul — pas de tests requis">UI</span>
+                                        {:else}
+                                            <button class="is-badge is-notests is-btn" onclick={(e) => { e.stopPropagation(); writeTests(t, row); }} title="Écrire les tests manquants">∅ tests ▶</button>
+                                        {/if}
                                     {/if}
                                 {:else}
                                     <span class="is-badge" class:is-ok={!row.patch?.stale} class:is-stale={row.patch?.stale}>
@@ -2025,6 +2029,7 @@
 .is-badge { font-size: 0.58rem; flex-shrink: 0; padding: 1px 4px; border-radius: 3px; }
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
+.is-badge.is-ui-only  { background: #1a1a1a; color: #555; cursor: default; }
 .is-badge.is-stale    { background: rgba(255,152,0,0.15); color: #ff9800; }
 .is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
 .is-badge.is-btn      { border: none; cursor: pointer; }

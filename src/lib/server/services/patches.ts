@@ -9,6 +9,7 @@ export type PatchInfo = {
     issueNumber?: number;       // premier numéro (compat)
     issueNumbers?: number[];    // tous les numéros (multi-issue)
     hasTests: boolean;
+    isPureUI: boolean;          // patch ne contient que des fichiers .svelte/.css/.scss
     createdAt: number;
     stale?: boolean;
 };
@@ -37,6 +38,14 @@ function detectTests(content: string): boolean {
     return /\+\+\+ b\/.*\.(test|spec)\.(ts|js|tsx|jsx|vue)/.test(content);
 }
 
+/** Retourne true si le patch ne touche que des fichiers UI (.svelte, .css, .scss).
+ *  Ces fichiers n'ont pas besoin de tests unitaires. */
+function detectPureUI(content: string): boolean {
+    const files = [...content.matchAll(/^\+\+\+ b\/(.+)$/gm)].map(m => m[1].trim());
+    if (files.length === 0) return false;
+    return files.every(f => /\.(svelte|css|scss)$/.test(f));
+}
+
 /** Variante cross-projet : liste les patches depuis le répertoire tasks réel de la task. */
 export function listPatchesFrom(tasksDir: string, taskId: string): PatchInfo[] {
     const dir = path.join(tasksDir, taskId, "patches");
@@ -63,6 +72,7 @@ function _listPatchesFromDir(dir: string): PatchInfo[] {
                 issueNumber: issueNumbers?.[0],
                 issueNumbers,
                 hasTests: detectTests(content),
+                isPureUI: detectPureUI(content),
                 createdAt: stat.mtimeMs,
             };
         })
