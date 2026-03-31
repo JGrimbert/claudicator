@@ -216,9 +216,25 @@
     let sandboxBusy = $state<string | null>(null); // nom du patch en cours d'opération
     let repromptBusy = $state<number | null>(null); // issueNumber en cours de reprompt
 
-    // Roadmap grouping (feature en cours)
+    // Roadmap grouping (#36 : calculé depuis $planGroups)
     let roadmapActive = $state(false);
-    let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>([]);
+    let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>((() => {
+        const groups = $planGroups;
+        if (!groups.length) {
+            // Pas de groupes roadmap : toutes les tâches dans un groupe par défaut
+            return tasks.length ? [{ name: 'default', tasks }] : [];
+        }
+        // Associer chaque tâche à son groupe par issueNumber
+        const result: { name: string; tasks: Task[] }[] = groups.map(g => ({
+            name: `P${g.index} ${g.name}`,
+            tasks: tasks.filter(t => t.issueNumber !== undefined && g.issues.includes(t.issueNumber)),
+        })).filter(g => g.tasks.length > 0);
+        // Tasks sans groupe (issueNumber absent ou non référencé)
+        const grouped = new Set(result.flatMap(g => g.tasks.map(t => t.id)));
+        const ungrouped = tasks.filter(t => !grouped.has(t.id));
+        if (ungrouped.length) result.push({ name: 'sans groupe', tasks: ungrouped });
+        return result;
+    })());
 
     // Post-run actions (#132)
     let justFinished = $state(false);
