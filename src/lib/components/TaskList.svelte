@@ -223,6 +223,27 @@
     // Post-run actions (#132)
     let justFinished = $state(false);
 
+    // #18 : justFinished = true 3s quand selected passe en état "done" (impl/doc/validation)
+    // #132 : loadTasksSilent déclenché quand justFinished devient true
+    let _prevSelectedStatus = $state<string | null>(null);
+    $effect(() => {
+        const currentStatus = selected?.status ?? null;
+        const wasDone = _prevSelectedStatus !== null && (
+            _prevSelectedStatus === 'implementation' ||
+            _prevSelectedStatus === 'documentation' ||
+            _prevSelectedStatus === 'validation'
+        );
+        const isNowDone = currentStatus === 'implementation' ||
+            currentStatus === 'documentation' ||
+            currentStatus === 'validation';
+        if (!wasDone && isNowDone && _prevSelectedStatus !== null) {
+            justFinished = true;
+            loadTasksSilent();
+            setTimeout(() => { justFinished = false; }, 3000);
+        }
+        _prevSelectedStatus = currentStatus;
+    });
+
     // Marquer implémentée (#18)
     let markingImplemented = $state(false);
     async function markTaskImplemented(task: Task) {
