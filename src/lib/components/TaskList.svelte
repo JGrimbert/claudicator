@@ -847,6 +847,9 @@
                 const fp = await res.json();
                 fullPlanDetail = fp;
                 activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile, taskId: initialTask.id });
+            } else {
+                // Plan supprimé ou introuvable — ouvre quand même l'onglet fullplan
+                activeFullPlan.set({ id: initialTask.fullPlanId, keyword: "", status: "error", taskId: initialTask.id });
             }
             // Charger le diff si une branche existe (sans setter planModeTask)
             if (initialTask.branch) {

@@ -372,7 +372,7 @@
         </div>
     {:else if plan.status === "error"}
         <div class="fp-state fp-error">
-            Erreur — le plan complet n'a pas été généré correctement.
+            {plan.keyword ? `Erreur — le plan complet n'a pas été généré correctement.` : `Plan introuvable — les données ont été supprimées. Génère un nouveau plan depuis le panel Issues.`}
         </div>
     {:else if loadError}
         <div class="fp-state fp-error">{loadError}</div>
