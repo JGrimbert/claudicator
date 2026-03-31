@@ -71,12 +71,24 @@ export const POST: RequestHandler = async ({ params }) => {
     const ctx = await getContext(taskId);
     if (!ctx) throw error(404, "Task introuvable");
 
-    const applied = getApplied(taskId);
-    const already = new Set(applied);
-    const chain = topoOrder(name, ctx.deps, already).filter(n => !already.has(n));
-    if (!chain.length) return json({ ok: true, applied, chain: [] });
+    // Vérifier que les patches "applied" sont réellement dans le working tree.
+    // git apply --check -R : réussit si le patch EST appliqué (reverse possible).
+    // Échoue si absent → état périmé (revert manuel, restart, etc.) → à ré-appliquer.
+    const storedApplied = getApplied(taskId);
+    const already = new Set<string>();
+    for (const p of storedApplied) {
+        try {
+            await g.raw(["apply", "--check", "-R", "--whitespace=nowarn", path.join(ctx.patchesDir, p)]);
+            already.add(p); // reverse OK → patch réellement présent
+        } catch {
+            // Absent du working tree — état périmé, on ignore
+        }
+    }
 
-    const newApplied = [...applied];
+    const chain = topoOrder(name, ctx.deps, already).filter(n => !already.has(n));
+    if (!chain.length) return json({ ok: true, applied: [...already], chain: [] });
+
+    const newApplied = [...already];
     const done: string[] = [];
     try {
         for (const patchName of chain) {
@@ -85,7 +97,6 @@ export const POST: RequestHandler = async ({ params }) => {
             done.push(patchName);
         }
     } catch (e: any) {
-        // Rollback des patches appliqués dans cette session
         for (const patchName of [...done].reverse()) {
             try { await g.raw(["apply", "-R", "--whitespace=nowarn", path.join(ctx.patchesDir, patchName)]); } catch { /* ignore */ }
         }
@@ -107,15 +118,27 @@ export const DELETE: RequestHandler = async ({ params }) => {
     const ctx = await getContext(taskId);
     if (!ctx) throw error(404, "Task introuvable");
 
-    const applied = getApplied(taskId);
-    if (!applied.includes(name)) return json({ ok: true, applied });
+    // Même vérification de cohérence que pour POST
+    const storedApplied = getApplied(taskId);
+    const verifiedApplied: string[] = [];
+    for (const p of storedApplied) {
+        try {
+            await g.raw(["apply", "--check", "-R", "--whitespace=nowarn", path.join(ctx.patchesDir, p)]);
+            verifiedApplied.push(p);
+        } catch { /* absent → ignorer */ }
+    }
+
+    if (!verifiedApplied.includes(name)) {
+        setApplied(taskId, verifiedApplied); // resync state
+        return json({ ok: true, applied: verifiedApplied });
+    }
 
     // Retirer les dépendants en premier (ordre inverse d'application), puis le patch lui-même
-    const dependents = findDependents(name, applied, ctx.deps)
-        .sort((a, b) => applied.indexOf(b) - applied.indexOf(a));
+    const dependents = findDependents(name, verifiedApplied, ctx.deps)
+        .sort((a, b) => verifiedApplied.indexOf(b) - verifiedApplied.indexOf(a));
     const toRemove = [...dependents, name];
 
-    const newApplied = [...applied];
+    const newApplied = [...verifiedApplied];
     for (const patchName of toRemove) {
         await g.raw(["apply", "-R", "--whitespace=nowarn", path.join(ctx.patchesDir, patchName)]);
         const idx = newApplied.indexOf(patchName);
