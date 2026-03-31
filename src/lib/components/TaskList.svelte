@@ -199,7 +199,13 @@
                         if (obj.type === "branch") commitAllProgress = { ...commitAllProgress!, branch: obj.name };
                         else if (obj.type === "applying") commitAllProgress = { ...commitAllProgress!, current: obj.patch, done: obj.index - 1, total: obj.total };
                         else if (obj.type === "applied") commitAllProgress = { ...commitAllProgress!, done: commitAllProgress!.done + 1 };
-                        else if (obj.type === "done") { commitAllProgress = { ...commitAllProgress!, done: obj.total, current: "", branch: obj.branch }; await loadTasksSilent(); }
+                        else if (obj.type === "done") {
+                            commitAllProgress = { ...commitAllProgress!, done: obj.total, current: "", branch: obj.branch };
+                            await loadTasksSilent();
+                            // Re-sélectionner pour afficher le panel push
+                            const updated = tasks.find(t => t.id === task.id);
+                            if (updated) await selectTask(updated, true);
+                        }
                         else if (obj.type === "error") commitAllProgress = { ...commitAllProgress!, error: obj.message ?? "Erreur inconnue" };
                     } catch { /* JSON partiel */ }
                 }
@@ -1219,7 +1225,7 @@
                             </div>
                         {/snippet}
 
-                        {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0}
+                        {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0 && task.status !== "validation" && task.status !== "merged"}
                             {@const fp = fullPlanDetail}
                             {@const allGroups = fp.stepFiles?.length
                                 ? fp.stepFiles.map(sf => ({
