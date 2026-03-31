@@ -27,10 +27,15 @@ src/
     api/
       mon-endpoint/
         +server.ts
-        +server.test.ts          ← test d'endpoint, colocalisé
+        server.test.ts           ← test d'endpoint, colocalisé
 ```
 
 - Nommage : `*.test.ts` (pas `*.spec.ts`)
+
+> **Contrainte SvelteKit** : dans `src/routes/`, le préfixe `+` est **réservé** par le framework
+> (`+page.svelte`, `+server.ts`, `+layout.ts`…). Un fichier nommé `+server.test.ts` déclenche
+> l'erreur _"Files prefixed with + are reserved"_ au démarrage de Vite.
+> → Les tests de routes sont nommés **`server.test.ts`** (sans `+`), pas `+server.test.ts`.
 - Colocalisé avec le fichier source (pas de dossier `__tests__/` séparé)
 
 ## Lancer les tests

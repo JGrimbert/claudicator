@@ -1,8 +1,9 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, startConsoleStream, testRunState, type TestLog, type Issue } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, startConsoleStream, testRunState, evalIssueDagsByKeyword, issueGroupsCache, type TestLog, type Issue } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
+    import { formatDiffSummary } from './TaskList.helpers';
     import PromptUsage from "$lib/components/PromptUsage.svelte";
     import Fuse from 'fuse.js';
 
@@ -73,6 +74,25 @@
     let selectedTaskFilter = $derived(selected ? taskToFilter(selected) : null);
     let selected = $state<Task | null>(null);
     let filterQuery = $state("");
+
+    // issue #41 - input central dans le panneau task
+    let centralInput = $state("");
+    let sendingCentralInput = $state(false);
+
+    async function sendCentralInput(taskId: string) {
+        const trimmed = centralInput.trim();
+        if (!trimmed || sendingCentralInput) return;
+        sendingCentralInput = true;
+        try {
+            await fetch("/api/agent/input", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input: trimmed, taskId }),
+            });
+            centralInput = "";
+        } catch { /* silencieux */ }
+        finally { sendingCentralInput = false; }
+    }
 
 
     // Workflow state
@@ -152,6 +172,10 @@
     let sandboxError = $state("");
     let sandboxBusy = $state<string | null>(null); // nom du patch en cours d'opération
     let repromptBusy = $state<number | null>(null); // issueNumber en cours de reprompt
+
+    // Roadmap grouping (feature en cours)
+    let roadmapActive = $state(false);
+    let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>([]);
 
     // Issue sélectionnée dans l'arbre fullplan
     let selectedIssueRow: IssueRow | null = $state(null);
@@ -476,41 +500,6 @@
     let pushing = $state(false);
     let merging = $state(false);
 
-    // ATLAS
-    let atlasGenerating = $state(false);
-    let atlasFeedback   = $state("");
-
-    async function toggleAtlas(task: Task, enabled: boolean) {
-        await fetch(`/api/tasks/${task.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ atlasEnabled: enabled }),
-        });
-        await loadTasks();
-        atlasFeedback = "";
-        // Auto-générer l'atlas dès l'activation
-        if (enabled) generateAtlas(task);
-    }
-
-    async function generateAtlas(task: Task) {
-        if (atlasGenerating) return;
-        atlasGenerating = true;
-        atlasFeedback   = "";
-        try {
-            const res  = await fetch("/api/atlas/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId: task.id }),
-            });
-            const data = await res.json();
-            atlasFeedback = data.error ? data.error : `✓ ${data.entryPoints} points d'entrée`;
-        } catch (e: any) {
-            atlasFeedback = e.message ?? "Erreur";
-        } finally {
-            atlasGenerating = false;
-        }
-    }
-
     // Sauter la planification
     let skippingPlan = $state(false);
     async function skipPlan(task: Task) {
@@ -795,6 +784,12 @@
         }
         localStorage.setItem(SELECTED_KEY, initialTask.id);
         selected = initialTask;
+        // issue #178 - scroller vers la task sélectionnée
+        if (!silent) {
+            requestAnimationFrame(() => {
+                document.querySelector(`[data-task-id="${initialTask.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            });
+        }
         planContent = null; diffContent = null;
         patches = []; selectedPatch = null; patchContent = null; fullPlanDetail = null;
         selectedIssueRow = null; selectedIssueDetail = null;
@@ -829,7 +824,7 @@
         // Toujours activer la scène plan pour une task active (même au démarrage)
         if (initialTask.status !== "merged" && initialTask.status !== "failed") {
             planModeTask.set({ id: initialTask.id, title: initialTask.title, issueNumber: initialTask.issueNumber });
-            if (!silent) consoleTab.set("symbols");
+            if (!silent) consoleTab.set(getInitialConsoleTab(initialTask));
         }
 
         let task = initialTask;
@@ -944,6 +939,7 @@
             planModeTask.set(null);
             localStorage.removeItem(SELECTED_KEY);
             if (task.issueNumber) issueListRefreshTick.update(n => n + 1);
+            taskRefreshTick.update(n => n + 1); // issue #91 : notifier les abonnés du tick
             await loadTasks();
         } catch (e: any) {
             wfError = e.message;
@@ -973,6 +969,12 @@
         {#if filterQuery}
             <button class="search-clear" onclick={() => filterQuery = ''}>✕</button>
         {/if}
+        <button
+            class="scope-toggle"
+            class:scope-all={searchScope === "all"}
+            onclick={() => searchScope = searchScope === "tasks" ? "all" : "tasks"}
+            title={searchScope === "all" ? "Recherche élargie (tasks + issues)" : "Recherche dans les tasks uniquement"}
+        >{searchScope === "all" ? "⊕" : "T"}</button>
     </div>
 
     <div class="list">
@@ -981,10 +983,22 @@
         {:else if filtered.length === 0}
             <p class="hint">Aucune task</p>
         {:else}
-            {#each filtered as task}
+            {#each filtered as task, taskIdx}
+                {#if roadmapActive}
+                    {@const taskGroupName = (() => {
+                        for (const g of tasksByGroup) {
+                            if (g.tasks[0]?.id === task.id) return g.name;
+                        }
+                        return null;
+                    })()}
+                    {#if taskGroupName !== null}
+                        <div class="task-group-header">{taskGroupName}</div>
+                    {/if}
+                {/if}
                 <div
                     class="task-row-wrap"
                     class:task-closed={task.status === "failed" || task.status === "merged"}
+                    data-task-id={task.id}
                     onmouseenter={() => task.issueNumber && hoveredIssueNumber.set(task.issueNumber)}
                     onmouseleave={() => hoveredIssueNumber.set(null)}
                 >
@@ -1233,25 +1247,33 @@
                             <div class="wf-error">{wfError}</div>
                         {/if}
 
-                        <!-- ── Toggle ATLAS ── -->
-                        <div class="atlas-row">
-                            <label class="atlas-toggle">
+                        <!-- ── Input central (run actif) ── -->
+                        {#if $agentRunState.running && $agentRunState.taskId === task.id}
+                            <div class="central-input-bar">
                                 <input
-                                    type="checkbox"
-                                    checked={task.atlasEnabled ?? false}
-                                    onchange={(e) => toggleAtlas(task, (e.target as HTMLInputElement).checked)}
+                                    class="central-input"
+                                    placeholder="Envoyer un message à l'agent…"
+                                    bind:value={centralInput}
+                                    disabled={sendingCentralInput}
+                                    onkeydown={(e) => e.key === 'Enter' && sendCentralInput(task.id)}
                                 />
-                                ATLAS
-                            </label>
-                            {#if atlasFeedback}
-                                <span class="atlas-feedback">{atlasFeedback}</span>
-                            {/if}
-                        </div>
+                                <button
+                                    class="central-input-send"
+                                    onclick={() => sendCentralInput(task.id)}
+                                    disabled={sendingCentralInput || !centralInput.trim()}
+                                >{sendingCentralInput ? "…" : "↵"}</button>
+                            </div>
+                        {/if}
 
                         <!-- ── Contenu ── -->
                         {#if selectedPanel === "plan"}
                             <div class="plan-scene-hint">↗ Scène principale</div>
-                            {#if !planContent}
+                            {#if planLoading}
+                                <div class="plan-loading">Chargement du plan…</div>
+                            {:else if planContent}
+                                <pre class="plan-content">{planContent}</pre>
+                            {:else}
+                                <div class="plan-empty">Aucun plan disponible</div>
                                 <button
                                     class="impl-skip"
                                     onclick={() => skipPlan(task)}
@@ -1265,10 +1287,29 @@
                         {:else if selectedPanel === "implement"}
                             <div class="impl-actions">
                                 {#if task.branch}
-                                    <button
-                                        class="impl-skip"
-                                        onclick={() => selectedPanel = "commit"}
-                                    >→ Commiter</button>
+                                    {#if diffContent !== null}
+                                        {@const diffSummary = formatDiffSummary(diffContent)}
+                                        {#if diffSummary.fileCount > 0}
+                                            <div class="diff-summary">
+                                                <span class="diff-summary-count">{diffSummary.fileCount} fichier{diffSummary.fileCount > 1 ? "s" : ""} modifié{diffSummary.fileCount > 1 ? "s" : ""}</span>
+                                                <button
+                                                    class="impl-skip"
+                                                    onclick={() => selectedPanel = "commit"}
+                                                >Voir diff →</button>
+                                            </div>
+                                        {:else}
+                                            <button
+                                                class="impl-skip"
+                                                onclick={() => selectedPanel = "commit"}
+                                            >→ Commiter</button>
+                                        {/if}
+                                    {:else}
+                                        <button
+                                            class="impl-skip"
+                                            onclick={() => loadDiff(task.id)}
+                                            disabled={diffLoading}
+                                        >{diffLoading ? "…" : "↺ Charger diff"}</button>
+                                    {/if}
                                 {:else if planContent}
                                     <button
                                         class="impl-skip"
@@ -1279,7 +1320,43 @@
                                 {#if task.implUsage}
                                     <PromptUsage usage={task.implUsage} totalUsage={task.totalUsage} label="Implémentation" />
                                 {/if}
+                                <!-- issue #132 - actions post-run -->
+                                {#if justFinished && selected?.id === task.id}
+                                    <div class="post-run-actions">
+                                        <span class="post-run-hint">Run terminé —</span>
+                                        <button class="impl-skip" onclick={() => task.branch ? (selectedPanel = "commit") : createBranchAndShowDiff(task)}>
+                                            → Commiter
+                                        </button>
+                                        {#if !task.branch}
+                                            <button class="impl-skip" onclick={() => createBranchAndShowDiff(task)} disabled={branchCreating}>
+                                                {branchCreating ? "Création…" : "→ Créer branche"}
+                                            </button>
+                                        {/if}
+                                    </div>
+                                {/if}
+                                <!-- issue #18 - marquer implémentée -->
+                                {#if task.status === "implementation" && !$agentRunState.running}
+                                    <button
+                                        class="impl-skip"
+                                        onclick={() => markTaskImplemented(task)}
+                                        disabled={markingImplemented}
+                                    >{markingImplemented ? "…" : "✓ Marquer implémentée"}</button>
+                                {/if}
                             </div>
+
+                        {#if taskDag && selected?.id === task.id}
+                            <div class="task-dag-mini">
+                                <div class="task-dag-label">Dépendances (#246)</div>
+                                <div class="task-dag-nodes">
+                                    {#each taskDag.steps.slice(0, 5) as step}
+                                        <span class="task-dag-node">#{step.id}</span>
+                                    {/each}
+                                    {#if taskDag.steps.length > 5}
+                                        <span class="task-dag-more">+{taskDag.steps.length - 5}</span>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/if}
 
                         {:else if selectedPanel === "commit"}
                             <div class="commit-panel">
@@ -1387,6 +1464,17 @@
                 {/if}
             {/each}
         {/if}
+        {#if foundIssues.length > 0}
+            <div class="found-issues-section">
+                <div class="found-issues-label">Issues —</div>
+                {#each foundIssues as issue}
+                    <div class="found-issue-row">
+                        <span class="found-issue-num">#{issue.number}</span>
+                        <span class="found-issue-title">{issue.title}</span>
+                    </div>
+                {/each}
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -1471,10 +1559,70 @@
     font-size: 0.7rem;
 }
 .search-clear:hover { color: #888; }
+.scope-toggle {
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+.scope-toggle:hover { color: #9181f9; }
+.scope-toggle.scope-all { color: #9181f9; }
+/* ── Issues trouvées (cross-search) ── */
+.found-issues-section {
+    border-top: 1px solid var(--border);
+    padding: 0.3rem 0;
+}
+.found-issues-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding: 0.2rem 1rem;
+}
+.found-issue-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 1rem;
+    cursor: pointer;
+}
+.found-issue-row:hover { background: var(--bg-subtle, #f5f5f5); }
+.found-issue-num { font-size: 0.6rem; color: #9181f9; min-width: 2.5rem; }
+.found-issue-title { font-size: 0.62rem; color: var(--text-muted); }
+/* ── DAG mini task ── */
+.task-dag-mini {
+    padding: 0.3rem 1rem;
+    border-top: 1px solid var(--border);
+}
+.task-dag-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.2rem; }
+.task-dag-nodes { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.task-dag-node {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 2px;
+    color: #3b82f6;
+}
+.task-dag-more { font-size: 0.6rem; color: var(--text-muted); }
 .list { flex: 1; min-height: 0; overflow-y: auto; }
 .list::-webkit-scrollbar { width: 4px; }
 .list::-webkit-scrollbar-track { background: transparent; }
 .list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.task-group-header {
+    padding: 0.25rem 1rem;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    background: var(--bg-subtle, #f5f5f5);
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    margin-top: 0.25rem;
+}
 .task-row-wrap { position: relative; }
 .task-closed :global(.item-row) { opacity: 0.55; }
 .task-closed :global(.item-title) { text-decoration: line-through; }
@@ -1701,27 +1849,60 @@
 }
 .impl-skip:hover { color: #7cbf7c; border-color: #4a7a4a; }
 .impl-skip:disabled { opacity: 0.35; cursor: default; }
-
-/* ── ATLAS toggle ── */
-.atlas-row {
+.diff-summary {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.35rem 1rem;
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
+    padding: 0.2rem 0;
 }
-.atlas-toggle {
+.diff-summary-count {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+/* ── Actions post-run ── */
+.post-run-actions {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.72rem;
-    color: #aaa;
-    cursor: pointer;
-    user-select: none;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    flex-wrap: wrap;
 }
-.atlas-toggle input { cursor: pointer; accent-color: #9181f9; }
-.atlas-feedback { font-size: 0.68rem; color: #888; }
+.post-run-hint {
+    font-size: 0.65rem;
+    color: #7cbf7c;
+}
+
+/* ── Input central ── */
+.central-input-bar {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding: 0.3rem 0.5rem;
+    gap: 0.4rem;
+}
+.central-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    outline: none;
+}
+.central-input:focus { border-color: #9181f9; }
+.central-input-send {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: #aaa;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+}
+.central-input-send:hover:not(:disabled) { color: #9181f9; border-color: #9181f9; }
+.central-input-send:disabled { opacity: 0.4; cursor: default; }
 
 /* ── Panneau Commit ── */
 .commit-panel { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
@@ -2137,6 +2318,19 @@
     color: var(--border-strong);
     font-style: italic;
     font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border);
+}
+.plan-loading { font-size: 0.65rem; color: var(--text-muted); padding: 0.5rem 1rem; }
+.plan-empty { font-size: 0.65rem; color: var(--text-muted); padding: 0.4rem 1rem; font-style: italic; }
+.plan-content {
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 0.5rem 1rem;
+    color: var(--text-muted);
+    max-height: 12rem;
+    overflow-y: auto;
     border-top: 1px solid var(--border);
 }
 

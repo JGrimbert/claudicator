@@ -4,6 +4,7 @@ import { resolveTaskContext, updateTask } from "$lib/server/services/tasks";
 import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";
 import { getMainBranch, checkoutMain } from "$lib/server/services/git";
 import { getCurrentProject } from "$lib/server/services/projects";
+import { killProcess, isRunning } from "$lib/server/services/processes";
 
 /** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
@@ -16,6 +17,11 @@ export async function POST({ params }) {
     const owner = project?.owner;
     const repo  = project?.repo;
     if (!owner || !repo) return json({ error: "Projet sans owner/repo configuré" }, { status: 400 });
+
+    // issue #91 : tuer le process actif si présent avant de merger
+    if (isRunning(params.id)) {
+        killProcess(params.id);
+    }
 
     try {
         const base = await getMainBranch(root);

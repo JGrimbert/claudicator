@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, evalIssueDagsByKeyword, planPanelActiveTab, issueGroupsCache } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, evalIssueDagsByKeyword, planPanelActiveTab, issueGroupsCache, taskIssueNumbers } from "$lib/stores/agent";
     import { get } from "svelte/store";
     import type { RoadmapData, RoadmapStep } from "jgr-ui";
 
@@ -448,7 +448,7 @@
 
                     <ul class="group-issues">
                         {#each group.issues as issue}
-                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)}>
+                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)} class:has-task={$taskIssueNumbers.has(issue.number)}>
                                 <button class="issue-num" onclick={() => openIssue(issue.number)}>
                                     #{issue.number}
                                 </button>
@@ -810,6 +810,7 @@
     font-size: 0.6rem;
 }
 .group-issue.is-twin { background: #0a0a18; border-radius: 2px; }
+.group-issue.has-task { background: rgba(59, 130, 246, 0.06); border-left: 2px solid #3b82f6; padding-left: calc(0.6rem - 2px); }
 
 /* issue-num cliquable */
 .issue-num {
