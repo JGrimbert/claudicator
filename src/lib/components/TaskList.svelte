@@ -167,6 +167,54 @@
     let patchLoading = $state(false);
     let patchApplying = $state(false);
 
+    // Commit-all patches
+    type CommitAllProgress = { done: number; total: number; current: string; branch?: string; error?: string };
+    let commitAllBusy = $state(false);
+    let commitAllProgress = $state<CommitAllProgress | null>(null);
+
+    async function commitAllPatches(task: Task) {
+        if (commitAllBusy) return;
+        commitAllBusy = true;
+        commitAllProgress = { done: 0, total: patches.length, current: "" };
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/commit-all-patches`, { method: "POST" });
+            if (!res.ok || !res.body) {
+                commitAllProgress = { ...commitAllProgress!, error: await res.text() };
+                return;
+            }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const events = buf.split("\n\n");
+                buf = events.pop() ?? "";
+                for (const ev of events) {
+                    const line = ev.replace(/^data: /, "").trim();
+                    if (!line) continue;
+                    try {
+                        const obj = JSON.parse(line);
+                        if (obj.type === "branch") commitAllProgress = { ...commitAllProgress!, branch: obj.name };
+                        else if (obj.type === "applying") commitAllProgress = { ...commitAllProgress!, current: obj.patch, done: obj.index - 1, total: obj.total };
+                        else if (obj.type === "applied") commitAllProgress = { ...commitAllProgress!, done: commitAllProgress!.done + 1 };
+                        else if (obj.type === "done") {
+                            commitAllProgress = { ...commitAllProgress!, done: obj.total, current: "", branch: obj.branch };
+                            await loadTasksSilent();
+                            // Re-sélectionner pour afficher le panel push
+                            const updated = tasks.find(t => t.id === task.id);
+                            if (updated) await selectTask(updated, true);
+                        }
+                        else if (obj.type === "error") commitAllProgress = { ...commitAllProgress!, error: obj.message ?? "Erreur inconnue" };
+                    } catch { /* JSON partiel */ }
+                }
+            }
+        } finally {
+            commitAllBusy = false;
+        }
+    }
+
     // Sandbox (appliquer/retirer un patch dans le repo cible pour tester)
     type SandboxState = { applied: string[]; deps: Record<string, string[]> };
     let sandboxState = $state<SandboxState | null>(null);
@@ -174,12 +222,49 @@
     let sandboxBusy = $state<string | null>(null); // nom du patch en cours d'opération
     let repromptBusy = $state<number | null>(null); // issueNumber en cours de reprompt
 
-    // Roadmap grouping (feature en cours)
+    // Roadmap grouping (#36 : calculé depuis $planGroups)
     let roadmapActive = $state(false);
-    let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>([]);
+    let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>((() => {
+        const groups = $planGroups;
+        if (!groups.length) {
+            // Pas de groupes roadmap : toutes les tâches dans un groupe par défaut
+            return tasks.length ? [{ name: 'default', tasks }] : [];
+        }
+        // Associer chaque tâche à son groupe par issueNumber
+        const result: { name: string; tasks: Task[] }[] = groups.map(g => ({
+            name: `P${g.index} ${g.name}`,
+            tasks: tasks.filter(t => t.issueNumber !== undefined && g.issues.includes(t.issueNumber)),
+        })).filter(g => g.tasks.length > 0);
+        // Tasks sans groupe (issueNumber absent ou non référencé)
+        const grouped = new Set(result.flatMap(g => g.tasks.map(t => t.id)));
+        const ungrouped = tasks.filter(t => !grouped.has(t.id));
+        if (ungrouped.length) result.push({ name: 'sans groupe', tasks: ungrouped });
+        return result;
+    })());
 
     // Post-run actions (#132)
     let justFinished = $state(false);
+
+    // #18 : justFinished = true 3s quand selected passe en état "done" (impl/doc/validation)
+    // #132 : loadTasksSilent déclenché quand justFinished devient true
+    let _prevSelectedStatus = $state<string | null>(null);
+    $effect(() => {
+        const currentStatus = selected?.status ?? null;
+        const wasDone = _prevSelectedStatus !== null && (
+            _prevSelectedStatus === 'implementation' ||
+            _prevSelectedStatus === 'documentation' ||
+            _prevSelectedStatus === 'validation'
+        );
+        const isNowDone = currentStatus === 'implementation' ||
+            currentStatus === 'documentation' ||
+            currentStatus === 'validation';
+        if (!wasDone && isNowDone && _prevSelectedStatus !== null) {
+            justFinished = true;
+            loadTasksSilent();
+            setTimeout(() => { justFinished = false; }, 3000);
+        }
+        _prevSelectedStatus = currentStatus;
+    });
 
     // Marquer implémentée (#18)
     let markingImplemented = $state(false);
@@ -534,6 +619,13 @@
 
     // Push / merge
     let pushing = $state(false);
+    let commitsAhead = $state<{ count: number; commits: { sha: string; message: string }[] } | null>(null);
+
+    async function loadCommitsAhead(taskId: string) {
+        commitsAhead = null;
+        const res = await fetch(`/api/tasks/${taskId}/commits-ahead`);
+        if (res.ok) commitsAhead = await res.json();
+    }
     let merging = $state(false);
 
     // Sauter la planification
@@ -641,7 +733,12 @@
             : tasks.filter(t => taskToFilter(t) === filter);
         return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
     })());
-    let fuse = $derived(new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 }));
+        // #40 : en mode 'all', Fuse cherche sur title + status dans toutes les tasks
+    let fuse = $derived(
+        searchScope === "all"
+            ? new Fuse(tasks, { keys: ['title', 'status'], threshold: 0.4 })
+            : new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 })
+    );
     let filtered = $derived(filterQuery.trim()
         ? fuse.search(filterQuery).map(r => r.item)
         : statusFiltered);
@@ -847,6 +944,13 @@
                 const fp = await res.json();
                 fullPlanDetail = fp;
                 activeFullPlan.set({ id: fp.id, keyword: fp.keyword, status: fp.status, planFile: fp.planFile, taskId: initialTask.id });
+                // #246 : charger le DAG des issues
+                if (fp.keyword && fp.id) {
+                    fetch(`/api/issues/groups/eval-dag/${fp.keyword}?planId=${fp.id}`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(data => { if (data?.exists && data.levels?.length) taskDag = { steps: data.levels.flatMap((l: any) => l.issues.map((n: number) => ({ id: n }))) }; })
+                        .catch(() => {});
+                }
             } else {
                 // Plan supprimé ou introuvable — ouvre quand même l'onglet fullplan
                 activeFullPlan.set({ id: initialTask.fullPlanId, keyword: "", status: "error", taskId: initialTask.id });
@@ -855,7 +959,10 @@
             if (initialTask.branch) {
                 await loadDiff(initialTask.id);
                 if (diffContent?.trim()) selectedPanel = "commit";
-                else if (diffContent !== null) selectedPanel = "push";
+                else if (diffContent !== null) {
+                    selectedPanel = "push";
+                    loadCommitsAhead(initialTask.id);
+                }
             }
             return;
         }
@@ -890,8 +997,10 @@
         // Auto-avance l'étape affichée
         if (task.status === "documentation" || task.status === "validation") {
             selectedPanel = diffContent?.trim() ? "commit" : "push";
+            if (selectedPanel === "push") loadCommitsAhead(task.id);
         } else if (task.branch && diffContent !== null) {
             selectedPanel = diffContent.trim() ? "commit" : "push";
+            if (selectedPanel === "push") loadCommitsAhead(task.id);
         } else if (planContent) {
             selectedPanel = "implement";
         }
@@ -1037,6 +1146,7 @@
                 <div
                     class="task-row-wrap"
                     class:task-closed={task.status === "failed" || task.status === "merged"}
+                    class:task-running={$agentRunState.running && $agentRunState.taskId === task.id}
                     data-task-id={task.id}
                     onmouseenter={() => task.issueNumber && hoveredIssueNumber.set(task.issueNumber)}
                     onmouseleave={() => hoveredIssueNumber.set(null)}
@@ -1127,7 +1237,7 @@
                             </div>
                         {/snippet}
 
-                        {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0}
+                        {#if task.type === "fullplan" && fullPlanDetail && issueRows.length > 0 && task.status !== "validation" && task.status !== "merged"}
                             {@const fp = fullPlanDetail}
                             {@const allGroups = fp.stepFiles?.length
                                 ? fp.stepFiles.map(sf => ({
@@ -1213,12 +1323,30 @@
                                             disabled={!!repromptBusy}
                                         >{repromptBusy ? "…" : `↺ Régénérer ${staleRows.length} patch${staleRows.length > 1 ? "s" : ""} périmé${staleRows.length > 1 ? "s" : ""}`}</button>
                                     {/if}
+                                    {#if patches.length > 0 && !staleRows.length && task.status !== "validation" && task.status !== "merged"}
+                                        <button
+                                            class="wf-btn wf-commit-all"
+                                            onclick={() => commitAllPatches(task)}
+                                            disabled={commitAllBusy}
+                                        >{commitAllBusy ? `… ${commitAllProgress?.done ?? 0}/${commitAllProgress?.total ?? 0}` : `↓ Commiter les ${patches.length} patches`}</button>
+                                    {/if}
                                     <button
                                         class="wf-btn"
                                         onclick={() => closeFullPlanIssues(task)}
                                         disabled={closingIssues}
                                     >{closingIssues ? "…" : `✕ Fermer les ${issueRows.length} issues`}</button>
                                 </div>
+                                {#if commitAllProgress}
+                                    <div class="commit-all-status" class:is-error={!!commitAllProgress.error} class:is-done={!commitAllBusy && !commitAllProgress.error}>
+                                        {#if commitAllProgress.error}
+                                            ✕ {commitAllProgress.error}
+                                        {:else if !commitAllBusy}
+                                            ✓ {commitAllProgress.done} commits sur {commitAllProgress.branch}
+                                        {:else}
+                                            {commitAllProgress.current} ({commitAllProgress.done}/{commitAllProgress.total})
+                                        {/if}
+                                    </div>
+                                {/if}
                             </div>
                         {/if}
 
@@ -1441,7 +1569,20 @@
 
                         {:else if selectedPanel === "push"}
                             <div class="push-panel">
-                                <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
+                                <span class="push-hint">
+                                    {#if commitsAhead}
+                                        <strong>{commitsAhead.count}</strong> commit{commitsAhead.count > 1 ? "s" : ""} sur <code>{task.branch}</code>
+                                    {:else}
+                                        Commits prêts sur <code>{task.branch}</code>
+                                    {/if}
+                                </span>
+                                {#if commitsAhead?.commits.length}
+                                    <div class="ahead-log">
+                                        {#each commitsAhead.commits as c}
+                                            <div class="ahead-row"><span class="ahead-sha">{c.sha}</span> <span class="ahead-msg">{c.message}</span></div>
+                                        {/each}
+                                    </div>
+                                {/if}
                                 <div class="push-actions">
                                     <button
                                         class="wf-btn"
@@ -1665,6 +1806,7 @@
 .task-row-wrap { position: relative; }
 .task-closed :global(.item-row) { opacity: 0.55; }
 .task-closed :global(.item-title) { text-decoration: line-through; }
+.task-running { background: rgba(247, 201, 72, 0.06); border-left: 2px solid #f7c948; }
 .task-delete-btn {
     position: absolute;
     right: 0.5rem;
@@ -1833,6 +1975,11 @@
 .wf-btn.wf-active:hover { color: #b0a0ff; }
 .wf-btn.wf-stale { color: #ff9800; border-color: rgba(255,152,0,0.3); }
 .wf-btn.wf-stale:hover:not(:disabled) { color: #ffb74d; border-color: rgba(255,152,0,0.6); }
+.wf-btn.wf-commit-all { color: #7ec8a0; border-color: rgba(126,200,160,0.3); }
+.wf-btn.wf-commit-all:hover:not(:disabled) { color: #a8e6c4; border-color: rgba(126,200,160,0.6); }
+.commit-all-status { padding: 4px 8px 2px; font-size: 11px; color: #888; }
+.commit-all-status.is-error { color: #e07070; }
+.commit-all-status.is-done { color: #7ec8a0; }
 /* secondary = étape déjà franchie, recliquable */
 .wf-btn.wf-secondary {
     color: #444;
@@ -2386,6 +2533,11 @@
     color: #3a3a5a;
     font-style: italic;
 }
+.push-hint strong { color: #7ec8a0; font-style: normal; }
+.ahead-log { display: flex; flex-direction: column; gap: 2px; }
+.ahead-row { display: flex; gap: 0.5rem; font-size: 0.6rem; line-height: 1.4; }
+.ahead-sha { color: #5a6a8a; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+.ahead-msg { color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .push-hint code {
     font-family: 'JetBrains Mono', monospace;
     color: var(--text-muted);

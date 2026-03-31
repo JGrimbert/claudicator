@@ -28,11 +28,13 @@ export async function getRemoteRepo() {
     };
 }
 
-/** Retourne le diff staged et unstaged d'un dépôt. */
+/** Retourne le diff staged et unstaged d'un dépôt.
+ *  --ignore-submodules=dirty : exclut les sous-modules simplement "dirty"
+ *  (modifications non commitées dans le sous-module) — ne masque pas les vrais changements de SHA. */
 export async function getDiff(root: string): Promise<string> {
     const g = simpleGit(root);
-    const staged   = await g.diff(["--cached"]);
-    const unstaged = await g.diff();
+    const staged   = await g.diff(["--cached", "--ignore-submodules=dirty"]);
+    const unstaged = await g.diff(["--ignore-submodules=dirty"]);
     return (staged + unstaged).trim();
 }
 
@@ -96,6 +98,18 @@ export async function getHeadCommit(root: string): Promise<string> {
     const g = simpleGit(root);
     const log = await g.log({ "--max-count": "1" } as any);
     return log.latest?.hash ?? "";
+}
+
+/** Retourne le nombre de commits en avance sur main (branch..HEAD). */
+export async function getCommitsAhead(root: string, branch: string): Promise<{ count: number; commits: { sha: string; message: string }[] }> {
+    const g = simpleGit(root);
+    const main = await getMainBranch(root);
+    const out = await g.raw(["log", `${main}..${branch}`, "--oneline", "--no-decorate"]);
+    const lines = out.trim().split("\n").filter(Boolean);
+    return {
+        count: lines.length,
+        commits: lines.map(l => ({ sha: l.slice(0, 7), message: l.slice(8) }))
+    };
 }
 
 /** Retourne les N derniers commits d'un dépôt. */

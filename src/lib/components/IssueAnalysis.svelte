@@ -540,17 +540,23 @@
                 ? snapshot.filter((s: any) => issueNumbers.includes(s.number))
                 : snapshot;
             let created = 0, existing = 0;
+            let lastCreatedId: string | undefined;
             await Promise.all(targets.map(async (issue: { number: number; title: string }) => {
                 const r = await fetch("/api/tasks", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: issue.title, issueNumber: issue.number })
                 });
-                if (r.ok) { (await r.json()).alreadyExisted ? existing++ : created++; }
+                if (r.ok) {
+                    const data = await r.json();
+                    if (data.alreadyExisted) { existing++; }
+                    else { created++; lastCreatedId = data.id; }
+                }
                 else { existing++; }
             }));
             createFeedback = `${created} task${created > 1 ? "s" : ""} créée${created > 1 ? "s" : ""}${existing > 0 ? `, ${existing} existaient déjà` : ""}`;
-            if (created > 0) notifyTaskCreated();
+            // #154 : naviguer vers la task créée si une seule task a été créée
+            if (created > 0) notifyTaskCreated(created === 1 ? lastCreatedId : undefined);
         } catch (e: any) {
             createFeedback = e.message ?? "Erreur";
         } finally {
