@@ -100,6 +100,18 @@ export async function getHeadCommit(root: string): Promise<string> {
     return log.latest?.hash ?? "";
 }
 
+/** Retourne le nombre de commits en avance sur main (branch..HEAD). */
+export async function getCommitsAhead(root: string, branch: string): Promise<{ count: number; commits: { sha: string; message: string }[] }> {
+    const g = simpleGit(root);
+    const main = await getMainBranch(root);
+    const out = await g.raw(["log", `${main}..${branch}`, "--oneline", "--no-decorate"]);
+    const lines = out.trim().split("\n").filter(Boolean);
+    return {
+        count: lines.length,
+        commits: lines.map(l => ({ sha: l.slice(0, 7), message: l.slice(8) }))
+    };
+}
+
 /** Retourne les N derniers commits d'un dépôt. */
 export async function getCommitLog(
     root:  string,

@@ -619,6 +619,13 @@
 
     // Push / merge
     let pushing = $state(false);
+    let commitsAhead = $state<{ count: number; commits: { sha: string; message: string }[] } | null>(null);
+
+    async function loadCommitsAhead(taskId: string) {
+        commitsAhead = null;
+        const res = await fetch(`/api/tasks/${taskId}/commits-ahead`);
+        if (res.ok) commitsAhead = await res.json();
+    }
     let merging = $state(false);
 
     // Sauter la planification
@@ -952,7 +959,10 @@
             if (initialTask.branch) {
                 await loadDiff(initialTask.id);
                 if (diffContent?.trim()) selectedPanel = "commit";
-                else if (diffContent !== null) selectedPanel = "push";
+                else if (diffContent !== null) {
+                    selectedPanel = "push";
+                    loadCommitsAhead(initialTask.id);
+                }
             }
             return;
         }
@@ -987,8 +997,10 @@
         // Auto-avance l'étape affichée
         if (task.status === "documentation" || task.status === "validation") {
             selectedPanel = diffContent?.trim() ? "commit" : "push";
+            if (selectedPanel === "push") loadCommitsAhead(task.id);
         } else if (task.branch && diffContent !== null) {
             selectedPanel = diffContent.trim() ? "commit" : "push";
+            if (selectedPanel === "push") loadCommitsAhead(task.id);
         } else if (planContent) {
             selectedPanel = "implement";
         }
@@ -1557,7 +1569,20 @@
 
                         {:else if selectedPanel === "push"}
                             <div class="push-panel">
-                                <span class="push-hint">Tous les commits sont prêts sur <code>{task.branch}</code></span>
+                                <span class="push-hint">
+                                    {#if commitsAhead}
+                                        <strong>{commitsAhead.count}</strong> commit{commitsAhead.count > 1 ? "s" : ""} sur <code>{task.branch}</code>
+                                    {:else}
+                                        Commits prêts sur <code>{task.branch}</code>
+                                    {/if}
+                                </span>
+                                {#if commitsAhead?.commits.length}
+                                    <div class="ahead-log">
+                                        {#each commitsAhead.commits as c}
+                                            <div class="ahead-row"><span class="ahead-sha">{c.sha}</span> <span class="ahead-msg">{c.message}</span></div>
+                                        {/each}
+                                    </div>
+                                {/if}
                                 <div class="push-actions">
                                     <button
                                         class="wf-btn"
@@ -2508,6 +2533,11 @@
     color: #3a3a5a;
     font-style: italic;
 }
+.push-hint strong { color: #7ec8a0; font-style: normal; }
+.ahead-log { display: flex; flex-direction: column; gap: 2px; }
+.ahead-row { display: flex; gap: 0.5rem; font-size: 0.6rem; line-height: 1.4; }
+.ahead-sha { color: #5a6a8a; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+.ahead-msg { color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .push-hint code {
     font-family: 'JetBrains Mono', monospace;
     color: var(--text-muted);
