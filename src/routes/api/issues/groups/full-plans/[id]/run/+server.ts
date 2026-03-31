@@ -42,7 +42,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
     if (reset) {
         if (patchesDir && fs.existsSync(patchesDir)) {
             for (const f of fs.readdirSync(patchesDir))
-                if (f.endsWith(".patch")) fs.unlinkSync(path.join(patchesDir, f));
+                if (f.endsWith(".patch") || f === "run-started-at.json")
+                    fs.unlinkSync(path.join(patchesDir, f));
         }
         if (fs.existsSync(worktreePath)) {
             try { execSync(`git -C "${root}" worktree remove --force "${worktreePath}"`, { stdio: "pipe" }); } catch { /* best-effort */ }
@@ -51,7 +52,13 @@ export const POST: RequestHandler = async ({ params, request }) => {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    if (patchesDir) fs.mkdirSync(patchesDir, { recursive: true });
+    if (patchesDir) {
+        fs.mkdirSync(patchesDir, { recursive: true });
+        const timingPath = path.join(patchesDir, "run-started-at.json");
+        if (!fs.existsSync(timingPath)) {
+            fs.writeFileSync(timingPath, JSON.stringify({ startedAt: Date.now() }));
+        }
+    }
 
     const fullPlanContent = fs.readFileSync(path.join(tasksDir, plan.planFile), "utf-8");
 

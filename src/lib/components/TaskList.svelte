@@ -280,6 +280,11 @@
         finally { patchApplying = false; }
     }
 
+    function formatDuration(ms: number): string {
+        if (ms < 1000) return `${ms} ms`;
+        return `${Math.round(ms / 1000)}k ms`;
+    }
+
     async function writeTests(task: Task, row: IssueRow) {
         if (!task.fullPlanId || !row.patch) return;
         agentRunState.update(s => ({
@@ -1062,6 +1067,9 @@
                                             {$testRunState.planId === t.fullPlanId && $testRunState.issueNumber === row.number && $testRunState.running ? "…" : "▶"} tests
                                         </button>
                                     {/if}
+                                {/if}
+                                {#if row.patch?.durationMs != null}
+                                    <span class="is-duration">{formatDuration(row.patch.durationMs)}</span>
                                 {/if}
                             </div>
                         {/snippet}
@@ -2030,6 +2038,13 @@
 .is-badge.is-missing  { background: #2a2a2a; color: #555; }
 .is-badge.is-notests  { background: rgba(247,201,72,0.15); color: #f7c948; }
 .is-badge.is-ui-only  { background: #1a1a1a; color: #555; cursor: default; }
+.is-duration {
+    margin-left: auto;
+    font-size: 0.48rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #2a4a2a;
+    flex-shrink: 0;
+}
 .is-badge.is-stale    { background: rgba(255,152,0,0.15); color: #ff9800; }
 .is-badge.is-ok       { background: rgba(76,175,80,0.15); color: #4caf50; }
 .is-badge.is-btn      { border: none; cursor: pointer; }

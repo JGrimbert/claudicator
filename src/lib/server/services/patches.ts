@@ -11,6 +11,7 @@ export type PatchInfo = {
     hasTests: boolean;
     isPureUI: boolean;          // patch ne contient que des fichiers .svelte/.css/.scss
     createdAt: number;
+    durationMs?: number;        // temps écoulé depuis le début du run (ou fin du patch précédent)
     stale?: boolean;
 };
 
@@ -54,14 +55,20 @@ export function listPatchesFrom(tasksDir: string, taskId: string): PatchInfo[] {
 
 function _listPatchesFromDir(dir: string): PatchInfo[] {
     if (!fs.existsSync(dir)) return [];
-    return fs.readdirSync(dir)
+
+    // Timestamp de départ du run (pour calculer la durée de la première étape)
+    let runStartedAt: number | null = null;
+    try {
+        const t = JSON.parse(fs.readFileSync(path.join(dir, "run-started-at.json"), "utf-8"));
+        runStartedAt = typeof t.startedAt === "number" ? t.startedAt : null;
+    } catch { /* absent */ }
+
+    const patches = fs.readdirSync(dir)
         .filter(f => f.endsWith(".patch"))
         .map(name => {
             const filePath = path.join(dir, name);
             const content = fs.readFileSync(filePath, "utf-8");
             const stat = fs.statSync(filePath);
-            // Extraire tous les numéros d'issues depuis le nom
-            // ex: "issue-132-18.patch" → [132, 18], "issue-262.patch" → [262]
             const stem = name.replace(/\.patch$/, "");
             const afterIssue = stem.match(/^issue-(.+)$/);
             const issueNumbers = afterIssue
@@ -74,8 +81,19 @@ function _listPatchesFromDir(dir: string): PatchInfo[] {
                 hasTests: detectTests(content),
                 isPureUI: detectPureUI(content),
                 createdAt: stat.mtimeMs,
-            };
-        })
+            } satisfies Omit<PatchInfo, "durationMs">;
+        });
+
+    // Calcul des durées : trié par date de création (ordre d'implémentation)
+    const sorted = [...patches].sort((a, b) => a.createdAt - b.createdAt);
+    const durationsMap = new Map<string, number>();
+    sorted.forEach((p, i) => {
+        const prevTime = i === 0 ? runStartedAt : sorted[i - 1].createdAt;
+        if (prevTime !== null) durationsMap.set(p.name, p.createdAt - prevTime);
+    });
+
+    return patches
+        .map(p => ({ ...p, durationMs: durationsMap.get(p.name) }))
         .sort((a, b) => (a.issueNumber ?? 0) - (b.issueNumber ?? 0));
 }
 
