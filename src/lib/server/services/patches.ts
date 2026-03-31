@@ -35,6 +35,16 @@ export function getPatchContentFrom(tasksDir: string, taskId: string, name: stri
     return fs.readFileSync(filePath, "utf-8");
 }
 
+/** Extrait la date de commit depuis l'en-tête git format-patch.
+ *  Ex: "Date: Thu, 31 Mar 2026 10:30:00 +0200" → timestamp ms.
+ *  Plus fiable que mtimeMs : immuable, même si le fichier est réécrit (write-tests, copie...). */
+function extractCommitDate(content: string): number | null {
+    const m = content.match(/^Date:\s+(.+)$/m);
+    if (!m) return null;
+    const t = new Date(m[1].trim()).getTime();
+    return isNaN(t) ? null : t;
+}
+
 function detectTests(content: string): boolean {
     return /\+\+\+ b\/.*\.(test|spec)\.(ts|js|tsx|jsx|vue)/.test(content);
 }
@@ -80,7 +90,9 @@ function _listPatchesFromDir(dir: string): PatchInfo[] {
                 issueNumbers,
                 hasTests: detectTests(content),
                 isPureUI: detectPureUI(content),
-                createdAt: stat.mtimeMs,
+                // Date de commit embarquée dans le patch — immuable même si le fichier est réécrit.
+                // Fallback sur mtimeMs si le header est absent (patches manuels / anciens formats).
+                createdAt: extractCommitDate(content) ?? stat.mtimeMs,
             } satisfies Omit<PatchInfo, "durationMs">;
         });
 
