@@ -56,7 +56,12 @@
       "Bash(./node_modules/.bin/svelte-check)",
       "Bash(for patch:*)",
       "Bash(echo \"=== $patch ===\")",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(__NEW_LINE_1e35a4fc59ce8325__ echo:*)",
+      "Bash(sed -n '1325p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
+      "Bash(sed -n '1342p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
+      "Bash(sed -n '1343p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
+      "Bash(sed -n '1348p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")"
     ]
   }
 }

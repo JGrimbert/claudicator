@@ -74,6 +74,7 @@
     let selectedTaskFilter = $derived(selected ? taskToFilter(selected) : null);
     let selected = $state<Task | null>(null);
     let filterQuery = $state("");
+    let searchScope = $state<"tasks" | "all">("tasks");
 
     // issue #41 - input central dans le panneau task
     let centralInput = $state("");
@@ -176,6 +177,41 @@
     // Roadmap grouping (feature en cours)
     let roadmapActive = $state(false);
     let tasksByGroup = $derived<{ name: string; tasks: Task[] }[]>([]);
+
+    // Post-run actions (#132)
+    let justFinished = $state(false);
+
+    // Marquer implémentée (#18)
+    let markingImplemented = $state(false);
+    async function markTaskImplemented(task: Task) {
+        if (markingImplemented) return;
+        markingImplemented = true;
+        try {
+            const res = await fetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "validation" }),
+            });
+            if (res.ok) tasks = tasks.map(t => t.id === task.id ? { ...t, status: "validation" } : t);
+        } catch { /* silencieux */ }
+        finally { markingImplemented = false; }
+    }
+
+    // DAG de dépendances (#246)
+    let taskDag = $state<{ steps: { id: number }[] } | null>(null);
+
+    // Résultats cross-search issues (#searchScope)
+    let foundIssues = $derived<{ number: number; title: string }[]>((() => {
+        if (searchScope !== "all" || filterQuery.length < 2) return [];
+        const snap = $issueGroupsCache;
+        if (!snap) return [];
+        const all: { number: number; title: string }[] = [
+            ...snap.ungroupedIssues,
+            ...snap.groups.flatMap((g: any) => g.issues ?? []),
+        ];
+        const q = filterQuery.toLowerCase();
+        return all.filter(i => `${i.number} ${i.title}`.toLowerCase().includes(q)).slice(0, 10);
+    })());
 
     // Issue sélectionnée dans l'arbre fullplan
     let selectedIssueRow: IssueRow | null = $state(null);
