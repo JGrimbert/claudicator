@@ -167,6 +167,48 @@
     let patchLoading = $state(false);
     let patchApplying = $state(false);
 
+    // Commit-all patches
+    type CommitAllProgress = { done: number; total: number; current: string; branch?: string; error?: string };
+    let commitAllBusy = $state(false);
+    let commitAllProgress = $state<CommitAllProgress | null>(null);
+
+    async function commitAllPatches(task: Task) {
+        if (commitAllBusy) return;
+        commitAllBusy = true;
+        commitAllProgress = { done: 0, total: patches.length, current: "" };
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/commit-all-patches`, { method: "POST" });
+            if (!res.ok || !res.body) {
+                commitAllProgress = { ...commitAllProgress!, error: await res.text() };
+                return;
+            }
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const events = buf.split("\n\n");
+                buf = events.pop() ?? "";
+                for (const ev of events) {
+                    const line = ev.replace(/^data: /, "").trim();
+                    if (!line) continue;
+                    try {
+                        const obj = JSON.parse(line);
+                        if (obj.type === "branch") commitAllProgress = { ...commitAllProgress!, branch: obj.name };
+                        else if (obj.type === "applying") commitAllProgress = { ...commitAllProgress!, current: obj.patch, done: obj.index - 1, total: obj.total };
+                        else if (obj.type === "applied") commitAllProgress = { ...commitAllProgress!, done: commitAllProgress!.done + 1 };
+                        else if (obj.type === "done") { commitAllProgress = { ...commitAllProgress!, done: obj.total, current: "", branch: obj.branch }; await loadTasksSilent(); }
+                        else if (obj.type === "error") commitAllProgress = { ...commitAllProgress!, error: obj.message ?? "Erreur inconnue" };
+                    } catch { /* JSON partiel */ }
+                }
+            }
+        } finally {
+            commitAllBusy = false;
+        }
+    }
+
     // Sandbox (appliquer/retirer un patch dans le repo cible pour tester)
     type SandboxState = { applied: string[]; deps: Record<string, string[]> };
     let sandboxState = $state<SandboxState | null>(null);
@@ -1213,12 +1255,30 @@
                                             disabled={!!repromptBusy}
                                         >{repromptBusy ? "…" : `↺ Régénérer ${staleRows.length} patch${staleRows.length > 1 ? "s" : ""} périmé${staleRows.length > 1 ? "s" : ""}`}</button>
                                     {/if}
+                                    {#if patches.length > 0 && !staleRows.length && task.status !== "validation" && task.status !== "merged"}
+                                        <button
+                                            class="wf-btn wf-commit-all"
+                                            onclick={() => commitAllPatches(task)}
+                                            disabled={commitAllBusy}
+                                        >{commitAllBusy ? `… ${commitAllProgress?.done ?? 0}/${commitAllProgress?.total ?? 0}` : `↓ Commiter les ${patches.length} patches`}</button>
+                                    {/if}
                                     <button
                                         class="wf-btn"
                                         onclick={() => closeFullPlanIssues(task)}
                                         disabled={closingIssues}
                                     >{closingIssues ? "…" : `✕ Fermer les ${issueRows.length} issues`}</button>
                                 </div>
+                                {#if commitAllProgress}
+                                    <div class="commit-all-status" class:is-error={!!commitAllProgress.error} class:is-done={!commitAllBusy && !commitAllProgress.error}>
+                                        {#if commitAllProgress.error}
+                                            ✕ {commitAllProgress.error}
+                                        {:else if !commitAllBusy}
+                                            ✓ {commitAllProgress.done} commits sur {commitAllProgress.branch}
+                                        {:else}
+                                            {commitAllProgress.current} ({commitAllProgress.done}/{commitAllProgress.total})
+                                        {/if}
+                                    </div>
+                                {/if}
                             </div>
                         {/if}
 
@@ -1833,6 +1893,11 @@
 .wf-btn.wf-active:hover { color: #b0a0ff; }
 .wf-btn.wf-stale { color: #ff9800; border-color: rgba(255,152,0,0.3); }
 .wf-btn.wf-stale:hover:not(:disabled) { color: #ffb74d; border-color: rgba(255,152,0,0.6); }
+.wf-btn.wf-commit-all { color: #7ec8a0; border-color: rgba(126,200,160,0.3); }
+.wf-btn.wf-commit-all:hover:not(:disabled) { color: #a8e6c4; border-color: rgba(126,200,160,0.6); }
+.commit-all-status { padding: 4px 8px 2px; font-size: 11px; color: #888; }
+.commit-all-status.is-error { color: #e07070; }
+.commit-all-status.is-done { color: #7ec8a0; }
 /* secondary = étape déjà franchie, recliquable */
 .wf-btn.wf-secondary {
     color: #444;
