@@ -28,11 +28,13 @@ export async function getRemoteRepo() {
     };
 }
 
-/** Retourne le diff staged et unstaged d'un dépôt. */
+/** Retourne le diff staged et unstaged d'un dépôt.
+ *  --ignore-submodules=dirty : exclut les sous-modules simplement "dirty"
+ *  (modifications non commitées dans le sous-module) — ne masque pas les vrais changements de SHA. */
 export async function getDiff(root: string): Promise<string> {
     const g = simpleGit(root);
-    const staged   = await g.diff(["--cached"]);
-    const unstaged = await g.diff();
+    const staged   = await g.diff(["--cached", "--ignore-submodules=dirty"]);
+    const unstaged = await g.diff(["--ignore-submodules=dirty"]);
     return (staged + unstaged).trim();
 }
 
