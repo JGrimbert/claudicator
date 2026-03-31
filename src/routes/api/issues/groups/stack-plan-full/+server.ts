@@ -248,20 +248,13 @@ export const POST: RequestHandler = async ({ request }) => {
         return `### Stack "${s.keyword}" (${s.issues.length} issues)\n${lines}`;
     }).join("\n\n");
 
-    const residualSection = residualIssues && residualIssues.length > 0
-        ? `\n### Résiduel (${residualIssues.length} issues)\n` +
+    // Issues sans stack assignée → à intégrer obligatoirement dans le plan
+    const unassignedSection = residualIssues && residualIssues.length > 0
+        ? `\n### Issues non assignées (${residualIssues.length} — à intégrer dans le plan)\n` +
           residualIssues.map(i => `  - #${i.number} — ${i.title}`).join("\n")
         : "";
 
-    const stepsTemplate = subStacks.map(s =>
-        `### Stack "${s.keyword}"\n` +
-        s.issues.map((i, idx) =>
-`#### Étape ${idx + 1} — #${i.number} : ${i.title}
-- Commit : "type(scope): ..."
-- Fichiers touchés :
-- Diff attendu :`
-        ).join("\n\n")
-    ).join("\n\n");
+    const allIssueNums = allIssues.map(i => `#${i.number}`).join(", ");
 
     const { section: roadmapSection, issueFiles } = buildRoadmapContext(allIssues);
     const aiDagSection = buildAiDagSection(groupKeyword, allIssues, issueFiles);
@@ -269,23 +262,74 @@ export const POST: RequestHandler = async ({ request }) => {
     const prompt = `@"plan-complet (agent)"
 
 # TASK : Plan complet du groupe "${groupKeyword}"
-## ${subStacks.length} sous-stacks — ${allIssues.length} issues
+## ${allIssues.length} issues — COUVERTURE TOTALE OBLIGATOIRE
 
-${stackSections}${residualSection}
+${stackSections}${unassignedSection}
 ${aiDagSection}${roadmapSection}
 ## OBJECTIF
-Réflexion globale sur l'ensemble du groupe (dépendances inter-stacks, ordre recommandé).
-Pour chaque sous-stack : ordre logique, commits indépendants, diff précis.
+Produire un workflow ordonné couvrant la TOTALITÉ des ${allIssues.length} issues.
+1. Identifier les stacks logiques parmi toutes les issues
+2. Regrouper dans une même étape les issues pouvant être commitées ensemble (pas de conflit fichiers, domaine commun)
+3. Intégrer les issues "non assignées" dans les stacks existantes ou créer de nouvelles étapes
+4. Ordonner selon le DAG de dépendances
+**AUCUNE ISSUE NE PEUT RESTER SANS ÉTAPE**
 
-## CONTRAINTES IMPORTANTES
+## CONTRAINTES
 - NE PAS commiter, NE PAS pousser, NE PAS modifier de fichiers
 - Produire uniquement un plan textuel structuré
 
-## FORMAT DU PLAN
-### Vue d'ensemble
-(dépendances entre sous-stacks, ordre d'implémentation global, risques)
+## FORMAT DE SORTIE OBLIGATOIRE
 
-${stepsTemplate}`;
+Produire d'abord la section globale (index), puis les étapes détaillées entre marqueurs.
+
+### PLAN GLOBAL
+
+# Plan complet — groupe "${groupKeyword}"
+
+## Vue d'ensemble
+(dépendances entre stacks, ordre d'implémentation recommandé, risques de conflits)
+
+## Étapes
+1. [Étape 1 — #X, #Y (stack "kw")](./etape-1.md)
+2. [Étape 2 — #Z (stack "kw2")](./etape-2.md)
+...
+
+---
+
+### ÉTAPES DÉTAILLÉES (une par étape, entre marqueurs [ETAPE:N]...[/ETAPE:N])
+
+[ETAPE:1]
+# Étape 1 — #X, #Y : titre
+
+## Issues
+- #X — titre
+- #Y — titre
+
+## ATLAS (symboles utiles)
+(fonctions / composants / stores impliqués)
+
+## Commit suggéré
+\`type(scope): description (#X, #Y)\`
+
+## Fichiers touchés
+- \`src/path/to/file.ts\`
+
+## Plan d'implémentation
+### #X — titre
+\`\`\`diff
+...
+\`\`\`
+### #Y — titre
+\`\`\`diff
+...
+\`\`\`
+[/ETAPE:1]
+
+[ETAPE:2]
+...
+[/ETAPE:2]
+
+**RÈGLE ABSOLUE** : Ces ${allIssues.length} issues doivent TOUTES apparaître dans une étape : ${allIssueNums}`;
 
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
     const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
@@ -362,11 +406,46 @@ ${stepsTemplate}`;
                         }
                     } catch { fullOutput += stdoutBuf + "\n"; }
                 }
+
+                // Extraire les blocs [ETAPE:N]...[/ETAPE:N]
+                const parsedStepFiles: { filename: string; issues: number[]; content: string }[] = [];
+                const stepRegex = /\[ETAPE:(\d+)\]([\s\S]*?)\[\/ETAPE:\1\]/g;
+                let stepMatch: RegExpExecArray | null;
+                while ((stepMatch = stepRegex.exec(fullOutput)) !== null) {
+                    const stepNum = stepMatch[1];
+                    const content = stepMatch[2].trim();
+                    const filename = `etape-${stepNum}.md`;
+                    const issueNums = [...content.matchAll(/#(\d+)/g)].map(x => parseInt(x[1]));
+                    parsedStepFiles.push({ filename, issues: [...new Set(issueNums)], content });
+                }
+
+                // Plan global = tout avant le premier marqueur [ETAPE (ou output complet si aucun)
+                const firstMarker = fullOutput.indexOf("[ETAPE:");
+                const globalContent = firstMarker > 0
+                    ? fullOutput.slice(0, firstMarker).trim()
+                    : fullOutput;
+
+                // Sauvegarder les fichiers d'étapes + générer ATLAS par étape
+                for (const sf of parsedStepFiles) {
+                    fs.writeFileSync(path.join(planDir, sf.filename), sf.content, "utf-8");
+                    const stepIssueObjs = allIssues.filter(i => sf.issues.includes(i.number));
+                    if (stepIssueObjs.length) {
+                        const atlasPath = path.join(planDir, `atlas-${sf.filename}`);
+                        writeAtlasForIssues(stepIssueObjs, sf.filename.replace(".md", ""), atlasPath);
+                        stepAtlasFiles[sf.filename] = atlasPath;
+                    }
+                }
+
                 const dir = getTasksDir();
                 fs.mkdirSync(dir, { recursive: true });
                 const planFile = `stack-full-${groupKeyword}-${Date.now()}.plan.md`;
-                fs.writeFileSync(path.join(dir, planFile), fullOutput, "utf-8");
-                updateFullPlan(planId, { status: "done", planFile, stepAtlasFiles });
+                fs.writeFileSync(path.join(dir, planFile), globalContent, "utf-8");
+                updateFullPlan(planId, {
+                    status: "done",
+                    planFile,
+                    stepAtlasFiles,
+                    stepFiles: parsedStepFiles.map(sf => ({ filename: sf.filename, issues: sf.issues })),
+                });
                 updateTask(fpTask.id, { status: "implementation" });
                 send({ line: "[done]", type: "system", planFile });
                 controller.close();

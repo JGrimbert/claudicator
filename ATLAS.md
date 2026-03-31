@@ -1,5 +1,5 @@
 # Atlas — Claudicator
-_Généré pour le groupe : task (9 issues)_
+_Généré pour le groupe : task (13 issues)_
 
 ## Points d'entrée — task
 
@@ -12,9 +12,9 @@ Ces symboles ont été identifiés comme pertinents pour le groupe :
 | `getTask` | `src/lib/server/services/tasks.ts` | `getTask(id)` |
 | `/api/tasks/[id]/plan` | `src/routes/api/tasks/[id]/plan/+server.ts` | `GET, POST, PUT` — Tâches — lit le plan de la tâche depuis le disque (GET) ou le sauvegarde (POST) |
 | `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
-| `/api/tasks/[id]/methods` | `src/routes/api/tasks/[id]/methods/+server.ts` | `GET` — Tâches — retourne les méthodes pertinentes pour la tâche (GET) |
-| `TaskList` | `src/lib/components/TaskList.svelte` | `toggleAtlas, generateAtlas, loadTasks, loadTasksSilent, writeTests, runTests, loadLinkedIssueState, taskToFilter, resetTask, taskPrefix, selectTask, createBranchAndShowDiff, loadDiff, closeFullPlanIssues, skipPlan, loadPlan, btnVariant, closeLinkedIssue` — composant UI |
-| `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks, parseGroups, loadRoadmaps, onRoadmapChange, createNewRoadmap` — composant UI |
+| `/api/tasks/[id]/commit` | `src/routes/api/tasks/[id]/commit/+server.ts` | `POST` — Tâches — commite les changements sur la branche de la tâche (POST) |
+| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, closeFullPlanIssues, skipPlan, loadPlan, repromptIssue, repromptAllStale, selectIssueRow, loadLinkedIssueState, closeLinkedIssue, writeTests, runTests, toggleAtlas, generateAtlas, createBranchAndShowDiff, loadDiff, btnVariant` — composant UI |
+| `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks, openIssue, loadRoadmaps, onRoadmapChange, createNewRoadmap, parseGroups` — composant UI |
 
 ---
 

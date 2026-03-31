@@ -301,6 +301,7 @@ export type ActiveFullPlan = {
     status: "generating" | "done" | "error";
     planFile?: string;
     taskId?: string;
+    stepFiles?: { filename: string; issues: number[] }[];
 };
 export const activeFullPlan = writable<ActiveFullPlan | null>(null);
 

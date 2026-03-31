@@ -301,14 +301,18 @@
         consoleTab.set("console");
 
         try {
-            const assignedInSubs = new Set((group.subdivisions ?? []).flatMap(s => s.issues.map(i => i.number)));
+            const subs = group.subdivisions ?? [];
+            const subStacks = subs.length > 0
+                ? subs
+                : [{ keyword: group.keyword, issues: group.issues }];
+            const assignedInSubs = new Set(subStacks.flatMap(s => s.issues.map(i => i.number)));
             const residualIssues = group.issues.filter(i => !assignedInSubs.has(i.number));
             const r = await fetch("/api/issues/groups/stack-plan-full", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     groupKeyword: group.keyword,
-                    subStacks: group.subdivisions ?? [],
+                    subStacks,
                     residualIssues
                 })
             });
@@ -442,86 +446,19 @@
                         <span class="group-count">{group.issues.length} issues</span>
                     </div>
 
-                    {#if (group.subdivisions ?? []).length > 0}
-                        {@const assignedInSubs = new Set(group.subdivisions.flatMap(s => s.issues.map(i => i.number)))}
-                        {@const residual = group.issues.filter(i => !assignedInSubs.has(i.number))}
-                        <div class="stack-group">
-                            {#each group.subdivisions as sub, subIdx}
-                                {@const stackKey = `${group.keyword}::${sub.keyword}`}
-                                {@const ss = stackState[stackKey]}
-                                {@const subHaiku = haikus[sub.keyword]}
-                                <div class="stack-box" style="--stack-hue: {(subIdx * 60) % 360}">
-                                    <div class="tree-branch-head">
-                                        <span class="sub-keyword">{sub.keyword}</span>
-                                        {#if sub.keywords.length > 1}
-                                            <span class="sub-extra-kw">+{sub.keywords.slice(1).join(", ")}</span>
-                                        {/if}
-                                        <span class="sub-count">{sub.issues.length}</span>
-                                        {#if subHaiku && !subHaiku.err}
-                                            <span class="sub-haiku-inline">{subHaiku.title}</span>
-                                        {/if}
-                                        <button
-                                            class="btn-stack-plan"
-                                            onclick={() => planStack(group.keyword, sub)}
-                                            disabled={ss?.planning}
-                                            title="Générer le plan stack"
-                                        >{ss?.planning ? "…" : "⚡"}</button>
-                                        {#if ss?.feedback}
-                                            <span class="stack-feedback">{ss.feedback}</span>
-                                        {/if}
-                                    </div>
-                                    <ul class="sub-issues">
-                                        {#each sub.issues as issue}
-                                            <li class="tree-leaf">
-                                                <button class="issue-num" onclick={() => openIssue(issue.number)}>
-                                                    #{issue.number}
-                                                </button>
-                                                <span class="issue-title">{issue.title}</span>
-                                                {#if twinNums.has(issue.number)}
-                                                    <span class="twin-badge" title="Sujet identique">⇔</span>
-                                                {/if}
-                                            </li>
-                                        {/each}
-                                    </ul>
-                                </div>
-                            {/each}
-                            {#if residual.length > 0}
-                                <div class="group-residual">
-                                    <div class="residual-head">
-                                        <span class="residual-connector">└─</span>
-                                        <span class="residual-label">autres ({residual.length})</span>
-                                    </div>
-                                    <ul class="sub-issues">
-                                        {#each residual as issue}
-                                            <li class="tree-leaf">
-                                                <button class="issue-num" onclick={() => openIssue(issue.number)}>
-                                                    #{issue.number}
-                                                </button>
-                                                <span class="issue-title">{issue.title}</span>
-                                                {#if twinNums.has(issue.number)}
-                                                    <span class="twin-badge" title="Sujet identique">⇔</span>
-                                                {/if}
-                                            </li>
-                                        {/each}
-                                    </ul>
-                                </div>
-                            {/if}
-                        </div>
-                    {:else}
-                        <ul class="group-issues">
-                            {#each group.issues as issue}
-                                <li class="group-issue" class:is-twin={twinNums.has(issue.number)}>
-                                    <button class="issue-num" onclick={() => openIssue(issue.number)}>
-                                        #{issue.number}
-                                    </button>
-                                    <span class="issue-title">{issue.title}</span>
-                                    {#if twinNums.has(issue.number)}
-                                        <span class="twin-badge" title="Sujet identique">⇔</span>
-                                    {/if}
-                                </li>
-                            {/each}
-                        </ul>
-                    {/if}
+                    <ul class="group-issues">
+                        {#each group.issues as issue}
+                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)}>
+                                <button class="issue-num" onclick={() => openIssue(issue.number)}>
+                                    #{issue.number}
+                                </button>
+                                <span class="issue-title">{issue.title}</span>
+                                {#if twinNums.has(issue.number)}
+                                    <span class="twin-badge" title="Sujet identique">⇔</span>
+                                {/if}
+                            </li>
+                        {/each}
+                    </ul>
 
                     {#if ev?.open}
                         <div class="eval-panel">
@@ -548,18 +485,16 @@
                             title="Évaluer la complexité du groupe avant de générer un fullPlan"
                         >{ev?.loading ? "…" : "🔍"}</button>
 
-                        {#if (group.subdivisions ?? []).length > 0}
-                            {@const fss = fullStackState[group.keyword]}
-                            <button
-                                class="btn-full-plan"
-                                onclick={() => planFullStack(group)}
-                                disabled={fss?.planning}
-                                title="Générer le plan complet du groupe (toutes les stacks)"
-                            >{fss?.planning ? "…" : "⚡ Plan complet"}</button>
-                            {#if fss?.feedback}
-                                <span class="stack-feedback">{fss.feedback}</span>
-                            {/if}
+                        <button
+                            class="btn-full-plan"
+                            onclick={() => planFullStack(group)}
+                            disabled={fullStackState[group.keyword]?.planning}
+                            title="Générer le plan complet du groupe"
+                        >{fullStackState[group.keyword]?.planning ? "…" : "⚡ Plan complet"}</button>
+                        {#if fullStackState[group.keyword]?.feedback}
+                            <span class="stack-feedback">{fullStackState[group.keyword].feedback}</span>
                         {/if}
+
                         {#if state?.created}
                             <a class="created-link" href={state.created.html_url} target="_blank" rel="noopener">
                                 ✓ #{state.created.parentNumber} — {state.created.title}

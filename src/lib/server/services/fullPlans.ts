@@ -12,6 +12,7 @@ export type FullPlan = {
     subStacks: { keyword: string; issues: { number: number; title: string }[] }[];
     residualIssues?: { number: number; title: string }[];
     stepAtlasFiles?: Record<string, string>;
+    stepFiles?: { filename: string; issues: number[] }[];
     createdAt: number;
     updatedAt: number;
 };
@@ -41,7 +42,7 @@ export function getFullPlanDir(planId: string): string {
     return path.join(FULL_PLANS_DIR, planId);
 }
 
-export function updateFullPlan(id: string, patch: Partial<Pick<FullPlan, "status" | "planFile" | "stepAtlasFiles" | "updatedAt">>): void {
+export function updateFullPlan(id: string, patch: Partial<Pick<FullPlan, "status" | "planFile" | "stepAtlasFiles" | "stepFiles" | "updatedAt">>): void {
     const p = planPath(id);
     if (!fs.existsSync(p)) return;
     const plan: FullPlan = JSON.parse(fs.readFileSync(p, "utf-8"));

@@ -15,12 +15,28 @@
     // Agrandir/réduire
     let expanded = $state(false);
 
+    // Suppression
+    let confirmingDelete = $state(false);
+    let deleting = $state(false);
+
     // Lancement implémentation
     let launching = $state(false);
     let launchingStack = $state<string | null>(null);
 
     // Nouveau cycle
     let launchingNewCycle = $state(false);
+
+    // Étapes détaillées
+    let stepFiles = $state<{ filename: string; issues: number[] }[]>([]);
+    let selectedStep = $state<string | null>(null);
+    let stepContent = $state("");
+    let stepLoading = $state(false);
+
+    // DAG
+    let dagLevels = $state<{ level: number; issues: number[]; stacks: string[] }[]>([]);
+    let dagRunning = $state(false);
+    let dagCurrentRow = $state<number | null>(null);
+    let dagStackStatus = $state<Record<string, "running" | "done" | "error">>({});
 
     /** Compte les issues résiduelles depuis le contenu du plan */
     function parseResidualCount(text: string): number {
@@ -48,10 +64,27 @@
     const stacks = $derived(content ? parseStacks(content) : []);
 
     $effect(() => {
+        if (plan.status === "done" && plan.id && plan.keyword) {
+            dagLevels = [];
+            dagStackStatus = {};
+            dagCurrentRow = null;
+            dagRunning = false;
+            fetch(`/api/issues/groups/eval-dag/${plan.keyword}?planId=${plan.id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data?.exists && data.levels?.length > 1) dagLevels = data.levels;
+                })
+                .catch(() => {});
+        }
+    });
+
+    $effect(() => {
         if (plan.status === "done" && plan.planFile && plan.id) {
             content = "";
             loadError = "";
             editing = false;
+            selectedStep = null;
+            stepFiles = [];
             fetch(`/api/issues/groups/full-plans/${plan.id}/content`)
                 .then(r => {
                     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -59,10 +92,31 @@
                 })
                 .then(t => { content = t; })
                 .catch(e => { loadError = e.message; });
+            // Charger la liste des étapes
+            fetch(`/api/issues/groups/full-plans/${plan.id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => { if (data?.stepFiles?.length) stepFiles = data.stepFiles; })
+                .catch(() => {});
         }
     });
 
+    async function viewStep(filename: string) {
+        selectedStep = filename;
+        stepContent = "";
+        stepLoading = true;
+        try {
+            const r = await fetch(`/api/issues/groups/full-plans/${plan.id}/steps/${filename}`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            stepContent = await r.text();
+        } catch (e: any) {
+            stepContent = `Erreur : ${e.message}`;
+        } finally {
+            stepLoading = false;
+        }
+    }
+
     function startEdit() {
+        confirmingDelete = false;
         editText = content;
         editing = true;
     }
@@ -156,6 +210,95 @@
         }
     }
 
+    async function runStackRaw(stackKeyword: string): Promise<void> {
+        const res = await fetch(`/api/issues/groups/full-plans/${plan.id}/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stackKeyword }),
+        });
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        const reader = res.body.getReader();
+        try {
+            while (true) {
+                const { done } = await reader.read();
+                if (done) break;
+            }
+        } finally {
+            reader.releaseLock();
+        }
+    }
+
+    async function launchDagRow(level: number): Promise<void> {
+        if (dagRunning || launching || launchingStack !== null || !plan.id) return;
+        const row = dagLevels.find(r => r.level === level);
+        if (!row?.stacks.length) return;
+        dagRunning = true;
+        dagCurrentRow = level;
+        for (const kw of row.stacks) dagStackStatus[kw] = "running";
+        try {
+            await Promise.all(row.stacks.map(async (kw) => {
+                try {
+                    await runStackRaw(kw);
+                    dagStackStatus[kw] = "done";
+                } catch {
+                    dagStackStatus[kw] = "error";
+                }
+            }));
+        } finally {
+            dagRunning = false;
+            dagCurrentRow = null;
+        }
+    }
+
+    async function launchDagRows(): Promise<void> {
+        if (dagRunning || launching || launchingStack !== null || !plan.id || !dagLevels.length) return;
+        dagRunning = true;
+        try {
+            for (let i = 0; i < dagLevels.length; i++) {
+                dagCurrentRow = i;
+                const row = dagLevels[i];
+                for (const kw of row.stacks) dagStackStatus[kw] = "running";
+                let rowFailed = false;
+                await Promise.all(row.stacks.map(async (kw) => {
+                    try {
+                        await runStackRaw(kw);
+                        dagStackStatus[kw] = "done";
+                    } catch {
+                        dagStackStatus[kw] = "error";
+                        rowFailed = true;
+                    }
+                }));
+                if (rowFailed) break;
+            }
+        } finally {
+            dagRunning = false;
+            dagCurrentRow = null;
+        }
+    }
+
+    function isRowLocked(level: number): boolean {
+        if (level === 0) return false;
+        for (let i = 0; i < level; i++) {
+            const row = dagLevels[i];
+            if (row.stacks.some(kw => dagStackStatus[kw] !== "done")) return true;
+        }
+        return false;
+    }
+
+    async function deletePlan() {
+        if (!plan.id) return;
+        if (!confirmingDelete) { confirmingDelete = true; return; }
+        deleting = true;
+        try {
+            await fetch(`/api/issues/groups/full-plans/${plan.id}`, { method: "DELETE" });
+            activeFullPlan.set(null);
+        } catch (e: any) {
+            loadError = e.message;
+            deleting = false;
+            confirmingDelete = false;
+        }
+    }
+
     async function launchImpl(stackKeyword?: string) {
         if (!plan.id) return;
         if (stackKeyword ? launchingStack === stackKeyword : launching) return;
@@ -216,18 +359,60 @@
                     </button>
                 </div>
             </div>
-        {:else}
-            <div class="fp-plan-row">
-                <div class="fp-plan-content">
-                    <JgrPre {content} previewLines={8} maxHeight={expanded ? undefined : "20rem"} />
-                </div>
-                <button class="fp-edit-btn" onclick={startEdit} title="Modifier">✎</button>
+        {:else if selectedStep}
+            <div class="fp-step-header">
+                <button class="fp-back-btn" onclick={() => { selectedStep = null; stepContent = ""; }}>← Plan global</button>
+                <span class="fp-step-title">{selectedStep}</span>
+            </div>
+            <div class="fp-plan-content fp-step-content">
+                {#if stepLoading}
+                    <div class="fp-state">Chargement…</div>
+                {:else}
+                    <JgrPre content={stepContent} previewLines={12} maxHeight={expanded ? undefined : "30rem"} />
+                {/if}
             </div>
             <div class="fp-expand-row">
                 <button class="fp-expand-link" onclick={() => { expanded = !expanded; }}>
                     {expanded ? "↑ Réduire" : "↕ Agrandir"}
                 </button>
             </div>
+        {:else}
+            <div class="fp-plan-row">
+                <div class="fp-plan-content">
+                    <JgrPre {content} previewLines={8} maxHeight={expanded ? undefined : "20rem"} />
+                </div>
+                <button class="fp-edit-btn" onclick={startEdit} title="Modifier">✎</button>
+                <button
+                    class="fp-delete-btn"
+                    class:fp-delete-confirm={confirmingDelete}
+                    onclick={deletePlan}
+                    disabled={deleting || launching || launchingStack !== null}
+                    title={confirmingDelete ? "Confirmer la suppression" : "Supprimer ce plan"}
+                >
+                    {deleting ? "…" : confirmingDelete ? "Confirmer ✕" : "✕"}
+                </button>
+            </div>
+            <div class="fp-expand-row">
+                <button class="fp-expand-link" onclick={() => { expanded = !expanded; }}>
+                    {expanded ? "↑ Réduire" : "↕ Agrandir"}
+                </button>
+            </div>
+            {#if stepFiles.length > 0}
+                <div class="fp-steps-list">
+                    <span class="fp-steps-title">Étapes ({stepFiles.length})</span>
+                    <div class="fp-steps-btns">
+                        {#each stepFiles as sf, i}
+                            <button class="fp-step-btn" onclick={() => viewStep(sf.filename)}>
+                                Étape {i + 1}
+                                {#if sf.issues.length}
+                                    <span class="fp-step-issues">{sf.issues.map(n => `#${n}`).join(", ")}</span>
+                                {/if}
+                            </button>
+                        {/each}
+                    </div>
+                </div>
+                <div class="fp-actions-sep"></div>
+            {/if}
             <div class="fp-actions">
                 {#if stacks.length > 0}
                     <div class="fp-stacks">
@@ -244,7 +429,7 @@
                     <div class="fp-actions-sep"></div>
                 {/if}
                 <JgrCta label="Lancer tout" pending={launching} onclick={() => launchImpl()} />
-                {#if residualCount > 0}
+                {#if residualCount > 0 && !stepFiles.length}
                     <button
                         class="fp-newcycle-btn"
                         onclick={launchNewCycle}
@@ -253,6 +438,41 @@
                     >
                         {launchingNewCycle ? "…" : `↻ Nouveau cycle (${residualCount} issues)`}
                     </button>
+                {/if}
+                {#if dagLevels.length > 0}
+                    <div class="fp-actions-sep"></div>
+                    <div class="fp-dag-header">
+                        <span class="fp-dag-title">Ordre DAG</span>
+                        <button
+                            class="fp-stack-btn"
+                            onclick={launchDagRows}
+                            disabled={dagRunning || launching || launchingStack !== null}
+                        >
+                            {dagRunning ? "…" : "▶▶"} Tout DAG
+                        </button>
+                    </div>
+                    {#each dagLevels as row}
+                        <div class="fp-dag-row" class:fp-dag-active={dagCurrentRow === row.level}>
+                            <div class="fp-dag-row-info">
+                                <span class="fp-dag-row-lbl">Row {row.level}</span>
+                                <span class="fp-dag-row-nums">{row.issues.map(n => `#${n}`).join(" ")}</span>
+                            </div>
+                            <div class="fp-dag-row-right">
+                                {#each row.stacks as kw}
+                                    <span class="fp-dag-badge fp-dag-badge-{dagStackStatus[kw] ?? 'idle'}">
+                                        {kw}{#if dagStackStatus[kw] === "running"} ⠋{:else if dagStackStatus[kw] === "done"} ✓{:else if dagStackStatus[kw] === "error"} ✗{/if}
+                                    </span>
+                                {/each}
+                                <button
+                                    class="fp-stack-btn"
+                                    onclick={() => launchDagRow(row.level)}
+                                    disabled={dagRunning || launching || launchingStack !== null || isRowLocked(row.level)}
+                                >
+                                    {dagCurrentRow === row.level ? "…" : "▶"} Row {row.level}
+                                </button>
+                            </div>
+                        </div>
+                    {/each}
                 {/if}
             </div>
         {/if}
@@ -321,6 +541,31 @@
     }
     .fp-edit-btn:hover {
         color: var(--color-text, #ccc);
+    }
+    .fp-delete-btn {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--color-text-muted, #888);
+        padding: 2px 4px;
+        line-height: 1;
+        border-radius: 3px;
+        white-space: nowrap;
+    }
+    .fp-delete-btn:hover:not(:disabled) {
+        color: #f87171;
+    }
+    .fp-delete-btn.fp-delete-confirm {
+        color: #f87171;
+        font-size: 11px;
+        border: 1px solid #dc2626;
+        padding: 2px 6px;
+    }
+    .fp-delete-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     .fp-expand-row {
         display: flex;
@@ -391,6 +636,141 @@
     .fp-newcycle-btn:disabled {
         opacity: 0.4;
         cursor: not-allowed;
+    }
+    .fp-dag-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .fp-dag-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-muted, #888);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .fp-dag-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--color-border, #333);
+        background: transparent;
+        transition: border-color 0.15s;
+    }
+    .fp-dag-row.fp-dag-active {
+        border-color: #6a50c0;
+    }
+    .fp-dag-row-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .fp-dag-row-lbl {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text, #ccc);
+        white-space: nowrap;
+    }
+    .fp-dag-row-nums {
+        font-size: 11px;
+        color: var(--color-text-muted, #888);
+        font-family: monospace;
+    }
+    .fp-dag-row-right {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+    .fp-dag-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 1px solid var(--color-border, #444);
+        color: var(--color-text-muted, #888);
+        white-space: nowrap;
+    }
+    .fp-dag-badge-running {
+        border-color: #6a50c0;
+        color: #a78bfa;
+    }
+    .fp-dag-badge-done {
+        border-color: #16a34a;
+        color: #4ade80;
+    }
+    .fp-dag-badge-error {
+        border-color: #dc2626;
+        color: #f87171;
+    }
+    .fp-step-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--color-border, #333);
+    }
+    .fp-back-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--color-accent, #7c6af7);
+        padding: 0;
+    }
+    .fp-back-btn:hover { text-decoration: underline; }
+    .fp-step-title {
+        font-size: 12px;
+        color: var(--color-text-muted, #888);
+        font-family: monospace;
+    }
+    .fp-step-content {
+        padding: 12px 16px;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .fp-steps-list {
+        padding: 8px 16px 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .fp-steps-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-muted, #888);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .fp-steps-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .fp-step-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid var(--color-border, #333);
+        background: var(--color-bg-subtle, #1a1a2e);
+        color: var(--color-text, #ccc);
+        white-space: nowrap;
+    }
+    .fp-step-btn:hover {
+        border-color: #7c6af7;
+        color: #a78bfa;
+    }
+    .fp-step-issues {
+        font-family: monospace;
+        font-size: 10px;
+        color: var(--color-text-muted, #888);
     }
     .fp-edit-wrap {
         display: flex;
