@@ -11,7 +11,8 @@ import simpleGit from "simple-git";
 export const GET: RequestHandler = async ({ params }) => {
     const taskId = params.id;
     const found = findTaskGlobal(t => t.id === taskId);
-    const patches = found ? listPatchesFrom(found.tasksDir, taskId) : listPatches(taskId);
+    const patches = (found ? listPatchesFrom(found.tasksDir, taskId) : listPatches(taskId))
+        .sort((a, b) => a.createdAt - b.createdAt); // ordre réel de génération
 
     const patchesWithFiles = patches.map(p => ({
         name: p.name,

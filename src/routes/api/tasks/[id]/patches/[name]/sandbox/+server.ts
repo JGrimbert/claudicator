@@ -12,7 +12,9 @@ type PatchCtx = { deps: Record<string, string[]>; patchesDir: string };
 async function getContext(taskId: string): Promise<PatchCtx | null> {
     const found = findTaskGlobal(t => t.id === taskId);
     if (!found) return null;
-    const patches = listPatchesFrom(found.tasksDir, taskId);
+    // Trier par createdAt : ordre réel de génération (pas par numéro d'issue)
+    const patches = listPatchesFrom(found.tasksDir, taskId)
+        .sort((a, b) => a.createdAt - b.createdAt);
     const patchesWithFiles = patches.map(p => ({
         name: p.name,
         files: getPatchFiles(getPatchContentFrom(found.tasksDir, taskId, p.name) ?? ""),

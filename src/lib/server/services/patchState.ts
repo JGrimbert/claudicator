@@ -12,16 +12,15 @@ export function getPatchFiles(content: string): string[] {
 }
 
 /** Construit le graphe de dépendances entre patches.
- *  deps[B] = [A] signifie que B nécessite A (overlap de fichiers, numéro issue inférieur). */
+ *  deps[B] = [A] signifie que B nécessite A (overlap de fichiers).
+ *  Le tableau doit être pré-trié dans l'ordre d'implémentation réel (par createdAt). */
 export function buildDeps(patches: { name: string; files: string[] }[]): Record<string, string[]> {
-    const issueNum = (name: string) => { const m = name.match(/issue-(\d+)/); return m ? Number(m[1]) : Infinity; };
-    const sorted = [...patches].sort((a, b) => issueNum(a.name) - issueNum(b.name));
     const deps: Record<string, string[]> = {};
-    for (const p of sorted) deps[p.name] = [];
+    for (const p of patches) deps[p.name] = [];
 
-    for (let i = 0; i < sorted.length; i++) {
-        for (let j = i + 1; j < sorted.length; j++) {
-            const a = sorted[i], b = sorted[j];
+    for (let i = 0; i < patches.length; i++) {
+        for (let j = i + 1; j < patches.length; j++) {
+            const a = patches[i], b = patches[j];
             if (a.files.some(f => b.files.includes(f))) {
                 deps[b.name].push(a.name);
             }
