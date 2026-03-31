@@ -259,44 +259,47 @@ export const POST: RequestHandler = async ({ request }) => {
     const { section: roadmapSection, issueFiles } = buildRoadmapContext(allIssues);
     const aiDagSection = buildAiDagSection(groupKeyword, allIssues, issueFiles);
 
-    const prompt = `@"plan-complet (agent)"
+    const issueList = allIssues.map(i => {
+        const desc = i.body ? `\n  > ${i.body.replace(/\n+/g, " ").trim().slice(0, 200)}` : "";
+        return `- #${i.number} — ${i.title}${desc}`;
+    }).join("\n");
 
-# TASK : Plan complet du groupe "${groupKeyword}"
+    const prompt = `# TASK : Plan complet du groupe "${groupKeyword}"
 ## ${allIssues.length} issues — COUVERTURE TOTALE OBLIGATOIRE
 
-${stackSections}${unassignedSection}
+${issueList}
 ${aiDagSection}${roadmapSection}
 ## OBJECTIF
 Produire un workflow ordonné couvrant la TOTALITÉ des ${allIssues.length} issues.
-1. Identifier les stacks logiques parmi toutes les issues
-2. Regrouper dans une même étape les issues pouvant être commitées ensemble (pas de conflit fichiers, domaine commun)
-3. Intégrer les issues "non assignées" dans les stacks existantes ou créer de nouvelles étapes
-4. Ordonner selon le DAG de dépendances
-**AUCUNE ISSUE NE PEUT RESTER SANS ÉTAPE**
+1. Regrouper dans une même étape les issues pouvant être commitées ensemble (domaine commun, pas de conflit fichiers)
+2. Intégrer toutes les issues dans une étape — **aucune ne peut rester sans étape**
+3. Ordonner selon le DAG de dépendances
 
 ## CONTRAINTES
 - NE PAS commiter, NE PAS pousser, NE PAS modifier de fichiers
 - Produire uniquement un plan textuel structuré
 
-## FORMAT DE SORTIE OBLIGATOIRE
+## ⚠️ FORMAT DE SORTIE OBLIGATOIRE
 
-Produire d'abord la section globale (index), puis les étapes détaillées entre marqueurs.
+**Les blocs \`[ETAPE:N]...[/ETAPE:N]\` sont OBLIGATOIRES. Sans eux, le plan ne peut pas être exploité.**
 
-### PLAN GLOBAL
+Produire d'abord une section globale (index des étapes), puis CHAQUE étape dans son bloc marqueur.
+
+### SECTION GLOBALE
 
 # Plan complet — groupe "${groupKeyword}"
 
 ## Vue d'ensemble
-(dépendances entre stacks, ordre d'implémentation recommandé, risques de conflits)
+(ordre d'implémentation recommandé, risques de conflits)
 
 ## Étapes
-1. [Étape 1 — #X, #Y (stack "kw")](./etape-1.md)
-2. [Étape 2 — #Z (stack "kw2")](./etape-2.md)
+1. Étape 1 — #X, #Y : titre court
+2. Étape 2 — #Z : titre court
 ...
 
 ---
 
-### ÉTAPES DÉTAILLÉES (une par étape, entre marqueurs [ETAPE:N]...[/ETAPE:N])
+### ÉTAPES DÉTAILLÉES — UN BLOC PAR ÉTAPE, OBLIGATOIRE
 
 [ETAPE:1]
 # Étape 1 — #X, #Y : titre
@@ -304,9 +307,6 @@ Produire d'abord la section globale (index), puis les étapes détaillées entre
 ## Issues
 - #X — titre
 - #Y — titre
-
-## ATLAS (symboles utiles)
-(fonctions / composants / stores impliqués)
 
 ## Commit suggéré
 \`type(scope): description (#X, #Y)\`
@@ -316,20 +316,17 @@ Produire d'abord la section globale (index), puis les étapes détaillées entre
 
 ## Plan d'implémentation
 ### #X — titre
-\`\`\`diff
-...
-\`\`\`
+(description des changements)
 ### #Y — titre
-\`\`\`diff
-...
-\`\`\`
+(description des changements)
 [/ETAPE:1]
 
 [ETAPE:2]
 ...
 [/ETAPE:2]
 
-**RÈGLE ABSOLUE** : Ces ${allIssues.length} issues doivent TOUTES apparaître dans une étape : ${allIssueNums}`;
+**RÈGLE ABSOLUE** : Ces ${allIssues.length} issues doivent TOUTES apparaître dans un bloc [ETAPE:N] : ${allIssueNums}
+**RÈGLE ABSOLUE** : Chaque étape DOIT être encadrée par \`[ETAPE:N]\` et \`[/ETAPE:N]\` — sans exception.`;
 
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
     const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";

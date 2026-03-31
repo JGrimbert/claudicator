@@ -301,12 +301,8 @@
         consoleTab.set("console");
 
         try {
-            const subs = group.subdivisions ?? [];
-            const subStacks = subs.length > 0
-                ? subs
-                : [{ keyword: group.keyword, issues: group.issues }];
-            const assignedInSubs = new Set(subStacks.flatMap(s => s.issues.map(i => i.number)));
-            const residualIssues = group.issues.filter(i => !assignedInSubs.has(i.number));
+            const subStacks = [{ keyword: group.keyword, issues: group.issues }];
+            const residualIssues: typeof group.issues = [];
             const r = await fetch("/api/issues/groups/stack-plan-full", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
