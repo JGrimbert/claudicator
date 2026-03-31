@@ -69,6 +69,15 @@ git -C $TARGET_PROJECT_PATH worktree remove /tmp/tdd-issue-<num> --force
 - **Succès** : chemin du patch généré + résumé (N tests ajoutés, 0 régressions)
 - **Échec** : rapport de blocage issu de `repair-loop` (cause, correctifs tentés, suggestion)
 
+### 7. Mettre à jour l'expérience des clusters
+
+Invoquer le skill `update-skill` en lui fournissant :
+- Le numéro de l'issue
+- Les fichiers modifiés (issus du commit dans le worktree)
+- Un résumé des difficultés rencontrées (pitfalls, patterns, leçons)
+
+Cette étape est **obligatoire**, même si aucune mise à jour n'est effectuée (le skill évalue lui-même la pertinence).
+
 ## Contraintes
 
 - NE JAMAIS modifier les fichiers source du dépôt principal

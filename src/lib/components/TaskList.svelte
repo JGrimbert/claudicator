@@ -225,13 +225,22 @@
         if (_patchPoll) { clearInterval(_patchPoll); _patchPoll = null; }
     }
 
-    // Démarre le polling quand un fullplan est sélectionné ET que l'agent tourne
+    // Démarre le polling quand un fullplan est actif — auto-sélection si nécessaire
     $effect(() => {
-        if (selected?.type === "fullplan" && $agentRunState.running) {
-            _startPatchPoll(selected.id);
-        } else {
+        if (!$agentRunState.running || !$agentRunState.taskId) {
             _stopPatchPoll();
+            return;
         }
+        // Trouver la task correspondant au plan en cours
+        const runningTask = tasks.find(t => t.fullPlanId === $agentRunState.taskId);
+        if (!runningTask) { _stopPatchPoll(); return; }
+
+        // Auto-sélectionner silencieusement pour activer le monitoring
+        if (selected?.id !== runningTask.id) {
+            selectTask(runningTask, true);
+            return; // selectTask va déclencher l'effect à nouveau avec selected mis à jour
+        }
+        _startPatchPoll(runningTask.id);
     });
 
     onDestroy(_stopPatchPoll);

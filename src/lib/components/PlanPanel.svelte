@@ -58,6 +58,7 @@
     $: if (activeTab === "skills") {
         if (!historyLoaded)  loadHistory();
         if (!clustersLoaded) loadClusters();
+        if (clusterSkillsList.length === 0) loadClusterSkills();
     }
 
     // ── Git history run ───────────────────────────────────────────────────────
@@ -321,6 +322,17 @@
         const next = new Set(expanded);
         if (next.has(dir)) next.delete(dir); else next.add(dir);
         expanded = next;
+    }
+
+    // ── Clusters actifs (.claude/commands/cluster-*.md) ───────────────────────
+    type ClusterSkill = { id: string; name: string; file: string };
+    let clusterSkillsList: ClusterSkill[] = [];
+
+    async function loadClusterSkills() {
+        try {
+            const res = await fetch("/api/skills/clusters");
+            if (res.ok) clusterSkillsList = await res.json();
+        } catch { /* silencieux */ }
     }
 
     // ── Skills générés ────────────────────────────────────────────────────────
@@ -911,6 +923,18 @@
                     </div>
                 {/each}
             {/if}
+            <!-- ── Clusters actifs ── -->
+            {#if clusterSkillsList.length > 0}
+                <div class="section-label section-label--cluster">CLUSTERS ACTIFS ({clusterSkillsList.length})</div>
+                <div class="skills-list">
+                    {#each clusterSkillsList as c}
+                        <div class="skill-row">
+                            <span class="skill-title">{c.id}</span>
+                            <span class="skill-badge skill-badge--cluster">cluster</span>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
             <!-- ── Générer ── -->
             <div class="skills-bar">
                 <button class="skills-gen-btn" onclick={generateSkills} disabled={skillsGenerating || skillCandidates.length === 0}>
@@ -1091,9 +1115,10 @@
     margin-top: 0.25rem;
 }
 .section-label:first-child { border-top: none; margin-top: 0; }
-.section-label--coal  { color: #3a7f8f; }
-.section-label--mixed { color: #7a5e1e; }
-.section-label--hist  { color: #7a4a7a; display: flex; align-items: center; gap: 0.5rem; }
+.section-label--coal    { color: #3a7f8f; }
+.section-label--mixed   { color: #7a5e1e; }
+.section-label--hist    { color: #7a4a7a; display: flex; align-items: center; gap: 0.5rem; }
+.section-label--cluster { color: #6a8f3a; }
 /* ── Clusters / arbo ── */
 .dir-row {
     border-bottom: 1px solid #111;
@@ -1532,6 +1557,7 @@
 .skill-badge--coal       { color: #3a7f8f; background: #040e10; }
 .skill-badge--historical { color: #7a4a7a; background: #100a14; }
 .skill-badge--commit     { color: #8f7a3a; background: #14100a; }
+.skill-badge--cluster    { color: #6a8f3a; background: #0c1404; }
 .skill-desc {
     font-size: 0.52rem;
     font-family: 'JetBrains Mono', monospace;

@@ -32,6 +32,10 @@
     let stepContent = $state("");
     let stepLoading = $state(false);
 
+    // Comptage des patches existants
+    let patchCount = $state(0);
+    let totalIssues = $derived(stepFiles.reduce((s, sf) => s + sf.issues.length, 0));
+
     // DAG
     let dagLevels = $state<{ level: number; issues: number[]; stacks: string[] }[]>([]);
     let dagRunning = $state(false);
@@ -97,6 +101,13 @@
                 .then(r => r.ok ? r.json() : null)
                 .then(data => { if (data?.stepFiles?.length) stepFiles = data.stepFiles; })
                 .catch(() => {});
+            // Compter les patches existants
+            if (plan.taskId) {
+                fetch(`/api/tasks/${plan.taskId}/patches`)
+                    .then(r => r.ok ? r.json() : [])
+                    .then((ps: { name: string }[]) => { patchCount = ps.filter(p => p.name.endsWith(".patch")).length; })
+                    .catch(() => {});
+            }
         }
     });
 
@@ -299,33 +310,56 @@
         }
     }
 
-    async function launchImpl(stackKeyword?: string) {
+    let resetting = $state(false);
+
+    async function launchImpl(stackKeyword?: string, reset = false) {
         if (!plan.id) return;
-        if (stackKeyword ? launchingStack === stackKeyword : launching) return;
-        if (stackKeyword) launchingStack = stackKeyword; else launching = true;
+        if (reset) { if (resetting) return; resetting = true; }
+        else if (stackKeyword ? launchingStack === stackKeyword : launching) return;
+        if (!reset) { if (stackKeyword) launchingStack = stackKeyword; else launching = true; }
         agentRunState.update(s => ({
             ...s,
             taskId: plan.id,
-            taskTitle: stackKeyword ? `Implémentation — ${plan.keyword} / ${stackKeyword}` : `Implémentation — ${plan.keyword}`,
+            taskTitle: reset
+                ? `⟳ Réimplémentation — ${plan.keyword}`
+                : stackKeyword ? `Implémentation — ${plan.keyword} / ${stackKeyword}` : `Implémentation — ${plan.keyword}`,
             logs: [],
             running: true,
             sessionAlive: false,
         }));
+        consoleTab.set("console");
         try {
-            const body = stackKeyword ? JSON.stringify({ stackKeyword }) : undefined;
+            const bodyObj: Record<string, unknown> = {};
+            if (stackKeyword) bodyObj.stackKeyword = stackKeyword;
+            if (reset) bodyObj.reset = true;
             const res = await fetch(`/api/issues/groups/full-plans/${plan.id}/run`, {
                 method: "POST",
-                headers: body ? { "Content-Type": "application/json" } : {},
-                body,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(bodyObj),
             });
-            await startConsoleStream(res, { onDone: () => { if (stackKeyword) launchingStack = null; else launching = false; } });
+            await startConsoleStream(res, {
+                onDone: () => {
+                    if (reset) { resetting = false; patchCount = 0; }
+                    else if (stackKeyword) launchingStack = null;
+                    else launching = false;
+                    // Rafraîchir le comptage patches après la fin du run
+                    if (plan.taskId) {
+                        fetch(`/api/tasks/${plan.taskId}/patches`)
+                            .then(r => r.ok ? r.json() : [])
+                            .then((ps: { name: string }[]) => { patchCount = ps.filter(p => p.name.endsWith(".patch")).length; })
+                            .catch(() => {});
+                    }
+                }
+            });
         } catch (e: any) {
             agentRunState.update(s => ({
                 ...s,
                 running: false,
                 logs: [...s.logs, { line: `[erreur] ${e.message}`, type: "system" }],
             }));
-            if (stackKeyword) launchingStack = null; else launching = false;
+            if (reset) resetting = false;
+            else if (stackKeyword) launchingStack = null;
+            else launching = false;
         }
     }
 </script>
@@ -428,7 +462,24 @@
                     </div>
                     <div class="fp-actions-sep"></div>
                 {/if}
-                <JgrCta label="Lancer tout" pending={launching} onclick={() => launchImpl()} />
+                <div class="fp-run-row">
+                    <JgrCta
+                        label={patchCount > 0
+                            ? `▶ Reprendre — ${patchCount} patch${patchCount > 1 ? "s" : ""} / ${stepFiles.length || "?"} étapes`
+                            : "▶ Implémenter"}
+                        pending={launching}
+                        onclick={() => launchImpl()}
+                    />
+                    <button
+                        class="fp-reset-btn"
+                        onclick={() => launchImpl(undefined, true)}
+                        disabled={resetting || launching || launchingStack !== null}
+                        title="Vider tous les patches, réinitialiser le worktree et tout réimplémenter depuis zéro"
+                    >{resetting ? "…" : patchCount > 0
+                        ? `⟳ Repartir de zéro — efface ${patchCount} patch${patchCount > 1 ? "s" : ""}`
+                        : `⟳ Implémenter (${stepFiles.length || totalIssues} étapes)`
+                    }</button>
+                </div>
                 {#if residualCount > 0 && !stepFiles.length}
                     <button
                         class="fp-newcycle-btn"
@@ -617,6 +668,29 @@
     .fp-actions-sep {
         height: 1px;
         background: var(--color-border, #333);
+    }
+    .fp-run-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .fp-reset-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #7c3aed;
+        background: transparent;
+        color: #a78bfa;
+        white-space: nowrap;
+    }
+    .fp-reset-btn:hover:not(:disabled) {
+        background: rgba(124, 58, 237, 0.15);
+    }
+    .fp-reset-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     .fp-newcycle-btn {
         align-self: flex-start;
