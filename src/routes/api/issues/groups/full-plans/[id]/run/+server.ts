@@ -199,8 +199,25 @@ Avant d'implémenter une étape :
 
 ` : "\n\n";
 
+    const stepCount = plan.stepFiles?.length ?? 0;
+    const strictStepRule = patchesDir ? `
+## ⚠️ CONTRAINTE ABSOLUE — UN PATCH PAR ÉTAPE
+
+Tu dois traiter chaque étape **séquentiellement**, une par une, dans l'ordre.
+**INTERDIT** de regrouper plusieurs étapes dans un seul commit ou patch.
+
+Pour chaque étape (${stepCount > 0 ? `il y en a **${stepCount}** au total` : "voir plan ci-dessous"}) :
+1. Fais le cycle TDD complet (RED → GREEN)
+2. Commit dans le worktree
+3. Génère le patch immédiatement **avant de passer à l'étape suivante**
+
+Le résultat final doit être exactement **${stepCount > 0 ? stepCount : "N"} patches** dans \`${patchesDir}\`.
+Un seul grand patch regroupant tout est un **échec**.
+
+` : "";
+
     const prompt = `# IMPLÉMENTATION : plan groupe "${plan.keyword}"
-${atlasInstruction}${planContent.trim()}${atlasSection}${workflowInstruction}`;
+${strictStepRule}${atlasInstruction}${planContent.trim()}${atlasSection}${workflowInstruction}`;
 
     const { ANTHROPIC_API_KEY: _k, CLAUDECODE: _cc, ...cleanEnv } = process.env as Record<string, string | undefined>;
     const claudeCmd = process.platform === "win32" ? "claude.cmd" : "claude";
