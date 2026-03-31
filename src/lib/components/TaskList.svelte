@@ -704,7 +704,12 @@
             : tasks.filter(t => taskToFilter(t) === filter);
         return base.slice().sort((a, b) => pos(a.issueNumber) - pos(b.issueNumber));
     })());
-    let fuse = $derived(new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 }));
+        // #40 : en mode 'all', Fuse cherche sur title + status dans toutes les tasks
+    let fuse = $derived(
+        searchScope === "all"
+            ? new Fuse(tasks, { keys: ['title', 'status'], threshold: 0.4 })
+            : new Fuse(statusFiltered, { keys: ['title'], threshold: 0.4 })
+    );
     let filtered = $derived(filterQuery.trim()
         ? fuse.search(filterQuery).map(r => r.item)
         : statusFiltered);
