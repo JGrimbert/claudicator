@@ -3,26 +3,8 @@
  * Ce module ne doit contenir que de la logique pure (sans DOM ni stores Svelte).
  */
 
-export type TaskStatus = "specification" | "planification" | "implementation" | "documentation" | "validation" | "merged" | "failed";
-export type TaskType = "standard" | "fullplan";
-export type Filter = "specification" | "implementation" | "validation" | "merged";
-
-export type Task = {
-    id: string;
-    title: string;
-    status: TaskStatus;
-    type?: TaskType;
-    fullPlanId?: string;
-    issueNumber?: number;
-    branch?: string;
-    pushed?: boolean;
-    logs: string[];
-    hasPlan?: boolean;
-    hasPatch?: boolean;
-    atlasEnabled?: boolean;
-    createdAt: string;
-    updatedAt: string;
-};
+// Re-export des types canoniques depuis task.ts (source de vérité unique)
+export type { TaskStatus, TaskType, Filter, Task } from "../types/task";
 
 // issue #36 - type PlanGroup (correspond au type du store agent)
 export type PlanGroup = {

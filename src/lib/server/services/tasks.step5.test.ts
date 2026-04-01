@@ -27,10 +27,11 @@ describe("Issue #72 — surbrillance de la tâche en cours d'exécution", () => 
     });
 });
 
-describe("Issue #246 — DAG des issues visible dans TaskList", () => {
-    it("le composant TaskList contient taskDag comme état réactif", () => {
+describe("Issue #246 — DAG des issues visible dans le panel de détail", () => {
+    it("TaskDetail contient taskDag comme état réactif", () => {
+        // taskDag est dans TaskDetail.svelte (panel de détail)
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // taskDag doit être un $state
@@ -38,9 +39,9 @@ describe("Issue #246 — DAG des issues visible dans TaskList", () => {
         expect(content).toContain("$state");
     });
 
-    it("le composant affiche les nœuds du DAG quand taskDag est défini", () => {
+    it("TaskDetail affiche les nœuds du DAG quand taskDag est défini", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // Le DAG doit s'afficher conditionnellement
@@ -49,9 +50,9 @@ describe("Issue #246 — DAG des issues visible dans TaskList", () => {
         expect(content).toContain("task-dag");
     });
 
-    it("le composant charge le DAG via l'endpoint eval-dag", () => {
+    it("TaskDetail charge le DAG via l'endpoint eval-dag", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // L'endpoint eval-dag doit être appelé pour charger le DAG

@@ -82,8 +82,9 @@ describe("Issue #178 — selectTask met à jour la sélection et scroll", () => 
     });
 
     it("sendCentralInput passe le taskId dans le body de la requête", () => {
+        // sendCentralInput est dans TaskDetail.svelte (panel de détail)
         const componentPath = path.resolve(
-            "src/lib/components/TaskList.svelte"
+            "src/lib/components/TaskDetail.svelte"
         );
         const content = fs.readFileSync(componentPath, "utf-8");
         // La fonction sendCentralInput prend taskId en paramètre
