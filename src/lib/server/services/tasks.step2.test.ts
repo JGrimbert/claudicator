@@ -12,18 +12,19 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 
 describe("Issue #18 — justFinished activé 3s après complétion d'une tâche", () => {
-    it("le composant TaskList contient la variable justFinished avec $state", () => {
+    it("TaskDetail contient la variable justFinished avec $state", () => {
+        // justFinished est dans TaskDetail.svelte (panel de détail)
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // justFinished doit être un $state réactif
         expect(content).toContain("justFinished = $state(false)");
     });
 
-    it("le composant TaskList contient un $effect qui surveille le statut pour justFinished", () => {
+    it("TaskDetail contient un $effect qui surveille le statut pour justFinished", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // Un $effect doit surveiller selected?.status et setter justFinished
@@ -31,9 +32,9 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
         expect(content).toContain("justFinished = true");
     });
 
-    it("le composant TaskList utilise setTimeout de 3000ms pour réinitialiser justFinished", () => {
+    it("TaskDetail utilise setTimeout de 3000ms pour réinitialiser justFinished", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
         // Le timer de 3s doit être présent
@@ -44,7 +45,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
 });
 
 describe("Issue #132 — loadTasksSilent déclenché après justFinished", () => {
-    it("le composant appelle loadTasksSilent dans le contexte de justFinished", () => {
+    it("TaskList appelle loadTasksSilent (défini dans TaskList)", () => {
         const content = fs.readFileSync(
             "src/lib/components/TaskList.svelte",
             "utf-8"
@@ -53,22 +54,14 @@ describe("Issue #132 — loadTasksSilent déclenché après justFinished", () =>
         expect(content).toContain("loadTasksSilent");
     });
 
-    it("le $effect sur justFinished appelle loadTasksSilent quand la tâche vient de finir", () => {
+    it("TaskDetail appelle onloadtaskssilent quand la tâche vient de finir", () => {
+        // Dans TaskDetail, loadTasksSilent est accessible via la prop onloadtaskssilent
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/TaskDetail.svelte",
             "utf-8"
         );
-        // Vérifier que justFinished et loadTasksSilent apparaissent dans le même $effect
-        // On cherche le pattern : $effect avec justFinished = true suivi de loadTasksSilent
-        const effectSection = content.match(/\$effect\([^)]*=>[^{]*\{[^}]*justFinished\s*=\s*true[^}]*\}/s);
-        if (!effectSection) {
-            // Cherche une variante : $effect avec une fonction qui contient les deux
-            const hasEffect = content.includes("$effect(");
-            const hasJustFinished = content.includes("justFinished = true");
-            const hasLoadTasks = content.includes("loadTasksSilent");
-            expect(hasEffect && hasJustFinished && hasLoadTasks).toBe(true);
-        } else {
-            expect(effectSection[0]).toBeTruthy();
-        }
+        const hasJustFinished = content.includes("justFinished = true");
+        const hasLoadTasks = content.includes("onloadtaskssilent");
+        expect(hasJustFinished && hasLoadTasks).toBe(true);
     });
 });

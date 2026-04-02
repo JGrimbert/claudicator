@@ -584,7 +584,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
 }
@@ -661,6 +661,7 @@
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.4;
+    padding: 0.5rem 1rem 0;
 }
 .body-text {
     color: var(--text-secondary);
@@ -670,10 +671,11 @@
     word-break: break-word;
     line-height: 1.6;
     margin: 0;
+    padding: 0 1rem;
 }
 .sub-issues {
     border-top: 1px solid var(--border);
-    padding-top: 0.75rem;
+    padding: 0.75rem 1rem 0;
 }
 .sub-label {
     font-size: 0.68rem;
@@ -742,7 +744,8 @@ ul { list-style: none; padding: 0; margin: 0; }
     line-height: 1.4;
     width: 100%;
     resize: none;
-    padding: 0;
+    padding: 0.5rem 1rem;
+    box-sizing: border-box;
 }
 .edit-inline--body {
     font-size: 0.78rem;
@@ -752,11 +755,11 @@ ul { list-style: none; padding: 0; margin: 0; }
     min-height: 10rem;
     resize: vertical;
     transition: background 0.15s;
+    padding: 0.5rem 1rem;
 }
 .edit-inline--body:focus {
     background: rgba(0, 0, 0, 0.35);
     border-radius: 4px;
-    padding: 0.5rem;
 }
 .issue-title, .body-text { cursor: text; }
 .issue-title:hover, .body-text:hover {
@@ -778,6 +781,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 .blink {
     color: #555;
     animation: blink 1.2s step-start infinite;
+    padding: 1rem;
 }
 @keyframes blink {
     50% { opacity: 0.3; }
