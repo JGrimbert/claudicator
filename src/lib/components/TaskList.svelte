@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, activeFullPlan, issueGroupsCache } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, doneTasksByIssue, activeFullPlan, issueGroupsCache } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import { taskToFilter, getInitialConsoleTab } from './TaskList.helpers';
     import { taskStore } from "$lib/domain/TaskStore.svelte.ts";
@@ -89,6 +89,8 @@
             const res = await fetch("/api/tasks");
             taskStore.tasks = await res.json();
             taskIssueNumbers.set(new Set(taskStore.tasks.filter(t => t.issueNumber).map(t => t.issueNumber!)));
+            const DONE = new Set(["merged", "validation", "documentation"]);
+            doneTasksByIssue.set(new Map(taskStore.tasks.filter(t => t.issueNumber && DONE.has(t.status)).map(t => [t.issueNumber!, t.id])));
             if (selected) {
                 const prev = selected.status;
                 selected = taskStore.tasks.find(t => t.id === selected!.id) ?? null;
@@ -110,6 +112,8 @@
             if (!Array.isArray(fresh)) return;
             taskStore.tasks = fresh;
             taskIssueNumbers.set(new Set(taskStore.tasks.filter(t => t.issueNumber).map(t => t.issueNumber!)));
+            const DONE = new Set(["merged", "validation", "documentation"]);
+            doneTasksByIssue.set(new Map(taskStore.tasks.filter(t => t.issueNumber && DONE.has(t.status)).map(t => [t.issueNumber!, t.id])));
             if (selected) {
                 const prev = selected.status;
                 selected = taskStore.tasks.find(t => t.id === selected!.id) ?? null;

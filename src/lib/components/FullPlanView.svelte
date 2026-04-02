@@ -312,6 +312,26 @@
 
     let resetting = $state(false);
 
+    // Fermeture des issues
+    let closingIssues = $state(false);
+    let closeResult = $state<{ closed: number; total: number } | null>(null);
+
+    async function closeAllIssues() {
+        if (closingIssues || !plan.id) return;
+        closingIssues = true;
+        closeResult = null;
+        try {
+            const res = await fetch(`/api/issues/groups/full-plans/${plan.id}/close-issues`, { method: "POST" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            closeResult = { closed: data.closed, total: data.total };
+        } catch {
+            closeResult = null;
+        } finally {
+            closingIssues = false;
+        }
+    }
+
     async function launchImpl(stackKeyword?: string, reset = false) {
         if (!plan.id) return;
         if (reset) { if (resetting) return; resetting = true; }
@@ -479,6 +499,23 @@
                         ? `⟳ Repartir de zéro — efface ${patchCount} patch${patchCount > 1 ? "s" : ""}`
                         : `⟳ Implémenter (${stepFiles.length || totalIssues} étapes)`
                     }</button>
+                </div>
+                <div class="fp-actions-sep"></div>
+                <div class="fp-close-row">
+                    <button
+                        class="fp-close-issues-btn"
+                        onclick={closeAllIssues}
+                        disabled={closingIssues || launching || launchingStack !== null}
+                        title="Ferme toutes les issues GitHub liées à ce fullplan"
+                    >
+                        {#if closingIssues}
+                            …
+                        {:else if closeResult}
+                            ✓ {closeResult.closed}/{closeResult.total} issues fermées
+                        {:else}
+                            ✕ Fermer toutes les issues
+                        {/if}
+                    </button>
                 </div>
                 {#if residualCount > 0 && !stepFiles.length}
                     <button
@@ -845,6 +882,28 @@
         font-family: monospace;
         font-size: 10px;
         color: var(--color-text-muted, #888);
+    }
+    .fp-close-row {
+        display: flex;
+        align-items: center;
+    }
+    .fp-close-issues-btn {
+        align-self: flex-start;
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px dashed #7f1d1d;
+        background: transparent;
+        color: #f87171;
+    }
+    .fp-close-issues-btn:hover:not(:disabled) {
+        border-color: #dc2626;
+        background: rgba(220, 38, 38, 0.1);
+    }
+    .fp-close-issues-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     .fp-edit-wrap {
         display: flex;

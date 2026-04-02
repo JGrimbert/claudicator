@@ -150,12 +150,50 @@ Tu travailles dans le worktree isolé : \`${worktreePath}\`
 
 **ÉTAPE N** couvre les issues indiquées dans le plan.
 
-#### 1. RED — Écrire les tests (OBLIGATOIRE avant tout code de production)
+#### 0. VÉRIFICATION PRÉALABLE — Détecter les ambiguïtés
+
+Avant d'écrire quoi que ce soit, inspecte le code existant dans ce worktree :
+- Le comportement décrit dans le plan est-il **déjà présent** dans les fichiers ?
+- Le code à supprimer a-t-il **déjà été supprimé** ?
+- Une implémentation partielle ou différente existe-t-elle ?
+
+**Si l'étape est déjà entièrement implémentée** → passe directement au protocole DÉJÀ FAIT ci-dessous.
+**Si l'étape est partiellement faite** → note ce qui manque, implémente uniquement le delta.
+**Si l'étape est absente** → cycle TDD normal.
+
+---
+
+#### PROTOCOLE DÉJÀ FAIT
+
+Si le code visé par l'étape est déjà en place :
+
+1. Écris un test de non-régression minimal qui **vérifie** le comportement attendu
+\`\`\`bash
+npm test -- <fichier.test.ts>
+\`\`\`
+→ Le test **doit passer** (c'est normal — le code est déjà là).
+
+2. Commit avec le préfixe \`chore(already-done)\` :
+\`\`\`bash
+git -C "${worktreePath}" add -A
+git -C "${worktreePath}" commit -m "chore(already-done): #N déjà implémenté — test de non-régression"
+\`\`\`
+
+3. Génère le patch normalement :
+\`\`\`bash
+git -C "${worktreePath}" format-patch HEAD~1 --stdout > "${patchesDir}/issue-N[-M].patch"
+\`\`\`
+
+4. Passe à l'étape suivante. **N'essaie pas de réécrire ce qui fonctionne déjà.**
+
+---
+
+#### 1. RED — Écrire les tests (cycle normal uniquement)
 \`\`\`bash
 # Crée les *.test.ts pour les issues de l'étape
 npm test -- <fichier.test.ts>
 \`\`\`
-→ Le test **DOIT échouer**. S'il passe déjà → il ne teste rien, réécris-le.
+→ Le test **DOIT échouer**. S'il passe immédiatement, applique le **PROTOCOLE DÉJÀ FAIT** — ne réécris pas le test pour forcer un échec artificiel.
 → NE PASSE PAS à l'étape GREEN tant que le RED n'est pas confirmé.
 
 #### 2. GREEN — Implémenter
@@ -182,7 +220,7 @@ Exemple pour une étape couvrant #132 et #18 : \`issue-132-18.patch\`
 ### RÈGLES ABSOLUES
 - Un commit = une étape du plan (peut couvrir plusieurs issues)
 - Un patch = un commit, nommé avec TOUS les numéros d'issues de l'étape
-- Le RED doit être confirmé avant d'écrire le code de production — sans exception
+- Ne jamais forcer un RED artificiel si le code est déjà correct — utiliser le PROTOCOLE DÉJÀ FAIT
 - Si aucun test unitaire n'est pertinent (pur CSS, config), rédige un test minimal et explique pourquoi
 - Chaque étape s'appuie sur les commits précédents dans ce worktree` : "";
 

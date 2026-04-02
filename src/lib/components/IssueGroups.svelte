@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, evalIssueDagsByKeyword, planPanelActiveTab, issueGroupsCache, taskIssueNumbers } from "$lib/stores/agent";
+    import { agentState, agentRunState, startConsoleStream, consoleTab, activeFullPlan, evalIssueDag, evalIssueDagsByKeyword, planPanelActiveTab, issueGroupsCache, taskIssueNumbers, doneTasksByIssue } from "$lib/stores/agent";
     import { get } from "svelte/store";
     import type { RoadmapData, RoadmapStep } from "jgr-ui";
 
@@ -286,7 +286,18 @@
 
     async function planFullStack(group: IssueGroup) {
         const key = group.keyword;
-        fullStackState = { ...fullStackState, [key]: { planning: true, feedback: "" } };
+
+        // Filtrer les issues déjà effectuées avant de lancer le plan
+        const done = get(doneTasksByIssue);
+        const pendingIssues = group.issues.filter(i => !done.has(i.number));
+        const skippedCount = group.issues.length - pendingIssues.length;
+
+        if (pendingIssues.length === 0) {
+            fullStackState = { ...fullStackState, [key]: { planning: false, feedback: `✓ Toutes les issues sont déjà effectuées (${skippedCount} ignorées)` } };
+            return;
+        }
+
+        fullStackState = { ...fullStackState, [key]: { planning: true, feedback: skippedCount > 0 ? `${skippedCount} issue(s) déjà effectuée(s) ignorée(s)` : "" } };
 
         // Initialiser le store global en mode génération
         activeFullPlan.set({ id: "", keyword: group.keyword, status: "generating" });
@@ -296,12 +307,12 @@
             running: true,
             logs: [],
             taskId: null,
-            taskTitle: `Plan complet — ${group.keyword}`,
+            taskTitle: `Plan complet — ${group.keyword}${skippedCount > 0 ? ` (${pendingIssues.length}/${group.issues.length} issues)` : ""}`,
         }));
         consoleTab.set("console");
 
         try {
-            const subStacks = [{ keyword: group.keyword, issues: group.issues }];
+            const subStacks = [{ keyword: group.keyword, issues: pendingIssues }];
             const residualIssues: typeof group.issues = [];
             const r = await fetch("/api/issues/groups/stack-plan-full", {
                 method: "POST",
@@ -333,6 +344,25 @@
             agentRunState.update(s => ({ ...s, running: false }));
             activeFullPlan.update(s => s ? { ...s, status: "error" } : s);
             fullStackState = { ...fullStackState, [key]: { planning: false, feedback: e instanceof Error ? e.message : String(e) } };
+        }
+    }
+
+    let deletingDone: Record<string, boolean> = $state({});
+
+    async function deleteDoneIssues(group: IssueGroup) {
+        const taskIds = group.issues
+            .map(i => $doneTasksByIssue.get(i.number))
+            .filter((id): id is string => id !== undefined);
+        if (taskIds.length === 0) return;
+        deletingDone = { ...deletingDone, [group.keyword]: true };
+        try {
+            await Promise.all(taskIds.map(id => fetch(`/api/tasks/${id}`, { method: "DELETE" })));
+            // Mettre à jour le store localement
+            const updated = new Map($doneTasksByIssue);
+            for (const issue of group.issues) updated.delete(issue.number);
+            doneTasksByIssue.set(updated);
+        } finally {
+            deletingDone = { ...deletingDone, [group.keyword]: false };
         }
     }
 
@@ -414,6 +444,7 @@
                 {@const haiku = haikus[group.keyword]}
                 {@const twinNums = new Set((group.twins ?? []).flat())}
                 {@const ev = evalState[group.keyword]}
+                {@const doneCount = group.issues.filter(i => $doneTasksByIssue.has(i.number)).length}
                 <div
                     class="group-card"
                     class:has-parent={group.hasParent}
@@ -444,12 +475,15 @@
 
                     <ul class="group-issues">
                         {#each group.issues as issue}
-                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)} class:has-task={$taskIssueNumbers.has(issue.number)}>
+                            {@const isDone = $doneTasksByIssue.has(issue.number)}
+                            <li class="group-issue" class:is-twin={twinNums.has(issue.number)} class:has-task={$taskIssueNumbers.has(issue.number)} class:is-done={isDone}>
                                 <button class="issue-num" onclick={() => openIssue(issue.number)}>
                                     #{issue.number}
                                 </button>
                                 <span class="issue-title">{issue.title}</span>
-                                {#if twinNums.has(issue.number)}
+                                {#if isDone}
+                                    <span class="done-badge" title="Task déjà effectuée">✓</span>
+                                {:else if twinNums.has(issue.number)}
                                     <span class="twin-badge" title="Sujet identique">⇔</span>
                                 {/if}
                             </li>
@@ -480,6 +514,15 @@
                             disabled={ev?.loading}
                             title="Évaluer la complexité du groupe avant de générer un fullPlan"
                         >{ev?.loading ? "…" : "🔍"}</button>
+
+                        {#if doneCount > 0}
+                            <button
+                                class="btn-purge-done"
+                                onclick={() => deleteDoneIssues(group)}
+                                disabled={deletingDone[group.keyword]}
+                                title="Supprimer les tasks déjà effectuées ({doneCount} issue{doneCount > 1 ? 's' : ''})"
+                            >{deletingDone[group.keyword] ? "…" : `🗑 ${doneCount} effectuée${doneCount > 1 ? 's' : ''}`}</button>
+                        {/if}
 
                         <button
                             class="btn-full-plan"
@@ -807,6 +850,7 @@
 }
 .group-issue.is-twin { background: #0a0a18; border-radius: 2px; }
 .group-issue.has-task { background: rgba(59, 130, 246, 0.06); border-left: 2px solid #3b82f6; padding-left: calc(0.6rem - 2px); }
+.group-issue.is-done { background: rgba(34, 197, 94, 0.06); border-left: 2px solid #22c55e; padding-left: calc(0.6rem - 2px); opacity: 0.7; }
 
 /* issue-num cliquable */
 .issue-num {
@@ -832,6 +876,7 @@
 
 /* Jumeaux */
 .twin-badge { font-size: 0.55rem; color: #6a5a9a; margin-left: auto; }
+.done-badge { font-size: 0.6rem; color: #22c55e; margin-left: auto; font-weight: 700; }
 
 /* ── Stack boxes (subdivisions) ── */
 .stack-group {
@@ -934,6 +979,19 @@
     gap: 0.4rem;
     margin-top: 0.2rem;
 }
+.btn-purge-done {
+    background: #1a0a08;
+    border: 1px solid #7f1d1d;
+    color: #f87171;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-purge-done:hover:not(:disabled) { background: #2a1010; color: #fca5a5; }
+.btn-purge-done:disabled { opacity: 0.5; cursor: default; }
+
 .btn-full-plan {
     background: #0a1020;
     border: 1px solid #2a3a6a;

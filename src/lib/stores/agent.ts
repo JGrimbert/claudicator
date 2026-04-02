@@ -191,6 +191,8 @@ export const issueGroupsCache = writable<IssueGroupsSnapshot | null>(null);
 
 export const hoveredIssueNumber = writable<number | null>(null);
 export const taskIssueNumbers  = writable<Set<number>>(new Set());
+/** Map issueNumber → taskId pour les tasks avec statut final (merged, validation, documentation) */
+export const doneTasksByIssue  = writable<Map<number, string>>(new Map());
 export const todoIssueNumbers  = writable<Set<number>>(new Set());
 export const issueListNumbers  = writable<Set<number>>(new Set());
 

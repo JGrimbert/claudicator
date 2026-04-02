@@ -10,10 +10,10 @@ Ces symboles ont été identifiés comme pertinents pour le groupe :
 | `listTasks` | `src/lib/server/services/tasks.ts` | `listTasks()` |
 | `deleteTask` | `src/lib/server/services/tasks.ts` | `deleteTask(id)` |
 | `getTask` | `src/lib/server/services/tasks.ts` | `getTask(id)` |
+| `/api/tasks/[id]/commit-all-patches` | `src/routes/api/tasks/[id]/commit-all-patches/+server.ts` | `POST` — POST /api/tasks/[id]/commit-all-patches Pour chaque patch : git apply → git add  |
 | `/api/tasks/[id]/plan` | `src/routes/api/tasks/[id]/plan/+server.ts` | `GET, POST, PUT` — Tâches — lit le plan de la tâche depuis le disque (GET) ou le sauvegarde (POST) |
 | `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
-| `/api/tasks/[id]/commit` | `src/routes/api/tasks/[id]/commit/+server.ts` | `POST` — Tâches — commite les changements sur la branche de la tâche (POST) |
-| `TaskList` | `src/lib/components/TaskList.svelte` | `taskToFilter, markTaskImplemented, resetTask, taskPrefix, loadTasks, loadTasksSilent, selectTask, sendCentralInput, closeFullPlanIssues, skipPlan, loadPlan, repromptIssue, repromptAllStale, selectIssueRow, loadLinkedIssueState, closeLinkedIssue, writeTests, runTests, createBranchAndShowDiff, loadDiff, btnVariant` — composant UI |
+| `TaskDetail` | `src/lib/components/TaskDetail.svelte` | `loadLinkedIssueState, writeTests, runTests, initTask, resetTask, markTaskImplemented, loadDiff, createBranchAndShowDiff, loadPlan, closeFullPlanIssues, skipPlan, btnVariant, closeLinkedIssue, sendCentralInput, repromptIssue, repromptAllStale, selectIssueRow` — composant UI |
 | `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks, openIssue, loadRoadmaps, onRoadmapChange, createNewRoadmap, parseGroups` — composant UI |
 
 ---
