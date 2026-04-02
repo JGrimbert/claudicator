@@ -954,7 +954,7 @@ function btnVariant(idx: number): "active" | "secondary" | "disabled" {
         <span class="wf-arrow">›</span>
         <button class="wf-btn" class:wf-active={btnVariant(2) === "active"} class:wf-disabled={btnVariant(2) !== "active"} disabled={btnVariant(2) !== "active" || branchCreating} onclick={() => task.branch ? (selectedPanel = "commit") : createBranchAndShowDiff(task)}>{branchCreating ? "Création…" : "Commiter"}</button>
         <span class="wf-arrow">›</span>
-        <button class="wf-btn" class:wf-active={btnVariant(3) === "active"} class:wf-disabled={btnVariant(3) !== "active"} disabled={btnVariant(3) !== "active"} onclick={() => selectedPanel = "push">Push</button>
+        <button class="wf-btn" class:wf-active={btnVariant(3) === "active"} class:wf-secondary={btnVariant(3) === "secondary" || (!!task.branch && btnVariant(3) === "disabled")} class:wf-disabled={!task.branch} disabled={!task.branch} onclick={() => { selectedPanel = "push"; if (task.branch) loadCommitsAhead(task.id); }}>Push</button>
         <span class="wf-arrow">›</span>
         <button class="wf-btn wf-disabled" disabled>Merge</button>
     </div>

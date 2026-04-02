@@ -45,9 +45,8 @@ export async function POST({ params }) {
         const targetPlanPath = path.join(plansDir, planFileName);
         fs.writeFileSync(targetPlanPath, planContent, "utf-8");
 
-        // 3. Commiter le plan
+        // 3. Stager le plan (pas de commit automatique — l'utilisateur commite depuis le panel)
         await git.add([path.join("plans", planFileName)]);
-        await git.commit(`plan: #${task.issueNumber ?? ""} ${task.title.slice(0, 60)}`);
 
         // 4. Commenter l'issue GitHub
         if (task.issueNumber) {
