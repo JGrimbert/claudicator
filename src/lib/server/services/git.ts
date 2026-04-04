@@ -65,7 +65,9 @@ export async function getBranchState(root: string, branch: string): Promise<{ pu
     const pushed = remote.all.some(b => b.trim() === `origin/${branch}`);
     const main = await getMainBranch(root);
     const mergedResult = await g.branch(["--merged", main]);
-    const merged = mergedResult.all.map(b => b.trim()).includes(branch);
+    // Une branche nouvellement créée sans commit est au même point que main →
+    // git branch --merged la listera à tort. On exige d'abord qu'elle soit pushée.
+    const merged = pushed && mergedResult.all.map(b => b.trim()).includes(branch);
     return { pushed, merged };
 }
 

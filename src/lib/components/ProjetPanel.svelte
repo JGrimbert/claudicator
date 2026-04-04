@@ -281,7 +281,6 @@
                 ? String($agentState.issue.number)
                 : undefined,
             cta: { label: "+ Issue", onclick: openCreate },
-            pending: $issueListPendingNumber !== null,
             loading: issuesLoading,
             empty: "Aucune issue ouverte",
         },

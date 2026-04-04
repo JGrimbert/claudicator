@@ -1,63 +1,46 @@
 # Atlas — Claudicator
-_Généré pour le groupe : task (13 issues)_
+_Généré pour : Issue #306 — spinner creation issue_
 
-## Points d'entrée — task
+## Points d'entrée (issue #306)
 
-Ces symboles ont été identifiés comme pertinents pour le groupe :
+Ces symboles ont été identifiés comme pertinents :
 
 | Symbole | Fichier | Signature |
 |---|---|---|
-| `listTasks` | `src/lib/server/services/tasks.ts` | `listTasks()` |
-| `deleteTask` | `src/lib/server/services/tasks.ts` | `deleteTask(id)` |
-| `getTask` | `src/lib/server/services/tasks.ts` | `getTask(id)` |
-| `/api/tasks/[id]/commit-all-patches` | `src/routes/api/tasks/[id]/commit-all-patches/+server.ts` | `POST` — POST /api/tasks/[id]/commit-all-patches Pour chaque patch : git apply → git add  |
-| `/api/tasks/[id]/plan` | `src/routes/api/tasks/[id]/plan/+server.ts` | `GET, POST, PUT` — Tâches — lit le plan de la tâche depuis le disque (GET) ou le sauvegarde (POST) |
-| `/api/tasks` | `src/routes/api/tasks/+server.ts` | `GET, POST` — Tâches — liste toutes les tâches ou en crée une (GET, POST) |
-| `TaskDetail` | `src/lib/components/TaskDetail.svelte` | `loadLinkedIssueState, writeTests, runTests, initTask, resetTask, markTaskImplemented, loadDiff, createBranchAndShowDiff, loadPlan, closeFullPlanIssues, skipPlan, btnVariant, closeLinkedIssue, sendCentralInput, repromptIssue, repromptAllStale, selectIssueRow` — composant UI |
-| `IssueAnalysis` | `src/lib/components/IssueAnalysis.svelte` | `loadTaskStatuses, createTasks, planTasks, openIssue, loadRoadmaps, onRoadmapChange, createNewRoadmap, parseGroups` — composant UI |
+| `getIssue` | `src/lib/server/services/github.ts` | `getIssue(owner, repo, number)` |
+| `closeIssue` | `src/lib/server/services/github.ts` | `closeIssue(owner, repo, issueNumber)` |
+| `getIssueSlots` | `src/lib/server/services/git-history.ts` | `getIssueSlots()` |
+| `/api/github/issues` | `src/routes/api/github/issues/+server.ts` | `POST` — GitHub — crée une issue dans le dépôt courant (POST) |
+| `/api/issue` | `src/routes/api/issue/+server.ts` | `GET, PATCH, POST` — GitHub — lit une issue avec ses sous-issues (GET) |
+| `/api/issues` | `src/routes/api/issues/+server.ts` | `GET, POST` — GitHub — liste toutes les issues du projet (GET) |
+| `TaskDetail` | `src/lib/components/TaskDetail.svelte` | `loadLinkedIssueState, closeFullPlanIssues, selectIssueRow, repromptIssue, closeLinkedIssue, writeTests, runTests` — composant UI |
+| `FullPlanView` | `src/lib/components/FullPlanView.svelte` | `closeAllIssues, parseStacks, launchDagRow, launchDagRows, isRowLocked` — composant UI |
 
 ---
 
 ## Snippets
 
-### `listTasks`
-_src/lib/server/services/tasks.ts_
+### `getIssue`
+_src/lib/server/services/github.ts_
 
 ```ts
-function listTasks(): Task[] {
-    ensureDir();
-    const dir = getTasksDir();
-    return fs.readdirSync(dir)
-        .filter(f => f.endsWith(".json"))
-        .map(f => {
-            const task = migrateTaskStatus(JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
-            task.hasPlan = fs.existsSync(path.join(dir, `${task.id}.plan.md`));
-            task.hasPatch = hasPatchFiles(task.id);
-            return task;
-        })
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+async function getIssue(owner: string, repo: string, number: number) {
+    const octokit = getOctokit();
+    const { data } = await octokit.issues.get({
+        owner,
+        repo,
+        issue_number: number
+    });
+    return data;
 }
 ```
 
-### `deleteTask`
-_src/lib/server/services/tasks.ts_
+### `closeIssue`
+_src/lib/server/services/github.ts_
 
 ```ts
-function deleteTask(id: string): boolean {
-    const p = taskPath(id);
-    if (!fs.existsSync(p)) return false;
-    fs.unlinkSync(p);
-    return true;
-}
-```
-
-### `getTask`
-_src/lib/server/services/tasks.ts_
-
-```ts
-function getTask(id: string): Task | null {
-    const p = taskPath(id);
-    if (!fs.existsSync(p)) return null;
-    return migrateTaskStatus(JSON.parse(fs.readFileSync(p, "utf-8")));
+async function closeIssue(owner: string, repo: string, issueNumber: number): Promise<void> {
+    const octokit = getOctokit();
+    await octokit.issues.update({ owner, repo, issue_number: issueNumber, state: "closed" });
 }
 ```
