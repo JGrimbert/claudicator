@@ -14,6 +14,7 @@
     } from "$lib/stores/agent";
     import { get } from "svelte/store";
     import TaskList from "./TaskList.svelte";
+    import CssAnalysis from "./CssAnalysis.svelte";
     import { JgrTabList } from "jgr-ui";
     import type { ListItem, TabDef } from "jgr-ui";
 
@@ -361,6 +362,10 @@
             empty: godObjects ? "Aucun fichier volumineux" : "Cliquez sur Scanner pour analyser",
             cta: { label: "Scanner", onclick: scanFiles },
         },
+        {
+            id: "css",
+            label: "CSS",
+        },
     ] satisfies TabDef[];
 </script>
 
@@ -378,6 +383,8 @@
     {#snippet customcontent(currentTabId)}
         {#if currentTabId === "tasks"}
             <TaskList />
+        {:else if currentTabId === "css"}
+            <CssAnalysis />
         {/if}
     {/snippet}
 </JgrTabList>

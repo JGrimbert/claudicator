@@ -159,7 +159,13 @@ export const issueListRefreshTick = writable(0);
 export const godObjectRefreshTick = writable(0);
 export const issueListPendingNumber = writable<number | null>(null);
 export const pendingSelectTaskId = writable<string | null>(null);
-export const projetPanelTab = writable<"todos" | "issues" | "tasks" | "sante">("issues");
+export const projetPanelTab = writable<"todos" | "issues" | "tasks" | "sante" | "css">("issues");
+
+export const cssAnalysis = writable<{
+    running: boolean;
+    result: string | null;
+    logs: RunLog[];
+}>({ running: false, result: null, logs: [] });
 /** Notifie la création d'une tâche et rafraîchit */
 export function notifyTaskCreated(taskId?: string) {
     if (taskId) {

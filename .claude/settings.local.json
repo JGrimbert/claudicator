@@ -68,7 +68,9 @@
       "Bash(npx publint:*)",
       "Bash(cmd:*)",
       "Bash(powershell -Command \"cd C:\\\\jgr-ui; npm run package\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(wc -l /c/claudicator/src/lib/components/*.svelte)",
+      "Read(//tmp/**)"
     ]
   }
 }
