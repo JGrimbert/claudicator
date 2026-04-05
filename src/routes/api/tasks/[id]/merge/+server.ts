@@ -6,6 +6,7 @@ import { getMainBranch, checkoutMain } from "$lib/server/services/git";
 import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
 import { killProcess, isRunning } from "$lib/server/services/processes";
 import { scanGodObjects } from "$lib/server/services/god-objects";
+import { saveCssHistory, deleteCssAnalysis } from "$lib/server/services/css-history";
 
 /** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
@@ -40,11 +41,22 @@ export async function POST({ params }) {
             );
         }
 
-        await mergePullRequest(owner, repo, pr.number);
+        const mergeResult = await mergePullRequest(owner, repo, pr.number);
         await checkoutMain(root);
         const merged = updateTask(params.id, { status: "merged" });
         if (task.type === "refacto") {
             setImmediate(() => { try { scanGodObjects(getProjectRoot()); } catch { /* silencieux */ } });
+        }
+        if (task.type === "css") {
+            const sha: string = (mergeResult as any).sha ?? "";
+            deleteCssAnalysis();
+            saveCssHistory({
+                date:      new Date().toISOString(),
+                taskTitle: task.title,
+                prUrl:     pr.html_url,
+                commitUrl: sha ? `https://github.com/${owner}/${repo}/commit/${sha}` : pr.html_url,
+                branch:    task.branch,
+            });
         }
         return json(merged);
     } catch (err) {
@@ -57,6 +69,16 @@ export async function POST({ params }) {
             const merged = updateTask(params.id, { status: "merged" });
             if (task.type === "refacto") {
                 setImmediate(() => { try { scanGodObjects(getProjectRoot()); } catch { /* silencieux */ } });
+            }
+            if (task.type === "css") {
+                deleteCssAnalysis();
+                saveCssHistory({
+                    date:      new Date().toISOString(),
+                    taskTitle: task.title,
+                    prUrl:     pr.html_url,
+                    commitUrl: pr.html_url,
+                    branch:    task.branch,
+                });
             }
             return json(merged);
         }

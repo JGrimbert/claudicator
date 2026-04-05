@@ -69,35 +69,5 @@ let { task, currentStep, branchCreating, onselectpanel, oncreatebranchanddiff, o
     padding: 0 0.2rem;
     line-height: 1;
 }
-.wf-btn {
-    background: none;
-    border: 1px solid transparent;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-}
-.wf-btn.wf-active {
-    color: var(--accent-hover);
-    border-color: transparent;
-    background: none;
-}
-.wf-btn.wf-active:hover { color: #b0a0ff; }
-.wf-btn.wf-secondary {
-    color: #444;
-    border-color: transparent;
-    cursor: pointer;
-}
-.wf-btn.wf-secondary:hover { color: #777; border-color: #333; }
-.wf-btn.wf-disabled {
-    color: #333;
-    border-color: transparent;
-    cursor: default;
-    pointer-events: none;
-}
+/* .wf-btn — défini globalement dans +layout.svelte */
 </style>

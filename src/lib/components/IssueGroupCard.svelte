@@ -455,79 +455,6 @@
 .twin-badge { font-size: 0.55rem; color: #6a5a9a; margin-left: auto; }
 .done-badge { font-size: 0.6rem; color: #22c55e; margin-left: auto; font-weight: 700; }
 
-/* ── Stack boxes (subdivisions) ── */
-.stack-group {
-    margin: 0.2rem 0 0.35rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-.stack-box {
-    border: 1px dashed hsl(calc(var(--stack-hue, 0) * 1deg) 28% 32%);
-    border-radius: 3px;
-    padding: 0.25rem 0.4rem;
-}
-.tree-branch-head {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.08rem 0;
-}
-.residual-connector {
-    color: #3a3a5a;
-    font-size: 0.6rem;
-    flex-shrink: 0;
-}
-.sub-extra-kw { font-size: 0.55rem; color: #555; }
-.tree-leaf {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    font-size: 0.6rem;
-    padding-left: 0.1rem;
-}
-.group-residual { display: flex; flex-direction: column; gap: 0.05rem; }
-.residual-head {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.08rem 0;
-}
-.residual-label { font-size: 0.55rem; color: #555; font-style: italic; }
-.sub-keyword {
-    font-size: 0.62rem;
-    color: #7a6ad9;
-    background: #140f30;
-    border: 1px solid #3a2a7a;
-    border-radius: 3px;
-    padding: 0.02rem 0.3rem;
-    flex-shrink: 0;
-}
-.sub-count { font-size: 0.55rem; color: #555; }
-.sub-haiku-inline {
-    font-size: 0.55rem;
-    color: #8a7ac9;
-    font-style: italic;
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-.btn-stack-plan {
-    background: none;
-    border: 1px solid #2a3a5a;
-    color: #5a7ab9;
-    font-size: 0.6rem;
-    padding: 0.05rem 0.3rem;
-    border-radius: 2px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-left: auto;
-}
-.btn-stack-plan:hover:not(:disabled) { background: #0a1020; color: #7a9adf; }
-.btn-stack-plan:disabled { opacity: 0.4; cursor: default; }
 .stack-feedback {
     font-size: 0.52rem;
     color: #5a7a5a;
@@ -538,17 +465,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-.sub-issues {
-    list-style: none;
-    padding: 0;
-    margin: 0.15rem 0 0 0.3rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    font-size: 0.58rem;
-    color: #aaa;
-}
-
 /* ── Footer ── */
 .group-footer {
     display: flex;
@@ -674,7 +590,6 @@
     animation: blink 1s step-end infinite;
     margin-left: 0.15rem;
 }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .eval-err {
     padding: 0.4rem 0.45rem;
     color: #e05a5a;

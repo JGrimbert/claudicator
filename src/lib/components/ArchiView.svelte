@@ -109,24 +109,6 @@
     background: var(--bg-panel, #0e0e0e);
     color: #888;
 }
-.atlas-header {
-    padding: 0.5rem 0.8rem;
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-    display: flex;
-    align-items: baseline;
-    gap: 0.8rem;
-}
-.atlas-title {
-    color: #555;
-    letter-spacing: 0.08em;
-    font-size: 0.6rem;
-}
-.atlas-subtitle {
-    color: #2a2a2a;
-    font-size: 0.58rem;
-    font-style: italic;
-}
 .atlas-loading, .atlas-error {
     padding: 1rem;
     color: #333;

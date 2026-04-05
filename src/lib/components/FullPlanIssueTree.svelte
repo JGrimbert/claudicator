@@ -423,21 +423,7 @@ let allGroups = $derived((() => {
     background: none; border: none; cursor: pointer; color: #f7c948; font-size: 0.7rem; padding: 0 2px;
 }
 .issue-status-footer { padding: 4px 8px; }
-/* ── Boutons wf réutilisés dans l'arbre ── */
-.wf-btn {
-    background: none;
-    border: 1px solid transparent;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-}
-.wf-btn:disabled { opacity: 0.4; cursor: default; }
+/* .wf-btn — défini globalement dans +layout.svelte */
 .wf-btn.wf-stale { color: #ff9800; border-color: rgba(255,152,0,0.3); }
 .wf-btn.wf-stale:hover:not(:disabled) { color: #ffb74d; border-color: rgba(255,152,0,0.6); }
 .wf-btn.wf-commit-all { color: #7ec8a0; border-color: rgba(126,200,160,0.3); }
