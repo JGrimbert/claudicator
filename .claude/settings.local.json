@@ -61,7 +61,8 @@
       "Bash(sed -n '1325p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
       "Bash(sed -n '1342p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
       "Bash(sed -n '1343p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
-      "Bash(sed -n '1348p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")"
+      "Bash(sed -n '1348p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
+      "Bash(node_modules/.bin/svelte-package)"
     ]
   }
 }

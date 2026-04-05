@@ -30,6 +30,7 @@ export class TaskController {
     selectedPanel = $state<WfPanel>("plan");
     centralInput = $state("");
     sendingCentralInput = $state(false);
+    resetting = $state(false);
 
     constructor(
         public task: Task,
@@ -47,6 +48,21 @@ export class TaskController {
     upgrade(updated: Task): TaskController {
         this.task = updated;
         return this;
+    }
+
+    /** Réinitialise la task à "specification" depuis n'importe quel état bloqué. */
+    async reset(): Promise<void> {
+        if (this.resetting) return;
+        this.resetting = true;
+        try {
+            const res = await fetch(`/api/tasks/${this.task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "specification" }),
+            });
+            const data = await res.json();
+            if (!data.error) await this.cb.onloadtasks();
+        } finally { this.resetting = false; }
     }
 
     async sendInput(): Promise<void> {
