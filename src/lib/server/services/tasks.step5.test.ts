@@ -9,7 +9,7 @@ import fs from "fs";
 describe("Issue #72 — surbrillance de la tâche en cours d'exécution", () => {
     it("le composant TaskList applique une classe CSS sur la task en cours d'exécution", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // Une classe running ou task-running doit être conditionnellement appliquée
@@ -19,7 +19,7 @@ describe("Issue #72 — surbrillance de la tâche en cours d'exécution", () => 
 
     it("le CSS définit le style de la classe running/task-running", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // Le CSS doit définir .task-running ou .task-row-wrap.running
@@ -31,7 +31,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
     it("TaskDetail contient taskDag comme état réactif", () => {
         // taskDag est dans TaskDetail.svelte (panel de détail)
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // taskDag doit être un $state
@@ -41,7 +41,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
 
     it("TaskDetail affiche les nœuds du DAG quand taskDag est défini", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // Le DAG doit s'afficher conditionnellement
@@ -52,7 +52,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
 
     it("TaskDetail charge le DAG via l'endpoint eval-dag", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // L'endpoint eval-dag doit être appelé pour charger le DAG

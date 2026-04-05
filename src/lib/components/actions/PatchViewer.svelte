@@ -1,5 +1,5 @@
 <script lang="ts">
-import DiffView from "./DiffView.svelte";
+import DiffView from "../viewers/DiffView.svelte";
 import type { PatchInfo } from "$lib/types/task";
 
 interface Props {

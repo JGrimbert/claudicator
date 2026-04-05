@@ -1,10 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentState, agentRunState, planModeTask, consoleTab, testRunState } from "$lib/stores/agent";
-    import DiagramViewer from "$lib/components/DiagramViewer.svelte";
-    import SymbolsView from "$lib/components/SymbolsView.svelte";
-    import ArchiView from "$lib/components/ArchiView.svelte";
-    import RunConsole from "$lib/components/RunConsole.svelte";
+    import DiagramViewer from "$lib/components/viewers/DiagramViewer.svelte";
+    import SymbolsView from "$lib/components/viewers/SymbolsView.svelte";
+    import ArchiView from "$lib/components/viewers/ArchiView.svelte";
+    import RunConsole from "$lib/components/consoles/RunConsole.svelte";
     import { JgrBtn } from 'jgr-ui';
 
     // ─── PROJET — fichiers contexte ───────────────────────────────────────────

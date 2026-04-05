@@ -7,6 +7,7 @@ import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects
 import { killProcess, isRunning } from "$lib/server/services/processes";
 import { scanGodObjects } from "$lib/server/services/god-objects";
 import { saveCssHistory, deleteCssAnalysis } from "$lib/server/services/css-history";
+import { saveComponentHistory, deleteComponentAnalysis } from "$lib/server/services/component-history";
 
 /** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
@@ -58,6 +59,17 @@ export async function POST({ params }) {
                 branch:    task.branch,
             });
         }
+        if (task.type === "archi") {
+            const sha: string = (mergeResult as any).sha ?? "";
+            deleteComponentAnalysis();
+            saveComponentHistory({
+                date:      new Date().toISOString(),
+                taskTitle: task.title,
+                prUrl:     pr.html_url,
+                commitUrl: sha ? `https://github.com/${owner}/${repo}/commit/${sha}` : pr.html_url,
+                branch:    task.branch,
+            });
+        }
         return json(merged);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -73,6 +85,16 @@ export async function POST({ params }) {
             if (task.type === "css") {
                 deleteCssAnalysis();
                 saveCssHistory({
+                    date:      new Date().toISOString(),
+                    taskTitle: task.title,
+                    prUrl:     pr.html_url,
+                    commitUrl: pr.html_url,
+                    branch:    task.branch,
+                });
+            }
+            if (task.type === "archi") {
+                deleteComponentAnalysis();
+                saveComponentHistory({
                     date:      new Date().toISOString(),
                     taskTitle: task.title,
                     prUrl:     pr.html_url,

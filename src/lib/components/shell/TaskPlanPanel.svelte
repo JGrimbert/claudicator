@@ -1,5 +1,5 @@
 <script lang="ts">
-import PromptUsage from "$lib/components/PromptUsage.svelte";
+import PromptUsage from "$lib/components/consoles/PromptUsage.svelte";
 import type { Task } from "$lib/types/task";
 
 interface Props {

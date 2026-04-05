@@ -3,7 +3,7 @@
     import { get } from "svelte/store";
     import { JgrRoadmap } from "jgr-ui";
     import type { RoadmapData, IssueCluster } from "jgr-ui";
-    import IssueGroups from "$lib/components/IssueGroups.svelte";
+    import IssueGroups from "$lib/components/issues/IssueGroups.svelte";
     import { agentState, projetPanelTab, pendingSelectTaskId, taskIssueNumbers, evalIssueDag, evalIssueDagsByKeyword } from "$lib/stores/agent";
     type Status = "loading" | "ok" | "empty" | "generating" | "error";
 

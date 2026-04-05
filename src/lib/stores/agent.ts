@@ -159,9 +159,15 @@ export const issueListRefreshTick = writable(0);
 export const godObjectRefreshTick = writable(0);
 export const issueListPendingNumber = writable<number | null>(null);
 export const pendingSelectTaskId = writable<string | null>(null);
-export const projetPanelTab = writable<"todos" | "issues" | "tasks" | "sante" | "css">("issues");
+export const projetPanelTab = writable<"todos" | "issues" | "tasks" | "sante" | "css" | "archi">("issues");
 
 export const cssAnalysis = writable<{
+    running: boolean;
+    result: string | null;
+    logs: RunLog[];
+}>({ running: false, result: null, logs: [] });
+
+export const componentAnalysis = writable<{
     running: boolean;
     result: string | null;
     logs: RunLog[];

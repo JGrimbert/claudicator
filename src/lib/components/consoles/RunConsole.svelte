@@ -4,7 +4,7 @@
     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
     import { JgrConsole } from 'jgr-ui';
     import type { LogEntry } from 'jgr-ui';
-    import PromptUsage from "$lib/components/PromptUsage.svelte";
+    import PromptUsage from "./PromptUsage.svelte";
 
     // Extraction des tokens depuis les events SSE de type "usage"
     type TokenUsage = { inputTokens: number; outputTokens: number };

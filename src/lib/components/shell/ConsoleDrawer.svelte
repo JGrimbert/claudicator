@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentRunState, stopConsoleStream, toggleConsoleMinimized, startConsoleStream, taskRefreshTick, type RunLog } from "$lib/stores/agent";
-    import RunConsole from "$lib/components/RunConsole.svelte";
+    import RunConsole from "$lib/components/consoles/RunConsole.svelte";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;

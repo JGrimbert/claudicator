@@ -70,7 +70,14 @@
       "Bash(powershell -Command \"cd C:\\\\jgr-ui; npm run package\")",
       "Bash(powershell:*)",
       "Bash(wc -l /c/claudicator/src/lib/components/*.svelte)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(sed -i 's|from \"\\\\./FullPlanIssueTree\\\\.svelte\"|from \"../issues/FullPlanIssueTree.svelte\"|g' /c/claudicator/src/lib/components/tasks/TaskDetail.svelte)",
+      "Bash(sed -i 's|from \"\\\\./WorkflowBar\\\\.svelte\"|from \"../shell/WorkflowBar.svelte\"|g' /c/claudicator/src/lib/components/tasks/TaskDetail.svelte)",
+      "Bash(sed -i 's|from \"\\\\./TaskPlanPanel\\\\.svelte\"|from \"../shell/TaskPlanPanel.svelte\"|g' /c/claudicator/src/lib/components/tasks/TaskDetail.svelte)",
+      "Bash(sed -i 's|from \"\\\\./ImplementPanel\\\\.svelte\"|from \"../actions/ImplementPanel.svelte\"|g' /c/claudicator/src/lib/components/tasks/TaskDetail.svelte)",
+      "Bash(sed -i 's|from \"\\\\./CommitPanel\\\\.svelte\"|from \"../actions/CommitPanel.svelte\"|g' /c/claudicator/src/lib/components/tasks/TaskDetail.svelte)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/vite build:*)"
     ]
   }
 }

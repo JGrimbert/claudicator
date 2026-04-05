@@ -3,13 +3,13 @@
     import { get } from "svelte/store";
     import { planGroups, planGroupsWithInvalidations, planGroupsDeduped, activePlanGroupIndex, agentState, issueAnalysis, issueStates, planPanelActiveTab } from "$lib/stores/agent";
     import type { PlanGroupDeduped, PlanGroupWithInvalidations } from "$lib/stores/agent";
-    import { computeSkillCandidates, computeStepSymbols } from "$lib/components/PlanPanel.helpers";
-    import type { DirCluster, MixedCluster, CoalNode, HistCoalNode, IssueSlot, HistoryStats, ClusterSkill, SkillProposal, SkillCandidate } from "$lib/components/PlanPanel.helpers";
-    import PlanTabClusters from "$lib/components/plan/PlanTabClusters.svelte";
-    import PlanTabStep     from "$lib/components/plan/PlanTabStep.svelte";
-    import PlanTabHistory  from "$lib/components/plan/PlanTabHistory.svelte";
-    import PlanTabSkills   from "$lib/components/plan/PlanTabSkills.svelte";
-    import PlanTabSteps    from "$lib/components/plan/PlanTabSteps.svelte";
+    import { computeSkillCandidates, computeStepSymbols } from "./PlanPanel.helpers";
+    import type { DirCluster, MixedCluster, CoalNode, HistCoalNode, IssueSlot, HistoryStats, ClusterSkill, SkillProposal, SkillCandidate } from "./PlanPanel.helpers";
+    import PlanTabClusters from "./PlanTabClusters.svelte";
+    import PlanTabStep     from "./PlanTabStep.svelte";
+    import PlanTabHistory  from "./PlanTabHistory.svelte";
+    import PlanTabSkills   from "./PlanTabSkills.svelte";
+    import PlanTabSteps    from "./PlanTabSteps.svelte";
 
     let activeTab: "clusters" | "étape" | "étapes" | "history" | "skills" = $planPanelActiveTab;
     $: activeTab = $planPanelActiveTab;

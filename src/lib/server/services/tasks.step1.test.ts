@@ -60,7 +60,7 @@ describe("Issue #41 — sendCentralInput utilise le taskId sélectionné", () =>
         // Vérifie que le composant TaskList contient l'attribut data-task-id
         // utilisé pour scrollIntoView dans selectTask
         const componentPath = path.resolve(
-            "src/lib/components/TaskList.svelte"
+            "src/lib/components/tasks/TaskList.svelte"
         );
         const content = fs.readFileSync(componentPath, "utf-8");
         expect(content).toContain('data-task-id=');
@@ -71,7 +71,7 @@ describe("Issue #41 — sendCentralInput utilise le taskId sélectionné", () =>
 describe("Issue #178 — selectTask met à jour la sélection et scroll", () => {
     it("selectTask utilise data-task-id pour identifier la tâche à scroller", () => {
         const componentPath = path.resolve(
-            "src/lib/components/TaskList.svelte"
+            "src/lib/components/tasks/TaskList.svelte"
         );
         const content = fs.readFileSync(componentPath, "utf-8");
         // La sélection est stockée dans `selected` (équivalent de selectedTaskId)
@@ -84,7 +84,7 @@ describe("Issue #178 — selectTask met à jour la sélection et scroll", () => 
     it("sendCentralInput passe le taskId dans le body de la requête", () => {
         // sendCentralInput est dans TaskDetail.svelte (panel de détail)
         const componentPath = path.resolve(
-            "src/lib/components/TaskDetail.svelte"
+            "src/lib/components/tasks/TaskDetail.svelte"
         );
         const content = fs.readFileSync(componentPath, "utf-8");
         // La fonction sendCentralInput prend taskId en paramètre

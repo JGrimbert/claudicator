@@ -1,8 +1,8 @@
 <script lang="ts">
     import { clusterFocusedSymbol, planGroups } from "$lib/stores/agent";
-    import IssueChip from "$lib/components/IssueChip.svelte";
-    import { groupIssuesByPlanGroup } from "$lib/components/PlanPanel.helpers";
-    import type { DirCluster, MixedCluster, CoalNode, CoalSymbol, HistCoalNode } from "$lib/components/PlanPanel.helpers";
+    import IssueChip from "$lib/components/issues/IssueChip.svelte";
+    import { groupIssuesByPlanGroup } from "./PlanPanel.helpers";
+    import type { DirCluster, MixedCluster, CoalNode, CoalSymbol, HistCoalNode } from "./PlanPanel.helpers";
 
     let {
         dirs,

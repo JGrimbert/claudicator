@@ -9,7 +9,7 @@ import fs from "fs";
 describe("Issue #262 — pas de checkbox ATLAS dans TaskList", () => {
     it("TaskList ne contient pas de checkbox type=checkbox liée à atlasEnabled", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // Vérifier qu'il n'y a pas de checkbox ATLAS dans le template
@@ -37,7 +37,7 @@ describe("Issue #154 — navigation vers la task créée dans IssueAnalysis", ()
     it("IssueAnalysis passe le taskId lors de la création d'une task unique", () => {
         // Après refactoring, la logique de création est dans PlanBatchConsole.svelte
         const content = fs.readFileSync(
-            "src/lib/components/PlanBatchConsole.svelte",
+            "src/lib/components/consoles/PlanBatchConsole.svelte",
             "utf-8"
         );
         // Quand une seule task est créée, notifyTaskCreated doit être appelée avec son id
@@ -50,7 +50,7 @@ describe("Issue #154 — navigation vers la task créée dans IssueAnalysis", ()
 
     it("TaskList gère pendingSelectTaskId pour auto-sélectionner la nouvelle task", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // TaskList doit réagir à pendingSelectTaskId

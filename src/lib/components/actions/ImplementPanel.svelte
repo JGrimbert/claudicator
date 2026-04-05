@@ -1,6 +1,6 @@
 <script lang="ts">
-import PromptUsage from "$lib/components/PromptUsage.svelte";
-import { formatDiffSummary } from "./TaskList.helpers";
+import PromptUsage from "$lib/components/consoles/PromptUsage.svelte";
+import { formatDiffSummary } from "../tasks/TaskList.helpers";
 import type { Task, WfPanel } from "$lib/types/task";
 
 interface Props {

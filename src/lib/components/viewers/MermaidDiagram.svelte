@@ -1,7 +1,7 @@
 <script lang="ts">
     import { afterUpdate } from "svelte";
-    import { extractMermaid, textWithoutMermaid } from "./IssueAnalysis.helpers";
-    import type { Group } from "./IssueAnalysis.helpers";
+    import { extractMermaid, textWithoutMermaid } from "../issues/IssueAnalysis.helpers";
+    import type { Group } from "../issues/IssueAnalysis.helpers";
 
     let { result, groups, hoveredIssueNumber, hasInvalidated, onRegenerate, openIssue }: {
         result: string;
