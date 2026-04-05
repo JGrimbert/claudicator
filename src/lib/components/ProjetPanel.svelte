@@ -5,6 +5,7 @@
         projetPanelTab,
         notifyTaskCreated,
         issueListRefreshTick,
+        godObjectRefreshTick,
         issueListPendingNumber,
         todoIssueNumbers,
         taskIssueNumbers,
@@ -251,6 +252,7 @@
     });
 
     $: if ($issueListRefreshTick > 0) loadIssues();
+    $: if ($godObjectRefreshTick > 0) loadGodObjects();
 
     // ─── ITEMS ────────────────────────────────────────────────────────────────
 

@@ -156,9 +156,10 @@ export function toggleConsoleMinimized(): void {
 
 export const taskRefreshTick = writable(0);
 export const issueListRefreshTick = writable(0);
+export const godObjectRefreshTick = writable(0);
 export const issueListPendingNumber = writable<number | null>(null);
 export const pendingSelectTaskId = writable<string | null>(null);
-export const projetPanelTab = writable<"todos" | "issues" | "tasks">("issues");
+export const projetPanelTab = writable<"todos" | "issues" | "tasks" | "sante">("issues");
 /** Notifie la création d'une tâche et rafraîchit */
 export function notifyTaskCreated(taskId?: string) {
     if (taskId) {

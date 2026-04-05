@@ -1,6 +1,8 @@
 /** Tâches — lit, met à jour ou supprime une tâche (GET, PATCH, DELETE) */
 import { json } from "@sveltejs/kit";
 import { getTask, updateTask, deleteTask } from "$lib/server/services/tasks";
+import { scanGodObjects } from "$lib/server/services/god-objects";
+import { getProjectRoot } from "$lib/server/services/projects";
 
 /** Récupère une tâche par ID */
 export async function GET({ params }) {
@@ -19,7 +21,17 @@ export async function PATCH({ params, request }) {
 
 /** Supprime une tâche par ID */
 export async function DELETE({ params }) {
+    const task = getTask(params.id);
+    if (!task) return json({ error: "Task introuvable" }, { status: 404 });
+
     const ok = deleteTask(params.id);
-    if (!ok) return json({ error: "Task introuvable" }, { status: 404 });
-    return json({ ok: true });
+
+    // Re-scan automatique après suppression d'une tâche de refactoring
+    if (task.title.startsWith("Refactoring:")) {
+        setImmediate(() => {
+            try { scanGodObjects(getProjectRoot()); } catch { /* silencieux */ }
+        });
+    }
+
+    return json({ ok });
 }
