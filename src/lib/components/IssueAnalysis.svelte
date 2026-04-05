@@ -1,20 +1,19 @@
 <script lang="ts">
     import { afterUpdate, onMount, onDestroy } from "svelte";
-    import { issueAnalysis, agentRunState, agentState, notifyTaskCreated, hoveredIssueNumber, planAllState, taskRefreshTick, issueStates, hasInvalidatedSlots, stopConsoleStream, startConsoleStream } from "$lib/stores/agent";
+    import { issueAnalysis, agentRunState, agentState, hoveredIssueNumber, issueStates, hasInvalidatedSlots } from "$lib/stores/agent";
     import IssueGroups from "./IssueGroups.svelte";
+    import MermaidDiagram from "./MermaidDiagram.svelte";
+    import RoadmapChat from "./RoadmapChat.svelte";
+    import PlanBatchConsole from "./PlanBatchConsole.svelte";
+    import { parseGroups } from "./IssueAnalysis.helpers";
+    import { readAnalysisStream } from "$lib/utils/analysisStream";
 
     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let frame = 0;
     let spinnerInterval: ReturnType<typeof setInterval> | null = null;
 
     let logArea: HTMLDivElement;
-    let planLogArea: HTMLDivElement | null = null;
     let autoScroll = true;
-    let mermaidDiv: HTMLDivElement | null = null;
-    let mermaidRendered = false;
-    let highlightedGroup: string | null = null;
-    let createLoading = false;
-    let createFeedback = "";
     let activeView: 'roadmap' | 'groups' = 'roadmap';
 
     // ── Roadmaps nommées ──────────────────────────────────────────────────
@@ -38,7 +37,6 @@
             return;
         }
         issueAnalysis.update(s => ({ ...s, roadmapId: val || null, result: null, logs: [] }));
-        mermaidRendered = false;
         const url = val ? `/api/issues/analysis?id=${val}` : "/api/issues/analysis";
         try {
             const r = await fetch(url);
@@ -57,7 +55,6 @@
         showNewRoadmap = false;
         newRoadmapName = "";
         issueAnalysis.update(s => ({ ...s, roadmapId: slug, result: null, logs: [], running: true, dismissed: false }));
-        mermaidRendered = false;
         try {
             const res = await fetch("/api/issues/analyze", {
                 method: "POST",
@@ -65,23 +62,7 @@
                 body: JSON.stringify({ roadmapId: slug })
             });
             if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, running: false })); return; }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            let buf = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buf += dec.decode(value, { stream: true });
-                const parts = buf.split("\n\n");
-                buf = parts.pop() ?? "";
-                for (const part of parts) {
-                    if (!part.startsWith("data:")) continue;
-                    try {
-                        const entry = JSON.parse(part.slice(5).trim());
-                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
-                    } catch { /* ignore */ }
-                }
-            }
+            await readAnalysisStream(res, entry => issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] })));
         } finally {
             try {
                 const r = await fetch(`/api/issues/analysis?id=${slug}`);
@@ -98,74 +79,9 @@
         }
     }
 
-    // ── Console chat agent roadmap ────────────────────────────────────────
-    let chatMessage = "";
-
-    async function sendChat() {
-        if (!chatMessage.trim() || $issueAnalysis.chatRunning) return;
-        const msg = chatMessage.trim();
-        chatMessage = "";
-        issueAnalysis.update(s => ({ ...s, chatRunning: true, logs: [] }));
-        mermaidRendered = false;
-        try {
-            const res = await fetch("/api/issues/roadmap/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: msg, roadmapId: $issueAnalysis.roadmapId ?? undefined })
-            });
-            if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, chatRunning: false })); return; }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            const newAgentLines: string[] = [];
-            let buf = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buf += dec.decode(value, { stream: true });
-                const parts = buf.split("\n\n");
-                buf = parts.pop() ?? "";
-                for (const part of parts) {
-                    if (!part.startsWith("data:")) continue;
-                    try {
-                        const entry = JSON.parse(part.slice(5).trim());
-                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
-                        if (entry.type === "agent") newAgentLines.push(entry.line);
-                    } catch { /* ignore */ }
-                }
-            }
-            if (newAgentLines.length > 0) {
-                issueAnalysis.update(s => ({ ...s, result: newAgentLines.join("\n"), chatRunning: false }));
-            } else {
-                issueAnalysis.update(s => ({ ...s, chatRunning: false }));
-            }
-        } catch {
-            issueAnalysis.update(s => ({ ...s, chatRunning: false }));
-        }
-    }
-
-    function onChatKeydown(e: KeyboardEvent) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
-    }
-
-    // ── Tasks pour coloriser les chips ────────────────────────────────────
-    let issueTaskStatus = new Map<number, string>();
-
-    async function loadTaskStatuses() {
-        try {
-            const r = await fetch("/api/tasks");
-            if (r.ok) {
-                const ts: Array<{ issueNumber?: number; status: string }> = await r.json();
-                const m = new Map<number, string>();
-                for (const t of ts) { if (t.issueNumber) m.set(t.issueNumber, t.status); }
-                issueTaskStatus = m;
-            }
-        } catch { /* silencieux */ }
-    }
-
     onMount(() => {
         spinnerInterval = setInterval(() => { frame = (frame + 1) % FRAMES.length; }, 80);
         loadResult();
-        loadTaskStatuses();
         loadRoadmaps();
         loadSnapshot();
     });
@@ -173,10 +89,6 @@
 
     afterUpdate(() => {
         if (autoScroll && logArea) logArea.scrollTop = logArea.scrollHeight;
-        if (planLogArea) planLogArea.scrollTop = planLogArea.scrollHeight;
-        if ($issueAnalysis.result && mermaidDiv && !mermaidRendered) {
-            renderMermaid();
-        }
     });
 
     function onScroll() {
@@ -185,7 +97,6 @@
         autoScroll = atBottom;
     }
 
-    // Charger le snapshot pour alimenter issueStates (détection issues fermées)
     async function loadSnapshot() {
         try {
             const r = await fetch("/api/issues/snapshot");
@@ -198,7 +109,6 @@
         } catch { /* silencieux */ }
     }
 
-    // Charger le résultat existant depuis le serveur au montage
     async function loadResult() {
         if ($issueAnalysis.result || $issueAnalysis.dismissed) return;
         try {
@@ -208,225 +118,6 @@
                 if (text.trim()) issueAnalysis.update(s => ({ ...s, result: text }));
             }
         } catch { /* silencieux */ }
-    }
-
-    // Extraire le bloc mermaid du résultat
-    function extractMermaid(text: string): string | null {
-        const match = text.match(/```mermaid\s*([\s\S]*?)```/);
-        return match ? match[1].trim() : null;
-    }
-
-    // Rendre le texte sans le bloc mermaid (pour affichage dans <pre>)
-    function textWithoutMermaid(text: string): string {
-        const clean = text
-            .replace(/```mermaid[\s\S]*?```/g, "")
-            .replace(/###\s+Groupe\s+\d+[\s\S]*/g, "")
-            .trim();
-        return clean || "Aucun contenu textuel. Relancez l'analyse pour générer un diagramme.";
-    }
-
-    async function renderMermaid() {
-        const mermaidCode = extractMermaid($issueAnalysis.result ?? "");
-        if (!mermaidCode || !mermaidDiv) return;
-        mermaidRendered = true;
-        try {
-            // Charger mermaid dynamiquement depuis CDN si absent
-            let mermaid: any = (window as any).mermaid;
-            if (!mermaid) {
-                await new Promise<void>((resolve, reject) => {
-                    const s = document.createElement("script");
-                    s.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
-                    s.onload = () => resolve();
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-                mermaid = (window as any).mermaid;
-                mermaid.initialize({
-                    startOnLoad: false,
-                    theme: "base",
-                    themeVariables: {
-                        background:          "#0c0c16",
-                        mainBkg:             "#12121a",
-                        primaryColor:        "#12121a",
-                        primaryTextColor:    "#888",
-                        primaryBorderColor:  "#1e1e2e",
-                        lineColor:           "#2a2a3a",
-                        secondaryColor:      "#0c0c16",
-                        tertiaryColor:       "#0c0c16",
-                        edgeLabelBackground: "#0c0c16",
-                        titleColor:          "#555",
-                        fontFamily:          "'JetBrains Mono', monospace",
-                        fontSize:            "11px",
-                    }
-                });
-            }
-            const { svg } = await mermaid.render("analysis-diagram", mermaidCode);
-            if (mermaidDiv) {
-                mermaidDiv.innerHTML = svg;
-                const svgEl = mermaidDiv.querySelector("svg");
-                if (svgEl) {
-                    svgEl.removeAttribute("height");
-                    svgEl.style.width = "100%";
-                    svgEl.style.height = "auto";
-                }
-                attachMermaidClicks();
-            }
-        } catch {
-            mermaidRendered = false;
-            if (mermaidDiv) mermaidDiv.innerHTML = `<pre class="mermaid-fallback">${mermaidCode}</pre>`;
-        }
-    }
-
-    function scrollToGroup(name: string) {
-        highlightedGroup = name;
-        const idx = groups.findIndex(g => g.name === name);
-        if (idx >= 0) {
-            document.getElementById(`group-card-${idx}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-        setTimeout(() => { if (highlightedGroup === name) highlightedGroup = null; }, 1800);
-    }
-
-    function attachMermaidClicks() {
-        if (!mermaidDiv) return;
-
-        // Arrondir les coins des rects
-        for (const rect of Array.from(mermaidDiv.querySelectorAll(".node rect"))) {
-            (rect as SVGRectElement).setAttribute("rx", "4");
-            (rect as SVGRectElement).setAttribute("ry", "4");
-        }
-
-
-        // Styler et redimensionner les markers d'arrowheads
-        const svgElem = mermaidDiv.querySelector("svg");
-        if (svgElem) {
-            const arrowColor = getComputedStyle(document.documentElement)
-                .getPropertyValue("--border-strong").trim() || "#3a3a5a";
-            for (const marker of Array.from(svgElem.querySelectorAll("marker"))) {
-                const mw = parseFloat(marker.getAttribute("markerWidth") ?? "10");
-                const mh = parseFloat(marker.getAttribute("markerHeight") ?? "10");
-                marker.setAttribute("markerWidth",  String(Math.round(mw * 0.6)));
-                marker.setAttribute("markerHeight", String(Math.round(mh * 0.6)));
-                for (const shape of Array.from(marker.querySelectorAll("path, polygon")) as SVGElement[]) {
-                    shape.setAttribute("fill",         arrowColor);
-                    shape.setAttribute("stroke",       arrowColor);
-                    shape.setAttribute("stroke-width", "1.5");
-                }
-            }
-        }
-
-        // Injecter des chips cliquables pour chaque #N dans les labels
-        for (const nodeLabel of Array.from(mermaidDiv.querySelectorAll(".nodeLabel"))) {
-            if (!/#\d+/.test(nodeLabel.innerHTML)) continue;
-            nodeLabel.innerHTML = nodeLabel.innerHTML.replace(/#(\d+)/g, (_, n) =>
-                `<span class="mermaid-issue-chip" data-issue="${n}">#${n}</span>`
-            );
-            for (const chip of Array.from(nodeLabel.querySelectorAll(".mermaid-issue-chip"))) {
-                const n = Number((chip as HTMLElement).dataset.issue);
-                chip.addEventListener("click", (e) => { e.stopPropagation(); openIssue(n); });
-            }
-            // Forcer le div wrapper à être block centré (Mermaid le met en inline-block)
-            const wrapper = nodeLabel.closest("div") as HTMLElement | null;
-            if (wrapper) {
-                wrapper.style.display = "block";
-                wrapper.style.width = "100%";
-                wrapper.style.textAlign = "center";
-            }
-        }
-
-        // Pass 1 : libérer les contraintes
-        requestAnimationFrame(() => {
-            if (!mermaidDiv) return;
-            for (const fo of Array.from(mermaidDiv.querySelectorAll(".node foreignObject"))) {
-                fo.setAttribute("height", "500");
-                fo.setAttribute("width",  "500");
-                fo.setAttribute("overflow", "visible");
-            }
-            // Pass 2 : mesurer et redimensionner avec le vrai scale SVG
-            requestAnimationFrame(() => {
-                if (!mermaidDiv) return;
-                const svgEl = mermaidDiv.querySelector("svg") as SVGSVGElement | null;
-                const ctm   = svgEl?.getScreenCTM();
-                const scaleX = ctm ? ctm.a : 1;
-                const scaleY = ctm ? ctm.d : 1;
-                for (const node of Array.from(mermaidDiv.querySelectorAll(".node"))) {
-                    const fo    = node.querySelector("foreignObject");
-                    const rect  = node.querySelector("rect");
-                    const nodeLabel = node.querySelector(".nodeLabel") as HTMLElement | null;
-                    if (!fo || !rect || !nodeLabel) continue;
-                    const bb = nodeLabel.getBoundingClientRect();
-                    if (!bb.height) continue;
-                    const padH = 28, padW = 24;
-                    const newH = bb.height / scaleY + padH;
-                    const newW = bb.width  / scaleX + padW;
-                    const oldH = parseFloat(rect.getAttribute("height") ?? "0");
-                    const oldW = parseFloat(rect.getAttribute("width")  ?? "0");
-                    const oldY = parseFloat(rect.getAttribute("y") ?? "0");
-                    const oldX = parseFloat(rect.getAttribute("x") ?? "0");
-                    rect.setAttribute("height", String(newH));
-                    rect.setAttribute("y",      String(oldY - (newH - oldH) / 2));
-                    if (newW > oldW) {
-                        rect.setAttribute("width", String(newW));
-                        rect.setAttribute("x",     String(oldX - (newW - oldW) / 2));
-                    }
-                    const finalW = Math.max(newW, oldW);
-                    fo.setAttribute("height", String(newH));
-                    fo.setAttribute("width",  String(finalW));
-                    // Recentrer le groupe label
-                    const labelG = fo.closest("g.label") as SVGGElement | null;
-                    if (labelG) {
-                        labelG.setAttribute("transform", `translate(${-finalW / 2}, ${-newH / 2})`);
-                    }
-                }
-
-                // Pass 3 : rétracter les paths après resize pour que la pointe reste au bord du noeud
-                requestAnimationFrame(() => {
-                    if (!mermaidDiv) return;
-                    const retract = 6; // px : compense l'expansion des noeuds (padH 28 vs Mermaid ~14)
-                    for (const path of Array.from(
-                        mermaidDiv.querySelectorAll(".flowchart-link, .edgePath path")
-                    ) as SVGPathElement[]) {
-                        if ((path as any)._retracted) continue;
-                        (path as any)._retracted = true;
-                        const totalLen = path.getTotalLength();
-                        if (totalLen <= retract + 6) continue;
-                        // newEnd : point cible (retract px avant l'endpoint original)
-                        const newEnd = path.getPointAtLength(totalLen - retract);
-                        // prev : 4px avant newEnd → établit la direction vers le noeud
-                        const prev   = path.getPointAtLength(totalLen - retract - 4);
-                        const d = path.getAttribute("d") ?? "";
-                        // Appende : repasse par l'endpoint (caché sous le noeud opaque),
-                        // recule vers prev, puis avance vers newEnd → direction correcte
-                        path.setAttribute("d",
-                            `${d} L${prev.x.toFixed(2)},${prev.y.toFixed(2)} L${newEnd.x.toFixed(2)},${newEnd.y.toFixed(2)}`
-                        );
-                    }
-                });
-            });
-        });
-
-        // Rendre les noeuds sans #N cliquables vers leur groupe
-        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-        for (const node of Array.from(mermaidDiv.querySelectorAll(".node"))) {
-            const text = (node.textContent ?? "").trim();
-            if (/#\d+/.test(text)) continue;
-            const normText = norm(text);
-            const matching = groups.find(g => {
-                const n = norm(g.name);
-                return normText.includes(n) || n.includes(normText);
-            });
-            if (matching) {
-                (node as HTMLElement).style.cursor = "pointer";
-                node.addEventListener("click", () => scrollToGroup(matching.name));
-                addHover(node as HTMLElement);
-            }
-        }
-    }
-
-    function addHover(node: HTMLElement) {
-        const shape = node.querySelector("rect, circle, polygon") as SVGElement | null;
-        if (!shape) return;
-        node.addEventListener("mouseenter", () => shape.setAttribute("stroke", "#2a4a6a"));
-        node.addEventListener("mouseleave", () => shape.setAttribute("stroke", "#1a2a40"));
     }
 
     async function openIssue(number: number) {
@@ -449,17 +140,9 @@
         }
     }
 
-    function dismiss() {
-        issueAnalysis.update(s => ({ ...s, result: null, dismissed: true, logs: [], running: false, updating: false, chatRunning: false, snapshotDiff: null }));
-        mermaidRendered = false;
-        createFeedback = "";
-        chatMessage = "";
-    }
-
     async function triggerRegenerate() {
         const roadmapId = $issueAnalysis.roadmapId;
         issueAnalysis.update(s => ({ ...s, running: true, result: null, logs: [], dismissed: false }));
-        mermaidRendered = false;
         try {
             const res = await fetch("/api/issues/analyze", {
                 method: "POST",
@@ -467,221 +150,21 @@
                 body: JSON.stringify({ roadmapId })
             });
             if (!res.ok || !res.body) { issueAnalysis.update(s => ({ ...s, running: false })); return; }
-            const reader = res.body.getReader();
-            const dec = new TextDecoder();
-            let buf = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buf += dec.decode(value, { stream: true });
-                const parts = buf.split("\n\n");
-                buf = parts.pop() ?? "";
-                for (const part of parts) {
-                    if (!part.startsWith("data:")) continue;
-                    try {
-                        const entry = JSON.parse(part.slice(5).trim());
-                        issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }));
-                    } catch { /* ignore */ }
-                }
-            }
+            await readAnalysisStream(res, entry => issueAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] })));
         } finally {
             const url = roadmapId ? `/api/issues/analysis?id=${roadmapId}` : "/api/issues/analysis";
             try {
                 const r = await fetch(url);
                 if (r.ok) {
                     const text = await r.text();
-                    if (text.trim()) issueAnalysis.update(s => ({ ...s, running: false, result: text }));
-                    // Recharger le snapshot pour détecter les nouvelles clôtures
-                    await loadSnapshot();
-                    return;
+                    if (text.trim()) {
+                        issueAnalysis.update(s => ({ ...s, running: false, result: text }));
+                        await loadSnapshot();
+                        return;
+                    }
                 }
             } catch { /* silencieux */ }
             issueAnalysis.update(s => ({ ...s, running: false }));
-        }
-    }
-
-    // ── Parser les groupes depuis le texte Markdown de l'analyse ──────────
-    type Group = { name: string; issues: number[]; dependsOn: string[]; summary: string };
-
-    function parseGroups(text: string): Group[] {
-        const groups: Group[] = [];
-        // Chercher les blocs "### Groupe N — Nom"
-        const blocks = text.split(/(?=### Groupe \d)/);
-        for (const block of blocks) {
-            const nameMatch = block.match(/### Groupe \d+ — (.+)/);
-            if (!nameMatch) continue;
-            const name = nameMatch[1].trim();
-            const issueMatch = block.match(/Issues\s*:\s*((?:#\d+(?:,\s*)?)+)/);
-            const issues = issueMatch
-                ? [...issueMatch[1].matchAll(/#(\d+)/g)].map(m => parseInt(m[1]))
-                : [];
-            const depMatch = block.match(/Dépend de\s*:\s*(.+)/);
-            const dependsOn = depMatch
-                ? depMatch[1].split(/[,;]/).map(s => s.trim()).filter(Boolean)
-                : [];
-            const summaryMatch = block.match(/Résumé\s*:\s*(.+)/);
-            const summary = summaryMatch ? summaryMatch[1].trim() : "";
-            if (name && issues.length > 0) groups.push({ name, issues, dependsOn, summary });
-        }
-        return groups;
-    }
-
-    async function createTasks(issueNumbers?: number[]) {
-        if (createLoading) return;
-        createLoading = true;
-        createFeedback = "";
-        try {
-            const snap = await fetch("/api/issues/snapshot");
-            if (!snap.ok) { createFeedback = "Snapshot introuvable"; return; }
-            const { snapshot } = await snap.json();
-            if (!snapshot?.length) { createFeedback = "Aucune issue dans la snapshot"; return; }
-
-            const targets = issueNumbers
-                ? snapshot.filter((s: any) => issueNumbers.includes(s.number))
-                : snapshot;
-            let created = 0, existing = 0;
-            let lastCreatedId: string | undefined;
-            await Promise.all(targets.map(async (issue: { number: number; title: string }) => {
-                const r = await fetch("/api/tasks", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title: issue.title, issueNumber: issue.number })
-                });
-                if (r.ok) {
-                    const data = await r.json();
-                    if (data.alreadyExisted) { existing++; }
-                    else { created++; lastCreatedId = data.id; }
-                }
-                else { existing++; }
-            }));
-            createFeedback = `${created} task${created > 1 ? "s" : ""} créée${created > 1 ? "s" : ""}${existing > 0 ? `, ${existing} existaient déjà` : ""}`;
-            // #154 : naviguer vers la task créée si une seule task a été créée
-            if (created > 0) notifyTaskCreated(created === 1 ? lastCreatedId : undefined);
-        } catch (e: any) {
-            createFeedback = e.message ?? "Erreur";
-        } finally {
-            createLoading = false;
-        }
-    }
-
-    // ── Planifier toutes les tasks séquentiellement ───────────────────────
-    let planLoading = false;
-    let planFeedback = "";
-    let planDone = 0;
-    let planTotal = 0;
-
-    async function planTasks() {
-        if (planLoading || createLoading) return;
-        if ($agentRunState.running || $agentRunState.sessionAlive) {
-            const ok = confirm("La console est active. L'interrompre pour lancer le plan en masse ?");
-            if (!ok) return;
-            stopConsoleStream(); // Annule le stream actif pour ne pas interférer
-        }
-        planLoading = true;
-        planFeedback = "";
-        planDone = 0;
-        try {
-            const res = await fetch("/api/tasks");
-            if (!res.ok) { planFeedback = "Erreur chargement tasks"; return; }
-            const allTasks = await res.json();
-            const toplan = allTasks.filter((t: any) => !t.hasPlan && t.status !== "running");
-            planTotal = toplan.length;
-            if (!toplan.length) { planFeedback = "Toutes les tasks sont déjà planifiées"; return; }
-
-            // Trier selon l'ordre des groupes (P1 avant P2, etc.)
-            const orderedTasks = [...toplan].sort((a: any, b: any) => {
-                const pos = (n: number | undefined) => {
-                    if (!n) return Infinity;
-                    for (let gi = 0; gi < groups.length; gi++) {
-                        const idx = groups[gi].issues.indexOf(n);
-                        if (idx >= 0) return gi * 1000 + idx;
-                    }
-                    return Infinity;
-                };
-                return pos(a.issueNumber) - pos(b.issueNumber);
-            });
-
-            planAllState.set({ running: true, currentTaskId: null });
-
-            // Initialise la console pour le batch (logs vidés une seule fois au départ)
-            agentRunState.update(s => ({
-                ...s, taskId: null, taskTitle: `Planification 0/${planTotal}`,
-                logs: [], running: false, sessionAlive: false, completionLabel: null
-            }));
-
-            for (const task of orderedTasks) {
-                planAllState.update(s => ({ ...s, currentTaskId: task.id }));
-                planFeedback = `${planDone + 1}/${planTotal} · ${task.title.slice(0, 28)}`;
-
-                let prompt = task.title;
-                try {
-                    const ctxRes = await fetch("/api/context", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ taskId: task.id })
-                    });
-                    if (ctxRes.ok) {
-                        const ctxData = await ctxRes.json();
-                        if (ctxData.prompt) prompt = ctxData.prompt;
-                    }
-                } catch { /* fallback titre */ }
-
-                // update (pas set) : les logs des tasks précédentes sont conservés
-                agentRunState.update(s => ({
-                    ...s,
-                    taskId: task.id,
-                    taskTitle: `${planDone + 1}/${planTotal} — ${task.title.slice(0, 25)}`,
-                    running: true,
-                    completionLabel: null,
-                }));
-                try {
-                    const runRes = await fetch("/api/agent/run", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ prompt, taskId: task.id })
-                    });
-                    await startConsoleStream(runRes);
-                } finally {
-                    taskRefreshTick.update(n => n + 1);
-                }
-
-                planDone++;
-                // Label intermédiaire visible entre les tasks
-                agentRunState.update(s => ({
-                    ...s,
-                    completionLabel: `${planDone}/${planTotal} planifiée${planDone > 1 ? "s" : ""}`
-                }));
-                planFeedback = `${planDone}/${planTotal} planifiée${planDone > 1 ? "s" : ""}`;
-            }
-            planFeedback = `${planDone} task${planDone > 1 ? "s" : ""} planifiée${planDone > 1 ? "s" : ""}`;
-            // Label final après le batch complet
-            agentRunState.update(s => ({
-                ...s,
-                completionLabel: `${planDone} task${planDone > 1 ? "s" : ""} planifiée${planDone > 1 ? "s" : ""} · vérifiez les plans`
-            }));
-        } catch (e: any) {
-            planFeedback = e.message ?? "Erreur";
-        } finally {
-            planLoading = false;
-            planAllState.set({ running: false, currentTaskId: null });
-        }
-    }
-
-    $: highlightHoveredChips($hoveredIssueNumber);
-
-    function highlightHoveredChips(n: number | null) {
-        if (!mermaidDiv) return;
-        for (const chip of Array.from(mermaidDiv.querySelectorAll(".mermaid-issue-chip"))) {
-            const el = chip as HTMLElement;
-            if (n !== null && el.dataset.issue === String(n)) {
-                el.style.background = "#162030";
-                el.style.borderColor = "#3a6a9a";
-                el.style.color = "#7cb8ff";
-            } else {
-                el.style.background = "";
-                el.style.borderColor = "";
-                el.style.color = "";
-            }
         }
     }
 
@@ -689,7 +172,6 @@
     $: systemLogs  = $issueAnalysis.logs.filter(l => l.type === "system" && !/^\[pid:\d+\]$/.test(l.line));
     $: lastStatus  = systemLogs.length > 0 ? systemLogs[systemLogs.length - 1].line : "";
     $: groups = $issueAnalysis.result ? parseGroups($issueAnalysis.result) : [];
-    $: planLogs = $agentRunState.logs.filter(l => l.type !== "usage" && !/^\[pid:\d+\]$/.test(l.line));
     $: isActive = $issueAnalysis.running || $issueAnalysis.updating || $issueAnalysis.chatRunning;
     $: activeLabel = $issueAnalysis.chatRunning ? "Raffinement de la roadmap" : $issueAnalysis.updating ? "Intégration des issues" : "Analyse des issues";
     $: activeHint  = $issueAnalysis.chatRunning ? "Raffinement en cours…" : $issueAnalysis.updating ? "Intégration des nouvelles issues…" : "Initialisation de l'analyse…";
@@ -733,7 +215,6 @@
     {#if activeView === 'groups'}
         <IssueGroups />
     {:else if isActive}
-        <!-- Console de logs temps réel -->
         <div class="log-area" bind:this={logArea} onscroll={onScroll}>
             {#if visibleLogs.length === 0}
                 <span class="hint blink">{FRAMES[frame]} {activeHint}</span>
@@ -749,71 +230,19 @@
 
     {:else if $issueAnalysis.result}
         <div class="result-area">
-            {#if $hasInvalidatedSlots}
-                <div class="invalidation-banner">
-                    <span class="inv-icon">⚠</span>
-                    Cette roadmap contient des issues fermées.
-                    <button class="btn-regen" onclick={triggerRegenerate}>Régénérer la roadmap</button>
-                </div>
-            {/if}
             <div class="roadmap-inline">
-            <!-- Diagramme Mermaid -->
-            {#if extractMermaid($issueAnalysis.result)}
-                <div class="mermaid-section">
-                    <div class="mermaid-container" bind:this={mermaidDiv}>
-                        <span class="hint">{FRAMES[frame]} Rendu du diagramme…</span>
-                    </div>
-                </div>
-            {:else}
-                <pre class="result-text">{textWithoutMermaid($issueAnalysis.result)}</pre>
-            {/if}
-        </div>
-
-        <div class="action-bar">
-            {#if planFeedback}
-                <span class="feedback">{planFeedback}</span>
-            {:else if createFeedback}
-                <span class="feedback">{createFeedback}</span>
-            {/if}
-            <button class="btn-tasks" onclick={() => createTasks()} disabled={createLoading || planLoading}>
-                {createLoading ? "Création…" : "Créer tasks"}
-            </button>
-            <button class="btn-plan" onclick={planTasks} disabled={planLoading || createLoading}>
-                {#if planLoading}
-                    {planDone}/{planTotal} ⠿
-                {:else}
-                    Planifier tasks
-                {/if}
-            </button>
-        </div>
-        </div>
-
-        {#if planLoading || ($agentRunState.taskId && planLogs.length > 0 && !$agentRunState.running && planFeedback)}
-            <div class="plan-log-area" bind:this={planLogArea}>
-                <div class="plan-log-header">
-                    <span class="plan-log-task">{$agentRunState.taskTitle}</span>
-                    {#if $agentRunState.running}<span class="plan-log-spin">{FRAMES[frame]}</span>{/if}
-                </div>
-                {#each planLogs as entry}
-                    <div class="plan-log-line" class:sys={entry.type === "system"}>{entry.line}</div>
-                {/each}
+                <MermaidDiagram
+                    result={$issueAnalysis.result}
+                    {groups}
+                    hoveredIssueNumber={$hoveredIssueNumber}
+                    hasInvalidated={$hasInvalidatedSlots}
+                    onRegenerate={triggerRegenerate}
+                    {openIssue}
+                />
             </div>
-        {/if}
-
-        <div class="chat-console" class:chat-running={$issueAnalysis.chatRunning}>
-            <textarea
-                bind:value={chatMessage}
-                placeholder="Instruction pour l'agent roadmap…"
-                disabled={$issueAnalysis.chatRunning}
-                onkeydown={onChatKeydown}
-                rows="2"
-            ></textarea>
-            <button
-                class="chat-send"
-                onclick={sendChat}
-                disabled={$issueAnalysis.chatRunning || !chatMessage.trim()}
-            >{$issueAnalysis.chatRunning ? FRAMES[frame] : "→"}</button>
+            <PlanBatchConsole {groups} {frame} />
         </div>
+        <RoadmapChat {frame} roadmapId={$issueAnalysis.roadmapId ?? null} />
 
     {:else}
         <div class="empty">
@@ -866,13 +295,7 @@
     animation: pulse 1.4s ease-in-out infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-.label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #555;
-    flex: 1;
-}
+.label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em; color: #555; flex: 1; }
 .log-area {
     flex: 1;
     min-height: 0;
@@ -890,13 +313,7 @@
     word-break: break-word;
 }
 .log-line.sys { color: #3a3a5a; font-style: italic; }
-.hint {
-    display: block;
-    padding: 0.4rem 0;
-    color: #2a2a3a;
-    font-size: 0.68rem;
-    font-style: italic;
-}
+.hint { display: block; padding: 0.4rem 0; color: #2a2a3a; font-size: 0.68rem; font-style: italic; }
 .blink { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
 .status-bar {
@@ -922,192 +339,6 @@
     min-height: 0;
     overflow-y: auto;
 }
-.result-text {
-    font-size: 0.7rem;
-    color: #bbb;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-}
-.mermaid-section {
-    width: 100%;
-}
-.mermaid-label {
-    font-size: 0.58rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #333;
-    padding: 0.3rem 0.8rem;
-    border-bottom: 1px solid #1a1a2a;
-}
-.mermaid-container {
-    padding: 0.8rem;
-    overflow-x: auto;
-    min-height: 80px;
-}
-.mermaid-container :global(svg) {
-    display: block;
-    width: 100%;
-    height: auto;
-    margin: 3em auto;
-}
-/* Noeuds */
-.mermaid-container :global(.node rect) {
-    fill: var(--bg-panel) !important;
-    stroke: var(--border) !important;
-    stroke-width: 1px !important;
-}
-.mermaid-container :global(.node foreignObject div) {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 100% !important;
-    text-align: center !important;
-}
-.mermaid-container :global(.nodeLabel) {
-    color: var(--accent-hover) !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.65rem !important;
-    line-height: 1.6 !important;
-    text-align: center !important;
-}
-.mermaid-container :global(.node text) {
-    fill: var(--accent-hover) !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 11px !important;
-}
-/* Chips #N injectés dans les labels */
-.mermaid-container :global(.mermaid-issue-chip) {
-    color: #4a9eff !important;
-    background: #0a1020 !important;
-    border: 1px solid #1a2a40 !important;
-    border-radius: 3px !important;
-    padding: 0.05rem 0.3rem !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.6rem !important;
-    cursor: pointer !important;
-    display: inline-block !important;
-    line-height: 1.4 !important;
-    margin-top: 0.5rem !important;
-    transition: color 0.12s, border-color 0.12s !important;
-}
-.mermaid-container :global(.mermaid-issue-chip:hover) {
-    color: #7cb8ff !important;
-    border-color: #2a4a6a !important;
-}
-
-/* Flèches en pointillés, discrètes (Mermaid v10 : .flowchart-link) */
-.mermaid-container :global(.flowchart-link),
-.mermaid-container :global(.edge-pattern-solid),
-.mermaid-container :global(.edgePath path) {
-    stroke-dasharray: 4 3 !important;
-    stroke: var(--border-strong) !important;
-    stroke-width: 1px !important;
-}
-.mermaid-container :global(.arrowheadPath),
-.mermaid-container :global([id$="pointEnd"] path),
-.mermaid-container :global([id$="pointStart"] path) {
-    fill: var(--border-strong) !important;
-    stroke: var(--border-strong) !important;
-    stroke-width: 1.5px !important;
-    opacity: 0.8 !important;
-}
-/* Noeuds — formes supplémentaires (cohérence avec rect ci-dessus) */
-.mermaid-container :global(.node circle),
-.mermaid-container :global(.node polygon) {
-    fill: var(--bg-panel) !important;
-    stroke: var(--border) !important;
-    stroke-width: 1px !important;
-}
-.mermaid-fallback {
-    font-size: 0.65rem;
-    color: #555;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-}
-.action-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 0.5rem 1.2rem;
-    background: var(--bg-deep);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-.btn-tasks {
-    background: #1a1040;
-    border: 1px solid #4a3a8a;
-    color: #9181f9;
-    font-size: 0.65rem;
-    padding: 0.22rem 0.75rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: background 0.15s;
-}
-.btn-tasks:hover:not(:disabled) { background: #251850; }
-.btn-tasks:disabled { opacity: 0.4; cursor: default; }
-.btn-plan {
-    background: #0a1a10;
-    border: 1px solid #2a4a3a;
-    color: #4caf50;
-    font-size: 0.65rem;
-    padding: 0.22rem 0.75rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: background 0.15s;
-}
-.btn-plan:hover:not(:disabled) { background: #0f2a18; }
-.btn-plan:disabled { opacity: 0.4; cursor: default; }
-.plan-log-area {
-    max-height: 180px;
-    overflow-y: auto;
-    border-top: 1px solid var(--border);
-    background: var(--bg-deep);
-    flex-shrink: 0;
-}
-.plan-log-area::-webkit-scrollbar { width: 3px; }
-.plan-log-area::-webkit-scrollbar-thumb { background: var(--border); }
-.plan-log-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.2rem 1.2rem;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg-deep);
-    z-index: 1;
-}
-.plan-log-task {
-    font-size: 0.58rem;
-    color: #3a3a5a;
-    font-style: italic;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.plan-log-spin { font-size: 0.7rem; color: #4caf50; flex-shrink: 0; }
-.plan-log-line {
-    font-size: 0.65rem;
-    color: #777;
-    line-height: 1.55;
-    padding: 0 1.2rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.plan-log-line.sys { color: #2a2a3a; font-style: italic; }
-.feedback {
-    font-size: 0.62rem;
-    color: #7c9e7c;
-    flex: 1;
-    font-style: italic;
-}
 .empty {
     flex: 1;
     display: flex;
@@ -1115,7 +346,6 @@
     justify-content: center;
     padding: 2rem;
 }
-/* ── Roadmap selector ── */
 .roadmap-selector select {
     background: var(--bg-deep);
     border: 1px solid var(--border);
@@ -1158,121 +388,4 @@
 }
 .new-roadmap-input button:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent); }
 .new-roadmap-input button:disabled { opacity: 0.4; cursor: default; }
-/* ── Focus button ── */
-.btn-focus {
-    background: none;
-    border: 1px solid transparent;
-    color: #333;
-    font-size: 0.65rem;
-    padding: 0.1rem 0.3rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-}
-.btn-focus:hover { color: #7c6af7; border-color: #3a2a5a; }
-.btn-focus.active { color: #7c6af7; border-color: #3a2a5a; }
-.focus-input {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.3rem 0.7rem;
-    border-top: 1px solid var(--border);
-    background: #0e0e1a;
-}
-.focus-input input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--border-strong);
-    color: var(--text-primary);
-    font-size: 0.62rem;
-    padding: 0.1rem 0;
-    font-family: 'JetBrains Mono', monospace;
-    outline: none;
-}
-.focus-input button {
-    background: none;
-    border: 1px solid var(--border);
-    color: #555;
-    font-size: 0.65rem;
-    padding: 0.05rem 0.4rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-}
-.focus-input button:hover:not(:disabled) { color: var(--accent-hover); border-color: var(--accent); }
-.focus-input button:disabled { opacity: 0.4; cursor: default; }
-/* ── Chat console ── */
-.chat-console {
-    display: flex;
-    align-items: flex-end;
-    gap: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    border-top: 1px solid var(--border);
-    background: var(--bg-panel);
-    flex-shrink: 0;
-}
-.chat-console.chat-running { opacity: 0.6; }
-.chat-console textarea {
-    flex: 1;
-    background: var(--bg-deep);
-    border: 1px solid var(--border-strong);
-    border-radius: 3px;
-    color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    padding: 0.3rem 0.5rem;
-    resize: none;
-    outline: none;
-    line-height: 1.5;
-    transition: border-color 0.15s;
-}
-.chat-console textarea:focus { border-color: var(--accent); }
-.chat-console textarea::placeholder { color: var(--border-strong); }
-.chat-send {
-    background: #1a1040;
-    border: 1px solid #4a3a8a;
-    color: #9181f9;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.65rem;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-    align-self: flex-end;
-    transition: background 0.15s;
-    min-width: 2.2rem;
-    text-align: center;
-}
-.chat-send:hover:not(:disabled) { background: #251850; }
-.chat-send:disabled { opacity: 0.4; cursor: default; }
-.invalidation-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.6rem;
-    color: #c87a20;
-    background: #120a00;
-    border: 1px solid #3a1e00;
-    border-radius: 3px;
-    padding: 0.35rem 0.6rem;
-    margin-bottom: 0.4rem;
-    flex-shrink: 0;
-}
-.inv-icon { font-size: 0.75rem; }
-.btn-regen {
-    margin-left: auto;
-    font-size: 0.58rem;
-    color: #c87a20;
-    background: none;
-    border: 1px solid #4a2a00;
-    border-radius: 3px;
-    padding: 0.15rem 0.5rem;
-    cursor: pointer;
-    transition: color 0.12s, border-color 0.12s;
-}
-.btn-regen:hover { color: cornsilk; border-color: #8a5a00; }
 </style>

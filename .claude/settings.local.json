@@ -62,7 +62,13 @@
       "Bash(sed -n '1342p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
       "Bash(sed -n '1343p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
       "Bash(sed -n '1348p' \"C:\\\\claudicator\\\\src\\\\lib\\\\components\\\\TaskList.svelte\")",
-      "Bash(node_modules/.bin/svelte-package)"
+      "Bash(node_modules/.bin/svelte-package)",
+      "Bash(npx svelte-kit:*)",
+      "Bash(npx svelte-package:*)",
+      "Bash(npx publint:*)",
+      "Bash(cmd:*)",
+      "Bash(powershell -Command \"cd C:\\\\jgr-ui; npm run package\")",
+      "Bash(powershell:*)"
     ]
   }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { get } from "svelte/store";
-    import { agentState, taskRefreshTick, issueListRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, doneTasksByIssue, activeFullPlan, issueGroupsCache } from "$lib/stores/agent";
+    import { agentState, taskRefreshTick, issueListRefreshTick, godObjectRefreshTick, pendingSelectTaskId, agentRunState, hoveredIssueNumber, planGroups, planModeTask, planAllState, issueAnalysis, tasksReady, consoleTab, taskIssueNumbers, doneTasksByIssue, activeFullPlan, issueGroupsCache } from "$lib/stores/agent";
     import { JgrItem } from 'jgr-ui';
     import { taskToFilter, getInitialConsoleTab } from './TaskList.helpers';
     import { taskStore } from "$lib/domain/TaskStore.svelte.ts";
@@ -139,6 +139,9 @@
         await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
         if (selected?.id === task.id) clearSelected();
         await loadTasks();
+        if (task.title.startsWith("Refactoring:")) {
+            godObjectRefreshTick.update(n => n + 1);
+        }
     }
 
     async function selectTask(initialTask: Task, silent = false) {
