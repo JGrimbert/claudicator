@@ -17,7 +17,6 @@ import { agentState } from "$lib/stores/agent";
 
 export class SpecController extends TaskController {
     // ── État propre au niveau spécification ─────────────────────────────
-    resetting = $state(false);
     skippingPlan = $state(false);
     linkedIssueState = $state<"open" | "closed" | null>(null);
     closingIssue = $state(false);
@@ -72,20 +71,6 @@ export class SpecController extends TaskController {
     }
 
     // ── Actions ──────────────────────────────────────────────────────────
-
-    async reset(): Promise<void> {
-        if (this.resetting) return;
-        this.resetting = true;
-        try {
-            const res = await fetch(`/api/tasks/${this.task.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "specification" })
-            });
-            const data = await res.json();
-            if (!data.error) await this.cb.onloadtasks();
-        } finally { this.resetting = false; }
-    }
 
     async skipPlan(): Promise<void> {
         if (this.skippingPlan) return;
