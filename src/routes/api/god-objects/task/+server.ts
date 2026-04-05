@@ -89,6 +89,7 @@ export async function POST({ request }) {
     const task = createTask({
         title: `Refactoring: ${basename} (${lines} lignes)`,
         status: "implementation",
+        type: "refacto",
     });
 
     // Utilise getTasksDir() pour gérer correctement les projets nommés

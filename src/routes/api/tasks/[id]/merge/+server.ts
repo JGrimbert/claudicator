@@ -3,8 +3,9 @@ import { json } from "@sveltejs/kit";
 import { resolveTaskContext, updateTask } from "$lib/server/services/tasks";
 import { findOpenPullRequest, createPullRequest, mergePullRequest } from "$lib/server/services/github";
 import { getMainBranch, checkoutMain } from "$lib/server/services/git";
-import { getCurrentProject } from "$lib/server/services/projects";
+import { getCurrentProject, getProjectRoot } from "$lib/server/services/projects";
 import { killProcess, isRunning } from "$lib/server/services/processes";
+import { scanGodObjects } from "$lib/server/services/god-objects";
 
 /** Crée une PR GitHub pour la branche de la tâche */
 export async function POST({ params }) {
@@ -41,7 +42,11 @@ export async function POST({ params }) {
 
         await mergePullRequest(owner, repo, pr.number);
         await checkoutMain(root);
-        return json(updateTask(params.id, { status: "merged" }));
+        const merged = updateTask(params.id, { status: "merged" });
+        if (task.type === "refacto") {
+            setImmediate(() => { try { scanGodObjects(getProjectRoot()); } catch { /* silencieux */ } });
+        }
+        return json(merged);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         // La branche est déjà mergée dans main → marquer comme merged
@@ -49,7 +54,11 @@ export async function POST({ params }) {
             try {
                 await checkoutMain(root);
             } catch { /* ignore */ }
-            return json(updateTask(params.id, { status: "merged" }));
+            const merged = updateTask(params.id, { status: "merged" });
+            if (task.type === "refacto") {
+                setImmediate(() => { try { scanGodObjects(getProjectRoot()); } catch { /* silencieux */ } });
+            }
+            return json(merged);
         }
         return json({ error: message }, { status: 500 });
     }

@@ -12,7 +12,7 @@ export type TaskStatus =
     | "merged"
     | "failed";
 
-export type TaskType = "standard" | "fullplan";
+export type TaskType = "standard" | "fullplan" | "refacto";
 export type Filter = "specification" | "implementation" | "validation" | "merged";
 export type WfPanel = "plan" | "implement" | "commit" | "push" | "patch";
 
