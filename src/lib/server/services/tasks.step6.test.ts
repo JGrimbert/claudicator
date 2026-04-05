@@ -35,8 +35,9 @@ describe("Issue #154 — navigation vers la task créée dans IssueAnalysis", ()
     });
 
     it("IssueAnalysis passe le taskId lors de la création d'une task unique", () => {
+        // Après refactoring, la logique de création est dans PlanBatchConsole.svelte
         const content = fs.readFileSync(
-            "src/lib/components/IssueAnalysis.svelte",
+            "src/lib/components/PlanBatchConsole.svelte",
             "utf-8"
         );
         // Quand une seule task est créée, notifyTaskCreated doit être appelée avec son id
