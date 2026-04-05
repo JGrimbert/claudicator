@@ -196,9 +196,58 @@
         }));
     }
 
+    // ─── GOD OBJECTS ─────────────────────────────────────────────────────────
+
+    type GodObjectEntry = { path: string; lines: number; severity: "warning" | "critical" };
+    type GodObjectScan = { scannedAt: string; files: GodObjectEntry[] };
+
+    let godObjects: GodObjectScan | null = null;
+    let godObjectsLoading = false;
+    let godObjectCreating: Record<string, boolean> = {};
+    let godObjectDone: Record<string, boolean> = {};
+
+    function shortName(p: string) {
+        return p.split(/[\\/]/).pop() ?? p;
+    }
+
+    async function loadGodObjects() {
+        try {
+            const res = await fetch("/api/god-objects");
+            if (res.ok) godObjects = await res.json();
+        } catch { /* silencieux */ }
+    }
+
+    async function scanFiles() {
+        godObjectsLoading = true;
+        try {
+            const res = await fetch("/api/god-objects", { method: "POST" });
+            if (res.ok) godObjects = await res.json();
+        } catch { /* silencieux */ }
+        finally { godObjectsLoading = false; }
+    }
+
+    async function createRefactoTask(entry: GodObjectEntry) {
+        if (godObjectCreating[entry.path] || godObjectDone[entry.path]) return;
+        godObjectCreating = { ...godObjectCreating, [entry.path]: true };
+        try {
+            const res = await fetch("/api/god-objects/task", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ file: entry.path, lines: entry.lines }),
+            });
+            const task = await res.json();
+            godObjectDone = { ...godObjectDone, [entry.path]: true };
+            notifyTaskCreated(task?.id);
+        } catch { /* silencieux */ }
+        finally {
+            godObjectCreating = { ...godObjectCreating, [entry.path]: false };
+        }
+    }
+
     onMount(() => {
         loadTodos();
         loadIssues();
+        loadGodObjects();
     });
 
     $: if ($issueListRefreshTick > 0) loadIssues();
@@ -226,6 +275,20 @@
     );
 
     $: issueListNumbers.set(new Set(displayedIssues.map((i) => i.number)));
+
+    $: godObjectItems = (godObjects?.files ?? []).map(
+        (entry): ListItem => ({
+            id: entry.path,
+            label: shortName(entry.path),
+            prefix: `${entry.severity === "critical" ? "●" : "○"} ${entry.lines} l.`,
+            description: entry.path,
+            actionLabel: "→ Refacto",
+            actionHoverOnly: true,
+            actionLoading: godObjectCreating[entry.path] ?? false,
+            actionDone: godObjectDone[entry.path] ?? false,
+            onaction: () => createRefactoTask(entry),
+        })
+    );
 
     $: todoItems = todos.map(
         (g): ListItem => ({
@@ -287,6 +350,14 @@
         {
             id: "tasks",
             label: "Tasks",
+        },
+        {
+            id: "sante",
+            label: "Refacto",
+            items: godObjectItems,
+            loading: godObjectsLoading,
+            empty: godObjects ? "Aucun fichier volumineux" : "Cliquez sur Scanner pour analyser",
+            cta: { label: "Scanner", onclick: scanFiles },
         },
     ] satisfies TabDef[];
 </script>
