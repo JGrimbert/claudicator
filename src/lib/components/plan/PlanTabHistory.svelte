@@ -1,7 +1,7 @@
 <script lang="ts">
     import { clusterFocusedSymbol } from "$lib/stores/agent";
-    import IssueChip from "$lib/components/IssueChip.svelte";
-    import type { IssueSlot, HistoryStats, HistCoalNode } from "$lib/components/PlanPanel.helpers";
+    import IssueChip from "$lib/components/issues/IssueChip.svelte";
+    import type { IssueSlot, HistoryStats, HistCoalNode } from "./PlanPanel.helpers";
 
     let {
         issueSlots,

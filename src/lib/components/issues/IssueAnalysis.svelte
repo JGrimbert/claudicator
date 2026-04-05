@@ -2,9 +2,9 @@
     import { afterUpdate, onMount, onDestroy } from "svelte";
     import { issueAnalysis, agentRunState, agentState, hoveredIssueNumber, issueStates, hasInvalidatedSlots } from "$lib/stores/agent";
     import IssueGroups from "./IssueGroups.svelte";
-    import MermaidDiagram from "./MermaidDiagram.svelte";
-    import RoadmapChat from "./RoadmapChat.svelte";
-    import PlanBatchConsole from "./PlanBatchConsole.svelte";
+    import MermaidDiagram from "../viewers/MermaidDiagram.svelte";
+    import RoadmapChat from "../consoles/RoadmapChat.svelte";
+    import PlanBatchConsole from "../consoles/PlanBatchConsole.svelte";
     import { parseGroups } from "./IssueAnalysis.helpers";
     import { readAnalysisStream } from "$lib/utils/analysisStream";
 

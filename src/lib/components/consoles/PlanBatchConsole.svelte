@@ -1,6 +1,6 @@
 <script lang="ts">
     import { agentRunState, planAllState, notifyTaskCreated, taskRefreshTick, stopConsoleStream, startConsoleStream } from "$lib/stores/agent";
-    import type { Group } from "./IssueAnalysis.helpers";
+    import type { Group } from "../issues/IssueAnalysis.helpers";
 
     let { groups, frame }: {
         groups: Group[];

@@ -14,13 +14,13 @@ import {
     MergedController,
     FullPlanController,
 } from "$lib/domain/task/index.svelte";
-import FullPlanIssueTree from "./FullPlanIssueTree.svelte";
-import WorkflowBar from "./WorkflowBar.svelte";
-import TaskPlanPanel from "./TaskPlanPanel.svelte";
-import ImplementPanel from "./ImplementPanel.svelte";
-import CommitPanel from "./CommitPanel.svelte";
-import PushMergePanel from "./PushMergePanel.svelte";
-import PatchViewer from "./PatchViewer.svelte";
+import FullPlanIssueTree from "../issues/FullPlanIssueTree.svelte";
+import WorkflowBar from "../shell/WorkflowBar.svelte";
+import TaskPlanPanel from "../shell/TaskPlanPanel.svelte";
+import ImplementPanel from "../actions/ImplementPanel.svelte";
+import CommitPanel from "../actions/CommitPanel.svelte";
+import PushMergePanel from "../actions/PushMergePanel.svelte";
+import PatchViewer from "../actions/PatchViewer.svelte";
 
 const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 

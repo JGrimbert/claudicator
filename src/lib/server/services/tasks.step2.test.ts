@@ -15,7 +15,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
     it("TaskDetail contient la variable justFinished avec $state", () => {
         // justFinished est dans TaskDetail.svelte (panel de détail)
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // justFinished doit être un $state réactif
@@ -24,7 +24,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
 
     it("TaskDetail contient un $effect qui surveille le statut pour justFinished", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // Un $effect doit surveiller selected?.status et setter justFinished
@@ -34,7 +34,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
 
     it("TaskDetail utilise setTimeout de 3000ms pour réinitialiser justFinished", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // Le timer de 3s doit être présent
@@ -47,7 +47,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
 describe("Issue #132 — loadTasksSilent déclenché après justFinished", () => {
     it("TaskList appelle loadTasksSilent (défini dans TaskList)", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // L'effet post-run doit appeler loadTasksSilent
@@ -57,7 +57,7 @@ describe("Issue #132 — loadTasksSilent déclenché après justFinished", () =>
     it("TaskDetail appelle onloadtaskssilent quand la tâche vient de finir", () => {
         // Dans TaskDetail, loadTasksSilent est accessible via la prop onloadtaskssilent
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         const hasJustFinished = content.includes("justFinished = true");

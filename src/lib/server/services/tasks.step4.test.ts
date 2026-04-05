@@ -15,7 +15,7 @@ describe("Issue #180 — affichage du plan Markdown dans le panel", () => {
     it("TaskDetail affiche planContent dans un <pre> ou équivalent", () => {
         // Le plan est affiché dans TaskDetail.svelte (panel de détail)
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // Le plan doit être affiché dans un élément pre
@@ -25,13 +25,13 @@ describe("Issue #180 — affichage du plan Markdown dans le panel", () => {
     it("loadPlan est appelé lors de l'initialisation de TaskDetail, hasPlan dans TaskList", () => {
         // loadPlan est dans TaskDetail.svelte
         const detailContent = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         expect(detailContent).toContain("loadPlan(");
         // hasPlan est utilisé dans TaskList pour la sélection initiale
         const listContent = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         expect(listContent).toContain("hasPlan");
@@ -52,7 +52,7 @@ describe("Issue #185 — affichage des diffs git dans le panel", () => {
     it("TaskDetail appelle loadDiff et affiche diffContent", () => {
         // loadDiff et diffContent sont dans TaskDetail.svelte
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // loadDiff doit exister
@@ -75,7 +75,7 @@ describe("Issue #185 — affichage des diffs git dans le panel", () => {
     it("le panel de diff montre les lignes ajoutées/supprimées avec classes CSS", () => {
         // CSS diff dans TaskDetail.svelte
         const content = fs.readFileSync(
-            "src/lib/components/TaskDetail.svelte",
+            "src/lib/components/tasks/TaskDetail.svelte",
             "utf-8"
         );
         // Classes CSS pour diff coloré

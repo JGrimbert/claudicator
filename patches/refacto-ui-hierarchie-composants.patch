@@ -1,0 +1,1031 @@
+From fb4e05bff870b96af721c1cf3575cfa8660495e2 Mon Sep 17 00:00:00 2001
+From: JGrimbert <jean.grimbert@gmail.com>
+Date: Sun, 5 Apr 2026 18:38:41 +0200
+Subject: [PATCH] =?UTF-8?q?refactor(ui):=20r=C3=A9organise=20composants=20?=
+ =?UTF-8?q?en=20sous-dossiers=20th=C3=A9matiques?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Crée 7 sous-dossiers dans src/lib/components/ :
+- shell/ (TopBar, ConsoleDrawer, ProjetPanel, GlobalPlanView, WorkflowBar, ProjectSettings, TaskPlanPanel)
+- viewers/ (12 composants : DiffView, FileTree, MethodsViewer, etc.)
+- consoles/ (RunConsole, CssAnalysis, ComponentAnalysis, PlanBatchConsole, RoadmapChat, PromptUsage)
+- actions/ (CommitPanel, PushMergePanel, PatchViewer, ImplementPanel)
+- issues/ (IssueChip, IssueGroups, IssueGroupCard, IssueAnalysis, FullPlanIssueTree + helpers)
+- tasks/ (TaskList, TaskDetail + helpers/tests)
+- agent/ (AgentConsole, AgentInput, FullPlanView, RoadmapViz)
+
+Déplace PlanPanel.svelte et ses helpers dans plan/ existant.
+Met à jour tous les imports dans les composants et les tests.
+---
+ .../{ => actions}/CommitPanel.svelte          |   0
+ .../{ => actions}/ImplementPanel.svelte       |   4 +-
+ .../{ => actions}/PatchViewer.svelte          |   0
+ .../{ => actions}/PushMergePanel.svelte       |   0
+ .../{ => agent}/AgentConsole.svelte           |   8 +-
+ .../components/{ => agent}/AgentInput.svelte  |   0
+ .../{ => agent}/FullPlanView.svelte           |   0
+ .../components/{ => agent}/RoadmapViz.svelte  |   2 +-
+ .../consoles/ComponentAnalysis.svelte         | 218 ++++++++++++++++++
+ .../{ => consoles}/CssAnalysis.svelte         |   0
+ .../{ => consoles}/PlanBatchConsole.svelte    |   0
+ .../{ => consoles}/PromptUsage.svelte         |   0
+ .../{ => consoles}/RoadmapChat.svelte         |   0
+ .../{ => consoles}/RunConsole.svelte          |   2 +-
+ .../{ => issues}/FullPlanIssueTree.svelte     |   0
+ .../IssueAnalysis.helpers.test.ts             |   0
+ .../{ => issues}/IssueAnalysis.helpers.ts     |   0
+ .../{ => issues}/IssueAnalysis.svelte         |   0
+ .../components/{ => issues}/IssueChip.svelte  |   0
+ .../{ => issues}/IssueGroupCard.svelte        |   0
+ .../{ => issues}/IssueGroups.helpers.test.ts  |   0
+ .../{ => issues}/IssueGroups.helpers.ts       |   0
+ .../{ => issues}/IssueGroups.svelte           |   0
+ .../{ => plan}/PlanPanel.helpers.test.ts      |   0
+ .../{ => plan}/PlanPanel.helpers.ts           |   0
+ .../components/{ => plan}/PlanPanel.svelte    |  14 +-
+ .../components/plan/PlanTabClusters.svelte    |   6 +-
+ src/lib/components/plan/PlanTabHistory.svelte |   4 +-
+ src/lib/components/plan/PlanTabSkills.svelte  |   2 +-
+ src/lib/components/plan/PlanTabStep.svelte    |   4 +-
+ .../{ => shell}/ConsoleDrawer.svelte          |   2 +-
+ .../{ => shell}/GlobalPlanView.svelte         |   0
+ .../{ => shell}/ProjectSettings.svelte        |   0
+ .../components/{ => shell}/ProjetPanel.svelte |   7 +
+ .../{ => shell}/TaskPlanPanel.svelte          |   2 +-
+ src/lib/components/{ => shell}/TopBar.svelte  |   0
+ .../components/{ => shell}/WorkflowBar.svelte |   0
+ .../components/{ => tasks}/TaskDetail.svelte  |   0
+ .../{ => tasks}/TaskList.helpers.ts           |   0
+ .../components/{ => tasks}/TaskList.svelte    |   0
+ .../components/{ => tasks}/TaskList.test.ts   |   0
+ .../components/{ => viewers}/ArchiView.svelte |   0
+ .../{ => viewers}/ArtifactViewer.svelte       |   0
+ .../{ => viewers}/ClusterCodeView.svelte      |   0
+ .../{ => viewers}/CoalCodeView.svelte         |   0
+ .../{ => viewers}/ContextViewer.svelte        |   0
+ .../{ => viewers}/DiagramViewer.svelte        |   0
+ .../components/{ => viewers}/DiffView.svelte  |   0
+ .../{ => viewers}/FileCodeView.svelte         |   0
+ .../components/{ => viewers}/FileTree.svelte  |   0
+ .../{ => viewers}/MermaidDiagram.svelte       |   0
+ .../{ => viewers}/MethodsViewer.svelte        |   0
+ .../{ => viewers}/SymbolsView.svelte          |   0
+ src/lib/server/services/tasks.step1.test.ts   |   6 +-
+ src/lib/server/services/tasks.step2.test.ts   |  10 +-
+ src/lib/server/services/tasks.step3.test.ts   |   4 +-
+ src/lib/server/services/tasks.step4.test.ts   |  10 +-
+ src/lib/server/services/tasks.step5.test.ts   |  10 +-
+ src/lib/server/services/tasks.step6.test.ts   |   6 +-
+ src/lib/server/services/tasks.step7.test.ts   |   6 +-
+ src/routes/+page.svelte                       |  22 +-
+ 61 files changed, 287 insertions(+), 62 deletions(-)
+ rename src/lib/components/{ => actions}/CommitPanel.svelte (100%)
+ rename src/lib/components/{ => actions}/ImplementPanel.svelte (97%)
+ rename src/lib/components/{ => actions}/PatchViewer.svelte (100%)
+ rename src/lib/components/{ => actions}/PushMergePanel.svelte (100%)
+ rename src/lib/components/{ => agent}/AgentConsole.svelte (98%)
+ rename src/lib/components/{ => agent}/AgentInput.svelte (100%)
+ rename src/lib/components/{ => agent}/FullPlanView.svelte (100%)
+ rename src/lib/components/{ => agent}/RoadmapViz.svelte (98%)
+ create mode 100644 src/lib/components/consoles/ComponentAnalysis.svelte
+ rename src/lib/components/{ => consoles}/CssAnalysis.svelte (100%)
+ rename src/lib/components/{ => consoles}/PlanBatchConsole.svelte (100%)
+ rename src/lib/components/{ => consoles}/PromptUsage.svelte (100%)
+ rename src/lib/components/{ => consoles}/RoadmapChat.svelte (100%)
+ rename src/lib/components/{ => consoles}/RunConsole.svelte (99%)
+ rename src/lib/components/{ => issues}/FullPlanIssueTree.svelte (100%)
+ rename src/lib/components/{ => issues}/IssueAnalysis.helpers.test.ts (100%)
+ rename src/lib/components/{ => issues}/IssueAnalysis.helpers.ts (100%)
+ rename src/lib/components/{ => issues}/IssueAnalysis.svelte (100%)
+ rename src/lib/components/{ => issues}/IssueChip.svelte (100%)
+ rename src/lib/components/{ => issues}/IssueGroupCard.svelte (100%)
+ rename src/lib/components/{ => issues}/IssueGroups.helpers.test.ts (100%)
+ rename src/lib/components/{ => issues}/IssueGroups.helpers.ts (100%)
+ rename src/lib/components/{ => issues}/IssueGroups.svelte (100%)
+ rename src/lib/components/{ => plan}/PlanPanel.helpers.test.ts (100%)
+ rename src/lib/components/{ => plan}/PlanPanel.helpers.ts (100%)
+ rename src/lib/components/{ => plan}/PlanPanel.svelte (97%)
+ rename src/lib/components/{ => shell}/ConsoleDrawer.svelte (99%)
+ rename src/lib/components/{ => shell}/GlobalPlanView.svelte (100%)
+ rename src/lib/components/{ => shell}/ProjectSettings.svelte (100%)
+ rename src/lib/components/{ => shell}/ProjetPanel.svelte (98%)
+ rename src/lib/components/{ => shell}/TaskPlanPanel.svelte (96%)
+ rename src/lib/components/{ => shell}/TopBar.svelte (100%)
+ rename src/lib/components/{ => shell}/WorkflowBar.svelte (100%)
+ rename src/lib/components/{ => tasks}/TaskDetail.svelte (100%)
+ rename src/lib/components/{ => tasks}/TaskList.helpers.ts (100%)
+ rename src/lib/components/{ => tasks}/TaskList.svelte (100%)
+ rename src/lib/components/{ => tasks}/TaskList.test.ts (100%)
+ rename src/lib/components/{ => viewers}/ArchiView.svelte (100%)
+ rename src/lib/components/{ => viewers}/ArtifactViewer.svelte (100%)
+ rename src/lib/components/{ => viewers}/ClusterCodeView.svelte (100%)
+ rename src/lib/components/{ => viewers}/CoalCodeView.svelte (100%)
+ rename src/lib/components/{ => viewers}/ContextViewer.svelte (100%)
+ rename src/lib/components/{ => viewers}/DiagramViewer.svelte (100%)
+ rename src/lib/components/{ => viewers}/DiffView.svelte (100%)
+ rename src/lib/components/{ => viewers}/FileCodeView.svelte (100%)
+ rename src/lib/components/{ => viewers}/FileTree.svelte (100%)
+ rename src/lib/components/{ => viewers}/MermaidDiagram.svelte (100%)
+ rename src/lib/components/{ => viewers}/MethodsViewer.svelte (100%)
+ rename src/lib/components/{ => viewers}/SymbolsView.svelte (100%)
+
+diff --git a/src/lib/components/CommitPanel.svelte b/src/lib/components/actions/CommitPanel.svelte
+similarity index 100%
+rename from src/lib/components/CommitPanel.svelte
+rename to src/lib/components/actions/CommitPanel.svelte
+diff --git a/src/lib/components/ImplementPanel.svelte b/src/lib/components/actions/ImplementPanel.svelte
+similarity index 97%
+rename from src/lib/components/ImplementPanel.svelte
+rename to src/lib/components/actions/ImplementPanel.svelte
+index b55467c..103aa76 100644
+--- a/src/lib/components/ImplementPanel.svelte
++++ b/src/lib/components/actions/ImplementPanel.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+-import PromptUsage from "$lib/components/PromptUsage.svelte";
+-import { formatDiffSummary } from "./TaskList.helpers";
++import PromptUsage from "$lib/components/consoles/PromptUsage.svelte";
++import { formatDiffSummary } from "../tasks/TaskList.helpers";
+ import type { Task, WfPanel } from "$lib/types/task";
+ 
+ interface Props {
+diff --git a/src/lib/components/PatchViewer.svelte b/src/lib/components/actions/PatchViewer.svelte
+similarity index 100%
+rename from src/lib/components/PatchViewer.svelte
+rename to src/lib/components/actions/PatchViewer.svelte
+diff --git a/src/lib/components/PushMergePanel.svelte b/src/lib/components/actions/PushMergePanel.svelte
+similarity index 100%
+rename from src/lib/components/PushMergePanel.svelte
+rename to src/lib/components/actions/PushMergePanel.svelte
+diff --git a/src/lib/components/AgentConsole.svelte b/src/lib/components/agent/AgentConsole.svelte
+similarity index 98%
+rename from src/lib/components/AgentConsole.svelte
+rename to src/lib/components/agent/AgentConsole.svelte
+index e8b547c..a303ecd 100644
+--- a/src/lib/components/AgentConsole.svelte
++++ b/src/lib/components/agent/AgentConsole.svelte
+@@ -1,10 +1,10 @@
+ <script lang="ts">
+     import { onMount } from "svelte";
+     import { agentState, agentRunState, planModeTask, consoleTab, testRunState } from "$lib/stores/agent";
+-    import DiagramViewer from "$lib/components/DiagramViewer.svelte";
+-    import SymbolsView from "$lib/components/SymbolsView.svelte";
+-    import ArchiView from "$lib/components/ArchiView.svelte";
+-    import RunConsole from "$lib/components/RunConsole.svelte";
++    import DiagramViewer from "$lib/components/viewers/DiagramViewer.svelte";
++    import SymbolsView from "$lib/components/viewers/SymbolsView.svelte";
++    import ArchiView from "$lib/components/viewers/ArchiView.svelte";
++    import RunConsole from "$lib/components/consoles/RunConsole.svelte";
+     import { JgrBtn } from 'jgr-ui';
+ 
+     // ─── PROJET — fichiers contexte ───────────────────────────────────────────
+diff --git a/src/lib/components/AgentInput.svelte b/src/lib/components/agent/AgentInput.svelte
+similarity index 100%
+rename from src/lib/components/AgentInput.svelte
+rename to src/lib/components/agent/AgentInput.svelte
+diff --git a/src/lib/components/FullPlanView.svelte b/src/lib/components/agent/FullPlanView.svelte
+similarity index 100%
+rename from src/lib/components/FullPlanView.svelte
+rename to src/lib/components/agent/FullPlanView.svelte
+diff --git a/src/lib/components/RoadmapViz.svelte b/src/lib/components/agent/RoadmapViz.svelte
+similarity index 98%
+rename from src/lib/components/RoadmapViz.svelte
+rename to src/lib/components/agent/RoadmapViz.svelte
+index d2d542d..56ec1c4 100644
+--- a/src/lib/components/RoadmapViz.svelte
++++ b/src/lib/components/agent/RoadmapViz.svelte
+@@ -3,7 +3,7 @@
+     import { get } from "svelte/store";
+     import { JgrRoadmap } from "jgr-ui";
+     import type { RoadmapData, IssueCluster } from "jgr-ui";
+-    import IssueGroups from "$lib/components/IssueGroups.svelte";
++    import IssueGroups from "$lib/components/issues/IssueGroups.svelte";
+     import { agentState, projetPanelTab, pendingSelectTaskId, taskIssueNumbers, evalIssueDag, evalIssueDagsByKeyword } from "$lib/stores/agent";
+     type Status = "loading" | "ok" | "empty" | "generating" | "error";
+ 
+diff --git a/src/lib/components/consoles/ComponentAnalysis.svelte b/src/lib/components/consoles/ComponentAnalysis.svelte
+new file mode 100644
+index 0000000..a15aa12
+--- /dev/null
++++ b/src/lib/components/consoles/ComponentAnalysis.svelte
+@@ -0,0 +1,218 @@
++<script lang="ts">
++    import { onMount } from "svelte";
++    import { componentAnalysis, notifyTaskCreated } from "$lib/stores/agent";
++    import { readAnalysisStream } from "$lib/utils/analysisStream";
++    import { JgrCta, JgrPre } from "jgr-ui";
++
++    type History = { date: string; taskTitle: string; prUrl: string; commitUrl: string; branch: string };
++
++    let taskCreating = $state(false);
++    let taskDone = $state(false);
++    let history = $state<History | null>(null);
++
++    onMount(async () => {
++        const r = await fetch("/api/component-analysis");
++        if (!r.ok) return;
++        const data = await r.json();
++        if (data?.content && !$componentAnalysis.result)
++            componentAnalysis.update(s => ({ ...s, result: data.content }));
++        if (data?.history) history = data.history;
++    });
++
++    async function createTask() {
++        if (taskCreating || taskDone) return;
++        taskCreating = true;
++        try {
++            const res = await fetch("/api/component-analysis/task", { method: "POST" });
++            if (res.ok) {
++                const task = await res.json();
++                taskDone = true;
++                notifyTaskCreated(task?.id);
++            }
++        } finally {
++            taskCreating = false;
++        }
++    }
++
++    let logEl = $state<HTMLElement | null>(null);
++
++    async function analyze() {
++        componentAnalysis.update(s => ({ ...s, running: true, result: null, logs: [] }));
++        try {
++            const res = await fetch("/api/component-analysis", { method: "POST" });
++            if (!res.ok || !res.body) {
++                componentAnalysis.update(s => ({ ...s, running: false }));
++                return;
++            }
++            await readAnalysisStream(res, entry =>
++                componentAnalysis.update(s => ({ ...s, logs: [...s.logs, entry] }))
++            );
++        } finally {
++            const r = await fetch("/api/component-analysis");
++            if (r.ok) {
++                const data = await r.json();
++                componentAnalysis.update(s => ({ ...s, result: data?.content ?? null, running: false }));
++                if (data?.history) history = data.history;
++            } else {
++                componentAnalysis.update(s => ({ ...s, running: false }));
++            }
++        }
++    }
++
++    $effect(() => {
++        if ($componentAnalysis.logs.length && logEl) logEl.scrollTop = logEl.scrollHeight;
++    });
++
++    const spinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
++    let spinnerIdx = $state(0);
++    $effect(() => {
++        if (!$componentAnalysis.running) return;
++        const t = setInterval(() => { spinnerIdx = (spinnerIdx + 1) % spinner.length; }, 100);
++        return () => clearInterval(t);
++    });
++
++    function fmtDate(iso: string) {
++        return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" });
++    }
++</script>
++
++<div class="wrap">
++    {#if $componentAnalysis.running}
++        <div class="status">
++            <span class="spin">{spinner[spinnerIdx]}</span>
++            Analyse architecture en cours…
++        </div>
++        <div class="logs" bind:this={logEl}>
++            {#each $componentAnalysis.logs.slice(-40) as log}
++                <div class="log-line" class:sys={log.type === "system"}>{log.line}</div>
++            {/each}
++        </div>
++    {:else if $componentAnalysis.result}
++        <div class="header">
++            <span class="done">✓ Analyse prête</span>
++            <div class="actions">
++                <button
++                    class="task-btn"
++                    class:done={taskDone}
++                    disabled={taskCreating || taskDone}
++                    onclick={createTask}
++                >
++                    {taskDone ? "✓ Tâche créée" : taskCreating ? "…" : "→ Créer tâche"}
++                </button>
++                <button class="re-btn" onclick={analyze}>↺ Relancer</button>
++            </div>
++        </div>
++        {#if history}
++            <div class="history-bar">
++                Précédente : <a href={history.commitUrl} target="_blank" rel="noopener">{history.taskTitle}</a>
++                <span class="history-date">— {fmtDate(history.date)}</span>
++            </div>
++        {/if}
++        <div class="result">
++            <JgrPre content={$componentAnalysis.result} maxLines={30} />
++        </div>
++    {:else}
++        <div class="empty">
++            {#if history}
++                <div class="history-bar">
++                    Dernière action : <a href={history.commitUrl} target="_blank" rel="noopener">{history.taskTitle}</a>
++                    <span class="history-date">— {fmtDate(history.date)}</span>
++                </div>
++            {/if}
++            <p class="hint">Analyse la structure des {44} composants Svelte.</p>
++            <p class="hint">Détecte les patterns visuels récurrents, propose une hiérarchie de dossiers et identifie les candidats jgr-ui agnostiques.</p>
++            <JgrCta label="Analyser composants" onclick={analyze} />
++        </div>
++    {/if}
++</div>
++
++<style>
++    .wrap {
++        display: flex;
++        flex-direction: column;
++        flex: 1;
++        min-height: 0;
++        padding: 0.5rem 0.75rem;
++        gap: 0.5rem;
++    }
++    .empty {
++        display: flex;
++        flex-direction: column;
++        gap: 0.75rem;
++        padding-top: 0.5rem;
++    }
++    .hint {
++        font-size: 0.65rem;
++        color: var(--text-muted);
++        line-height: 1.5;
++        margin: 0;
++    }
++    .status {
++        display: flex;
++        align-items: center;
++        gap: 0.5rem;
++        font-size: 0.65rem;
++        color: var(--text-secondary);
++        font-family: 'JetBrains Mono', monospace;
++        flex-shrink: 0;
++    }
++    .spin { color: var(--accent); }
++    .logs {
++        flex: 1;
++        min-height: 0;
++        overflow-y: auto;
++        font-family: 'JetBrains Mono', monospace;
++        font-size: 0.58rem;
++        color: var(--text-muted);
++        display: flex;
++        flex-direction: column;
++        gap: 0.1rem;
++    }
++    .log-line { white-space: pre-wrap; word-break: break-all; }
++    .log-line.sys { color: var(--text-dim, #333); }
++    .header {
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        flex-shrink: 0;
++    }
++    .actions { display: flex; align-items: center; gap: 0.4rem; }
++    .history-bar {
++        font-size: 0.6rem;
++        color: var(--text-muted);
++        font-family: 'JetBrains Mono', monospace;
++        flex-shrink: 0;
++        border-left: 2px solid var(--border);
++        padding-left: 0.5rem;
++    }
++    .history-bar a { color: var(--accent); text-decoration: none; }
++    .history-bar a:hover { text-decoration: underline; }
++    .history-date { color: var(--text-dim, #444); }
++    .done { font-size: 0.62rem; color: #4caf50; font-family: 'JetBrains Mono', monospace; }
++    .task-btn {
++        background: none;
++        border: 1px solid var(--accent);
++        color: var(--accent);
++        font-size: 0.6rem;
++        font-family: 'JetBrains Mono', monospace;
++        padding: 0.2rem 0.5rem;
++        cursor: pointer;
++        border-radius: 2px;
++        transition: background 0.1s;
++    }
++    .task-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 15%, transparent); }
++    .task-btn:disabled { opacity: 0.5; cursor: default; }
++    .task-btn.done { border-color: #4caf50; color: #4caf50; }
++    .re-btn {
++        background: none;
++        border: 1px solid var(--border);
++        color: var(--text-muted);
++        font-size: 0.6rem;
++        font-family: 'JetBrains Mono', monospace;
++        padding: 0.2rem 0.4rem;
++        cursor: pointer;
++        border-radius: 2px;
++    }
++    .re-btn:hover { border-color: var(--border-strong); color: var(--text-secondary); }
++    .result { flex: 1; min-height: 0; overflow-y: auto; }
++</style>
+diff --git a/src/lib/components/CssAnalysis.svelte b/src/lib/components/consoles/CssAnalysis.svelte
+similarity index 100%
+rename from src/lib/components/CssAnalysis.svelte
+rename to src/lib/components/consoles/CssAnalysis.svelte
+diff --git a/src/lib/components/PlanBatchConsole.svelte b/src/lib/components/consoles/PlanBatchConsole.svelte
+similarity index 100%
+rename from src/lib/components/PlanBatchConsole.svelte
+rename to src/lib/components/consoles/PlanBatchConsole.svelte
+diff --git a/src/lib/components/PromptUsage.svelte b/src/lib/components/consoles/PromptUsage.svelte
+similarity index 100%
+rename from src/lib/components/PromptUsage.svelte
+rename to src/lib/components/consoles/PromptUsage.svelte
+diff --git a/src/lib/components/RoadmapChat.svelte b/src/lib/components/consoles/RoadmapChat.svelte
+similarity index 100%
+rename from src/lib/components/RoadmapChat.svelte
+rename to src/lib/components/consoles/RoadmapChat.svelte
+diff --git a/src/lib/components/RunConsole.svelte b/src/lib/components/consoles/RunConsole.svelte
+similarity index 99%
+rename from src/lib/components/RunConsole.svelte
+rename to src/lib/components/consoles/RunConsole.svelte
+index c26ffa3..b585e5f 100644
+--- a/src/lib/components/RunConsole.svelte
++++ b/src/lib/components/consoles/RunConsole.svelte
+@@ -4,7 +4,7 @@
+     import { agentRunState, taskRefreshTick, startConsoleStream } from "$lib/stores/agent";
+     import { JgrConsole } from 'jgr-ui';
+     import type { LogEntry } from 'jgr-ui';
+-    import PromptUsage from "$lib/components/PromptUsage.svelte";
++    import PromptUsage from "./PromptUsage.svelte";
+ 
+     // Extraction des tokens depuis les events SSE de type "usage"
+     type TokenUsage = { inputTokens: number; outputTokens: number };
+diff --git a/src/lib/components/FullPlanIssueTree.svelte b/src/lib/components/issues/FullPlanIssueTree.svelte
+similarity index 100%
+rename from src/lib/components/FullPlanIssueTree.svelte
+rename to src/lib/components/issues/FullPlanIssueTree.svelte
+diff --git a/src/lib/components/IssueAnalysis.helpers.test.ts b/src/lib/components/issues/IssueAnalysis.helpers.test.ts
+similarity index 100%
+rename from src/lib/components/IssueAnalysis.helpers.test.ts
+rename to src/lib/components/issues/IssueAnalysis.helpers.test.ts
+diff --git a/src/lib/components/IssueAnalysis.helpers.ts b/src/lib/components/issues/IssueAnalysis.helpers.ts
+similarity index 100%
+rename from src/lib/components/IssueAnalysis.helpers.ts
+rename to src/lib/components/issues/IssueAnalysis.helpers.ts
+diff --git a/src/lib/components/IssueAnalysis.svelte b/src/lib/components/issues/IssueAnalysis.svelte
+similarity index 100%
+rename from src/lib/components/IssueAnalysis.svelte
+rename to src/lib/components/issues/IssueAnalysis.svelte
+diff --git a/src/lib/components/IssueChip.svelte b/src/lib/components/issues/IssueChip.svelte
+similarity index 100%
+rename from src/lib/components/IssueChip.svelte
+rename to src/lib/components/issues/IssueChip.svelte
+diff --git a/src/lib/components/IssueGroupCard.svelte b/src/lib/components/issues/IssueGroupCard.svelte
+similarity index 100%
+rename from src/lib/components/IssueGroupCard.svelte
+rename to src/lib/components/issues/IssueGroupCard.svelte
+diff --git a/src/lib/components/IssueGroups.helpers.test.ts b/src/lib/components/issues/IssueGroups.helpers.test.ts
+similarity index 100%
+rename from src/lib/components/IssueGroups.helpers.test.ts
+rename to src/lib/components/issues/IssueGroups.helpers.test.ts
+diff --git a/src/lib/components/IssueGroups.helpers.ts b/src/lib/components/issues/IssueGroups.helpers.ts
+similarity index 100%
+rename from src/lib/components/IssueGroups.helpers.ts
+rename to src/lib/components/issues/IssueGroups.helpers.ts
+diff --git a/src/lib/components/IssueGroups.svelte b/src/lib/components/issues/IssueGroups.svelte
+similarity index 100%
+rename from src/lib/components/IssueGroups.svelte
+rename to src/lib/components/issues/IssueGroups.svelte
+diff --git a/src/lib/components/PlanPanel.helpers.test.ts b/src/lib/components/plan/PlanPanel.helpers.test.ts
+similarity index 100%
+rename from src/lib/components/PlanPanel.helpers.test.ts
+rename to src/lib/components/plan/PlanPanel.helpers.test.ts
+diff --git a/src/lib/components/PlanPanel.helpers.ts b/src/lib/components/plan/PlanPanel.helpers.ts
+similarity index 100%
+rename from src/lib/components/PlanPanel.helpers.ts
+rename to src/lib/components/plan/PlanPanel.helpers.ts
+diff --git a/src/lib/components/PlanPanel.svelte b/src/lib/components/plan/PlanPanel.svelte
+similarity index 97%
+rename from src/lib/components/PlanPanel.svelte
+rename to src/lib/components/plan/PlanPanel.svelte
+index fa82fad..ed614ae 100644
+--- a/src/lib/components/PlanPanel.svelte
++++ b/src/lib/components/plan/PlanPanel.svelte
+@@ -3,13 +3,13 @@
+     import { get } from "svelte/store";
+     import { planGroups, planGroupsWithInvalidations, planGroupsDeduped, activePlanGroupIndex, agentState, issueAnalysis, issueStates, planPanelActiveTab } from "$lib/stores/agent";
+     import type { PlanGroupDeduped, PlanGroupWithInvalidations } from "$lib/stores/agent";
+-    import { computeSkillCandidates, computeStepSymbols } from "$lib/components/PlanPanel.helpers";
+-    import type { DirCluster, MixedCluster, CoalNode, HistCoalNode, IssueSlot, HistoryStats, ClusterSkill, SkillProposal, SkillCandidate } from "$lib/components/PlanPanel.helpers";
+-    import PlanTabClusters from "$lib/components/plan/PlanTabClusters.svelte";
+-    import PlanTabStep     from "$lib/components/plan/PlanTabStep.svelte";
+-    import PlanTabHistory  from "$lib/components/plan/PlanTabHistory.svelte";
+-    import PlanTabSkills   from "$lib/components/plan/PlanTabSkills.svelte";
+-    import PlanTabSteps    from "$lib/components/plan/PlanTabSteps.svelte";
++    import { computeSkillCandidates, computeStepSymbols } from "./PlanPanel.helpers";
++    import type { DirCluster, MixedCluster, CoalNode, HistCoalNode, IssueSlot, HistoryStats, ClusterSkill, SkillProposal, SkillCandidate } from "./PlanPanel.helpers";
++    import PlanTabClusters from "./PlanTabClusters.svelte";
++    import PlanTabStep     from "./PlanTabStep.svelte";
++    import PlanTabHistory  from "./PlanTabHistory.svelte";
++    import PlanTabSkills   from "./PlanTabSkills.svelte";
++    import PlanTabSteps    from "./PlanTabSteps.svelte";
+ 
+     let activeTab: "clusters" | "étape" | "étapes" | "history" | "skills" = $planPanelActiveTab;
+     $: activeTab = $planPanelActiveTab;
+diff --git a/src/lib/components/plan/PlanTabClusters.svelte b/src/lib/components/plan/PlanTabClusters.svelte
+index 512020d..3012be6 100644
+--- a/src/lib/components/plan/PlanTabClusters.svelte
++++ b/src/lib/components/plan/PlanTabClusters.svelte
+@@ -1,8 +1,8 @@
+ <script lang="ts">
+     import { clusterFocusedSymbol, planGroups } from "$lib/stores/agent";
+-    import IssueChip from "$lib/components/IssueChip.svelte";
+-    import { groupIssuesByPlanGroup } from "$lib/components/PlanPanel.helpers";
+-    import type { DirCluster, MixedCluster, CoalNode, CoalSymbol, HistCoalNode } from "$lib/components/PlanPanel.helpers";
++    import IssueChip from "$lib/components/issues/IssueChip.svelte";
++    import { groupIssuesByPlanGroup } from "./PlanPanel.helpers";
++    import type { DirCluster, MixedCluster, CoalNode, CoalSymbol, HistCoalNode } from "./PlanPanel.helpers";
+ 
+     let {
+         dirs,
+diff --git a/src/lib/components/plan/PlanTabHistory.svelte b/src/lib/components/plan/PlanTabHistory.svelte
+index 8145f5d..22d72fd 100644
+--- a/src/lib/components/plan/PlanTabHistory.svelte
++++ b/src/lib/components/plan/PlanTabHistory.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+     import { clusterFocusedSymbol } from "$lib/stores/agent";
+-    import IssueChip from "$lib/components/IssueChip.svelte";
+-    import type { IssueSlot, HistoryStats, HistCoalNode } from "$lib/components/PlanPanel.helpers";
++    import IssueChip from "$lib/components/issues/IssueChip.svelte";
++    import type { IssueSlot, HistoryStats, HistCoalNode } from "./PlanPanel.helpers";
+ 
+     let {
+         issueSlots,
+diff --git a/src/lib/components/plan/PlanTabSkills.svelte b/src/lib/components/plan/PlanTabSkills.svelte
+index 2f1eb6d..10f5313 100644
+--- a/src/lib/components/plan/PlanTabSkills.svelte
++++ b/src/lib/components/plan/PlanTabSkills.svelte
+@@ -1,6 +1,6 @@
+ <script lang="ts">
+     import { clusterFocusedSymbol } from "$lib/stores/agent";
+-    import type { SkillCandidate, ClusterSkill, SkillProposal } from "$lib/components/PlanPanel.helpers";
++    import type { SkillCandidate, ClusterSkill, SkillProposal } from "./PlanPanel.helpers";
+ 
+     let {
+         skillCandidates,
+diff --git a/src/lib/components/plan/PlanTabStep.svelte b/src/lib/components/plan/PlanTabStep.svelte
+index 20965f1..8b97805 100644
+--- a/src/lib/components/plan/PlanTabStep.svelte
++++ b/src/lib/components/plan/PlanTabStep.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+     import { clusterFocusedSymbol, planGroups } from "$lib/stores/agent";
+-    import IssueChip from "$lib/components/IssueChip.svelte";
+-    import type { DirCluster, MixedCluster, CoalNode, PlanGroupBase } from "$lib/components/PlanPanel.helpers";
++    import IssueChip from "$lib/components/issues/IssueChip.svelte";
++    import type { DirCluster, MixedCluster, CoalNode, PlanGroupBase } from "./PlanPanel.helpers";
+     import type { PlanGroupWithInvalidations } from "$lib/stores/agent";
+ 
+     type ActiveGroup = PlanGroupWithInvalidations & {
+diff --git a/src/lib/components/ConsoleDrawer.svelte b/src/lib/components/shell/ConsoleDrawer.svelte
+similarity index 99%
+rename from src/lib/components/ConsoleDrawer.svelte
+rename to src/lib/components/shell/ConsoleDrawer.svelte
+index 8ee309b..dd290ed 100644
+--- a/src/lib/components/ConsoleDrawer.svelte
++++ b/src/lib/components/shell/ConsoleDrawer.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+     import { onMount } from "svelte";
+     import { agentRunState, stopConsoleStream, toggleConsoleMinimized, startConsoleStream, taskRefreshTick, type RunLog } from "$lib/stores/agent";
+-    import RunConsole from "$lib/components/RunConsole.svelte";
++    import RunConsole from "$lib/components/consoles/RunConsole.svelte";
+ 
+     const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+     let frame = 0;
+diff --git a/src/lib/components/GlobalPlanView.svelte b/src/lib/components/shell/GlobalPlanView.svelte
+similarity index 100%
+rename from src/lib/components/GlobalPlanView.svelte
+rename to src/lib/components/shell/GlobalPlanView.svelte
+diff --git a/src/lib/components/ProjectSettings.svelte b/src/lib/components/shell/ProjectSettings.svelte
+similarity index 100%
+rename from src/lib/components/ProjectSettings.svelte
+rename to src/lib/components/shell/ProjectSettings.svelte
+diff --git a/src/lib/components/ProjetPanel.svelte b/src/lib/components/shell/ProjetPanel.svelte
+similarity index 98%
+rename from src/lib/components/ProjetPanel.svelte
+rename to src/lib/components/shell/ProjetPanel.svelte
+index 3e300d6..1895f37 100644
+--- a/src/lib/components/ProjetPanel.svelte
++++ b/src/lib/components/shell/ProjetPanel.svelte
+@@ -15,6 +15,7 @@
+     import { get } from "svelte/store";
+     import TaskList from "./TaskList.svelte";
+     import CssAnalysis from "./CssAnalysis.svelte";
++    import ComponentAnalysis from "./ComponentAnalysis.svelte";
+     import { JgrTabList } from "jgr-ui";
+     import type { ListItem, TabDef } from "jgr-ui";
+ 
+@@ -366,6 +367,10 @@
+             id: "css",
+             label: "CSS",
+         },
++        {
++            id: "archi",
++            label: "Archi",
++        },
+     ] satisfies TabDef[];
+ </script>
+ 
+@@ -385,6 +390,8 @@
+             <TaskList />
+         {:else if currentTabId === "css"}
+             <CssAnalysis />
++        {:else if currentTabId === "archi"}
++            <ComponentAnalysis />
+         {/if}
+     {/snippet}
+ </JgrTabList>
+diff --git a/src/lib/components/TaskPlanPanel.svelte b/src/lib/components/shell/TaskPlanPanel.svelte
+similarity index 96%
+rename from src/lib/components/TaskPlanPanel.svelte
+rename to src/lib/components/shell/TaskPlanPanel.svelte
+index cf915f8..bb827bf 100644
+--- a/src/lib/components/TaskPlanPanel.svelte
++++ b/src/lib/components/shell/TaskPlanPanel.svelte
+@@ -1,5 +1,5 @@
+ <script lang="ts">
+-import PromptUsage from "$lib/components/PromptUsage.svelte";
++import PromptUsage from "$lib/components/consoles/PromptUsage.svelte";
+ import type { Task } from "$lib/types/task";
+ 
+ interface Props {
+diff --git a/src/lib/components/TopBar.svelte b/src/lib/components/shell/TopBar.svelte
+similarity index 100%
+rename from src/lib/components/TopBar.svelte
+rename to src/lib/components/shell/TopBar.svelte
+diff --git a/src/lib/components/WorkflowBar.svelte b/src/lib/components/shell/WorkflowBar.svelte
+similarity index 100%
+rename from src/lib/components/WorkflowBar.svelte
+rename to src/lib/components/shell/WorkflowBar.svelte
+diff --git a/src/lib/components/TaskDetail.svelte b/src/lib/components/tasks/TaskDetail.svelte
+similarity index 100%
+rename from src/lib/components/TaskDetail.svelte
+rename to src/lib/components/tasks/TaskDetail.svelte
+diff --git a/src/lib/components/TaskList.helpers.ts b/src/lib/components/tasks/TaskList.helpers.ts
+similarity index 100%
+rename from src/lib/components/TaskList.helpers.ts
+rename to src/lib/components/tasks/TaskList.helpers.ts
+diff --git a/src/lib/components/TaskList.svelte b/src/lib/components/tasks/TaskList.svelte
+similarity index 100%
+rename from src/lib/components/TaskList.svelte
+rename to src/lib/components/tasks/TaskList.svelte
+diff --git a/src/lib/components/TaskList.test.ts b/src/lib/components/tasks/TaskList.test.ts
+similarity index 100%
+rename from src/lib/components/TaskList.test.ts
+rename to src/lib/components/tasks/TaskList.test.ts
+diff --git a/src/lib/components/ArchiView.svelte b/src/lib/components/viewers/ArchiView.svelte
+similarity index 100%
+rename from src/lib/components/ArchiView.svelte
+rename to src/lib/components/viewers/ArchiView.svelte
+diff --git a/src/lib/components/ArtifactViewer.svelte b/src/lib/components/viewers/ArtifactViewer.svelte
+similarity index 100%
+rename from src/lib/components/ArtifactViewer.svelte
+rename to src/lib/components/viewers/ArtifactViewer.svelte
+diff --git a/src/lib/components/ClusterCodeView.svelte b/src/lib/components/viewers/ClusterCodeView.svelte
+similarity index 100%
+rename from src/lib/components/ClusterCodeView.svelte
+rename to src/lib/components/viewers/ClusterCodeView.svelte
+diff --git a/src/lib/components/CoalCodeView.svelte b/src/lib/components/viewers/CoalCodeView.svelte
+similarity index 100%
+rename from src/lib/components/CoalCodeView.svelte
+rename to src/lib/components/viewers/CoalCodeView.svelte
+diff --git a/src/lib/components/ContextViewer.svelte b/src/lib/components/viewers/ContextViewer.svelte
+similarity index 100%
+rename from src/lib/components/ContextViewer.svelte
+rename to src/lib/components/viewers/ContextViewer.svelte
+diff --git a/src/lib/components/DiagramViewer.svelte b/src/lib/components/viewers/DiagramViewer.svelte
+similarity index 100%
+rename from src/lib/components/DiagramViewer.svelte
+rename to src/lib/components/viewers/DiagramViewer.svelte
+diff --git a/src/lib/components/DiffView.svelte b/src/lib/components/viewers/DiffView.svelte
+similarity index 100%
+rename from src/lib/components/DiffView.svelte
+rename to src/lib/components/viewers/DiffView.svelte
+diff --git a/src/lib/components/FileCodeView.svelte b/src/lib/components/viewers/FileCodeView.svelte
+similarity index 100%
+rename from src/lib/components/FileCodeView.svelte
+rename to src/lib/components/viewers/FileCodeView.svelte
+diff --git a/src/lib/components/FileTree.svelte b/src/lib/components/viewers/FileTree.svelte
+similarity index 100%
+rename from src/lib/components/FileTree.svelte
+rename to src/lib/components/viewers/FileTree.svelte
+diff --git a/src/lib/components/MermaidDiagram.svelte b/src/lib/components/viewers/MermaidDiagram.svelte
+similarity index 100%
+rename from src/lib/components/MermaidDiagram.svelte
+rename to src/lib/components/viewers/MermaidDiagram.svelte
+diff --git a/src/lib/components/MethodsViewer.svelte b/src/lib/components/viewers/MethodsViewer.svelte
+similarity index 100%
+rename from src/lib/components/MethodsViewer.svelte
+rename to src/lib/components/viewers/MethodsViewer.svelte
+diff --git a/src/lib/components/SymbolsView.svelte b/src/lib/components/viewers/SymbolsView.svelte
+similarity index 100%
+rename from src/lib/components/SymbolsView.svelte
+rename to src/lib/components/viewers/SymbolsView.svelte
+diff --git a/src/lib/server/services/tasks.step1.test.ts b/src/lib/server/services/tasks.step1.test.ts
+index afce45e..ea9abcc 100644
+--- a/src/lib/server/services/tasks.step1.test.ts
++++ b/src/lib/server/services/tasks.step1.test.ts
+@@ -60,7 +60,7 @@ describe("Issue #41 — sendCentralInput utilise le taskId sélectionné", () =>
+         // Vérifie que le composant TaskList contient l'attribut data-task-id
+         // utilisé pour scrollIntoView dans selectTask
+         const componentPath = path.resolve(
+-            "src/lib/components/TaskList.svelte"
++            "src/lib/components/tasks/TaskList.svelte"
+         );
+         const content = fs.readFileSync(componentPath, "utf-8");
+         expect(content).toContain('data-task-id=');
+@@ -71,7 +71,7 @@ describe("Issue #41 — sendCentralInput utilise le taskId sélectionné", () =>
+ describe("Issue #178 — selectTask met à jour la sélection et scroll", () => {
+     it("selectTask utilise data-task-id pour identifier la tâche à scroller", () => {
+         const componentPath = path.resolve(
+-            "src/lib/components/TaskList.svelte"
++            "src/lib/components/tasks/TaskList.svelte"
+         );
+         const content = fs.readFileSync(componentPath, "utf-8");
+         // La sélection est stockée dans `selected` (équivalent de selectedTaskId)
+@@ -84,7 +84,7 @@ describe("Issue #178 — selectTask met à jour la sélection et scroll", () =>
+     it("sendCentralInput passe le taskId dans le body de la requête", () => {
+         // sendCentralInput est dans TaskDetail.svelte (panel de détail)
+         const componentPath = path.resolve(
+-            "src/lib/components/TaskDetail.svelte"
++            "src/lib/components/tasks/TaskDetail.svelte"
+         );
+         const content = fs.readFileSync(componentPath, "utf-8");
+         // La fonction sendCentralInput prend taskId en paramètre
+diff --git a/src/lib/server/services/tasks.step2.test.ts b/src/lib/server/services/tasks.step2.test.ts
+index b8a93d9..44a257c 100644
+--- a/src/lib/server/services/tasks.step2.test.ts
++++ b/src/lib/server/services/tasks.step2.test.ts
+@@ -15,7 +15,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
+     it("TaskDetail contient la variable justFinished avec $state", () => {
+         // justFinished est dans TaskDetail.svelte (panel de détail)
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // justFinished doit être un $state réactif
+@@ -24,7 +24,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
+ 
+     it("TaskDetail contient un $effect qui surveille le statut pour justFinished", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // Un $effect doit surveiller selected?.status et setter justFinished
+@@ -34,7 +34,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
+ 
+     it("TaskDetail utilise setTimeout de 3000ms pour réinitialiser justFinished", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // Le timer de 3s doit être présent
+@@ -47,7 +47,7 @@ describe("Issue #18 — justFinished activé 3s après complétion d'une tâche"
+ describe("Issue #132 — loadTasksSilent déclenché après justFinished", () => {
+     it("TaskList appelle loadTasksSilent (défini dans TaskList)", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // L'effet post-run doit appeler loadTasksSilent
+@@ -57,7 +57,7 @@ describe("Issue #132 — loadTasksSilent déclenché après justFinished", () =>
+     it("TaskDetail appelle onloadtaskssilent quand la tâche vient de finir", () => {
+         // Dans TaskDetail, loadTasksSilent est accessible via la prop onloadtaskssilent
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         const hasJustFinished = content.includes("justFinished = true");
+diff --git a/src/lib/server/services/tasks.step3.test.ts b/src/lib/server/services/tasks.step3.test.ts
+index 8115cae..dbf16a6 100644
+--- a/src/lib/server/services/tasks.step3.test.ts
++++ b/src/lib/server/services/tasks.step3.test.ts
+@@ -8,7 +8,7 @@ import fs from "fs";
+ describe("Issue #36 — tasksByGroup calculé depuis $planGroups", () => {
+     it("le composant TaskList contient tasksByGroup basé sur $planGroups et non une valeur statique vide", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // tasksByGroup ne doit plus être $derived([]) vide
+@@ -23,7 +23,7 @@ describe("Issue #36 — tasksByGroup calculé depuis $planGroups", () => {
+ 
+     it("tasksByGroup associe chaque tâche à son groupe par issueNumber", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // La logique doit utiliser issueNumber pour le matching
+diff --git a/src/lib/server/services/tasks.step4.test.ts b/src/lib/server/services/tasks.step4.test.ts
+index ef830ed..bb7a20e 100644
+--- a/src/lib/server/services/tasks.step4.test.ts
++++ b/src/lib/server/services/tasks.step4.test.ts
+@@ -15,7 +15,7 @@ describe("Issue #180 — affichage du plan Markdown dans le panel", () => {
+     it("TaskDetail affiche planContent dans un <pre> ou équivalent", () => {
+         // Le plan est affiché dans TaskDetail.svelte (panel de détail)
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // Le plan doit être affiché dans un élément pre
+@@ -25,13 +25,13 @@ describe("Issue #180 — affichage du plan Markdown dans le panel", () => {
+     it("loadPlan est appelé lors de l'initialisation de TaskDetail, hasPlan dans TaskList", () => {
+         // loadPlan est dans TaskDetail.svelte
+         const detailContent = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         expect(detailContent).toContain("loadPlan(");
+         // hasPlan est utilisé dans TaskList pour la sélection initiale
+         const listContent = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         expect(listContent).toContain("hasPlan");
+@@ -52,7 +52,7 @@ describe("Issue #185 — affichage des diffs git dans le panel", () => {
+     it("TaskDetail appelle loadDiff et affiche diffContent", () => {
+         // loadDiff et diffContent sont dans TaskDetail.svelte
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // loadDiff doit exister
+@@ -75,7 +75,7 @@ describe("Issue #185 — affichage des diffs git dans le panel", () => {
+     it("le panel de diff montre les lignes ajoutées/supprimées avec classes CSS", () => {
+         // CSS diff dans TaskDetail.svelte
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // Classes CSS pour diff coloré
+diff --git a/src/lib/server/services/tasks.step5.test.ts b/src/lib/server/services/tasks.step5.test.ts
+index f7a1dde..246f232 100644
+--- a/src/lib/server/services/tasks.step5.test.ts
++++ b/src/lib/server/services/tasks.step5.test.ts
+@@ -9,7 +9,7 @@ import fs from "fs";
+ describe("Issue #72 — surbrillance de la tâche en cours d'exécution", () => {
+     it("le composant TaskList applique une classe CSS sur la task en cours d'exécution", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // Une classe running ou task-running doit être conditionnellement appliquée
+@@ -19,7 +19,7 @@ describe("Issue #72 — surbrillance de la tâche en cours d'exécution", () =>
+ 
+     it("le CSS définit le style de la classe running/task-running", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // Le CSS doit définir .task-running ou .task-row-wrap.running
+@@ -31,7 +31,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
+     it("TaskDetail contient taskDag comme état réactif", () => {
+         // taskDag est dans TaskDetail.svelte (panel de détail)
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // taskDag doit être un $state
+@@ -41,7 +41,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
+ 
+     it("TaskDetail affiche les nœuds du DAG quand taskDag est défini", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // Le DAG doit s'afficher conditionnellement
+@@ -52,7 +52,7 @@ describe("Issue #246 — DAG des issues visible dans le panel de détail", () =>
+ 
+     it("TaskDetail charge le DAG via l'endpoint eval-dag", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskDetail.svelte",
++            "src/lib/components/tasks/TaskDetail.svelte",
+             "utf-8"
+         );
+         // L'endpoint eval-dag doit être appelé pour charger le DAG
+diff --git a/src/lib/server/services/tasks.step6.test.ts b/src/lib/server/services/tasks.step6.test.ts
+index a89a1ee..4851ba9 100644
+--- a/src/lib/server/services/tasks.step6.test.ts
++++ b/src/lib/server/services/tasks.step6.test.ts
+@@ -9,7 +9,7 @@ import fs from "fs";
+ describe("Issue #262 — pas de checkbox ATLAS dans TaskList", () => {
+     it("TaskList ne contient pas de checkbox type=checkbox liée à atlasEnabled", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // Vérifier qu'il n'y a pas de checkbox ATLAS dans le template
+@@ -37,7 +37,7 @@ describe("Issue #154 — navigation vers la task créée dans IssueAnalysis", ()
+     it("IssueAnalysis passe le taskId lors de la création d'une task unique", () => {
+         // Après refactoring, la logique de création est dans PlanBatchConsole.svelte
+         const content = fs.readFileSync(
+-            "src/lib/components/PlanBatchConsole.svelte",
++            "src/lib/components/consoles/PlanBatchConsole.svelte",
+             "utf-8"
+         );
+         // Quand une seule task est créée, notifyTaskCreated doit être appelée avec son id
+@@ -50,7 +50,7 @@ describe("Issue #154 — navigation vers la task créée dans IssueAnalysis", ()
+ 
+     it("TaskList gère pendingSelectTaskId pour auto-sélectionner la nouvelle task", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // TaskList doit réagir à pendingSelectTaskId
+diff --git a/src/lib/server/services/tasks.step7.test.ts b/src/lib/server/services/tasks.step7.test.ts
+index d275f39..c43ef4a 100644
+--- a/src/lib/server/services/tasks.step7.test.ts
++++ b/src/lib/server/services/tasks.step7.test.ts
+@@ -10,7 +10,7 @@ import fs from "fs";
+ describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks", () => {
+     it("le composant TaskList utilise un Fuse qui inclut 'status' comme clé de recherche quand searchScope === all", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // Fuse doit avoir 'status' dans ses clés quand scope=all
+@@ -23,7 +23,7 @@ describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks",
+ 
+     it("le Fuse en mode 'all' cherche dans toutes les tasks (pas seulement statusFiltered)", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // Quand searchScope === 'all', le Fuse doit chercher dans toutes les tasks
+@@ -37,7 +37,7 @@ describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks",
+ 
+     it("foundIssues (issues GitHub) est combiné avec les résultats tasks quand scope=all", () => {
+         const content = fs.readFileSync(
+-            "src/lib/components/TaskList.svelte",
++            "src/lib/components/tasks/TaskList.svelte",
+             "utf-8"
+         );
+         // foundIssues doit exister pour la recherche cross-source
+diff --git a/src/routes/+page.svelte b/src/routes/+page.svelte
+index 3c5d2ed..8f04a09 100644
+--- a/src/routes/+page.svelte
++++ b/src/routes/+page.svelte
+@@ -1,16 +1,16 @@
+ <script lang="ts">
+     import { onMount } from "svelte";
+-    import TopBar from "$lib/components/TopBar.svelte";
+-    import AgentConsole from "$lib/components/AgentConsole.svelte";
+-    import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
+-    import AgentInput from "$lib/components/AgentInput.svelte";
+-    import ProjetPanel from "$lib/components/ProjetPanel.svelte";
+-    import PlanPanel from "$lib/components/PlanPanel.svelte";
+-    import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
+-    import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
+-    import CoalCodeView from "$lib/components/CoalCodeView.svelte";
+-    import RoadmapViz from "$lib/components/RoadmapViz.svelte";
+-    import FullPlanView from "$lib/components/FullPlanView.svelte";
++    import TopBar from "$lib/components/shell/TopBar.svelte";
++    import AgentConsole from "$lib/components/agent/AgentConsole.svelte";
++    import ArtifactViewer from "$lib/components/viewers/ArtifactViewer.svelte";
++    import AgentInput from "$lib/components/agent/AgentInput.svelte";
++    import ProjetPanel from "$lib/components/shell/ProjetPanel.svelte";
++    import PlanPanel from "$lib/components/plan/PlanPanel.svelte";
++    import GlobalPlanView from "$lib/components/shell/GlobalPlanView.svelte";
++    import ClusterCodeView from "$lib/components/viewers/ClusterCodeView.svelte";
++    import CoalCodeView from "$lib/components/viewers/CoalCodeView.svelte";
++    import RoadmapViz from "$lib/components/agent/RoadmapViz.svelte";
++    import FullPlanView from "$lib/components/agent/FullPlanView.svelte";
+     import { JgrLayout, JgrTabs } from 'jgr-ui';
+     import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream, evalIssueDag, projetPanelTab, pendingSelectTaskId } from "$lib/stores/agent";
+     import type { RunLog } from "$lib/stores/agent";
+-- 
+2.39.1.windows.1
+

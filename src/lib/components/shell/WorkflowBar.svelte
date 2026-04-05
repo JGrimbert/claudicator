@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { Task, WfPanel } from "$lib/types/task";
-import { btnVariant } from "./TaskList.helpers";
+import { btnVariant } from "../tasks/TaskList.helpers";
 
 interface Props {
     task: Task;

@@ -13,8 +13,9 @@
         type Issue,
     } from "$lib/stores/agent";
     import { get } from "svelte/store";
-    import TaskList from "./TaskList.svelte";
-    import CssAnalysis from "./CssAnalysis.svelte";
+    import TaskList from "../tasks/TaskList.svelte";
+    import CssAnalysis from "../consoles/CssAnalysis.svelte";
+    import ComponentAnalysis from "../consoles/ComponentAnalysis.svelte";
     import { JgrTabList } from "jgr-ui";
     import type { ListItem, TabDef } from "jgr-ui";
 
@@ -366,6 +367,10 @@
             id: "css",
             label: "CSS",
         },
+        {
+            id: "archi",
+            label: "Archi",
+        },
     ] satisfies TabDef[];
 </script>
 
@@ -385,6 +390,8 @@
             <TaskList />
         {:else if currentTabId === "css"}
             <CssAnalysis />
+        {:else if currentTabId === "archi"}
+            <ComponentAnalysis />
         {/if}
     {/snippet}
 </JgrTabList>

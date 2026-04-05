@@ -10,7 +10,7 @@ import fs from "fs";
 describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks", () => {
     it("le composant TaskList utilise un Fuse qui inclut 'status' comme clé de recherche quand searchScope === all", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // Fuse doit avoir 'status' dans ses clés quand scope=all
@@ -23,7 +23,7 @@ describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks",
 
     it("le Fuse en mode 'all' cherche dans toutes les tasks (pas seulement statusFiltered)", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // Quand searchScope === 'all', le Fuse doit chercher dans toutes les tasks
@@ -37,7 +37,7 @@ describe("Issue #40 — recherche élargie : Fuse cherche dans issues ET tasks",
 
     it("foundIssues (issues GitHub) est combiné avec les résultats tasks quand scope=all", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // foundIssues doit exister pour la recherche cross-source

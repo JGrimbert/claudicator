@@ -1,16 +1,16 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import TopBar from "$lib/components/TopBar.svelte";
-    import AgentConsole from "$lib/components/AgentConsole.svelte";
-    import ArtifactViewer from "$lib/components/ArtifactViewer.svelte";
-    import AgentInput from "$lib/components/AgentInput.svelte";
-    import ProjetPanel from "$lib/components/ProjetPanel.svelte";
-    import PlanPanel from "$lib/components/PlanPanel.svelte";
-    import GlobalPlanView from "$lib/components/GlobalPlanView.svelte";
-    import ClusterCodeView from "$lib/components/ClusterCodeView.svelte";
-    import CoalCodeView from "$lib/components/CoalCodeView.svelte";
-    import RoadmapViz from "$lib/components/RoadmapViz.svelte";
-    import FullPlanView from "$lib/components/FullPlanView.svelte";
+    import TopBar from "$lib/components/shell/TopBar.svelte";
+    import AgentConsole from "$lib/components/agent/AgentConsole.svelte";
+    import ArtifactViewer from "$lib/components/viewers/ArtifactViewer.svelte";
+    import AgentInput from "$lib/components/agent/AgentInput.svelte";
+    import ProjetPanel from "$lib/components/shell/ProjetPanel.svelte";
+    import PlanPanel from "$lib/components/plan/PlanPanel.svelte";
+    import GlobalPlanView from "$lib/components/shell/GlobalPlanView.svelte";
+    import ClusterCodeView from "$lib/components/viewers/ClusterCodeView.svelte";
+    import CoalCodeView from "$lib/components/viewers/CoalCodeView.svelte";
+    import RoadmapViz from "$lib/components/agent/RoadmapViz.svelte";
+    import FullPlanView from "$lib/components/agent/FullPlanView.svelte";
     import { JgrLayout, JgrTabs } from 'jgr-ui';
     import { agentRunState, issueAnalysis, projectUsage, planModeTask, globalPlanPrompt, clusterFocusedSymbol, coalCodeFocus, activeFullPlan, taskRefreshTick, startConsoleStream, evalIssueDag, projetPanelTab, pendingSelectTaskId } from "$lib/stores/agent";
     import type { RunLog } from "$lib/stores/agent";

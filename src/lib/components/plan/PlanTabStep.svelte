@@ -1,7 +1,7 @@
 <script lang="ts">
     import { clusterFocusedSymbol, planGroups } from "$lib/stores/agent";
-    import IssueChip from "$lib/components/IssueChip.svelte";
-    import type { DirCluster, MixedCluster, CoalNode, PlanGroupBase } from "$lib/components/PlanPanel.helpers";
+    import IssueChip from "$lib/components/issues/IssueChip.svelte";
+    import type { DirCluster, MixedCluster, CoalNode, PlanGroupBase } from "./PlanPanel.helpers";
     import type { PlanGroupWithInvalidations } from "$lib/stores/agent";
 
     type ActiveGroup = PlanGroupWithInvalidations & {

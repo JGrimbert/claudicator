@@ -8,7 +8,7 @@ import fs from "fs";
 describe("Issue #36 — tasksByGroup calculé depuis $planGroups", () => {
     it("le composant TaskList contient tasksByGroup basé sur $planGroups et non une valeur statique vide", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // tasksByGroup ne doit plus être $derived([]) vide
@@ -23,7 +23,7 @@ describe("Issue #36 — tasksByGroup calculé depuis $planGroups", () => {
 
     it("tasksByGroup associe chaque tâche à son groupe par issueNumber", () => {
         const content = fs.readFileSync(
-            "src/lib/components/TaskList.svelte",
+            "src/lib/components/tasks/TaskList.svelte",
             "utf-8"
         );
         // La logique doit utiliser issueNumber pour le matching

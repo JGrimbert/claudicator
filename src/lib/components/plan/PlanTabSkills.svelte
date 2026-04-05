@@ -1,6 +1,6 @@
 <script lang="ts">
     import { clusterFocusedSymbol } from "$lib/stores/agent";
-    import type { SkillCandidate, ClusterSkill, SkillProposal } from "$lib/components/PlanPanel.helpers";
+    import type { SkillCandidate, ClusterSkill, SkillProposal } from "./PlanPanel.helpers";
 
     let {
         skillCandidates,
