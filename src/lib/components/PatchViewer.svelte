@@ -32,25 +32,5 @@ let { selectedPatch, patchContent, patchLoading, patchApplying, onapply, onrejec
 .patch-panel-title { font-size: 0.7rem; font-weight: 600; color: var(--text); }
 .patch-panel-test { font-size: 0.62rem; color: #f44336; }
 .patch-panel-test.has-tests { color: #4caf50; }
-.wf-btn {
-    background: none;
-    border: 1px solid transparent;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-    color: #555;
-}
-.wf-btn:disabled { opacity: 0.4; cursor: default; }
-.wf-btn.wf-active {
-    color: var(--accent-hover);
-    border-color: transparent;
-    background: none;
-}
-.wf-btn.wf-active:hover { color: #b0a0ff; }
+/* .wf-btn — défini globalement dans +layout.svelte */
 </style>

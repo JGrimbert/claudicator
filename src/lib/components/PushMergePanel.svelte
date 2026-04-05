@@ -90,26 +90,7 @@ let {
 .ahead-sha { color: #5a6a8a; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
 .ahead-msg { color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .push-actions { display: flex; gap: 0.5rem; }
-.wf-btn {
-    background: none;
-    border: 1px solid transparent;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: color 0.15s, border-color 0.15s;
-    color: #555;
-}
-.wf-btn:disabled { opacity: 0.4; cursor: default; }
-.wf-btn.wf-active { color: var(--accent-hover); border-color: transparent; background: none; }
-.wf-btn.wf-active:hover { color: #b0a0ff; }
-.wf-btn.wf-secondary { color: #444; border-color: transparent; cursor: pointer; }
-.wf-btn.wf-secondary:hover { color: #777; border-color: #333; }
-.wf-btn.wf-disabled { color: #333; border-color: transparent; cursor: default; pointer-events: none; }
+/* .wf-btn — défini globalement dans +layout.svelte */
 .close-issue-btn { color: #a04040 !important; border-color: #3a2a2a !important; }
 .close-issue-btn:hover:not(:disabled) { color: #f44336 !important; border-color: #f44336 !important; }
 .merging-spin { color: cornsilk !important; }

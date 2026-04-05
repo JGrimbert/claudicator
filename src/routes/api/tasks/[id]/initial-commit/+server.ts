@@ -20,6 +20,14 @@ function toBranchName(issueNumber: number | undefined, title: string): string {
     return issueNumber ? `issue-${issueNumber}-${slug}` : `task-${slug}`;
 }
 
+/** Retourne un nom de branche unique : ajoute un suffixe date si la branche existe déjà */
+async function uniqueBranchName(git: ReturnType<typeof simpleGit>, base: string): Promise<string> {
+    const { all } = await git.branch(["-a"]);
+    if (!all.includes(base)) return base;
+    const suffix = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+    return `${base.slice(0, 35)}-${suffix}`;
+}
+
 /** Crée la branche initiale pour une tâche */
 export async function POST({ params }) {
     const ctx = resolveTaskContext(params.id);
@@ -31,11 +39,12 @@ export async function POST({ params }) {
     if (!fs.existsSync(planPath)) return json({ error: "Plan introuvable" }, { status: 404 });
 
     const planContent = fs.readFileSync(planPath, "utf-8");
-    const branchName = toBranchName(task.issueNumber, task.title);
+    const branchBase = toBranchName(task.issueNumber, task.title);
 
     try {
         // 1. Créer et checkout la branche dans le projet cible
         const git = simpleGit(root);
+        const branchName = await uniqueBranchName(git, branchBase);
         await git.checkoutLocalBranch(branchName);
 
         // 2. Écrire le plan dans le projet cible

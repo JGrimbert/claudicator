@@ -1,17 +1,18 @@
 /** CSS Analysis — lance/retourne l'audit CSS Claude */
 import fs from "fs";
 import { json } from "@sveltejs/kit";
-import { getProjectRoot } from "$lib/server/services/projects";
+import { getProjectRoot, getCurrentProject } from "$lib/server/services/projects";
 import { collectCssFiles, buildCssPrompt } from "$lib/server/agent/css-analysis";
 import { spawnClaudeStream } from "$lib/server/agent/claude-stream";
-import { getCurrentProject } from "$lib/server/services/projects";
+import { loadCssHistory } from "$lib/server/services/css-history";
 
 const ANALYSIS_FILE = ".agent/css-analysis.md";
 
-/** Retourne le contenu de la dernière analyse CSS (null si aucune) */
+/** Retourne le contenu de l'analyse CSS + l'historique (null si aucune) */
 export async function GET() {
-    if (!fs.existsSync(ANALYSIS_FILE)) return json(null);
-    return json({ content: fs.readFileSync(ANALYSIS_FILE, "utf-8") });
+    const history = loadCssHistory();
+    if (!fs.existsSync(ANALYSIS_FILE)) return json({ content: null, history });
+    return json({ content: fs.readFileSync(ANALYSIS_FILE, "utf-8"), history });
 }
 
 /** Déclenche une nouvelle analyse CSS via Claude */

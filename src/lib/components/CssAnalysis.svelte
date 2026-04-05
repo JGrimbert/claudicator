@@ -1,10 +1,24 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { cssAnalysis, notifyTaskCreated } from "$lib/stores/agent";
     import { readAnalysisStream } from "$lib/utils/analysisStream";
     import { JgrCta, JgrPre } from "jgr-ui";
 
+    type CssHistory = { date: string; taskTitle: string; prUrl: string; commitUrl: string; branch: string };
+
     let taskCreating = $state(false);
     let taskDone = $state(false);
+    let history = $state<CssHistory | null>(null);
+
+    onMount(async () => {
+        const r = await fetch("/api/css-analysis");
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data?.content && !$cssAnalysis.result) {
+            cssAnalysis.update(s => ({ ...s, result: data.content }));
+        }
+        if (data?.history) history = data.history;
+    });
 
     async function createTask() {
         if (taskCreating || taskDone) return;
@@ -39,6 +53,7 @@
             if (r.ok) {
                 const data = await r.json();
                 cssAnalysis.update(s => ({ ...s, result: data?.content ?? null, running: false }));
+                if (data?.history) history = data.history;
             } else {
                 cssAnalysis.update(s => ({ ...s, running: false }));
             }
@@ -46,9 +61,7 @@
     }
 
     $effect(() => {
-        if ($cssAnalysis.logs.length && logEl) {
-            logEl.scrollTop = logEl.scrollHeight;
-        }
+        if ($cssAnalysis.logs.length && logEl) logEl.scrollTop = logEl.scrollHeight;
     });
 
     const spinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
@@ -58,6 +71,10 @@
         const t = setInterval(() => { spinnerIdx = (spinnerIdx + 1) % spinner.length; }, 100);
         return () => clearInterval(t);
     });
+
+    function fmtDate(iso: string) {
+        return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    }
 </script>
 
 <div class="css-wrap">
@@ -73,7 +90,7 @@
         </div>
     {:else if $cssAnalysis.result}
         <div class="css-header">
-            <span class="css-done">✓ Analyse terminée</span>
+            <span class="css-done">✓ Analyse prête</span>
             <div class="css-actions">
                 <button
                     class="task-btn"
@@ -83,14 +100,26 @@
                 >
                     {taskDone ? "✓ Tâche créée" : taskCreating ? "…" : "→ Créer tâche"}
                 </button>
-                <button class="re-btn" onclick={analyze}>↺</button>
+                <button class="re-btn" onclick={analyze}>↺ Relancer</button>
             </div>
         </div>
+        {#if history}
+            <div class="history-bar">
+                Précédente : <a href={history.commitUrl} target="_blank" rel="noopener">{history.taskTitle}</a>
+                <span class="history-date">— {fmtDate(history.date)}</span>
+            </div>
+        {/if}
         <div class="css-result">
             <JgrPre content={$cssAnalysis.result} maxLines={30} />
         </div>
     {:else}
         <div class="css-empty">
+            {#if history}
+                <div class="history-bar">
+                    Dernière action : <a href={history.commitUrl} target="_blank" rel="noopener">{history.taskTitle}</a>
+                    <span class="history-date">— {fmtDate(history.date)}</span>
+                </div>
+            {/if}
             <p class="hint">Analyse les blocs CSS de tous les composants Svelte du projet.</p>
             <p class="hint">Détecte les classes mortes, patterns répétés, classes métier à abstraire et candidats jgr-ui.</p>
             <JgrCta label="Analyser CSS" onclick={analyze} />
@@ -132,9 +161,7 @@
         flex-shrink: 0;
     }
 
-    .spin {
-        color: var(--accent);
-    }
+    .spin { color: var(--accent); }
 
     .css-logs {
         flex: 1;
@@ -163,6 +190,23 @@
         align-items: center;
         gap: 0.4rem;
     }
+
+    .history-bar {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        flex-shrink: 0;
+        border-left: 2px solid var(--border);
+        padding-left: 0.5rem;
+    }
+
+    .history-bar a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+    .history-bar a:hover { text-decoration: underline; }
+
+    .history-date { color: var(--text-dim, #444); }
 
     .task-btn {
         background: none;
